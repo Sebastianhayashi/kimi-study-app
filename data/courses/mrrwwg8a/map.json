@@ -1,0 +1,113 @@
+{
+  "title": "英语四年级上册",
+  "mission": "掌握《闽教版英语 四年级上册》核心内容",
+  "source": "book.pdf",
+  "currentLesson": "lessons/0010-the-spring-festival.html",
+  "lessons": [
+    {
+      "number": 1,
+      "slug": "0001-our-classroom",
+      "title": "Unit 1 Our Classroom · 初次见面与教室物品",
+      "file": "lessons/0001-our-classroom.html",
+      "focus": "打招呼、介绍班级、核心教室词汇",
+      "unit": 1,
+      "part": "A",
+      "status": "completed"
+    },
+    {
+      "number": 2,
+      "slug": "0002-in-my-classroom",
+      "title": "Unit 1 In My Classroom · 描述教室里的物品与位置",
+      "file": "lessons/0002-in-my-classroom.html",
+      "focus": "There is / There are、I can see ...、歌曲 My Classroom",
+      "unit": 1,
+      "part": "B/C",
+      "status": "completed"
+    },
+    {
+      "number": 3,
+      "slug": "0003-our-school",
+      "title": "Unit 2 Our School · 介绍学校里的场所",
+      "file": "lessons/0003-our-school.html",
+      "focus": "This is our …、学校场所词汇、ir 发音、歌曲 My Happy School",
+      "unit": 2,
+      "part": "A/B/C",
+      "status": "completed"
+    },
+    {
+      "number": 4,
+      "slug": "0004-numbers-and-animals",
+      "title": "Unit 3 Numbers and Animals · 数字 13–20 与农场动物",
+      "file": "lessons/0004-numbers-and-animals.html",
+      "focus": "数字 13–20、农场动物、How much is … and …? 加法问答",
+      "unit": 3,
+      "part": "A/B/C",
+      "status": "completed"
+    },
+    {
+      "number": 5,
+      "slug": "0005-numbers-and-time",
+      "title": "Unit 4 Numbers and Time · 时间表达与整十数字",
+      "file": "lessons/0005-numbers-and-time.html",
+      "focus": "What's the time?、整十数与几十几、涉及整十数的加法",
+      "unit": 4,
+      "part": "A/B/C",
+      "status": "completed"
+    },
+    {
+      "number": 6,
+      "slug": "0006-review-1",
+      "title": "Review 1 · Unit 1–4 综合复习",
+      "file": "lessons/0006-review-1.html",
+      "focus": "核心词汇、重点句型、语音、综合表达",
+      "unit": "Review 1",
+      "part": "A/B/C",
+      "status": "completed"
+    },
+    {
+      "number": 7,
+      "slug": "0007-daily-activities",
+      "title": "Unit 5 Daily Activities · 描述一天的活动安排",
+      "file": "lessons/0007-daily-activities.html",
+      "focus": "When do you …?、日常活动短语、It's time to …、Tick Tock 歌曲",
+      "unit": 5,
+      "part": "A/B/C",
+      "status": "completed"
+    },
+    {
+      "number": 8,
+      "slug": "0008-meals",
+      "title": "Unit 6 Meals · 谈论一日三餐与食物",
+      "file": "lessons/0008-meals.html",
+      "focus": "What's for …?、Do you like …?、Have some …, please.、食物词汇",
+      "unit": 6,
+      "part": "A/B/C",
+      "status": "completed"
+    },
+    {
+      "number": 9,
+      "slug": "0009-christmas",
+      "title": "Unit 7 Christmas · 圣诞节礼物与祝福",
+      "file": "lessons/0009-christmas.html",
+      "focus": "What present do you want?、Do you like your present?、圣诞祝福歌曲",
+      "unit": 7,
+      "part": "A/B/C",
+      "status": "completed"
+    },
+    {
+      "number": 10,
+      "slug": "0010-the-spring-festival",
+      "title": "Unit 8 The Spring Festival · 春节习俗与祝福",
+      "file": "lessons/0010-the-spring-festival.html",
+      "focus": "How do you spend …?、春节活动短语、Do you …? Yes, we do.、To the Fair 歌曲",
+      "unit": 8,
+      "part": "A/B/C",
+      "status": "active"
+    }
+  ],
+  "pendingUnits": [
+    { "unit": "Review 2", "title": "Review 2" },
+    { "unit": "Story Time", "title": "The Tiger and the Monkey" }
+  ],
+  "updatedAt": "2026-07-20T00:54:00+08:00"
+}

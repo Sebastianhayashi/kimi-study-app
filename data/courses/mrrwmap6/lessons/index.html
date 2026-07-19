@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>让创意更有黏性 · 课程目录</title>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --text: #2c3e50;
+      --muted: #6c757d;
+      --accent: #e74c3c;
+      --accent-light: #fdf2f2;
+      --secondary: #3498db;
+      --secondary-light: #eaf5fb;
+      --success: #27ae60;
+      --border: #e9ecef;
+      --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+    header {
+      text-align: center;
+      padding: 48px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border-radius: 16px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow);
+    }
+    header h1 {
+      margin: 0 0 12px;
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    header .subtitle {
+      font-size: 1.1rem;
+      opacity: 0.95;
+    }
+    section {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1.4rem;
+      border-left: 4px solid var(--accent);
+      padding-left: 12px;
+    }
+    .principle-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .principle-item {
+      background: var(--secondary-light);
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+    }
+    .principle-item .letter {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      line-height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      margin-right: 6px;
+    }
+    .lesson-list {
+      list-style: none;
+      padding-left: 0;
+    }
+    .lesson-list li {
+      margin: 12px 0;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      transition: box-shadow 0.15s ease, transform 0.15s ease;
+    }
+    .lesson-list li:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      transform: translateY(-2px);
+    }
+    .lesson-list a {
+      color: var(--text);
+      text-decoration: none;
+      display: block;
+    }
+    .lesson-list .lesson-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--secondary);
+      margin-bottom: 6px;
+    }
+    .lesson-list .lesson-desc {
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 40px;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>让创意更有黏性</h1>
+      <div class="subtitle">创意直抵人心的六条路径 · 课程目录</div>
+    </header>
+
+    <section>
+      <h2>课程概览</h2>
+      <p>本课程基于奇普·希思与丹·希思的著作《让创意更有黏性：创意直抵人心的六条路径》，通过8节课系统讲解如何让创意被人听懂、记住并促使行动。</p>
+      <p>核心理念：</p>
+      <div class="principle-grid">
+        <div class="principle-item"><span class="letter">S</span> 简单 Simplicity</div>
+        <div class="principle-item"><span class="letter">U</span> 意外 Unexpectedness</div>
+        <div class="principle-item"><span class="letter">C</span> 具体 Concreteness</div>
+        <div class="principle-item"><span class="letter">C</span> 可信 Credibility</div>
+        <div class="principle-item"><span class="letter">E</span> 情感 Emotions</div>
+        <div class="principle-item"><span class="letter">S</span> 故事 Stories</div>
+      </div>
+      <p style="text-align:center; font-weight:600; color: var(--secondary);">简 · 奇 · 具 · 信 · 情 · 事 = SUCCESs</p>
+    </section>
+
+    <section>
+      <h2>课程列表</h2>
+      <ul class="lesson-list">
+        <li>
+          <a href="0001-让创意更有黏性-导论.html">
+            <div class="lesson-title">第1课 让创意更有黏性：导论</div>
+            <div class="lesson-desc">建立全书框架，理解黏性的含义，认识 SUCCESs 检查表与知识的诅咒。</div>
+          </a>
+        </li>
+        <li>
+          <a href="0002-简单-精炼核心信息.html">
+            <div class="lesson-title">第2课 简单：精炼核心信息</div>
+            <div class="lesson-desc">找到核心，运用指挥官意图、避免埋没导语、用基模和类比降低理解成本。</div>
+          </a>
+        </li>
+        <li>
+          <a href="0003-意外-吸引和维持注意.html">
+            <div class="lesson-title">第3课 意外：吸引和维持注意</div>
+            <div class="lesson-desc">打破预测机器制造惊讶，运用好奇心缺口理论维持长期注意。</div>
+          </a>
+        </li>
+        <li>
+          <a href="0004-具体-让别人听懂并记住.html">
+            <div class="lesson-title">第4课 具体：让别人听懂并记住</div>
+            <div class="lesson-desc">用感官语言替代抽象术语，借助魔术贴理论增加记忆钩子。</div>
+          </a>
+        </li>
+        <li>
+          <a href="0005-可信-让别人相信.html">
+            <div class="lesson-title">第5课 可信：让别人相信</div>
+            <div class="lesson-desc">权威与反权威、生动细节、统计数据、西纳特拉测试、可检验性认证。</div>
+          </a>
+        </li>
+        <li>
+          <a href="0006-情感-让别人关心在乎.html">
+            <div class="lesson-title">第6课 情感：让别人关心在乎</div>
+            <div class="lesson-desc">用具体个人激发情感，跳出马斯洛地下室，诉诸身份认同与自身利益。</div>
+          </a>
+        </li>
+        <li>
+          <a href="0007-故事-促使别人行动.html">
+            <div class="lesson-title">第7课 故事：促使别人行动</div>
+            <div class="lesson-desc">故事即模拟与启发，掌握挑战情节、联系情节、创造情节三种模板。</div>
+          </a>
+        </li>
+        <li>
+          <a href="0008-综合应用-把SUCCESs变成日常习惯.html">
+            <div class="lesson-title">第8课 综合应用：把 SUCCESs 变成日常习惯</div>
+            <div class="lesson-desc">沟通五步法、症状诊断、黏性战略与教学、以黏制黏、日常检查表。</div>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>学习建议</h2>
+      <ol>
+        <li>按顺序学习，每节课后完成课后练习。</li>
+        <li>准备一个真实场景（汇报、邮件、演讲、教学等），用 SUCCESs 检查表逐步优化。</li>
+        <li>在生活中主动发掘好故事，而不是只依赖创造。</li>
+        <li>把"简、奇、具、信、情、事"六字口诀贴在显眼处，形成检查习惯。</li>
+      </ol>
+    </section>
+
+    <footer>
+      <p>教材：《让创意更有黏性》by 奇普·希思、丹·希思</p>
+      <p>让创意更有黏性 · 课程系列</p>
+    </footer>
+  </div>
+</body>
+</html>

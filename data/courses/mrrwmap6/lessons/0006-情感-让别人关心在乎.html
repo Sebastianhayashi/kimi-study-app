@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第6课 情感：让别人关心在乎</title>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --text: #2c3e50;
+      --muted: #6c757d;
+      --accent: #e74c3c;
+      --accent-light: #fdf2f2;
+      --secondary: #3498db;
+      --secondary-light: #eaf5fb;
+      --success: #27ae60;
+      --border: #e9ecef;
+      --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+    header {
+      text-align: center;
+      padding: 48px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border-radius: 16px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow);
+    }
+    header h1 {
+      margin: 0 0 12px;
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    header .subtitle {
+      font-size: 1.1rem;
+      opacity: 0.95;
+    }
+    section {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1.4rem;
+      border-left: 4px solid var(--accent);
+      padding-left: 12px;
+    }
+    h3 {
+      font-size: 1.15rem;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    p { margin: 12px 0; }
+    .highlight {
+      background: var(--accent-light);
+      border-left: 4px solid var(--accent);
+      padding: 16px;
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+    }
+    .formula {
+      background: var(--secondary-light);
+      border: 2px dashed var(--secondary);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--secondary);
+      margin: 20px 0;
+    }
+    .example-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 14px 0;
+    }
+    .example-box strong { color: #92400e; }
+    .case {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    .case h4 {
+      margin: 0 0 10px;
+      color: var(--secondary);
+      font-size: 1.05rem;
+    }
+    ul, ol { padding-left: 22px; }
+    li { margin: 8px 0; }
+    .checklist {
+      list-style: none;
+      padding-left: 0;
+    }
+    .checklist li {
+      padding-left: 28px;
+      position: relative;
+    }
+    .checklist li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--success);
+      font-weight: 700;
+    }
+    .practice {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .practice h3 {
+      margin-top: 0;
+      color: var(--success);
+    }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 40px;
+      padding: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    th { background: #f1f3f5; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>第6课 情感：让别人关心在乎</h1>
+      <div class="subtitle">SUCCESs 原则五：Emotions</div>
+    </header>
+
+    <section>
+      <h2>本课目标</h2>
+      <ul class="checklist">
+        <li>理解"相信"和"关心"的区别，情感能促人行动</li>
+        <li>学会用具体个人替代抽象人群来激发情感</li>
+        <li>掌握情感联想的运用，避免语义夸张</li>
+        <li>理解马斯洛需求层次，跳出"地下室"</li>
+        <li>学会诉诸身份认同和自身利益</li>
+        <li>完成一次"情感化改写"练习</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>一、个人胜过人群</h2>
+      <p>特蕾莎修女说："如果我看到的是人群，我绝不会有行动；如果我看到的是个人，我就会。"</p>
+      <div class="case">
+        <h4>案例：罗基娅效应</h4>
+        <p>卡内基梅隆大学的研究人员让受试者读两种募捐信。一种充满统计数据：马拉维300多万儿童食物短缺、赞比亚300万人面临饥荒……另一种只讲一个小女孩罗基娅的故事。</p>
+        <p>结果：读统计数据版的人平均捐1.14美元，读罗基娅故事版的人平均捐2.38美元——<strong>两倍多</strong>。</p>
+        <p>更惊人的是，把两种版本一起给第三组人看，他们平均只捐1.43美元。统计数据竟然削弱了故事的效果！</p>
+      </div>
+      <div class="highlight">
+        <strong>原因：</strong>统计数据把人带入分析性思维模式。一旦开始分析，情感反应就会降低，行动意愿也随之下降。
+      </div>
+    </section>
+
+    <section>
+      <h2>二、用对的情感驱动行动</h2>
+      <p>青少年大都相信吸烟有害健康，但他们还是抽烟。要让他们行动，需要找到能驱动他们的情感。</p>
+      <div class="case">
+        <h4>案例："真相"反吸烟广告</h4>
+        <p>"真相"运动没有恐吓青少年，而是把大烟草公司刻画成表里不一的权威。广告中，青少年在大烟草公司总部前堆起1800个"尸体袋"，对应每天死于吸烟的人数。</p>
+        <p>结果：看过"真相"广告的青少年中，22%能立刻回忆起这个广告，而烟草公司自己制作的"想一想，别吸烟"广告只有3%。看过"真相"广告后表示未来一年不会吸烟的人，比没看过的人多了66%。</p>
+      </div>
+      <div class="highlight">
+        <strong>关键洞察：</strong>"真相"广告利用的是青少年的<strong>反叛情感</strong>。既然年轻人曾用抽烟来反叛大人，现在他们可以用"不抽烟"来反叛大烟草公司。
+      </div>
+    </section>
+
+    <section>
+      <h2>三、情感联想与语义夸张</h2>
+      <p>我们可以把观点和已有情感联系起来，但要注意：联想用多了会贬值。</p>
+      <div class="case">
+        <h4>案例："独特"的通货膨胀</h4>
+        <p>研究人员分析美国前50家报纸20年间的文章，发现用"独特"形容某事物的比例增加了73%，而"特别"的使用率却在下降。</p>
+        <p>但"独特"本应是"特别"的极致。当"独特"被滥用，它就不再独特了。同样，"相对论"、"量子跃迁"、"混沌理论"等词也被频繁用来制造"深刻感"，最终削弱了它们的情感力量。</p>
+      </div>
+      <div class="case">
+        <h4>案例：从"体育精神"到"尊重比赛"</h4>
+        <p>"体育精神"曾被滥用为"只要不做坏事就行"，甚至被视为"给输家的安慰奖"。积极执教联盟的吉姆·汤普森用"尊重比赛"取而代之。</p>
+        <p>这个口号强调：比赛及其正直精神比球员个人更伟大。结果，达拉斯一个篮球联盟的技术犯规从每15场1次降到每52场1次；北加州一个联盟驱逐出场数减少90%，加入联盟的球员增加20%。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>四、诉诸自身利益</h2>
+      <p>最直接的让人关心的方法，是告诉他们"这对你有什么好处"。</p>
+      <div class="case">
+        <h4>案例：约翰·卡普尔斯的邮购广告</h4>
+        <p>"我坐在钢琴前，他们都笑我……但当我开始弹起来的时候！"</p>
+        <p>卡普尔斯说，广告要始终涉及读者自身利益。不要说"用我们家轮胎的人都能高枕无忧"，而要说"<strong>您</strong>要是用我们家的轮胎，必能高枕无忧"。</p>
+      </div>
+      <div class="case">
+        <h4>案例：坦佩市有线电视</h4>
+        <p>研究人员向家庭介绍有线电视。一组读抽象的好处说明，另一组被引导想象自己使用有线电视的具体场景。</p>
+        <p>结果：抽象组20%订购，想象组47%订购。让人在脑中"预演"自己受益的画面，效果翻倍。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>五、跳出马斯洛的"地下室"</h2>
+      <p>马斯洛需求层次常被误解为必须从底层往上爬。实际上，人几乎同时追求所有需求。</p>
+      <table>
+        <thead>
+          <tr>
+            <th>需求层次</th>
+            <th>常被忽视？</th>
+            <th>例子</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>生理、安定</td><td>常见但狭隘</td><td>奖金、稳定工作</td></tr>
+          <tr><td>归属、尊重</td><td>有时被提及</td><td>团队认可、地位</td></tr>
+          <tr><td>学习、审美、自我实现、超越</td><td>常被忽视</td><td>成长机会、使命感、创造美</td></tr>
+        </tbody>
+      </table>
+      <div class="case">
+        <h4>案例：弗洛伊德·李的飞马食堂</h4>
+        <p>巴格达机场的飞马食堂负责人弗洛伊德·李说："在我看来，我不只负责伙食，我负责的是士气。"</p>
+        <p>他用跟其他食堂一样的食材，却打造出上等肋排、精美水果拼盘、装饰着流苏的绿桌布。士兵们说："一来到这儿，你就会忘了自己是在伊拉克。"李在挖掘马斯洛的高层需求：审美、学习、超越。</p>
+      </div>
+      <div class="case">
+        <h4>案例：消防员与爆米花机</h4>
+        <p>一位营销人员想向消防队推销安全短片，提供爆米花机或刀具作为试看回报。消防员愤怒地拒绝："你以为我们去学习消防安全课程是因为看上了什么破烂爆米花机？"</p>
+        <p>消防员的身份认同是：我们是冒着生命危险救人的人，不是会被小惠打动的人。这个身份认同比自身利益更有力量。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>六、诉诸身份认同</h2>
+      <p>人们做决策时，常问的不是"对我有什么好处"，而是"像我这样的人在这种情况下会怎么做"。</p>
+      <div class="case">
+        <h4>案例："别把得州弄乱"</h4>
+        <p>得克萨斯州乱扔垃圾问题严重，目标受众是18~35岁、开皮卡、热爱体育和乡村音乐的男性"布巴"。</p>
+        <p>传统公益广告（哭泣的印第安人、可爱的猫头鹰）对布巴无效。赛雷克请来达拉斯牛仔队球员、拳击手乔治·福尔曼、乡村歌手威利·纳尔逊等"得州佬"，传递一个信息：<strong>真正的得州佬不乱扔垃圾。</strong></p>
+        <p>结果：一年后乱扔垃圾减少29%，5年内路边可见垃圾减少72%，空罐子减少81%。原本计划的100万美元执法罚款因效果太好而被取消。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>七、创造同理心</h2>
+      <p>同理心产生于个体，而非模式。要让人关心，就要让他们看到具体的个人。</p>
+      <div class="case">
+        <h4>案例：IDEO的病人视角影片</h4>
+        <p>IDEO帮医院改善流程时，制作了一部从腿部骨折病人视角拍摄的影片。观众只看到门、天花板、听不懂的医学用语，以及长时间无人理会的等待。</p>
+        <p>医院员工看完后的第一反应是"哇，我从来没意识到……"他们突然有了改变的动力。</p>
+      </div>
+      <div class="case">
+        <h4>案例：双钢琴基金会的"三个为什么"</h4>
+        <p>一家双钢琴基金会的宗旨宣言是"保护、保存和推广双钢琴音乐"。但没人关心。</p>
+        <p>经过三次"为什么"追问，他们终于找到了让人关心的说法：</p>
+        <div class="highlight">
+          "钢琴是一种华丽的乐器，把整个交响乐团的音域和音色都交给一位演奏者。当你把两台这样的乐器放在同一个房间里，两位演奏者相互交流、相互呼应——既有管弦乐队的声响，又有室内音乐的亲密。"
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>八、本课核心清单</h2>
+      <ul class="checklist">
+        <li>情感能促人行动，光让人相信还不够</li>
+        <li>具体个人比抽象人群更能激发关心</li>
+        <li>分析性思维会削弱情感反应，慎用统计数据</li>
+        <li>选择能驱动目标受众行动的情感（如同情、愤怒、反叛、自豪）</li>
+        <li>情感联想会被滥用导致语义夸张，要寻找新的表达</li>
+        <li>诉诸自身利益时要让人能想象自己受益</li>
+        <li>不要只待在马斯洛"地下室"，要诉诸学习、审美、超越等高层需求</li>
+        <li>身份认同往往比自身利益更有驱动力</li>
+        <li>同理心来自对具体个人的感知，而非对抽象模式的理解</li>
+      </ul>
+    </section>
+
+    <section class="practice">
+      <h3>课后练习</h3>
+      <ol>
+        <li><strong>情感诊断：</strong>选择一个你要说服别人的议题，分析目标受众目前关心什么、不关心什么。</li>
+        <li>
+          <strong>个人化改写：</strong>把一段充满数据或抽象概念的表达，改写成关于一个具体个人的故事。
+        </li>
+        <li>
+          <strong>情感选择：</strong>针对同一个议题，列出三种可能激发的情感（如愤怒、自豪、同情），判断哪一种最可能驱动行动。
+        </li>
+        <li>
+          <strong>身份认同：</strong>你的目标受众会如何回答"像我这样的人会怎么做"？设计一条诉诸身份认同的信息。
+        </li>
+        <li><strong>SUCCESs 检查：</strong>用"情感"原则检查——你的信息是否让人有所感觉？是哪种感觉？这种感觉会促使人行动吗？</li>
+      </ol>
+    </section>
+
+    <footer>
+      <p>下一课预告：第7课 故事——促使别人行动</p>
+      <p>让创意更有黏性 · 课程系列</p>
+    </footer>
+  </div>
+</body>
+</html>

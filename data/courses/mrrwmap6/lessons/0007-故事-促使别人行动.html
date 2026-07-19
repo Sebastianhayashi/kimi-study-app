@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第7课 故事：促使别人行动</title>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --text: #2c3e50;
+      --muted: #6c757d;
+      --accent: #e74c3c;
+      --accent-light: #fdf2f2;
+      --secondary: #3498db;
+      --secondary-light: #eaf5fb;
+      --success: #27ae60;
+      --border: #e9ecef;
+      --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+    header {
+      text-align: center;
+      padding: 48px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border-radius: 16px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow);
+    }
+    header h1 {
+      margin: 0 0 12px;
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    header .subtitle {
+      font-size: 1.1rem;
+      opacity: 0.95;
+    }
+    section {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1.4rem;
+      border-left: 4px solid var(--accent);
+      padding-left: 12px;
+    }
+    h3 {
+      font-size: 1.15rem;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    p { margin: 12px 0; }
+    .highlight {
+      background: var(--accent-light);
+      border-left: 4px solid var(--accent);
+      padding: 16px;
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+    }
+    .formula {
+      background: var(--secondary-light);
+      border: 2px dashed var(--secondary);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--secondary);
+      margin: 20px 0;
+    }
+    .example-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 14px 0;
+    }
+    .example-box strong { color: #92400e; }
+    .case {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    .case h4 {
+      margin: 0 0 10px;
+      color: var(--secondary);
+      font-size: 1.05rem;
+    }
+    ul, ol { padding-left: 22px; }
+    li { margin: 8px 0; }
+    .checklist {
+      list-style: none;
+      padding-left: 0;
+    }
+    .checklist li {
+      padding-left: 28px;
+      position: relative;
+    }
+    .checklist li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--success);
+      font-weight: 700;
+    }
+    .practice {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .practice h3 {
+      margin-top: 0;
+      color: var(--success);
+    }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 40px;
+      padding: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    th { background: #f1f3f5; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>第7课 故事：促使别人行动</h1>
+      <div class="subtitle">SUCCESs 原则六：Stories</div>
+    </header>
+
+    <section>
+      <h2>本课目标</h2>
+      <ul class="checklist">
+        <li>理解故事的双重力量：模拟（如何行动）+ 启发（为何行动）</li>
+        <li>理解心理模拟：故事是大脑的飞行模拟器</li>
+        <li>掌握三种基本故事模板：挑战情节、联系情节、创造情节</li>
+        <li>学会发掘和讲述身边的真实故事</li>
+        <li>完成一次"故事化改写"练习</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>一、为什么故事能促人行动？</h2>
+      <div class="formula">
+        故事 = 模拟（如何行动）+ 启发（为何行动）
+      </div>
+      <p>可信让人相信，情感让人关心，而<strong>故事让人行动</strong>。</p>
+      <p>故事不是让我们被动接收信息，而是让我们在脑中模拟情境。听护士讲述她如何判断婴儿心包积气，我们仿佛也在那个加护病房里；听维修员讲E053错误代码的陷阱，我们也在学习如何应对。</p>
+    </section>
+
+    <section>
+      <h2>二、故事是大脑的飞行模拟器</h2>
+      <p>研究显示，心理模拟能激活大脑中与实际活动相同的区域。想象一道闪光会激活视觉区域，想象被触摸会激活触觉区域。心理模拟甚至能改变生理反应：想象喝柠檬汁会让唾液分泌增多。</p>
+      <div class="case">
+        <h4>实验：事件模拟 vs 结果模拟</h4>
+        <p>加州大学洛杉矶分校的研究让学生处理一个困扰自己的问题，分为三组：</p>
+        <ul>
+          <li><strong>控制组：</strong>只接受一般性解决问题的指导。</li>
+          <li><strong>结果模拟组：</strong>每天想象问题得到解决后的美好画面。</li>
+          <li><strong>事件模拟组：</strong>每天回溯问题如何一步步发生。</li>
+        </ul>
+        <p>结果：<strong>事件模拟组表现最好</strong>。他们更可能采取具体行动、寻求他人意见、并感到自己有所学习和成长。</p>
+        <p>这与我们的直觉相反：积极想象成功并不如一步步复盘过程有效。</p>
+      </div>
+      <div class="highlight">
+        <strong>关键洞察：</strong>故事提供了情境和过程，而不仅仅是结论。它让我们像飞行员在模拟舱中训练一样，在脑中预演如何应对真实情况。
+      </div>
+    </section>
+
+    <section>
+      <h2>三、故事的双重价值：模拟 + 启发</h2>
+      <div class="case">
+        <h4>案例：护士与心脏监护仪</h4>
+        <p>新生儿加护病房里，一名婴儿脸色突然变深蓝。医生团队判断是肺萎陷，准备插管治疗。但一位护士怀疑是心包积气——她上次遇到这种病时，婴儿还没确诊就死了。</p>
+        <p>心脏监护仪显示一切正常，但护士坚持用听诊器检查，发现心脏根本没有跳动。她立即做胸腔按压，让医生把针筒插入心脏抽出空气。婴儿得救。</p>
+        <p><strong>模拟价值：</strong>教我们不要太依赖机器，要学会质疑设备。<br>
+        <strong>启发价值：</strong>一个基层护士在权威压力下坚持正确判断，挽救了生命。</p>
+      </div>
+      <div class="case">
+        <h4>案例：施乐复印机维修员</h4>
+        <p>施乐维修员在午餐时交换故事。一位维修员讲：新的XER主板配置会在双电晕管发弧光时触发24伏特互锁，显示E053错误代码。这个代码很误导人，他和同事折腾了几个小时，最后才发现只是一根双电晕管坏了。</p>
+        <p>这个故事让其他维修员在脑中更新了"E053基模"——下次遇到类似情况，他们知道该怎么处理了。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>四、发掘故事：贾里德的奇迹</h2>
+      <div class="case">
+        <h4>案例：赛百味的"三明治减肥英雄"</h4>
+        <p>贾里德·福格尔大学三年级时体重达425磅（约193公斤），腰围60英寸。医生说他可能活不过35岁。他开始每天吃赛百味三明治，3个月减掉近100磅，最终减掉245磅。</p>
+        <p>赛百味总部最初拒绝了这个故事："快餐不能打健康牌。"但一家加盟店老板看到了潜力，广告公司为它免费制作广告。2000年1月1日首播后，媒体蜂拥而至，奥普拉主动打来电话。赛百味2000年营业额上升18%，2001年又上升16%。</p>
+      </div>
+      <p>贾里德的故事在SUCCESs检查表中几乎全中：</p>
+      <ul>
+        <li><strong>简单：</strong>吃三明治减肥</li>
+        <li><strong>意外：</strong>吃快餐还能瘦这么多</li>
+        <li><strong>具体：</strong>425磅、60英寸腰围、特定三明治</li>
+        <li><strong>可信：</strong>真实人物，真实照片</li>
+        <li><strong>情感：</strong>关心贾里德，被他的毅力打动</li>
+        <li><strong>故事：</strong>克服巨大障碍获得成功</li>
+      </ul>
+      <div class="highlight">
+        <strong>重要启示：</strong>你不一定非要创造黏性创意，很多时候只需要发掘身边已有的好故事。
+      </div>
+    </section>
+
+    <section>
+      <h2>五、三种基本故事模板</h2>
+      <p>研究发现，80%以上的《心灵鸡汤》故事可以归入三类基本情节。学会识别这些模板，能帮助我们更快发掘好故事。</p>
+
+      <div class="case">
+        <h4>1. 挑战情节：克服困难</h4>
+        <p>主人公成功克服了令人望而生畏的巨大挑战。典型例子：大卫与歌利亚、贾里德减肥、罗丝·布卢姆金创业。</p>
+        <p>罗丝·布卢姆金23岁时从俄罗斯偷渡到美国，不会英语，没上过学。1937年她用500美元开始做家具生意，50年后年营业额达1亿美元。100多岁时仍每周7天去店里，甚至把百岁生日聚会推迟到店面公休日晚上。</p>
+        <p><strong>启发：</strong>鼓舞毅力、勇气和行动力，让人想接受挑战、更加努力。</p>
+      </div>
+
+      <div class="case">
+        <h4>2. 联系情节：跨越鸿沟</h4>
+        <p>讲的是跨越鸿沟建立关系的故事，如种族、阶级、民族、信仰等巨大分歧。</p>
+        <p>典型例子：《圣经》中的好撒马利亚人、黑人橄榄球运动员乔·格林与白人小球迷的可乐广告、《罗密欧与朱丽叶》、《泰坦尼克号》。</p>
+        <p><strong>启发：</strong>促使我们助人为乐、待人宽容、与人合作、爱人如己。</p>
+      </div>
+
+      <div class="case">
+        <h4>3. 创造情节：脑力突破</h4>
+        <p>有关人们智力上的突破，以打破常识和创意革新的办法处理问题。</p>
+        <p>典型例子：苹果落到牛顿头上启发万有引力、英格索兰"研磨机小组"用汽车后保险杠拖着塑料和金属测试耐用性（"拖拉测试"）、沙克尔顿把爱抱怨的队员安排在自己身边以减少负面影响。</p>
+        <p><strong>启发：</strong>让人想创新、实验新办法、不走寻常路。</p>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>故事类型</th>
+            <th>核心冲突</th>
+            <th>适合场景</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>挑战情节</td>
+            <td>主人公 vs 巨大障碍</td>
+            <td>项目启动、激励团队、动员行动</td>
+          </tr>
+          <tr>
+            <td>联系情节</td>
+            <td>不同群体之间建立桥梁</td>
+            <td>团队建设、年会、强调合作与包容</td>
+          </tr>
+          <tr>
+            <td>创造情节</td>
+            <td>用创新办法解决难题</td>
+            <td>创新动员、变革管理、鼓励实验</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>六、跳板故事：让人看见可能性</h2>
+      <div class="case">
+        <h4>案例：世界银行与赞比亚医疗工作者</h4>
+        <p>1996年，斯蒂芬·丹宁在世界银行负责知识管理项目，但高层并不重视。一次午餐中，他听到一个故事：赞比亚一个小城的医疗工作者想对抗疟疾，想办法连上互联网，在美国疾病防治中心网站上找到了答案。</p>
+        <p>丹宁意识到，这个故事完美诠释了知识管理的价值。在高层管理委员会上，他没有讲理论，而是讲了这个故事。汇报结束后，高管们开始热烈讨论如何执行——他们"偷"走了他的点子，但这正是丹宁想要的。</p>
+        <p>世界银行总裁随后宣布，知识管理是银行的最高优先目标之一。</p>
+      </div>
+      <div class="highlight">
+        <strong>跳板故事的特点：</strong>它不直接告诉听众该怎么做，而是让听众自己看到可能性，从而主动参与解决问题。
+      </div>
+    </section>
+
+    <section>
+      <h2>七、故事为何能击败"知识的诅咒"</h2>
+      <p>故事几乎天生具备SUCCESs检查表上的大部分要素：</p>
+      <ul>
+        <li><strong>简单：</strong>好故事通常围绕一个清晰的核心冲突</li>
+        <li><strong>意外：</strong>故事常有转折</li>
+        <li><strong>具体：</strong>故事很难讲得抽象</li>
+        <li><strong>可信：</strong>真实故事自带可信</li>
+        <li><strong>情感：</strong>故事天然带有情感</li>
+        <li><strong>故事：</strong>它本身就是故事</li>
+      </ul>
+      <p>故事最大的挑战是<strong>确保它反映你的核心信息</strong>。一个精彩但不相关的电影故事，可能只会分散注意力。</p>
+      <div class="case">
+        <h4>案例：会议记录故事书</h4>
+        <p>克莱因为一场研讨会做总结，让记录员记下所有故事。主办人欣喜若狂，认为故事比会议记录更生动有用。但演讲者们愤怒地反对，他们觉得自己的经验被简化成了轶事。</p>
+        <p>问题在于，演讲者们高估了抽象建议（如"保持沟通渠道畅通"）的价值，低估了故事的力量。这些建议只是常识，而故事才是非常识。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>八、如何发掘好故事？</h2>
+      <p>好故事不需要编造，生活中比比皆是。关键是知道该找什么：</p>
+      <ol>
+        <li><strong>寻找挑战：</strong>谁克服了巨大困难？</li>
+        <li><strong>寻找联系：</strong>谁跨越了鸿沟建立了关系？</li>
+        <li><strong>寻找创造：</strong>谁用出人意料的办法解决了问题？</li>
+        <li><strong>寻找转折点：</strong>哪件事改变了人们对某件事的看法？</li>
+        <li><strong>寻找具体细节：</strong>有没有一个画面、一句话、一个道具能概括整个故事？</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>九、本课核心清单</h2>
+      <ul class="checklist">
+        <li>故事的双重力量：模拟如何行动 + 启发为何行动</li>
+        <li>故事是大脑的飞行模拟器，让我们在脑中预演现实情境</li>
+        <li>事件模拟（复盘过程）比结果模拟（想象成功）更有效</li>
+        <li>三种故事模板：挑战情节、联系情节、创造情节</li>
+        <li>好故事往往就在身边，关键是有意识地发掘</li>
+        <li>故事要服务于核心信息，不能只为精彩而精彩</li>
+        <li>故事能单独击败"知识的诅咒"</li>
+      </ul>
+    </section>
+
+    <section class="practice">
+      <h3>课后练习</h3>
+      <ol>
+        <li><strong>故事发掘：</strong>回想你工作、学习或生活中最近发生的一件事，判断它属于挑战情节、联系情节还是创造情节。</li>
+        <li><strong>故事化改写：</strong>选择一段你常用的"建议清单"或"操作要点"，尝试用一个故事来替代或补充它。</li>
+        <li><strong>心理模拟：</strong>针对一个你正在面临的挑战，用事件模拟的方式一步步回溯它是如何发生的，写下你的发现。</li>
+        <li><strong>核心匹配：</strong>确保你选的故事反映了你想要传达的核心信息——如果不是，如何调整？</li>
+        <li><strong>SUCCESs 检查：</strong>用"故事"原则检查——你的故事是否提供了模拟和启发？能否促使人行动？</li>
+      </ol>
+    </section>
+
+    <footer>
+      <p>下一课预告：第8课 综合应用——把 SUCCESs 变成日常习惯</p>
+      <p>让创意更有黏性 · 课程系列</p>
+    </footer>
+  </div>
+</body>
+</html>

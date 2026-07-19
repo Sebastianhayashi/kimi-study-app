@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第一课：创意黏性入门</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="container">
+  <p class="small"><a href="../MISSION.md">任务</a> · <a href="../RESOURCES.md">资源</a> · <a href="../reference/succes-framework.html">SUCCESs 速查表</a></p>
+
+  <h1>第一课：创意黏性入门</h1>
+  <p class="lead">为什么有些想法能被人记住并改变行为，而有些却像水过鸭背？</p>
+
+  <h2>从一个故事开始：电影院爆米花</h2>
+  <p>1992 年，一位叫做阿特·西尔弗曼（Art Silverman）的人想告诉大家：电影院里的大桶爆米花对健康有害。他本可以写一份报告，列出饱和脂肪、卡路里和研究成果。但他没有。</p>
+
+  <div class="example">
+    <div class="example-title">他选择了这样一句话</div>
+    <p>"一份中桶电影院爆米花所含的饱和脂肪，比一份培根鸡蛋早餐、一份巨无霸午餐和一份牛排晚餐加起来还要多。"</p>
+  </div>
+
+  <p>这句话没有使用专业术语，却让人们<strong>立刻</strong>理解了问题的严重性。随后媒体争相报道，电影院也被迫改用更健康的油。</p>
+
+  <p>这就是<strong>黏性创意</strong>的力量：它不靠强迫，不靠重复，而是靠设计让信息自己"粘"在脑子里。</p>
+
+  <h2>什么是"黏性"？</h2>
+  <p>在本书中，"黏性"指的是一个想法能够被理解、被记住，并且能<strong>产生持久影响</strong>——改变人的想法或行为。</p>
+
+  <div class="callout">
+    <strong>黏性三问：</strong>别人听完我的想法后，能听懂吗？能记住吗？会因此做点不一样的事吗？
+  </div>
+
+  <h2>SUCCESs：六大黏性原则</h2>
+  <p>希思兄弟在研究了无数成功案例后，提炼出一个英文缩写 <strong>SUCCESs</strong>。每个字母对应一条原则：</p>
+
+  <table>
+    <thead>
+      <tr><th>字母</th><th>原则</th><th>一句话解释</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>S</td><td>简单 Simple</td><td>找到核心，精炼表达</td></tr>
+      <tr><td>U</td><td>意外 Unexpected</td><td>打破预期，维持好奇</td></tr>
+      <tr><td>C</td><td>具体 Concrete</td><td>用感官可感知的画面说话</td></tr>
+      <tr><td>C</td><td>可信 Credible</td><td>让受众自己相信</td></tr>
+      <tr><td>E</td><td>情感 Emotional</td><td>让人在乎</td></tr>
+      <tr><td>S</td><td>故事 Stories</td><td>用情节促人行动</td></tr>
+    </tbody>
+  </table>
+
+  <p>爆米花案例同时用到了多个原则：具体（一桶爆米花的画面）、意外（比三餐加起来还糟）、可信（有数据支撑的对比）、情感（对健康隐患的关心）。</p>
+
+  <h2>最大敌人：知识的诅咒</h2>
+  <p>书中有一个著名实验：击节者心里想一首歌，用手指敲出节奏，让另一个人猜。击节者觉得"这太明显了"，但听猜者往往完全摸不着头脑。</p>
+
+  <p>这就是<strong>知识的诅咒</strong>：一旦你知道某件事，就很难想象不知道它的人是什么状态。专家讲课枯燥、领导讲话空泛、产品经理写文档让人困惑，多半都是这个原因。</p>
+
+  <div class="callout">
+    <strong>第一课的关键行动：</strong>不要问自己"我说明白了吗"，而要问自己"对方能复述出来吗"。
+  </div>
+
+  <h2>小测验：这是哪个原则？</h2>
+  <div class="quiz" data-answer="concrete">
+    <div class="quiz-question">"这份报告的结论相当于：你每天早上多喝一杯含糖饮料，一年就会多长 4 公斤脂肪。" 这句话主要运用了哪条原则？</div>
+    <div class="quiz-options">
+      <label><input type="radio" name="q1" value="simple"> 简单 Simple</label>
+      <label><input type="radio" name="q1" value="unexpected"> 意外 Unexpected</label>
+      <label><input type="radio" name="q1" value="concrete"> 具体 Concrete</label>
+      <label><input type="radio" name="q1" value="credible"> 可信 Credible</label>
+    </div>
+    <div class="quiz-feedback" id="q1-feedback"></div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.quiz').forEach(quiz => {
+      const answer = quiz.dataset.answer;
+      const feedback = quiz.querySelector('.quiz-feedback');
+      quiz.querySelectorAll('input').forEach(input => {
+        input.addEventListener('change', () => {
+          feedback.className = 'quiz-feedback';
+          if (input.value === answer) {
+            feedback.classList.add('correct');
+            feedback.textContent = '正确。把抽象数字转换成"一年多长 4 公斤脂肪"这种可感知的画面，正是具体原则。';
+          } else {
+            feedback.classList.add('incorrect');
+            feedback.textContent = '再想想。这句话的关键不是信息多少、是否出人意料、是否有数据，而是把抽象数字变成了可感知的身体变化。';
+          }
+        });
+      });
+    });
+  </script>
+
+  <h2>本节练习：用 SUCCESs 快速诊断一句话</h2>
+  <div class="exercise">
+    <div class="exercise-title">练习：改造一条你最近要表达的信息</div>
+    <ol>
+      <li>写下你最近要向某人传达的一句话（可以是工作汇报、家庭沟通、朋友圈、课程讲解等）。</li>
+      <li>对照 <a href="../reference/succes-framework.html">SUCCESs 速查表</a>，判断它在哪条原则上最弱。</li>
+      <li>只改一句话，让它在那条原则上变强。</li>
+    </ol>
+    <p><strong>示例：</strong><br>
+    原句："我们要提升客户满意度。"<br>
+    改造（具体）："我们要让客服在客户挂断电话前，说出一句能被客户复述给同事听的话。"</p>
+  </div>
+
+  <h2>推荐资源</h2>
+  <ul>
+    <li>本书《让创意更有黏性》前言与第一章：了解"黏性"定义与"知识的诅咒"。</li>
+    <li><a href="../reference/succes-framework.html">SUCCESs 速查表</a>：保存下来，以后每次写邮件、做汇报前翻一翻。</li>
+  </ul>
+
+  <div class="callout">
+    <strong>有问题？</strong>这个学习空间是为你量身定制的。如果哪个概念不清楚、想深入某个原则、或者想让我帮你改真实文案，随时告诉我。
+  </div>
+
+  <div class="nav">
+    <span></span>
+    <a href="0002-simple-core-message.html">下一课：简单——如何精炼核心信息 →</a>
+  </div>
+</div>
+</body>
+</html>

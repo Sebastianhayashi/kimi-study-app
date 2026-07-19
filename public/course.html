@@ -1,0 +1,2037 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Kimi Study 课程学习工作区 v2" />
+<title>Play Anything · Kimi Study</title>
+<style>
+:root {
+  --bg: #f7f9fc;
+  --surface: #ffffff;
+  --surface-2: #f1f4f9;
+  --surface-blue: #e9f1ff;
+  --text: #1f1f1f;
+  --text-2: #444746;
+  --muted: #747775;
+  --subtle: #92979f;
+  --line: #dfe3ea;
+  --line-2: #c8cdd6;
+  --brand: #0b57d0;
+  --brand-hover: #0842a0;
+  --brand-soft: #dbe8ff;
+  --brand-ink: #073b83;
+  --success: #238566;
+  --success-soft: #e8f5ef;
+  --warning: #8a5708;
+  --warning-soft: #fff4df;
+  --shadow: 0 8px 24px rgba(60,64,67,.10), 0 2px 6px rgba(60,64,67,.07);
+  --topbar: 68px;
+  --left: 268px;
+  --right: 370px;
+}
+* { box-sizing: border-box; }
+html { color-scheme: light; }
+body {
+  margin: 0;
+  min-width: 320px;
+  height: 100vh;
+  overflow: hidden;
+  color: var(--text);
+  background: var(--bg);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+button, textarea { font: inherit; }
+button { color: inherit; }
+svg { display: block; }
+[hidden] { display: none !important; }
+
+.app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  height: var(--topbar);
+  flex: none;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255,255,255,.94);
+  backdrop-filter: blur(18px);
+}
+.topbar-inner {
+  width: calc(100% - 34px);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.brand {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.icon-button {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--text-2);
+  background: transparent;
+  cursor: pointer;
+}
+.icon-button:hover { background: var(--surface-2); }
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(145deg,#1f63d7,#063e9b);
+  box-shadow: 0 1px 2px rgba(60,64,67,.12), 0 2px 6px rgba(60,64,67,.10);
+  font-size: 16px;
+  font-weight: 800;
+}
+.identity { min-width: 0; }
+.course-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 17px;
+  font-weight: 720;
+  letter-spacing: -.02em;
+}
+.course-meta {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pill {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 19px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: var(--text-2);
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+.pill:hover { background: var(--surface-2); }
+.pill.primary {
+  border-color: var(--brand);
+  color: #fff;
+  background: var(--brand);
+}
+.pill.primary:hover { background: var(--brand-hover); }
+
+.workspace {
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  grid-template-columns: var(--left) minmax(0,1fr) var(--right);
+  background: var(--surface);
+}
+
+.left-panel,
+.assistant-panel {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+}
+.left-panel { border-right: 1px solid var(--line); }
+.assistant-panel { border-left: 1px solid var(--line); }
+
+.panel-header,
+.course-header {
+  height: 54px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 15px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.panel-title {
+  font-size: 13px;
+  font-weight: 720;
+}
+.header-context {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.left-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 8px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.left-tab {
+  min-height: 34px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+}
+.left-tab:hover { background: var(--surface-2); }
+.left-tab.active {
+  color: var(--brand-ink);
+  background: var(--brand-soft);
+}
+
+.left-content {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+}
+.context-view { display: none; }
+.context-view.active { display: block; }
+
+.mission-card {
+  padding: 15px;
+  border: 1px solid #bfd2f2;
+  border-radius: 14px;
+  background: #f5f8ff;
+}
+.section-kicker {
+  color: var(--brand);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.mission-title {
+  margin: 9px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 720;
+}
+.mission-copy {
+  margin: 7px 0 0;
+  color: var(--text-2);
+  font-size: 11px;
+  line-height: 1.58;
+}
+
+.side-section { margin-top: 19px; }
+.side-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.side-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 720;
+}
+.side-note {
+  color: var(--muted);
+  font-size: 10px;
+}
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.progress-track {
+  min-width: 0;
+  flex: 1;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--surface-2);
+}
+.progress-track span {
+  display: block;
+  width: 14%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand);
+}
+.progress-value {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.record-list,
+.lesson-list {
+  display: grid;
+  gap: 6px;
+}
+.record {
+  display: grid;
+  grid-template-columns: 25px minmax(0,1fr);
+  gap: 9px;
+  padding: 10px;
+  border-radius: 10px;
+  color: var(--text-2);
+  background: var(--surface-2);
+}
+.record-icon {
+  width: 25px;
+  height: 25px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: var(--brand);
+  background: var(--brand-soft);
+  font-size: 10px;
+  font-weight: 800;
+}
+.record.complete .record-icon {
+  color: var(--success);
+  background: var(--success-soft);
+}
+.record.warning .record-icon {
+  color: var(--warning);
+  background: var(--warning-soft);
+}
+.record-title {
+  font-size: 11px;
+  line-height: 1.45;
+  font-weight: 680;
+}
+.record-meta {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.lesson-item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 26px minmax(0,1fr);
+  gap: 8px;
+  padding: 10px 9px;
+  border: 0;
+  border-radius: 10px;
+  color: var(--text-2);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.lesson-item:hover { background: var(--surface-2); }
+.lesson-item.active {
+  color: var(--brand-ink);
+  background: var(--brand-soft);
+  font-weight: 720;
+}
+.lesson-number {
+  color: var(--muted);
+  font-size: 9px;
+  padding-top: 2px;
+}
+
+.course-panel {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+.course-header {
+  padding-left: 18px;
+  padding-right: 12px;
+}
+.course-header-left {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.current-lesson {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  font-weight: 720;
+}
+.course-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.compact-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.compact-progress .progress-track { width: 92px; flex: none; }
+.mobile-only { display: none; }
+
+.course-stage {
+  min-height: 0;
+  flex: 1;
+  background: #fbfaf7;
+}
+.lesson-frame {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 0;
+  background: #fbfaf7;
+}
+
+.assistant-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--success);
+  font-size: 9px;
+}
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+}
+.context-bar {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  background: var(--surface-2);
+  font-size: 9px;
+  line-height: 1.5;
+}
+.chat-thread {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px 13px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.message {
+  max-width: 94%;
+  padding: 11px 12px;
+  border-radius: 14px;
+  font-size: 11px;
+  line-height: 1.62;
+}
+.message p { margin: 0; }
+.message p + p { margin-top: 7px; }
+.message.assistant {
+  align-self: flex-start;
+  color: var(--text-2);
+  background: var(--surface-2);
+}
+.message.user {
+  align-self: flex-end;
+  color: var(--brand-ink);
+  background: var(--brand-soft);
+}
+.citations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 9px;
+}
+.citation {
+  min-height: 25px;
+  padding: 0 8px;
+  border: 1px solid #b9cdf0;
+  border-radius: 13px;
+  color: var(--brand-ink);
+  background: #f7faff;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 700;
+}
+.citation:hover { background: var(--brand-soft); }
+
+.quick-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 13px 11px;
+}
+.quick-prompt {
+  min-height: 29px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  color: var(--muted);
+  background: #fff;
+  cursor: pointer;
+  font-size: 9px;
+}
+.quick-prompt:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.composer {
+  padding: 11px;
+  border-top: 1px solid var(--line);
+}
+.composer-shell {
+  padding: 9px;
+  border: 1px solid var(--line-2);
+  border-radius: 15px;
+  background: #fff;
+}
+.composer textarea {
+  width: 100%;
+  min-height: 62px;
+  max-height: 130px;
+  resize: none;
+  border: 0;
+  outline: none;
+  color: var(--text);
+  background: transparent;
+  font-size: 11px;
+  line-height: 1.55;
+}
+.composer textarea::placeholder { color: var(--subtle); }
+.composer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  margin-top: 7px;
+}
+.grounding {
+  color: var(--muted);
+  font-size: 8px;
+}
+.send-button {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--brand);
+  cursor: pointer;
+}
+.send-button:disabled { opacity: .38; cursor: not-allowed; }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  z-index: 100;
+  display: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: #fff;
+  background: #303134;
+  box-shadow: var(--shadow);
+  transform: translateX(-50%);
+  font-size: 11px;
+}
+.toast.show { display: block; }
+
+@media (max-width: 1080px) {
+  :root { --left: 238px; --right: 340px; }
+}
+@media (max-width: 860px) {
+  .workspace { grid-template-columns: minmax(0,1fr); }
+  .left-panel,
+  .assistant-panel {
+    position: fixed;
+    top: var(--topbar);
+    bottom: 0;
+    z-index: 50;
+    width: min(360px, 92vw);
+    box-shadow: var(--shadow);
+    transition: transform .18s ease;
+  }
+  .left-panel {
+    left: 0;
+    transform: translateX(-103%);
+  }
+  .left-panel.mobile-open { transform: translateX(0); }
+  .assistant-panel {
+    right: 0;
+    transform: translateX(103%);
+  }
+  .assistant-panel.mobile-open { transform: translateX(0); }
+  .mobile-only { display: grid; }
+  .top-actions .pill:not(.mobile-action) { display: none; }
+}
+@media (max-width: 620px) {
+  .topbar-inner { width: calc(100% - 16px); }
+  .brand-mark,
+  .course-meta { display: none; }
+  .course-name { font-size: 15px; }
+  .course-header { padding-left: 8px; }
+  .compact-progress .progress-track { width: 62px; }
+  .pill { min-height: 35px; padding: 0 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after { transition-duration: .001ms !important; }
+}
+</style>
+
+<style id="notebooklm-rounded-resizable-adjustments">
+  :root {
+    --left: 268px;
+    --right: 370px;
+    --resize-gap: 12px;
+    --module-radius: 20px;
+    --module-outline: rgba(60, 64, 67, .11);
+    --module-shadow:
+      0 1px 2px rgba(60, 64, 67, .05),
+      0 8px 26px rgba(60, 64, 67, .07);
+  }
+
+  body {
+    background: #f3f5f9;
+  }
+
+  .topbar {
+    border-bottom: 0;
+    background: #f3f5f9;
+    backdrop-filter: none;
+  }
+
+  .workspace {
+    grid-template-columns:
+      var(--left)
+      var(--resize-gap)
+      minmax(420px, 1fr)
+      var(--resize-gap)
+      var(--right);
+    gap: 0;
+    padding: 0 14px 14px;
+    background: #f3f5f9;
+  }
+
+  .left-panel,
+  .course-panel,
+  .assistant-panel {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--module-outline);
+    border-radius: var(--module-radius);
+    background: var(--surface);
+    box-shadow: var(--module-shadow);
+  }
+
+  .left-panel,
+  .assistant-panel {
+    border-right: 1px solid var(--module-outline);
+    border-left: 1px solid var(--module-outline);
+  }
+
+  .panel-header,
+  .course-header {
+    border-bottom: 0;
+    background: var(--surface);
+  }
+
+  .left-tabs {
+    margin: 0 10px;
+    padding: 5px;
+    border-bottom: 0;
+    border-radius: 13px;
+    background: var(--surface-2);
+  }
+
+  .left-content {
+    padding-top: 12px;
+  }
+
+  .mission-card,
+  .record,
+  .composer-shell,
+  .message.assistant,
+  .context-bar {
+    border: 0;
+  }
+
+  .mission-card {
+    box-shadow: inset 0 0 0 1px rgba(11, 87, 208, .12);
+  }
+
+  .context-bar {
+    margin: 0 12px;
+    padding: 9px 11px;
+    border-radius: 10px;
+  }
+
+  .course-panel {
+    background: var(--surface);
+  }
+
+  .course-header {
+    margin: 0;
+    padding: 0 14px 0 18px;
+  }
+
+  .course-stage {
+    margin: 0 10px 10px;
+    overflow: hidden;
+    border: 0;
+    border-radius: 15px;
+    background: #fbfaf7;
+  }
+
+  .lesson-frame {
+    border-radius: 15px;
+  }
+
+  .assistant-panel .panel-header {
+    padding-left: 16px;
+    padding-right: 12px;
+  }
+
+  .chat-thread {
+    padding-top: 13px;
+  }
+
+  .composer {
+    margin: 0 10px 10px;
+    padding: 0;
+    border-top: 0;
+  }
+
+  .composer-shell {
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+
+  .resize-handle {
+    position: relative;
+    min-width: var(--resize-gap);
+    cursor: col-resize;
+    touch-action: none;
+    user-select: none;
+    z-index: 4;
+  }
+
+  .resize-handle::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 4px;
+    height: 48px;
+    border-radius: 99px;
+    background: rgba(116, 119, 117, .16);
+    transform: translate(-50%, -50%);
+    transition:
+      width .15s ease,
+      height .15s ease,
+      background .15s ease;
+  }
+
+  .resize-handle:hover::before,
+  .resize-handle.dragging::before {
+    width: 5px;
+    height: 64px;
+    background: rgba(11, 87, 208, .34);
+  }
+
+  .resize-handle:focus-visible {
+    outline: none;
+  }
+
+  .resize-handle:focus-visible::before {
+    width: 5px;
+    height: 64px;
+    background: rgba(11, 87, 208, .42);
+    box-shadow: 0 0 0 4px rgba(11, 87, 208, .09);
+  }
+
+  .resize-handle-left {
+    grid-column: 2;
+  }
+
+  .course-panel {
+    grid-column: 3;
+  }
+
+  .resize-handle-right {
+    grid-column: 4;
+  }
+
+  .assistant-panel {
+    grid-column: 5;
+  }
+
+  .left-panel {
+    grid-column: 1;
+  }
+
+  body.is-resizing,
+  body.is-resizing * {
+    cursor: col-resize !important;
+  }
+
+  body.is-resizing iframe {
+    pointer-events: none;
+  }
+
+  @media (max-width: 1080px) {
+    :root {
+      --left: 238px;
+      --right: 340px;
+    }
+
+    .workspace {
+      grid-template-columns:
+        var(--left)
+        var(--resize-gap)
+        minmax(360px, 1fr)
+        var(--resize-gap)
+        var(--right);
+    }
+  }
+
+  @media (max-width: 860px) {
+    .workspace {
+      display: block;
+      padding: 0 8px 8px;
+    }
+
+    .course-panel {
+      height: 100%;
+    }
+
+    .resize-handle {
+      display: none;
+    }
+
+    .left-panel,
+    .assistant-panel {
+      border-radius: 18px;
+    }
+
+    .course-stage {
+      margin-left: 7px;
+      margin-right: 7px;
+      margin-bottom: 7px;
+    }
+  }
+</style>
+
+
+<style id="focus-and-fullscreen-adjustments">
+  :root {
+    --left-handle: var(--resize-gap);
+    --right-handle: var(--resize-gap);
+  }
+
+  .workspace {
+    grid-template-columns:
+      var(--left)
+      var(--left-handle)
+      minmax(420px, 1fr)
+      var(--right-handle)
+      var(--right);
+    transition: grid-template-columns .18s ease;
+  }
+
+  .workspace.left-collapsed {
+    --left: 0px;
+    --left-handle: 0px;
+  }
+
+  .workspace.right-collapsed {
+    --right: 0px;
+    --right-handle: 0px;
+  }
+
+  .workspace.left-collapsed .left-panel,
+  .workspace.left-collapsed .resize-handle-left,
+  .workspace.right-collapsed .assistant-panel,
+  .workspace.right-collapsed .resize-handle-right {
+    display: none;
+  }
+
+  .workspace.focus-mode {
+    --left: 0px;
+    --right: 0px;
+    --left-handle: 0px;
+    --right-handle: 0px;
+  }
+
+  .workspace.focus-mode .left-panel,
+  .workspace.focus-mode .assistant-panel,
+  .workspace.focus-mode .resize-handle {
+    display: none;
+  }
+
+  .panel-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .panel-control,
+  .course-control {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .panel-control:hover,
+  .course-control:hover {
+    color: var(--text);
+    background: var(--surface-2);
+  }
+
+  .course-control.active {
+    color: var(--brand);
+    background: var(--brand-soft);
+  }
+
+  .restore-control {
+    display: none;
+  }
+
+  .workspace.left-collapsed .restore-left,
+  .workspace.right-collapsed .restore-right {
+    display: grid;
+  }
+
+  .workspace.focus-mode .restore-control {
+    display: none;
+  }
+
+  .focus-label {
+    display: inline;
+  }
+
+  .focus-mode #focusModeButton {
+    color: var(--brand);
+    background: var(--brand-soft);
+  }
+
+  .focus-mode #focusModeButton .focus-label::after {
+    content: "退出专注";
+    font-size: 0;
+  }
+
+  .course-panel:fullscreen,
+  .course-panel:-webkit-full-screen {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: var(--surface);
+  }
+
+  .course-panel:fullscreen .course-header,
+  .course-panel:-webkit-full-screen .course-header {
+    padding-left: 22px;
+    padding-right: 18px;
+  }
+
+  .course-panel:fullscreen .course-stage,
+  .course-panel:-webkit-full-screen .course-stage {
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .course-panel:fullscreen .lesson-frame,
+  .course-panel:-webkit-full-screen .lesson-frame {
+    border-radius: 0;
+  }
+
+  .course-panel:fullscreen #fullscreenButton,
+  .course-panel:-webkit-full-screen #fullscreenButton {
+    color: var(--brand);
+    background: var(--brand-soft);
+  }
+
+  @media (max-width: 860px) {
+    .workspace.left-collapsed .left-panel,
+    .workspace.right-collapsed .assistant-panel {
+      display: flex;
+    }
+
+    .workspace.left-collapsed .resize-handle-left,
+    .workspace.right-collapsed .resize-handle-right {
+      display: none;
+    }
+
+    .desktop-panel-control,
+    .restore-control,
+    #focusModeButton {
+      display: none !important;
+    }
+  }
+</style>
+
+
+<style id="teach-visible-adjustments">
+  .left-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .left-tab {
+    padding: 0 5px;
+  }
+
+  .mission-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .context-chip {
+    min-height: 24px;
+    padding: 0 8px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-2);
+    background: rgba(255,255,255,.72);
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  .context-chip.success {
+    color: var(--success);
+    background: var(--success-soft);
+  }
+
+  .mission-details {
+    margin-top: 12px;
+    padding-top: 11px;
+    border-top: 1px solid rgba(11,87,208,.12);
+  }
+
+  .mission-details summary {
+    cursor: pointer;
+    color: var(--brand-ink);
+    font-size: 10px;
+    font-weight: 700;
+    list-style: none;
+  }
+
+  .mission-details summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .mission-details summary::after {
+    content: "＋";
+    float: right;
+    color: var(--brand);
+  }
+
+  .mission-details[open] summary::after {
+    content: "－";
+  }
+
+  .mission-detail-group {
+    margin-top: 10px;
+  }
+
+  .mission-detail-label {
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 750;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .mission-detail-list {
+    margin: 6px 0 0;
+    padding-left: 17px;
+  }
+
+  .mission-detail-list li {
+    color: var(--text-2);
+    font-size: 10px;
+    line-height: 1.55;
+  }
+
+  .map-stack {
+    display: grid;
+    gap: 11px;
+  }
+
+  .teach-card {
+    padding: 13px;
+    border-radius: 13px;
+    background: var(--surface-2);
+  }
+
+  .teach-card.emphasis {
+    color: var(--brand-ink);
+    background: var(--brand-soft);
+  }
+
+  .teach-card.warning {
+    color: var(--warning);
+    background: var(--warning-soft);
+  }
+
+  .teach-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 9px;
+  }
+
+  .teach-card-title {
+    margin: 0;
+    color: inherit;
+    font-size: 11px;
+    line-height: 1.4;
+    font-weight: 750;
+  }
+
+  .teach-card-meta {
+    flex: none;
+    color: var(--muted);
+    font-size: 8px;
+  }
+
+  .teach-card-copy {
+    margin: 6px 0 0;
+    color: var(--text-2);
+    font-size: 10px;
+    line-height: 1.56;
+  }
+
+  .teach-card.emphasis .teach-card-copy {
+    color: #315786;
+  }
+
+  .teach-card.warning .teach-card-copy {
+    color: #80571c;
+  }
+
+  .source-meter {
+    margin-top: 11px;
+  }
+
+  .source-meter-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 9px;
+  }
+
+  .source-meter-track {
+    height: 5px;
+    margin-top: 7px;
+    overflow: hidden;
+    border-radius: 99px;
+    background: rgba(255,255,255,.78);
+  }
+
+  .source-meter-track span {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--success);
+  }
+
+  .method-list {
+    display: grid;
+    gap: 8px;
+  }
+
+  .method-card {
+    padding: 11px;
+    border-radius: 11px;
+    background: #fff;
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+
+  .method-title {
+    margin: 0;
+    color: var(--text);
+    font-size: 10px;
+    font-weight: 750;
+  }
+
+  .method-trigger,
+  .method-boundary {
+    margin-top: 5px;
+    color: var(--muted);
+    font-size: 9px;
+    line-height: 1.5;
+  }
+
+  .method-trigger strong,
+  .method-boundary strong {
+    color: var(--text-2);
+  }
+
+  .path-list {
+    display: grid;
+    gap: 5px;
+    margin-top: 9px;
+  }
+
+  .path-row {
+    display: grid;
+    grid-template-columns: 20px minmax(0,1fr);
+    gap: 7px;
+    align-items: start;
+    color: var(--text-2);
+    font-size: 9px;
+    line-height: 1.45;
+  }
+
+  .path-index {
+    width: 20px;
+    height: 20px;
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+    color: var(--brand);
+    background: #fff;
+    font-size: 8px;
+    font-weight: 800;
+  }
+
+  .source-anchor-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 9px;
+  }
+
+  .source-anchor {
+    min-height: 23px;
+    padding: 0 8px;
+    border: 1px solid #b9cdf0;
+    border-radius: 12px;
+    color: var(--brand-ink);
+    background: #fff;
+    cursor: pointer;
+    font-size: 8px;
+    font-weight: 700;
+  }
+
+  .source-anchor:hover {
+    background: var(--brand-soft);
+  }
+
+  @media (max-width: 620px) {
+    .left-tabs {
+      gap: 3px;
+      padding: 4px;
+    }
+
+    .left-tab {
+      font-size: 10px;
+    }
+  }
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <button class="icon-button" id="backButton" aria-label="返回我的学习">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="m14.5 6-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="brand-mark">K</span>
+        <div class="identity">
+          <div class="course-name">Play Anything</div>
+          <div class="course-meta">Ian Bogost · 7 节课 · 1 份材料</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="pill mobile-action" id="mobileContextButton">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 5h14v14H5V5Z" stroke="currentColor" stroke-width="1.7"/><path d="M9 5v14" stroke="currentColor" stroke-width="1.7"/></svg>
+          学习概览
+        </button>
+        <button class="pill mobile-action" id="mobileAssistantButton">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 5.5h14v10H9l-4 3v-13Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+          助手
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="left-panel" id="leftPanel">
+      <div class="panel-header">
+        <span class="panel-title">学习上下文</span>
+        <div class="panel-header-actions">
+          <button class="panel-control desktop-panel-control" id="collapseLeftButton" aria-label="最小化学习上下文" title="最小化学习上下文">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+              <path d="M5 5h14v14H5V5Z" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M9 5v14M14 9l-3 3 3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="icon-button mobile-only" id="closeLeft" aria-label="关闭学习上下文">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="left-tabs">
+        <button class="left-tab active" data-left-tab="overview">学习概览</button>
+        <button class="left-tab" data-left-tab="map">学习地图</button>
+        <button class="left-tab" data-left-tab="lessons">课程目录</button>
+      </div>
+
+      <div class="left-content">
+        <div class="context-view active" id="left-overview">
+          <article class="mission-card">
+            <div class="section-kicker">学习目标</div>
+            <h2 class="mission-title">理解限制如何创造可玩的空间，并完成一次现实中的 mall-tile 实践。</h2>
+            <p class="mission-copy">本课程不是让你把生活游戏化，而是训练你看清一个系统的材料、限制和可操作空间。</p>
+            <div class="mission-status">
+              <span class="context-chip success">目标已明确</span>
+              <span class="context-chip">约 90 分钟</span>
+              <span class="context-chip">7 节课</span>
+            </div>
+            <details class="mission-details">
+              <summary>查看成功标准与范围</summary>
+              <div class="mission-detail-group">
+                <div class="mission-detail-label">成功标准</div>
+                <ul class="mission-detail-list">
+                  <li>能解释为什么限制可能产生新的行动空间。</li>
+                  <li>能在一个现实场景中识别材料、规则与可操作动作。</li>
+                  <li>完成一次 mall-tile 实践并复盘结果。</li>
+                </ul>
+              </div>
+              <div class="mission-detail-group">
+                <div class="mission-detail-label">当前约束</div>
+                <ul class="mission-detail-list">
+                  <li>以理解和实践为主，不扩展到完整游戏设计理论。</li>
+                  <li>案例优先来自本书；补充例子会明确标为教学迁移。</li>
+                </ul>
+              </div>
+            </details>
+          </article>
+
+          <section class="side-section">
+            <div class="side-heading">
+              <h3 class="side-title">课程进度</h3>
+              <span class="side-note">1 / 7</span>
+            </div>
+            <div class="progress-row">
+              <div class="progress-track"><span></span></div>
+              <span class="progress-value">14%</span>
+            </div>
+          </section>
+
+          <section class="side-section">
+            <div class="side-heading">
+              <h3 class="side-title">学习记录</h3>
+              <span class="side-note">今天</span>
+            </div>
+            <div class="record-list">
+              <article class="record complete">
+                <span class="record-icon">✓</span>
+                <div><div class="record-title">课程已创建</div><div class="record-meta">学习目标与 7 节课结构已确认</div></div>
+              </article>
+              <article class="record">
+                <span class="record-icon">1</span>
+                <div><div class="record-title">正在学习 Lesson 1</div><div class="record-meta">已阅读到“游戏真正教会我们的事”</div></div>
+              </article>
+              <article class="record warning">
+                <span class="record-icon">?</span>
+                <div><div class="record-title">理解检查尚未完成</div><div class="record-meta">本课共有 3 道问题</div></div>
+              </article>
+              <article class="record warning">
+                <span class="record-icon">→</span>
+                <div><div class="record-title">实践任务待完成</div><div class="record-meta">在 24 小时内完成一次 mall-tile 练习</div></div>
+              </article>
+            </div>
+          </section>
+        </div>
+
+        <div class="context-view" id="left-map">
+          <div class="map-stack">
+            <article class="teach-card emphasis">
+              <div class="teach-card-head">
+                <h3 class="teach-card-title">课程承诺</h3>
+                <span class="teach-card-meta">当前路线</span>
+              </div>
+              <p class="teach-card-copy">用最短路径掌握本书关于“限制与玩”的核心判断，并把它迁移到一个真实日常场景。</p>
+            </article>
+
+            <article class="teach-card">
+              <div class="teach-card-head">
+                <h3 class="teach-card-title">材料理解</h3>
+                <span class="teach-card-meta">已完成</span>
+              </div>
+              <p class="teach-card-copy">已建立整本书的结构、核心论点、案例与边界地图。当前课节依据 Preface 与 Chapter 1。</p>
+              <div class="source-meter">
+                <div class="source-meter-head"><span>可用材料范围</span><strong>100%</strong></div>
+                <div class="source-meter-track"><span></span></div>
+              </div>
+              <div class="source-anchor-list">
+                <button class="source-anchor" data-target="lesson-section-1">核心问题</button>
+                <button class="source-anchor" data-target="lesson-section-2">关键论点</button>
+                <button class="source-anchor" data-target="lesson-section-3">原书案例</button>
+              </div>
+            </article>
+
+            <section class="side-section" style="margin-top:0">
+              <div class="side-heading">
+                <h3 class="side-title">核心方法</h3>
+                <span class="side-note">3 个</span>
+              </div>
+              <div class="method-list">
+                <article class="method-card">
+                  <h4 class="method-title">限制创造行动空间</h4>
+                  <div class="method-trigger"><strong>何时使用：</strong>当现实规则无法立即改变，但仍需要寻找新动作时。</div>
+                  <div class="method-boundary"><strong>边界：</strong>不是要求接受伤害性或不公正的规则。</div>
+                </article>
+                <article class="method-card">
+                  <h4 class="method-title">先看材料，再谈目标</h4>
+                  <div class="method-trigger"><strong>何时使用：</strong>当抽象目标让你忽略眼前可操作的对象时。</div>
+                  <div class="method-boundary"><strong>边界：</strong>不适用于需要先处理安全风险的场景。</div>
+                </article>
+                <article class="method-card">
+                  <h4 class="method-title">Mall-tile move</h4>
+                  <div class="method-trigger"><strong>何时使用：</strong>在重复、受限或无聊的环境中寻找一个小型可玩结构。</div>
+                  <div class="method-boundary"><strong>边界：</strong>练习不能妨碍他人或掩盖真正需要解决的问题。</div>
+                </article>
+              </div>
+            </section>
+
+            <article class="teach-card">
+              <div class="teach-card-head">
+                <h3 class="teach-card-title">学习路径</h3>
+                <span class="teach-card-meta">7 个能力切片</span>
+              </div>
+              <div class="path-list">
+                <div class="path-row"><span class="path-index">1</span><span>区分“人生是一场游戏”与本书真正的主张。</span></div>
+                <div class="path-row"><span class="path-index">2</span><span>理解限制为什么可能提升而非降低体验。</span></div>
+                <div class="path-row"><span class="path-index">3</span><span>识别普通工作中的材料、规则和动作空间。</span></div>
+                <div class="path-row"><span class="path-index">…</span><span>逐步迁移到个人实践，并建立可复用的观察方法。</span></div>
+              </div>
+            </article>
+
+            <article class="teach-card warning">
+              <div class="teach-card-head">
+                <h3 class="teach-card-title">本课程暂不展开</h3>
+                <span class="teach-card-meta">可稍后深入</span>
+              </div>
+              <p class="teach-card-copy">完整游戏设计史、商业游戏化框架和与其他哲学传统的系统比较。需要时可通过“深入完善”加入。</p>
+            </article>
+
+            <article class="teach-card">
+              <div class="teach-card-head">
+                <h3 class="teach-card-title">补充资料</h3>
+                <span class="teach-card-meta">可信来源</span>
+              </div>
+              <p class="teach-card-copy">当前课程以原书为主，尚未使用外部资料修正关键论点。若后续加入，会说明它用于更新、纠错还是延伸。</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="context-view" id="left-lessons">
+          <div class="lesson-list">
+            <button class="lesson-item active"><span class="lesson-number">01</span><span>Life Is Not a Game</span></button>
+            <button class="lesson-item"><span class="lesson-number">02</span><span>Ironoia: Keeping the World at a Distance</span></button>
+            <button class="lesson-item"><span class="lesson-number">03</span><span>Fun Is Not Sugar</span></button>
+            <button class="lesson-item"><span class="lesson-number">04</span><span>Playgrounds Hidden in Ordinary Work</span></button>
+            <button class="lesson-item"><span class="lesson-number">05</span><span>Attention, Limits, and Gratitude</span></button>
+            <button class="lesson-item"><span class="lesson-number">06</span><span>Practicing the Mall-Tile Move</span></button>
+            <button class="lesson-item"><span class="lesson-number">07</span><span>Building a Personal Practice of Play</span></button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div
+      class="resize-handle resize-handle-left"
+      id="resizeLeft"
+      role="separator"
+      aria-label="调整学习上下文宽度"
+      aria-orientation="vertical"
+      tabindex="0"
+    ></div>
+
+    <section class="course-panel" id="coursePanel">
+      <div class="course-header">
+        <div class="course-header-left">
+          <button class="icon-button mobile-only" id="courseContextButton" aria-label="打开学习上下文">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M5 5h14v14H5V5Z" stroke="currentColor" stroke-width="1.7"/><path d="M9 5v14" stroke="currentColor" stroke-width="1.7"/></svg>
+          </button>
+          <span class="current-lesson">Lesson 1 · Life Is Not a Game</span>
+        </div>
+        <div class="course-actions">
+          <button class="course-control restore-control restore-left" id="restoreLeftButton" aria-label="恢复学习上下文" title="恢复学习上下文">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+              <path d="M5 5h14v14H5V5Z" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M9 5v14M13 9l-3 3 3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="compact-progress">
+            <div class="progress-track"><span></span></div>
+            <span>1 / 7</span>
+          </div>
+          <button class="course-control" id="focusModeButton" aria-label="切换专注模式" title="切换专注模式">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+              <path d="M8 4H4v4M16 4h4v4M8 20H4v-4M16 20h4v-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="focus-label" hidden>专注模式</span>
+          </button>
+          <button class="course-control" id="fullscreenButton" aria-label="全屏课程" title="全屏课程">
+            <svg class="fullscreen-enter-icon" width="17" height="17" viewBox="0 0 24 24" fill="none">
+              <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="pill primary" id="nextLessonButton">下一课</button>
+          <button class="course-control restore-control restore-right" id="restoreAssistantButton" aria-label="恢复 Kimi 助手" title="恢复 Kimi 助手">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+              <path d="M5 5h14v14H5V5Z" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M15 5v14M11 9l3 3-3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="course-stage">
+        <iframe id="lessonFrame" class="lesson-frame" title="课程内容"></iframe>
+      </div>
+    </section>
+
+    <div
+      class="resize-handle resize-handle-right"
+      id="resizeRight"
+      role="separator"
+      aria-label="调整 Kimi 助手宽度"
+      aria-orientation="vertical"
+      tabindex="0"
+    ></div>
+
+    <aside class="assistant-panel" id="assistantPanel">
+      <div class="panel-header">
+        <div>
+          <span class="panel-title">Kimi 助手</span>
+          <span class="assistant-status"><span class="status-dot"></span>基于当前课程</span>
+        </div>
+        <div class="panel-header-actions">
+          <button class="panel-control desktop-panel-control" id="collapseAssistantButton" aria-label="最小化 Kimi 助手" title="最小化 Kimi 助手">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+              <path d="M5 5h14v14H5V5Z" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M15 5v14M10 9l3 3-3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="icon-button mobile-only" id="closeAssistant" aria-label="关闭助手">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="context-bar">当前上下文：Lesson 1 · Preface + Chapter 1</div>
+
+      <div class="chat-thread" id="chatThread">
+        <div class="message assistant">
+          <p>我已经读取当前课节和对应材料。你可以让我解释概念、举例、检查答案，或把本课内容转换成行动练习。</p>
+          <div class="citations">
+            <button class="citation" data-target="lesson-section-2">核心论点</button>
+            <button class="citation" data-target="lesson-section-3">商场地砖案例</button>
+            <button class="citation" data-target="lesson-practice">课后练习</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="quick-prompts">
+        <button class="quick-prompt">用中文解释本课</button>
+        <button class="quick-prompt">总结三个核心观点</button>
+        <button class="quick-prompt">举一个工作场景的例子</button>
+        <button class="quick-prompt">检查我的理解</button>
+      </div>
+
+      <div class="composer">
+        <div class="composer-shell">
+          <textarea id="assistantInput" placeholder="就当前课节向 Kimi 提问…"></textarea>
+          <div class="composer-actions">
+            <span class="grounding">优先引用当前课程和原材料</span>
+            <button class="send-button" id="sendButton" aria-label="发送" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="m7 12 10-7-3.3 14-2.2-5-4.5-2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const lessonFrame = document.getElementById('lessonFrame');
+lessonFrame.srcdoc = new TextDecoder().decode(
+  Uint8Array.from(atob('PCFkb2N0eXBlIGh0bWw+CjxodG1sIGxhbmc9ImVuIj4KPGhlYWQ+CjxtZXRhIGNoYXJzZXQ9InV0Zi04IiAvPgo8bWV0YSBuYW1lPSJ2aWV3cG9ydCIgY29udGVudD0id2lkdGg9ZGV2aWNlLXdpZHRoLCBpbml0aWFsLXNjYWxlPTEiIC8+CjxzdHlsZT4KOnJvb3QgewogIC0tcGFwZXI6ICNmYmZhZjc7CiAgLS1wYXBlci0yOiAjZjNmMGU5OwogIC0taW5rOiAjMjAyMTI0OwogIC0taW5rLTI6ICM0YTRkNTI7CiAgLS1tdXRlZDogIzc3N2I4MjsKICAtLWxpbmU6ICNkZWRiZDM7CiAgLS1ibHVlOiAjMzU2OGM4OwogIC0tYmx1ZS1zb2Z0OiAjZWFmMWZmOwogIC0tZ3JlZW46ICMyMzdhNWE7CiAgLS1ncmVlbi1zb2Z0OiAjZWFmNmYxOwogIC0tcmVkOiAjYjIzYjM1OwogIC0tcmVkLXNvZnQ6ICNmZmYwZWU7CiAgLS1hbWJlcjogIzhhNWIwYTsKICAtLWFtYmVyLXNvZnQ6ICNmZmY2ZGY7Cn0KKiB7IGJveC1zaXppbmc6IGJvcmRlci1ib3g7IH0KaHRtbCB7IHNjcm9sbC1iZWhhdmlvcjogc21vb3RoOyB9CmJvZHkgewogIG1hcmdpbjogMDsKICBjb2xvcjogdmFyKC0taW5rKTsKICBiYWNrZ3JvdW5kOiB2YXIoLS1wYXBlcik7CiAgZm9udC1mYW1pbHk6IEludGVyLCB1aS1zYW5zLXNlcmlmLCBzeXN0ZW0tdWksIC1hcHBsZS1zeXN0ZW0sIEJsaW5rTWFjU3lzdGVtRm9udCwKICAgICJTZWdvZSBVSSIsICJQaW5nRmFuZyBTQyIsICJNaWNyb3NvZnQgWWFIZWkiLCBzYW5zLXNlcmlmOwogIC13ZWJraXQtZm9udC1zbW9vdGhpbmc6IGFudGlhbGlhc2VkOwp9Ci5jb250YWluZXIgewogIHdpZHRoOiBtaW4oY2FsYygxMDAlIC0gNTJweCksIDgyMHB4KTsKICBtYXJnaW46IDAgYXV0bzsKICBwYWRkaW5nOiA1OHB4IDAgOTJweDsKfQpoZWFkZXIgewogIG1hcmdpbi1ib3R0b206IDQycHg7CiAgcGFkZGluZy1ib3R0b206IDI4cHg7CiAgYm9yZGVyLWJvdHRvbTogMXB4IHNvbGlkIHZhcigtLWxpbmUpOwp9CmgxIHsKICBtYXJnaW46IDA7CiAgZm9udC1zaXplOiBjbGFtcCgzNHB4LCA2dncsIDUycHgpOwogIGxpbmUtaGVpZ2h0OiAxLjA4OwogIGxldHRlci1zcGFjaW5nOiAtLjA1MmVtOwogIGZvbnQtd2VpZ2h0OiA3NjA7Cn0KLnN1YnRpdGxlIHsKICBtYXJnaW46IDE2cHggMCAwOwogIG1heC13aWR0aDogNzIwcHg7CiAgY29sb3I6IHZhcigtLWluay0yKTsKICBmb250LXNpemU6IDE3cHg7CiAgbGluZS1oZWlnaHQ6IDEuNzI7Cn0KLmxlc3Nvbi1tZXRhIHsKICBtYXJnaW46IDE3cHggMCAwOwogIGNvbG9yOiB2YXIoLS1tdXRlZCk7CiAgZm9udC1zaXplOiAxMnB4Owp9CmEgewogIGNvbG9yOiB2YXIoLS1ibHVlKTsKICB0ZXh0LWRlY29yYXRpb246IG5vbmU7CiAgZm9udC13ZWlnaHQ6IDY1MDsKfQpoMiB7CiAgbWFyZ2luOiA0NHB4IDAgMTRweDsKICBzY3JvbGwtbWFyZ2luLXRvcDogMjRweDsKICBmb250LXNpemU6IDI0cHg7CiAgbGluZS1oZWlnaHQ6IDEuMzsKICBsZXR0ZXItc3BhY2luZzogLS4wMjZlbTsKfQpwLCBsaSB7CiAgY29sb3I6ICMzNDM2M2E7CiAgZm9udC1zaXplOiAxNXB4OwogIGxpbmUtaGVpZ2h0OiAxLjg2Owp9CnVsLCBvbCB7IHBhZGRpbmctbGVmdDogMjVweDsgfQpsaSArIGxpIHsgbWFyZ2luLXRvcDogN3B4OyB9CmJsb2NrcXVvdGUgewogIG1hcmdpbjogMjRweCAwOwogIHBhZGRpbmc6IDE3cHggMjBweDsKICBib3JkZXItbGVmdDogNHB4IHNvbGlkIHZhcigtLWJsdWUpOwogIGJvcmRlci1yYWRpdXM6IDAgMTRweCAxNHB4IDA7CiAgYmFja2dyb3VuZDogdmFyKC0tYmx1ZS1zb2Z0KTsKfQpibG9ja3F1b3RlIHAgewogIG1hcmdpbjogMDsKICBjb2xvcjogIzI4NGQ4YjsKICBmb250LXNpemU6IDE3cHg7CiAgZm9udC13ZWlnaHQ6IDY1MDsKfQoudGVybSB7CiAgcGFkZGluZzogMnB4IDZweDsKICBib3JkZXItcmFkaXVzOiA3cHg7CiAgY29sb3I6ICMyNDRkOTY7CiAgYmFja2dyb3VuZDogdmFyKC0tYmx1ZS1zb2Z0KTsKICBmb250LXdlaWdodDogNzAwOwp9Ci5leGFtcGxlLAouZXhlcmNpc2UsCi5xdWl6LWNvbnRhaW5lciwKLmNhbGxvdXQgewogIG1hcmdpbjogMjZweCAwOwogIHBhZGRpbmc6IDIwcHg7CiAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGluZSk7CiAgYm9yZGVyLXJhZGl1czogMTZweDsKICBiYWNrZ3JvdW5kOiAjZmZmOwp9Ci5leGFtcGxlIHsKICBib3JkZXItY29sb3I6ICNiZGQwZjE7CiAgYmFja2dyb3VuZDogI2Y2ZjlmZjsKfQouZXhhbXBsZSAubGFiZWwsCi5leGVyY2lzZS10aXRsZSB7CiAgbWFyZ2luLWJvdHRvbTogOHB4OwogIGNvbG9yOiB2YXIoLS1ibHVlKTsKICBmb250LXNpemU6IDEycHg7CiAgZm9udC13ZWlnaHQ6IDgwMDsKICBsZXR0ZXItc3BhY2luZzogLjA0ZW07CiAgdGV4dC10cmFuc2Zvcm06IHVwcGVyY2FzZTsKfQouZXhhbXBsZSBwLAouZXhlcmNpc2UgcCwKLmNhbGxvdXQgcCB7IG1hcmdpbjogMDsgfQp0YWJsZSB7CiAgd2lkdGg6IDEwMCU7CiAgYm9yZGVyLWNvbGxhcHNlOiBzZXBhcmF0ZTsKICBib3JkZXItc3BhY2luZzogMDsKICBvdmVyZmxvdzogaGlkZGVuOwogIGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWxpbmUpOwogIGJvcmRlci1yYWRpdXM6IDE0cHg7CiAgYmFja2dyb3VuZDogI2ZmZjsKfQp0aCwgdGQgewogIHBhZGRpbmc6IDE0cHggMTVweDsKICBib3JkZXItYm90dG9tOiAxcHggc29saWQgdmFyKC0tbGluZSk7CiAgdmVydGljYWwtYWxpZ246IHRvcDsKICBmb250LXNpemU6IDEzcHg7CiAgbGluZS1oZWlnaHQ6IDEuNTU7CiAgdGV4dC1hbGlnbjogbGVmdDsKfQp0aCB7CiAgY29sb3I6ICMzZDRlNjg7CiAgYmFja2dyb3VuZDogI2YxZjVmYjsKICBmb250LXdlaWdodDogNzUwOwp9CnRyOmxhc3QtY2hpbGQgdGQgeyBib3JkZXItYm90dG9tOiAwOyB9Ci5xdWl6LWNvbnRhaW5lciB7CiAgZGlzcGxheTogZ3JpZDsKICBnYXA6IDE1cHg7CiAgcGFkZGluZzogMDsKICBib3JkZXI6IDA7CiAgYmFja2dyb3VuZDogdHJhbnNwYXJlbnQ7Cn0KLnF1aXotcXVlc3Rpb24gewogIHBhZGRpbmc6IDE4cHg7CiAgYm9yZGVyOiAxcHggc29saWQgdmFyKC0tbGluZSk7CiAgYm9yZGVyLXJhZGl1czogMTVweDsKICBiYWNrZ3JvdW5kOiAjZmZmOwp9Ci5xdWl6LXF1ZXN0aW9uID4gcCB7CiAgbWFyZ2luOiAwIDAgMTNweDsKICBjb2xvcjogdmFyKC0taW5rKTsKICBmb250LXdlaWdodDogNjUwOwp9Ci5xdWl6LW9wdGlvbnMgewogIGRpc3BsYXk6IGdyaWQ7CiAgZ2FwOiA4cHg7Cn0KLnF1aXotb3B0aW9ucyBidXR0b24gewogIHdpZHRoOiAxMDAlOwogIHBhZGRpbmc6IDExcHggMTNweDsKICBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1saW5lKTsKICBib3JkZXItcmFkaXVzOiAxMXB4OwogIGNvbG9yOiB2YXIoLS1pbmstMik7CiAgYmFja2dyb3VuZDogI2ZmZjsKICBjdXJzb3I6IHBvaW50ZXI7CiAgdGV4dC1hbGlnbjogbGVmdDsKICBsaW5lLWhlaWdodDogMS40NTsKfQoucXVpei1vcHRpb25zIGJ1dHRvbjpob3ZlciB7CiAgYm9yZGVyLWNvbG9yOiAjOThiNWU4OwogIGJhY2tncm91bmQ6ICNmNmY5ZmY7Cn0KLnF1aXotb3B0aW9ucyBidXR0b24uY29ycmVjdCB7CiAgYm9yZGVyLWNvbG9yOiAjOTFjN2I0OwogIGNvbG9yOiB2YXIoLS1ncmVlbik7CiAgYmFja2dyb3VuZDogdmFyKC0tZ3JlZW4tc29mdCk7Cn0KLnF1aXotb3B0aW9ucyBidXR0b24ud3JvbmcgewogIGJvcmRlci1jb2xvcjogI2UyYWFhNjsKICBjb2xvcjogdmFyKC0tcmVkKTsKICBiYWNrZ3JvdW5kOiB2YXIoLS1yZWQtc29mdCk7Cn0KLnF1aXotZmVlZGJhY2sgewogIG1hcmdpbi10b3A6IDExcHg7CiAgcGFkZGluZzogMTBweCAxMnB4OwogIGJvcmRlci1yYWRpdXM6IDEwcHg7CiAgY29sb3I6IHZhcigtLWluay0yKTsKICBiYWNrZ3JvdW5kOiB2YXIoLS1wYXBlci0yKTsKICBmb250LXNpemU6IDEycHg7CiAgbGluZS1oZWlnaHQ6IDEuNTU7Cn0KLmNoZWNrbGlzdCBsaTo6bWFya2VyIHsgY29sb3I6IHZhcigtLWJsdWUpOyBmb250LXdlaWdodDogODAwOyB9Ci5jYWxsb3V0IHsKICBib3JkZXItY29sb3I6ICNhY2Q1YzY7CiAgYmFja2dyb3VuZDogdmFyKC0tZ3JlZW4tc29mdCk7Cn0KLmNhbGxvdXQgc3Ryb25nIHsKICBkaXNwbGF5OiBibG9jazsKICBtYXJnaW4tYm90dG9tOiA2cHg7CiAgY29sb3I6IHZhcigtLWdyZWVuKTsKfQouZm9vdGVyIHsKICBtYXJnaW4tdG9wOiA0NnB4OwogIHBhZGRpbmctdG9wOiAyM3B4OwogIGJvcmRlci10b3A6IDFweCBzb2xpZCB2YXIoLS1saW5lKTsKfQouZm9vdGVyIHAgewogIGNvbG9yOiB2YXIoLS1tdXRlZCk7CiAgZm9udC1zaXplOiAxMnB4Owp9CkBtZWRpYSAobWF4LXdpZHRoOiA2NDBweCkgewogIC5jb250YWluZXIgewogICAgd2lkdGg6IG1pbihjYWxjKDEwMCUgLSAzMHB4KSwgODIwcHgpOwogICAgcGFkZGluZy10b3A6IDM2cHg7CiAgfQogIGgxIHsgZm9udC1zaXplOiAzN3B4OyB9CiAgLnN1YnRpdGxlIHsgZm9udC1zaXplOiAxNXB4OyB9CiAgaDIgeyBmb250LXNpemU6IDIxcHg7IH0KICB0YWJsZSB7IGRpc3BsYXk6IGJsb2NrOyBvdmVyZmxvdy14OiBhdXRvOyB9Cn0KPC9zdHlsZT4KPC9oZWFkPgo8Ym9keT4KPGRpdiBjbGFzcz0iY29udGFpbmVyIj4KPGhlYWRlcj4KPGgxPkxlc3NvbiAxOiBMaWZlIElzIE5vdCBhIEdhbWU8L2gxPgo8cCBjbGFzcz0ic3VidGl0bGUiPkJvZ29zdOKAmXMgY29yZSBtb3ZlIOKAlCBsaW1pdHMgY3JlYXRlIHBsYXlncm91bmRzOyDigJxwbGF54oCdIGlzIGhvdyB5b3Ugb3BlcmF0ZSB0aGVtPC9wPgo8cCBjbGFzcz0ibGVzc29uLW1ldGEiPgogICAgICBTb3VyY2U6IFByZWZhY2UgKyBDaGFwdGVyIDEgwrcgfjEyIG1pbnV0ZXMgwrcKICAgICAgPGEgZGF0YS1jb3Vyc2UtbWFwPSIxIiBocmVmPSIjIj5Db3Vyc2UgbWFwPC9hPgo8L3A+CjwvaGVhZGVyPgo8aDIgaWQ9Imxlc3Nvbi1zZWN0aW9uLTEiPjEuIFRoZSBzbG9nYW4geW91IHNob3VsZCBzdG9wIHRydXN0aW5nPC9oMj4KPHA+UGVvcGxlIHNheSDigJxsaWZlIGlzIGEgZ2FtZeKAnSB3aGVuIHRoZXkgbWVldCBhIGdhbWUgZGVzaWduZXItcGhpbG9zb3BoZXIuIEJvZ29zdOKAmXMgb3BlbmluZyBtb3ZlIGlzIGJsdW50OiA8c3Ryb25nPmxpZmUgaXMgbm90IGEgZ2FtZTwvc3Ryb25nPiwgYW5kIGhlIGRvZXMgbm90IHdhbnQgdG8gdHVybiB5b3VycyBpbnRvIG9uZS48L3A+CjxwPlRoZSBzbG9nYW4gc291bmRzIHdpc2Ugd2hpbGUgZXhwbGFpbmluZyBhbG1vc3Qgbm90aGluZy4gRG9lcyBpdCBtZWFuIGxpZmUgZW5kcz8gVGhhdCB5b3UgY29tcGV0ZT8gQ29sbGFib3JhdGU/IFRyZWF0IHBlb3BsZSBsaWtlIHBhd25zPyBUaGF0IGxpZmUgaXMgZnVuIOKAlCB1bmxlc3MgaXQgaXNu4oCZdD88L3A+CjxibG9ja3F1b3RlPgo8cD5SZWFsaXR5IGlzIGFscmlnaHQgYXMgaXQgaXMuIEl04oCZcyBqdXN0IGhhcmQgdG8gc2VlIHdoYXQgaXQgaXMuPC9wPgo8L2Jsb2NrcXVvdGU+CjxwPlRoZSBib29r4oCZcyBwcm9taXNlIGlzIG5vdCBnYW1pZmljYXRpb24uIEl0IGlzIGEgd2F5IHRvIGxpdmUgaW5zaWRlIGEgd29ybGQgYmlnZ2VyIHRoYW4geW91ciBob3BlcyDigJQgd2l0aCBwbGVhc3VyZSBhbmQgZ3JhdGl0dWRlIOKAlCBieSBsZWFybmluZyB3aGF0IGdhbWVzIGFjdHVhbGx5IGRlbW9uc3RyYXRlLjwvcD4KPGgyIGlkPSJsZXNzb24tc2VjdGlvbi0yIj4yLiBXaGF0IGdhbWVzIHJlYWxseSB0ZWFjaCAodGhlIHRyYW5zZmVyYWJsZSBiaXQpPC9oMj4KPHA+R2FtZXMgYXJlIG5vdCBhcHBlYWxpbmcgcHJpbWFyaWx5IGJlY2F1c2UgdGhleSBkZWxpdmVyIOKAnGZ1buKAnSBhcyBwdXJlIGVuam95bWVudC4gVGhleSBhcHBlYWwgYmVjYXVzZSB0aGV5IGFyZSA8c3BhbiBjbGFzcz0idGVybSI+bGltaXRlZDwvc3Bhbj4uIFRoZXkgZXJlY3QgYm91bmRhcmllcyB5b3UgbXVzdCBhY2NlcHQgaW4gb3JkZXIgdG8gcGxheS48L3A+Cjx1bD4KPGxpPjxzdHJvbmc+U29jY2VyOjwvc3Ryb25nPiB0d28gc2lkZXMgb2YgZWxldmVuOyBtb3ZlIGEgYmFsbCBpbnRvIGEgZ29hbCB3aXRob3V0IGhhbmRzLjwvbGk+CjxsaT48c3Ryb25nPlRldHJpczo8L3N0cm9uZz4gcGxhY2UgZmFsbGluZyB0ZXRyb21pbm9lcyB0byBjbGVhciBsaW5lcy48L2xpPgo8L3VsPgo8cD5UaG9zZSBydWxlcyBsb29rIHNtYWxsLiBUaGUgZXhwZXJpZW5jZXMgdGhleSBnZW5lcmF0ZSBhcmUgbGFyZ2UuIDxzdHJvbmc+VGhlIGJvdW50eSBjb21lcyBmcm9tIHB1cnN1aW5nIHRoZSB0aGluZyBvbiBpdHMgb3duIHRlcm1zLCBpbnNpZGUgaXRzIGxpbWl0cy48L3N0cm9uZz48L3A+CjxwPkdlbmVyYWxpemVkOiA8c3BhbiBjbGFzcz0idGVybSI+cGxheTwvc3Bhbj4gaXMgb3BlcmF0aW5nIGEgY29uc3RyYWluZWQgc3lzdGVtIGluIGEgZ3JhdGlmeWluZyB3YXkuIE5vdCB0aGUgb3Bwb3NpdGUgb2Ygd29yay4gTm90IGEgc2FsdmUgZm9yIG1pc2VyeS4gQSB3YXkgb2YgcnVubmluZyB3aGF0ZXZlciBzeXN0ZW0geW91IGFyZSBpbiDigJQgc29jY2VyLCBUZXRyaXMsIHlhcmQgd29yaywgcGFyZW50aW5nLCB6b25pbmcgbWVldGluZ3Mg4oCUIGJ5IHRha2luZyBpdHMgc3RydWN0dXJlIHNlcmlvdXNseS48L3A+CjxkaXYgY2xhc3M9ImV4YW1wbGUiPgo8ZGl2IGNsYXNzPSJsYWJlbCI+Q29yZSBjbGFpbSAobWVtb3JpemUgdGhpcyk8L2Rpdj4KPHA+VG8gcGxheSBpcyB0byB0YWtlIHNvbWV0aGluZyDigJQgYW55dGhpbmcg4oCUIG9uIGl0cyBvd24gdGVybXMsIGFzIGlmIGl0cyBleGlzdGVuY2Ugd2VyZSByZWFzb25hYmxlLiBUaGUgcG93ZXIgb2YgZ2FtZXMgaXMgc3RydWN0dXJlZCBjb25zdHJhaW50LCB3aGljaCBvcGVucyBzcGFjZSBmb3IgcGxheS48L3A+CjwvZGl2Pgo8aDIgaWQ9Imxlc3Nvbi1zZWN0aW9uLTMiPjMuIEV2ZXJ5d2hlcmUsIHBsYXlncm91bmRzICh0aGUgbWFsbC10aWxlIHN0b3J5KTwvaDI+CjxwPkNoYXB0ZXIgMSBvcGVucyB3aXRoIEJvZ29zdCBodXJyeWluZyB0aHJvdWdoIGEgY3Jvd2RlZCBBdGxhbnRhIG1hbGwgd2l0aCBoaXMgeW91bmcgZGF1Z2h0ZXIuIEhlIGZlZWxzIGhlciB0dWdnaW5nLiBTaGUgaXMgbm90IHJlc2lzdGluZyB0aGUgdHJpcCBhcyBwdXJlIGNvbXBsYWludC4gU2hlIGlzIHRpbWluZyBzdGVwcyBzbyBoZXIgZmVldCBsYW5kIGluc2lkZSB0aGUgc3F1YXJlIGZsb29yIHRpbGVzIOKAlCBhIOKAnHN0ZXAgb24gYSBjcmFja+KAnSB2YXJpYW50IHVuZGVyIGZvcmNlZCBzcGVlZC48L3A+CjxwPkhpcyBydXNoIGJlY29tZXMgaGVyIHByb3B1bHNpb24gc3lzdGVtLiBTaGUgZGlkIG5vdCBjaG9vc2UgdGhlIGRlc3RpbmF0aW9uLCBzbyBzaGUgY291bGQgYXR0ZW5kIHRvIHRoZSBmbG9vci4gVGhlIHJlc3VsdDogY2hhbGxlbmdpbmcsIGludGVyZXN0aW5nLCBmdW4g4oCUIG1hZGUgZnJvbSBhIGJsZWFrIGVycmFuZC48L3A+CjxwPkFkdWx0cyB1c3VhbGx5IGZpbGUgdGhpcyB1bmRlciDigJxraWRzIGFyZSBjcmVhdGl2ZS7igJ0gQm9nb3N0IGZsaXBzIHRoZSBtb3JhbDo8L3A+Cjx1bD4KPGxpPkNoaWxkcmVuIGFyZSBsZXNzIHBvd2VyZnVsIGFuZCBzbWFsbGVyOyB0aGUgd29ybGQgaXMgbm90IGJ1aWx0IGZvciB0aGVtLjwvbGk+CjxsaT5UaGV5IGNvbnN0YW50bHkgPHN0cm9uZz5jb21wcm9taXNlIHdpdGg8L3N0cm9uZz4gZW52aXJvbm1lbnRzIHRoYXQgaWdub3JlIHRoZWlyIGRlc2lyZXMuPC9saT4KPGxpPlRoYXQgaXMgbm90IG9ubHkgaW5ub2NlbmNlLiBJdCBpcyBhIHNraWxsOiA8c3Ryb25nPm1lZXRpbmcgdGhlIHdvcmxkIG1vcmUgdGhhbiBoYWxmd2F5PC9zdHJvbmc+IHNvIG1lYW5pbmcgY2FuIGFwcGVhciBpbiBzdHVwaWQsIGJvcmluZywgbWFuZGF0b3J5IHNpdHVhdGlvbnMuPC9saT4KPC91bD4KPHA+VGhlIGFkdWx0IGxlc3NvbiBpcyBub3Qg4oCcYWx3YXlzIGhvcCBvbiB0aWxlcy7igJ0gSXQgaXMgdGhlIGdlbmVyYWwgcHJhY3RpY2U6IGFsbW9zdCBhbnl0aGluZyBjYW4gYmUgY29heGVkIGludG8gcmVsZWFzaW5nIG5vdmVsdHkgaWYgeW91IHN0b3AgZGVtYW5kaW5nIGl0IGJlIHNvbWV0aGluZyBlbHNlIGZpcnN0LjwvcD4KPGgyIGlkPSJsZXNzb24tc2VjdGlvbi00Ij40LiBPcmRpbmFyeSBiZWxpZWYgdnMuIEJvZ29zdCAocXVpY2sgY29udHJhc3QpPC9oMj4KPHRhYmxlIGNsYXNzPSJjb21wYXJlIj4KPHRoZWFkPgo8dHI+PHRoPk9yZGluYXJ5IGJlbGllZjwvdGg+PHRoPkJvZ29zdOKAmXMgcmVmcmFtZTwvdGg+PC90cj4KPC90aGVhZD4KPHRib2R5Pgo8dHI+Cjx0ZD5QbGF5IG1lYW5zIGRvaW5nIHdoYXQgeW91IHdhbnQsIGZyZWUgb2YgZHV0eTwvdGQ+Cjx0ZD5QbGF5IG1lYW5zIHdvcmtpbmcgd2l0aCBsaW1pdHMgeW91IGFjY2VwdDwvdGQ+CjwvdHI+Cjx0cj4KPHRkPkltcHJvdmUgbGlmZSBieSBleHBhbmRpbmcgb3B0aW9ucyAvIGVzY2FwaW5nIGJvcmVkb208L3RkPgo8dGQ+SW1wcm92ZSBsaWZlIGJ5IHRyZWF0aW5nIHByZXNlbnQgbWF0ZXJpYWxzIGFzIHJlYXNvbmFibGU8L3RkPgo8L3RyPgo8dHI+Cjx0ZD7igJxNYWtlIGl0IGZ1buKAnSA9IGFkZCBzdWdhciAoTWFyeSBQb3BwaW5zKSDigJQgcHJldmlldyBvZiBDaC4gMzwvdGQ+Cjx0ZD5GdW4gZW1lcmdlcyBmcm9tIG5vdmVsIG9wZXJhdGlvbiBvZiBhIGZhbWlsaWFyIHNpdHVhdGlvbjwvdGQ+CjwvdHI+CjwvdGJvZHk+CjwvdGFibGU+CjxwPllvdSBkbyBub3QgbmVlZCBDaGFwdGVyIDMgeWV0LiBKdXN0IG5vdGljZTogaWYgeW91ciBmaXJzdCBpbnN0aW5jdCBpcyDigJxzcGljZSB0aGlzIHVwIHNvIEkgY2FuIHRvbGVyYXRlIGl0LOKAnSB5b3UgbWF5IGFscmVhZHkgYmUgaW4gdGhlIHN1Z2FyIG1vZGVsLCBub3QgdGhlIHBsYXlncm91bmQgbW9kZWwuPC9wPgo8aDIgaWQ9Imxlc3Nvbi1zZWN0aW9uLTUiPjUuIENoZWNrIHVuZGVyc3RhbmRpbmc8L2gyPgo8ZGl2IGNsYXNzPSJxdWl6LWNvbnRhaW5lciIgaWQ9Imxlc3Nvbi1xdWl6Ij4KPGRpdiBjbGFzcz0icXVpei1xdWVzdGlvbiIgZGF0YS1hbnN3ZXI9IjEiIGRhdGEtd2h5PSJHYW1lcyBzaG93IHRoYXQgYWNjZXB0ZWQgbGltaXRzIHByb2R1Y2UgcmljaCBleHBlcmllbmNlIOKAlCBub3QgdGhhdCBsaWZlIHNob3VsZCBiZWNvbWUgYSBzY29yZWQgY29tcGV0aXRpb24uIj4KPHA+QWNjb3JkaW5nIHRvIHRoZSBQcmVmYWNlLCB3aHkgc3R1ZHkgZ2FtZXMgaWYg4oCcbGlmZSBpcyBub3QgYSBnYW1l4oCdPzwvcD4KPGRpdiBjbGFzcz0icXVpei1vcHRpb25zIj4KPGJ1dHRvbiBkYXRhLWNob2ljZT0iMCIgdHlwZT0iYnV0dG9uIj5UbyB0dXJuIGRhaWx5IGxpZmUgaW50byBwb2ludCBzeXN0ZW1zIGFuZCBsZXZlbHM8L2J1dHRvbj4KPGJ1dHRvbiBkYXRhLWNob2ljZT0iMSIgdHlwZT0iYnV0dG9uIj5UbyBzZWUgaG93IGxpbWl0cyBnZW5lcmF0ZSBhYnVuZGFudCBwbGF5PC9idXR0b24+CjxidXR0b24gZGF0YS1jaG9pY2U9IjIiIHR5cGU9ImJ1dHRvbiI+VG8gcHJvdmUgY29tcGV0aXRpb24gaXMgdGhlIG1lYW5pbmcgb2YgbGlmZTwvYnV0dG9uPgo8L2Rpdj4KPGRpdiBjbGFzcz0icXVpei1mZWVkYmFjayIgaGlkZGVuPSIiPjwvZGl2Pgo8L2Rpdj4KPGRpdiBjbGFzcz0icXVpei1xdWVzdGlvbiIgZGF0YS1hbnN3ZXI9IjIiIGRhdGEtd2h5PSJTaGUgYWNjZXB0ZWQgdGhlIG1hbGzigJlzIHBhY2UgYW5kIG1hdGVyaWFscyAodGlsZXMsIGNyb3dkcykgYW5kIGJ1aWx0IGEgcGxheWdyb3VuZCBpbnNpZGUgdGhlbSDigJQgbm90IHB1cmUgZXNjYXBlIGZyb20gdGhlIGVycmFuZC4iPgo8cD5XaGF0IGJlc3QgZGVzY3JpYmVzIHRoZSBkYXVnaHRlcuKAmXMgbWFsbC10aWxlIG1vdmU/PC9wPgo8ZGl2IGNsYXNzPSJxdWl6LW9wdGlvbnMiPgo8YnV0dG9uIGRhdGEtY2hvaWNlPSIwIiB0eXBlPSJidXR0b24iPlB1cmUgcmViZWxsaW9uIHRoYXQgY2FuY2VsZWQgdGhlIGVycmFuZOKAmXMgcHVycG9zZTwvYnV0dG9uPgo8YnV0dG9uIGRhdGEtY2hvaWNlPSIxIiB0eXBlPSJidXR0b24iPkEgcHJvb2YgdGhhdCBvbmx5IGNoaWxkcmVuIGNhbiBldmVyIGZpbmQgam95PC9idXR0b24+CjxidXR0b24gZGF0YS1jaG9pY2U9IjIiIHR5cGU9ImJ1dHRvbiI+Q29tcHJvbWlzZSB3aXRoIGxpbWl0cyB0aGF0IG1hZGUgbm92ZWx0eSBwb3NzaWJsZTwvYnV0dG9uPgo8L2Rpdj4KPGRpdiBjbGFzcz0icXVpei1mZWVkYmFjayIgaGlkZGVuPSIiPjwvZGl2Pgo8L2Rpdj4KPGRpdiBjbGFzcz0icXVpei1xdWVzdGlvbiIgZGF0YS1hbnN3ZXI9IjAiIGRhdGEtd2h5PSJQbGF5IGlzIG9wZXJhdGluZyBhIGNvbnN0cmFpbmVkIHN5c3RlbSBncmF0aWZ5aW5nbHkg4oCUIHdvcmsgYW5kIGNob3JlcyBjYW4gYmUgcGxheWVkOyB0aGV5IGFyZSBub3QgYXV0b21hdGljIG9wcG9zaXRlcy4iPgo8cD5XaGljaCBkZWZpbml0aW9uIG1hdGNoZXMgQm9nb3N04oCZcyBnZW5lcmFsaXplZCDigJxwbGF54oCdPzwvcD4KPGRpdiBjbGFzcz0icXVpei1vcHRpb25zIj4KPGJ1dHRvbiBkYXRhLWNob2ljZT0iMCIgdHlwZT0iYnV0dG9uIj5PcGVyYXRpbmcgYSBjb25zdHJhaW5lZCBzeXN0ZW0gd2l0aCBlbmdhZ2VtZW50PC9idXR0b24+CjxidXR0b24gZGF0YS1jaG9pY2U9IjEiIHR5cGU9ImJ1dHRvbiI+QXZvaWRpbmcgYWxsIHN0cnVjdHVyZSBzbyBkZXNpcmUgY2FuIHJ1biBmcmVlPC9idXR0b24+CjxidXR0b24gZGF0YS1jaG9pY2U9IjIiIHR5cGU9ImJ1dHRvbiI+UmVzdGluZyBhZnRlciBsYWJvciBzbyBtaXNlcnkgY2FuIGRpc3NvbHZlPC9idXR0b24+CjwvZGl2Pgo8ZGl2IGNsYXNzPSJxdWl6LWZlZWRiYWNrIiBoaWRkZW49IiI+PC9kaXY+CjwvZGl2Pgo8L2Rpdj4KPGgyIGlkPSJsZXNzb24tc2VjdGlvbi02Ij42LiBTa2lsbCBwcmFjdGljZSAoZG8gdGhpcyBvbmNlIGJlZm9yZSBMZXNzb24gMik8L2gyPgo8ZGl2IGNsYXNzPSJleGVyY2lzZSIgaWQ9Imxlc3Nvbi1wcmFjdGljZSI+CjxkaXYgY2xhc3M9ImV4ZXJjaXNlLXRpdGxlIj5UaGUgbWFsbC10aWxlIG1vdmUgKDEwIG1pbnV0ZXMpPC9kaXY+CjxwPlBpY2sgb25lIHNpdHVhdGlvbiB5b3Ugd2lsbCBmYWNlIGluIHRoZSBuZXh0IDI0IGhvdXJzIHRoYXQgdXN1YWxseSBmZWVscyBkdWxsIG9yIGZyaWN0aW9uLWhlYXZ5IChjb21tdXRlLCBkaXNoZXMsIGEgcXVldWUsIGEgc3RhdHVzIG1lZXRpbmcsIGVtYWlsIHRyaWFnZSkuPC9wPgo8b2wgY2xhc3M9ImNoZWNrbGlzdCI+CjxsaT48c3Ryb25nPk5hbWUgdGhlIG1hdGVyaWFsczwvc3Ryb25nPiDigJQgd2hhdCBpcyBhY3R1YWxseSB0aGVyZSAoZmxvb3IsIHRpbWVyLCBpbmJveCBydWxlcywgb3RoZXIgcGVvcGxlLCB0b29scyk/PC9saT4KPGxpPjxzdHJvbmc+TmFtZSBvbmUgbm9uLW5lZ290aWFibGUgbGltaXQ8L3N0cm9uZz4geW91IHVzdWFsbHkgcmVzZW50IChzcGVlZCwgbm9pc2UsIGR1cmF0aW9uLCBmb3JtYXQpLjwvbGk+CjxsaT48c3Ryb25nPkludmVudCBhIHRpbnkgcGxheWdyb3VuZCBpbnNpZGUgdGhhdCBsaW1pdDwvc3Ryb25nPiDigJQgYSBjb25zdHJhaW50IHlvdSBhZGQgb3IgYWNjZXB0IHRoYXQgbWFrZXMgdGhlIHNhbWUgc2l0dWF0aW9uIG5vdmVsIChjb3VudGluZywgcGF0dGVybiwgcm91dGUsIHNpbGVuY2UgcnVsZSwgb25lLXRvb2wtb25seSwgZXRjLikuPC9saT4KPGxpPjxzdHJvbmc+UnVuIGl0IG9uY2U8L3N0cm9uZz4gd2l0aG91dCB0cnlpbmcgdG8g4oCcZW5qb3nigJ0gaXQgZmlyc3QuIEFmdGVyd2FyZCwgbm90ZTogd2hhdCBiZWNhbWUgbmV3bHkgdmlzaWJsZT88L2xpPgo8L29sPgo8cD5CcmluZyB0aGF0IG5vdGUgdG8gdGhlIG5leHQgc2Vzc2lvbi4gV2Ugd2lsbCB1c2UgaXQgd2hlbiB3ZSBoaXQgPGVtPmlyb25vaWE8L2VtPiAoQ2hhcHRlciAyKTogdGhlIGhhYml0IG9mIGtlZXBpbmcgdGhpbmdzIGF0IGEgbWlzdHJ1c3RmdWwgZGlzdGFuY2UuPC9wPgo8L2Rpdj4KPGgyIGlkPSJsZXNzb24tc2VjdGlvbi03Ij5QcmltYXJ5IHNvdXJjZTwvaDI+CjxwPlJlLXJlYWQgKG9yIHNraW0tYW5ub3RhdGUpIHRoZSA8c3Ryb25nPlByZWZhY2U8L3N0cm9uZz4gYW5kIHRoZSBvcGVuaW5nIG1hbGwgc2NlbmUgb2YgPHN0cm9uZz5DaGFwdGVyIDE8L3N0cm9uZz4gaW4geW91ciBFUFVCIG9mIElhbiBCb2dvc3QsIDxlbT5QbGF5IEFueXRoaW5nPC9lbT4gKEJhc2ljIEJvb2tzLCAyMDE2KS4gTWFyayBldmVyeSBwbGFjZSBoZSBkZWZpbmVzIHBsYXkgdmlhIDxlbT5saW1pdHM8L2VtPiByYXRoZXIgdGhhbiB2aWEgZnJlZWRvbS48L3A+CjxkaXYgY2xhc3M9ImNhbGxvdXQiPjxzdHJvbmc+S2ltaSDliqnmiYvlt7LlsLHnu6rjgII8L3N0cm9uZz48cD7kvaDlj6/ku6XlnKjlj7Pkvqfor6Lpl67mpoLlv7XjgIHopoHmsYLkuL7kvovvvIzmiJbmo4Dmn6Xoh6rlt7Hlr7nmnKzor77nmoTnkIbop6PjgII8L3A+PC9kaXY+CjxkaXYgY2xhc3M9ImZvb3RlciI+CjxwPgo8YSBkYXRhLWNvdXJzZS1tYXA9IjEiIGhyZWY9IiMiPkNvdXJzZSBtYXA8L2E+CiAgICAgIMK3IE5leHQgdXA6IElyb25vaWEgKHdoZW4geW91IGZpbmlzaCB0aGUgZXhlcmNpc2UpCiAgICA8L3A+Cgo8L2Rpdj4KPC9kaXY+CjxzY3JpcHQ+CmRvY3VtZW50LnF1ZXJ5U2VsZWN0b3JBbGwoJy5xdWl6LXF1ZXN0aW9uJykuZm9yRWFjaCgocXVlc3Rpb24pID0+IHsKICBjb25zdCBjb3JyZWN0QW5zd2VyID0gU3RyaW5nKHF1ZXN0aW9uLmRhdGFzZXQuYW5zd2VyKTsKICBjb25zdCB3aHkgPSBxdWVzdGlvbi5kYXRhc2V0LndoeSB8fCAnJzsKICBjb25zdCBmZWVkYmFjayA9IHF1ZXN0aW9uLnF1ZXJ5U2VsZWN0b3IoJy5xdWl6LWZlZWRiYWNrJyk7CgogIHF1ZXN0aW9uLnF1ZXJ5U2VsZWN0b3JBbGwoJ1tkYXRhLWNob2ljZV0nKS5mb3JFYWNoKChidXR0b24pID0+IHsKICAgIGJ1dHRvbi5hZGRFdmVudExpc3RlbmVyKCdjbGljaycsICgpID0+IHsKICAgICAgcXVlc3Rpb24ucXVlcnlTZWxlY3RvckFsbCgnW2RhdGEtY2hvaWNlXScpLmZvckVhY2goKGNhbmRpZGF0ZSkgPT4gewogICAgICAgIGNhbmRpZGF0ZS5kaXNhYmxlZCA9IHRydWU7CiAgICAgICAgY2FuZGlkYXRlLmNsYXNzTGlzdC5yZW1vdmUoJ2NvcnJlY3QnLCAnd3JvbmcnKTsKICAgICAgICBpZiAoU3RyaW5nKGNhbmRpZGF0ZS5kYXRhc2V0LmNob2ljZSkgPT09IGNvcnJlY3RBbnN3ZXIpIHsKICAgICAgICAgIGNhbmRpZGF0ZS5jbGFzc0xpc3QuYWRkKCdjb3JyZWN0Jyk7CiAgICAgICAgfQogICAgICB9KTsKCiAgICAgIGNvbnN0IGNvcnJlY3QgPSBTdHJpbmcoYnV0dG9uLmRhdGFzZXQuY2hvaWNlKSA9PT0gY29ycmVjdEFuc3dlcjsKICAgICAgaWYgKCFjb3JyZWN0KSBidXR0b24uY2xhc3NMaXN0LmFkZCgnd3JvbmcnKTsKCiAgICAgIGZlZWRiYWNrLmhpZGRlbiA9IGZhbHNlOwogICAgICBmZWVkYmFjay50ZXh0Q29udGVudCA9IGAke2NvcnJlY3QgPyAn5Zue562U5q2j56Gu44CCJyA6ICflho3mg7PkuIDmraXjgIInfSAke3doeX1gOwogICAgfSk7CiAgfSk7Cn0pOwoKZG9jdW1lbnQucXVlcnlTZWxlY3RvckFsbCgnW2RhdGEtY291cnNlLW1hcF0nKS5mb3JFYWNoKChsaW5rKSA9PiB7CiAgbGluay5hZGRFdmVudExpc3RlbmVyKCdjbGljaycsIChldmVudCkgPT4gewogICAgZXZlbnQucHJldmVudERlZmF1bHQoKTsKICAgIHdpbmRvdy5wYXJlbnQucG9zdE1lc3NhZ2UoeyB0eXBlOiAnb3Blbi1vdXRsaW5lJyB9LCAnKicpOwogIH0pOwp9KTsKPC9zY3JpcHQ+CjwvYm9keT4KPC9odG1sPg=='), character => character.charCodeAt(0))
+);
+
+const leftPanel = document.getElementById('leftPanel');
+const assistantPanel = document.getElementById('assistantPanel');
+const chatThread = document.getElementById('chatThread');
+const assistantInput = document.getElementById('assistantInput');
+const sendButton = document.getElementById('sendButton');
+const toast = document.getElementById('toast');
+let toastTimer;
+
+function showToast(text) {
+  toast.textContent = text;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2100);
+}
+
+function scrollLesson(targetId) {
+  const doc = lessonFrame.contentDocument;
+  const target = doc && doc.getElementById(targetId);
+  if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+document.querySelectorAll('.left-tab').forEach(button => {
+  button.addEventListener('click', () => {
+    document.querySelectorAll('.left-tab').forEach(item => item.classList.remove('active'));
+    button.classList.add('active');
+    document.querySelectorAll('.context-view').forEach(view => view.classList.remove('active'));
+    document.getElementById(`left-${button.dataset.leftTab}`).classList.add('active');
+  });
+});
+
+document.querySelectorAll('.lesson-item').forEach((item, index) => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.lesson-item').forEach(candidate => candidate.classList.remove('active'));
+    item.classList.add('active');
+    if (index === 0) {
+      lessonFrame.contentWindow.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      showToast(`原型：切换到第 ${index + 1} 课`);
+    }
+    leftPanel.classList.remove('mobile-open');
+  });
+});
+
+document.getElementById('nextLessonButton').addEventListener('click', () => {
+  showToast('原型：进入 Lesson 2 · Ironoia');
+});
+
+document.getElementById('backButton').addEventListener('click', () => {
+  showToast('原型：返回“我的学习”');
+});
+
+function openLeft() { leftPanel.classList.add('mobile-open'); }
+function closeLeft() { leftPanel.classList.remove('mobile-open'); }
+function openAssistant() { assistantPanel.classList.add('mobile-open'); }
+function closeAssistant() { assistantPanel.classList.remove('mobile-open'); }
+
+document.getElementById('mobileContextButton').addEventListener('click', openLeft);
+document.getElementById('courseContextButton').addEventListener('click', openLeft);
+document.getElementById('closeLeft').addEventListener('click', closeLeft);
+document.getElementById('mobileAssistantButton').addEventListener('click', openAssistant);
+document.getElementById('closeAssistant').addEventListener('click', closeAssistant);
+
+document.querySelectorAll('.citation').forEach(button => {
+  button.addEventListener('click', () => scrollLesson(button.dataset.target));
+});
+
+assistantInput.addEventListener('input', () => {
+  sendButton.disabled = assistantInput.value.trim().length === 0;
+});
+
+assistantInput.addEventListener('keydown', event => {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    if (!sendButton.disabled) sendMessage();
+  }
+});
+
+document.querySelectorAll('.quick-prompt').forEach(button => {
+  button.addEventListener('click', () => {
+    assistantInput.value = button.textContent.trim();
+    sendButton.disabled = false;
+    sendMessage();
+  });
+});
+
+function escapeHtml(value) {
+  return value.replace(/[&<>"']/g, character => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  }[character]));
+}
+
+function assistantReply(question) {
+  if (question.includes('解释') || question.includes('中文')) {
+    return {
+      body: '本课的核心不是把生活变成计分游戏，而是理解：限制并不只会减少自由。认真对待一个系统已有的规则，反而可能让新的行动方式变得可见。',
+      citations: [['lesson-section-2','游戏真正教会我们的事'],['lesson-section-3','商场地砖案例']]
+    };
+  }
+  if (question.includes('总结') || question.includes('三个')) {
+    return {
+      body: '三个核心观点：生活不是一场需要计分的游戏；丰富体验常常来自被认真对待的限制；玩是一种操作现实系统的方式，而不是逃离责任。',
+      citations: [['lesson-section-1','停止相信的口号'],['lesson-section-2','核心定义']]
+    };
+  }
+  if (question.includes('例子') || question.includes('工作')) {
+    return {
+      body: '例如状态会议。会议本身无法取消，但可以接受“每人两分钟，只说明阻碍和下一步”这个限制，把它变成观察信息失真的练习。',
+      citations: [['lesson-section-2','限制产生空间'],['lesson-practice','Mall-tile 练习']]
+    };
+  }
+  return {
+    body: '先用一句话回答：为什么 Bogost 认为限制不是游戏的缺点，而是丰富体验的前提？写下答案后，我可以依据课节内容帮你检查。',
+    citations: [['lesson-quiz','理解检查'],['lesson-section-2','核心定义']]
+  };
+}
+
+function addAssistantMessage(reply) {
+  const message = document.createElement('div');
+  message.className = 'message assistant';
+  const citations = reply.citations.map(([target,label]) =>
+    `<button class="citation" data-target="${target}">${escapeHtml(label)}</button>`
+  ).join('');
+  message.innerHTML = `<p>${escapeHtml(reply.body)}</p><div class="citations">${citations}</div>`;
+  chatThread.appendChild(message);
+  message.querySelectorAll('.citation').forEach(button => {
+    button.addEventListener('click', () => scrollLesson(button.dataset.target));
+  });
+  chatThread.scrollTop = chatThread.scrollHeight;
+}
+
+function sendMessage() {
+  const text = assistantInput.value.trim();
+  if (!text) return;
+  const user = document.createElement('div');
+  user.className = 'message user';
+  user.innerHTML = `<p>${escapeHtml(text)}</p>`;
+  chatThread.appendChild(user);
+
+  assistantInput.value = '';
+  sendButton.disabled = true;
+  chatThread.scrollTop = chatThread.scrollHeight;
+
+  const thinking = document.createElement('div');
+  thinking.className = 'message assistant';
+  thinking.innerHTML = '<p>正在依据当前课节查找相关内容…</p>';
+  chatThread.appendChild(thinking);
+
+  setTimeout(() => {
+    thinking.remove();
+    addAssistantMessage(assistantReply(text));
+  }, 600);
+}
+
+sendButton.addEventListener('click', sendMessage);
+
+window.addEventListener('message', event => {
+  if (event.data && event.data.type === 'open-outline') {
+    document.querySelector('[data-left-tab="lessons"]').click();
+    openLeft();
+  }
+});
+
+const workspace = document.querySelector('.workspace');
+const rootStyle = document.documentElement.style;
+const resizeLeft = document.getElementById('resizeLeft');
+const resizeRight = document.getElementById('resizeRight');
+
+const moduleSizes = {
+  left: Number(localStorage.getItem('kimi-study-left-width')) || 268,
+  right: Number(localStorage.getItem('kimi-study-right-width')) || 370
+};
+
+function clamp(value, minimum, maximum) {
+  return Math.min(Math.max(value, minimum), maximum);
+}
+
+function applyModuleSizes() {
+  rootStyle.setProperty('--left', `${moduleSizes.left}px`);
+  rootStyle.setProperty('--right', `${moduleSizes.right}px`);
+  resizeLeft.setAttribute('aria-valuenow', String(Math.round(moduleSizes.left)));
+  resizeRight.setAttribute('aria-valuenow', String(Math.round(moduleSizes.right)));
+}
+
+function availableLimits() {
+  const width = workspace.getBoundingClientRect().width;
+  const reservedForCourse = Math.max(420, Math.min(620, width * 0.48));
+  const handles = 24;
+  return {
+    leftMax: Math.max(310, width - moduleSizes.right - reservedForCourse - handles),
+    rightMax: Math.max(390, width - moduleSizes.left - reservedForCourse - handles)
+  };
+}
+
+function persistModuleSizes() {
+  localStorage.setItem('kimi-study-left-width', String(Math.round(moduleSizes.left)));
+  localStorage.setItem('kimi-study-right-width', String(Math.round(moduleSizes.right)));
+}
+
+function startResize(side, event) {
+  if (window.matchMedia('(max-width: 860px)').matches) return;
+
+  event.preventDefault();
+  const startX = event.clientX;
+  const startLeft = moduleSizes.left;
+  const startRight = moduleSizes.right;
+  const handle = side === 'left' ? resizeLeft : resizeRight;
+
+  handle.classList.add('dragging');
+  document.body.classList.add('is-resizing');
+
+  function move(pointerEvent) {
+    const limits = availableLimits();
+    const delta = pointerEvent.clientX - startX;
+
+    if (side === 'left') {
+      moduleSizes.left = clamp(startLeft + delta, 210, limits.leftMax);
+    } else {
+      moduleSizes.right = clamp(startRight - delta, 290, limits.rightMax);
+    }
+
+    applyModuleSizes();
+  }
+
+  function stop() {
+    handle.classList.remove('dragging');
+    document.body.classList.remove('is-resizing');
+    persistModuleSizes();
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', stop);
+    window.removeEventListener('pointercancel', stop);
+  }
+
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', stop);
+  window.addEventListener('pointercancel', stop);
+}
+
+function keyboardResize(side, event) {
+  if (!['ArrowLeft', 'ArrowRight', 'Home'].includes(event.key)) return;
+  event.preventDefault();
+
+  if (event.key === 'Home') {
+    moduleSizes.left = 268;
+    moduleSizes.right = 370;
+  } else {
+    const direction = event.key === 'ArrowRight' ? 1 : -1;
+    const amount = event.shiftKey ? 32 : 12;
+    const limits = availableLimits();
+
+    if (side === 'left') {
+      moduleSizes.left = clamp(moduleSizes.left + direction * amount, 210, limits.leftMax);
+    } else {
+      moduleSizes.right = clamp(moduleSizes.right - direction * amount, 290, limits.rightMax);
+    }
+  }
+
+  applyModuleSizes();
+  persistModuleSizes();
+}
+
+resizeLeft.setAttribute('aria-valuemin', '210');
+resizeLeft.setAttribute('aria-valuemax', '440');
+resizeRight.setAttribute('aria-valuemin', '290');
+resizeRight.setAttribute('aria-valuemax', '520');
+
+resizeLeft.addEventListener('pointerdown', event => startResize('left', event));
+resizeRight.addEventListener('pointerdown', event => startResize('right', event));
+resizeLeft.addEventListener('keydown', event => keyboardResize('left', event));
+resizeRight.addEventListener('keydown', event => keyboardResize('right', event));
+
+resizeLeft.addEventListener('dblclick', () => {
+  moduleSizes.left = 268;
+  applyModuleSizes();
+  persistModuleSizes();
+});
+
+resizeRight.addEventListener('dblclick', () => {
+  moduleSizes.right = 370;
+  applyModuleSizes();
+  persistModuleSizes();
+});
+
+window.addEventListener('resize', () => {
+  if (window.matchMedia('(max-width: 860px)').matches) return;
+  const limits = availableLimits();
+  moduleSizes.left = clamp(moduleSizes.left, 210, limits.leftMax);
+  moduleSizes.right = clamp(moduleSizes.right, 290, limits.rightMax);
+  applyModuleSizes();
+});
+
+applyModuleSizes();
+
+
+const coursePanel = document.getElementById('coursePanel');
+const collapseLeftButton = document.getElementById('collapseLeftButton');
+const collapseAssistantButton = document.getElementById('collapseAssistantButton');
+const restoreLeftButton = document.getElementById('restoreLeftButton');
+const restoreAssistantButton = document.getElementById('restoreAssistantButton');
+const focusModeButton = document.getElementById('focusModeButton');
+const fullscreenButton = document.getElementById('fullscreenButton');
+
+const panelState = {
+  leftCollapsed: localStorage.getItem('kimi-study-left-collapsed') === 'true',
+  rightCollapsed: localStorage.getItem('kimi-study-right-collapsed') === 'true',
+  focusMode: false
+};
+
+function applyPanelState() {
+  workspace.classList.toggle('left-collapsed', panelState.leftCollapsed);
+  workspace.classList.toggle('right-collapsed', panelState.rightCollapsed);
+  workspace.classList.toggle('focus-mode', panelState.focusMode);
+
+  collapseLeftButton.setAttribute('aria-expanded', String(!panelState.leftCollapsed));
+  collapseAssistantButton.setAttribute('aria-expanded', String(!panelState.rightCollapsed));
+  focusModeButton.setAttribute('aria-pressed', String(panelState.focusMode));
+  focusModeButton.title = panelState.focusMode ? '退出专注模式' : '进入专注模式';
+
+  if (!panelState.focusMode) {
+    localStorage.setItem('kimi-study-left-collapsed', String(panelState.leftCollapsed));
+    localStorage.setItem('kimi-study-right-collapsed', String(panelState.rightCollapsed));
+  }
+}
+
+function collapseLeftPanel() {
+  panelState.focusMode = false;
+  panelState.leftCollapsed = true;
+  applyPanelState();
+}
+
+function restoreLeftPanel() {
+  panelState.focusMode = false;
+  panelState.leftCollapsed = false;
+  applyPanelState();
+}
+
+function collapseRightPanel() {
+  panelState.focusMode = false;
+  panelState.rightCollapsed = true;
+  applyPanelState();
+}
+
+function restoreRightPanel() {
+  panelState.focusMode = false;
+  panelState.rightCollapsed = false;
+  applyPanelState();
+}
+
+collapseLeftButton.addEventListener('click', collapseLeftPanel);
+restoreLeftButton.addEventListener('click', restoreLeftPanel);
+collapseAssistantButton.addEventListener('click', collapseRightPanel);
+restoreAssistantButton.addEventListener('click', restoreRightPanel);
+
+focusModeButton.addEventListener('click', () => {
+  panelState.focusMode = !panelState.focusMode;
+  applyPanelState();
+  showToast(panelState.focusMode ? '已进入专注模式' : '已恢复学习工作区');
+});
+
+async function toggleCourseFullscreen() {
+  try {
+    if (document.fullscreenElement === coursePanel) {
+      await document.exitFullscreen();
+      return;
+    }
+
+    if (coursePanel.requestFullscreen) {
+      await coursePanel.requestFullscreen();
+      return;
+    }
+
+    if (coursePanel.webkitRequestFullscreen) {
+      coursePanel.webkitRequestFullscreen();
+      return;
+    }
+
+    showToast('当前浏览器不支持课程全屏');
+  } catch (error) {
+    showToast('无法进入全屏，请检查浏览器权限');
+  }
+}
+
+fullscreenButton.addEventListener('click', toggleCourseFullscreen);
+
+function updateFullscreenState() {
+  const active = document.fullscreenElement === coursePanel ||
+    document.webkitFullscreenElement === coursePanel;
+  fullscreenButton.classList.toggle('active', active);
+  fullscreenButton.title = active ? '退出全屏' : '全屏课程';
+  fullscreenButton.setAttribute('aria-label', active ? '退出全屏' : '全屏课程');
+}
+
+document.addEventListener('fullscreenchange', updateFullscreenState);
+document.addEventListener('webkitfullscreenchange', updateFullscreenState);
+
+document.addEventListener('keydown', event => {
+  if (event.key.toLowerCase() === 'f' && !event.metaKey && !event.ctrlKey && !event.altKey) {
+    const target = event.target;
+    const editing = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+    if (!editing) {
+      event.preventDefault();
+      panelState.focusMode = !panelState.focusMode;
+      applyPanelState();
+    }
+  }
+});
+
+applyPanelState();
+
+
+document.querySelectorAll('.source-anchor').forEach(button => {
+  button.addEventListener('click', () => {
+    scrollLesson(button.dataset.target);
+  });
+});
+
+</script>
+</body>
+</html>

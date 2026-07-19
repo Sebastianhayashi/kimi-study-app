@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第3课 意外：吸引和维持注意</title>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --text: #2c3e50;
+      --muted: #6c757d;
+      --accent: #e74c3c;
+      --accent-light: #fdf2f2;
+      --secondary: #3498db;
+      --secondary-light: #eaf5fb;
+      --success: #27ae60;
+      --border: #e9ecef;
+      --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+    header {
+      text-align: center;
+      padding: 48px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border-radius: 16px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow);
+    }
+    header h1 {
+      margin: 0 0 12px;
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    header .subtitle {
+      font-size: 1.1rem;
+      opacity: 0.95;
+    }
+    section {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1.4rem;
+      border-left: 4px solid var(--accent);
+      padding-left: 12px;
+    }
+    h3 {
+      font-size: 1.15rem;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    p { margin: 12px 0; }
+    .highlight {
+      background: var(--accent-light);
+      border-left: 4px solid var(--accent);
+      padding: 16px;
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+    }
+    .formula {
+      background: var(--secondary-light);
+      border: 2px dashed var(--secondary);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--secondary);
+      margin: 20px 0;
+    }
+    .example-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 14px 0;
+    }
+    .example-box strong { color: #92400e; }
+    .case {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    .case h4 {
+      margin: 0 0 10px;
+      color: var(--secondary);
+      font-size: 1.05rem;
+    }
+    ul, ol { padding-left: 22px; }
+    li { margin: 8px 0; }
+    .checklist {
+      list-style: none;
+      padding-left: 0;
+    }
+    .checklist li {
+      padding-left: 28px;
+      position: relative;
+    }
+    .checklist li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--success);
+      font-weight: 700;
+    }
+    .practice {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .practice h3 {
+      margin-top: 0;
+      color: var(--success);
+    }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 40px;
+      padding: 20px;
+    }
+    .tag {
+      display: inline-block;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    th { background: #f1f3f5; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>第3课 意外：吸引和维持注意</h1>
+      <div class="subtitle">SUCCESs 原则二：Unexpectedness</div>
+    </header>
+
+    <section>
+      <h2>本课目标</h2>
+      <ul class="checklist">
+        <li>理解"意外"的两个层次：吸引注意（惊讶）和维持注意（兴趣）</li>
+        <li>学会用打破基模的方式制造有价值的惊讶</li>
+        <li>区分"有内涵的惊讶"与"噱头式惊讶"</li>
+        <li>运用"好奇心缺口理论"维持受众注意力</li>
+        <li>完成一次"意外开场"练习</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>一、意外的两个任务</h2>
+      <div class="formula">
+        意外 = 吸引注意（惊讶）+ 维持注意（兴趣）
+      </div>
+      <p>信息沟通的首要难题，是让受众在纷繁嘈杂中注意到你。但注意到你还不够，如果你的信息复杂，还得让他们一直听下去。</p>
+      <p>天生具有黏性的观点往往能激起两种情绪：</p>
+      <ul>
+        <li><strong>惊讶</strong>：让人瞬间集中注意力。</li>
+        <li><strong>兴趣</strong>：让人愿意持续投入注意力。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>二、吸引注意：打破预测机器</h2>
+      <p>我们的大脑是一台<strong>预测机器</strong>，不断根据已有基模预测未来。当预测失灵时，就会产生<strong>惊讶</strong>。惊讶的生理作用，就是迫使我们停下来、睁大眼睛、接收新信息。</p>
+      <div class="case">
+        <h4>案例：西南航空卡伦·伍德的安全广播</h4>
+        <p>没人愿意听飞机安全广播。但空乘卡伦·伍德用一段俏皮演讲打破了乘客的预期：</p>
+        <p>"离开爱人可有50种方法，不过要离开我们这架飞机只有6种方法：前方的两个出入门，机翼上面的两个逃生窗，还有后方的两个出入门。"</p>
+        <p>乘客不仅认真听，广播结束后还鼓起掌来。</p>
+      </div>
+      <div class="case">
+        <h4>案例：别克昂科雷安全带广告</h4>
+        <p>一则家庭用车广告，画面温馨、孩子在后座、爸爸握着方向盘——然后突然一辆超速车从侧面撞上昂科雷，画面一片狼藉。</p>
+        <p>字幕浮现："没料到会发生这种事吧？这种事总是料想不到。"</p>
+        <p>这则广告打破了"汽车广告总是安全美好"的基模，也打破了"家庭短途出行很安全"的基模，从而强化核心信息：系好安全带。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>三、惊讶必须有内涵，不能沦为噱头</h2>
+      <p>不是所有惊讶都有黏性。互联网时代有一类广告：画面震撼、过目难忘，但观众看完不知道在卖什么。这就是<strong>噱头式惊讶</strong>。</p>
+      <div class="example-box">
+        <strong>反例：</strong>2000年超级碗广告中，一群饿狼冲进球场攻击军乐队。画面惊人，但没人知道这则广告想推销什么产品。除非卖的是"防撕咬乐队制服"。
+      </div>
+      <p>有内涵的惊讶需要满足一个条件：<strong>事前不可预测，事后可以后测</strong>。就像《第六感》的结局，出人意料，但回头再看，线索其实贯穿全片。</p>
+      <div class="highlight">
+        <strong>制造有价值惊讶的三步法：</strong><br>
+        ① 确定你要传达的核心信息；<br>
+        ② 找出信息中违反直觉的部分；<br>
+        ③ 破坏听众的相关预测基模，然后帮他们修好它。
+      </div>
+    </section>
+
+    <section>
+      <h2>四、用非常识打破常识</h2>
+      <p>常识是黏性信息的大敌。如果信息听起来像是常识，人们会觉得"我本来就懂"，于是左耳进右耳出。好的传播者要把信息中违背常识的部分揭示出来。</p>
+      <div class="case">
+        <h4>案例：诺德斯特龙百货</h4>
+        <p>"出色的客户服务"听起来像常识。诺德斯特龙用一系列非常识的小故事打破员工旧有基模：</p>
+        <ul>
+          <li>替顾客熨好下午开会要穿的新衬衫</li>
+          <li>帮顾客包装在别家店买的礼物</li>
+          <li>冬天为顾客暖车</li>
+          <li>把汽车轮胎防滑链的钱退给顾客——尽管诺德斯特龙并不卖防滑链</li>
+        </ul>
+        <p>这些故事让新员工震惊："这跟我们原来的服务理念完全不一样！"然后他们开始接受诺德斯特龙的客服基模。</p>
+      </div>
+      <div class="case">
+        <h4>案例：诺拉·埃夫龙的新闻课</h4>
+        <p>老师给学生布置导语作业：校长宣布全体教师下周四去萨克拉门托参加新教学方法研讨会，发言者包括玛格丽特·米德、芝加哥大学校长和加州州长。</p>
+        <p>学生们写的导语都是："州长布朗、玛格丽特·米德、罗伯特·梅纳德·哈钦斯周四将于萨克拉门托向贝弗利山高中全体教师发表讲话……"</p>
+        <p>老师揭晓标准答案："<strong>下周四不上课。</strong>"</p>
+        <p>这一刻打破了学生"新闻报道就是罗列事实"的基模，让他们意识到新闻的关键在于找出事情的意义。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>五、维持注意：好奇心的缺口理论</h2>
+      <p>乔治·洛温施坦提出：<strong>当我们感到知识出现缺口时，好奇心就会产生</strong>。缺口带来痛苦，我们迫切想填补它。</p>
+      <p>因此，不要直接给出答案。先让听众意识到"这里有一个你不知道的东西"，再逐步释放信息。</p>
+      <div class="case">
+        <h4>案例：土星光环之谜</h4>
+        <p>一位天文学家写科普文章，以谜题开场：</p>
+        <p>"我们应该如何解释堪称太阳系中最壮观的行星特征——土星光环呢？三支享誉国际的科学家团队为何会从这个问题得出各不相同的答案呢？剑桥说是气体，MIT说是尘埃颗粒，加州理工说是冰晶体。这怎么可能？"</p>
+        <p>答案是什么？覆盖着冰的尘埃。作者让"尘埃"都变得有意思，因为他先打开了知识缺口，再一步步填补。</p>
+      </div>
+      <div class="case">
+        <h4>案例：好莱坞的转折点</h4>
+        <p>编剧罗伯特·麦基说："好奇心是回答问题和闭合开放模式的智力需求，故事则借由相反做法——提出问题和打开情境——来迎合这种普遍欲望。"</p>
+        <p>成功的剧本把每一场戏都设计成转折点，让观众不断想问：接下去会发生什么事？结局会是怎样？</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>六、如何打开知识缺口？</h2>
+      <p>洛温施坦给出了几种实用方法：</p>
+      <ul>
+        <li><strong>提出问题</strong>：这件事为什么会这样？</li>
+        <li><strong>设下谜团</strong>：答案暂时不揭晓。</li>
+        <li><strong>指出别人知道、你不知道的事</strong>：制造"信息差"。</li>
+        <li><strong>展现结果未知的情境</strong>：选举、比赛、悬疑故事。</li>
+        <li><strong>鼓励对方猜一猜</strong>：制造"会发生什么事"和"我猜对了吗"两个缺口。</li>
+      </ul>
+      <div class="example-box">
+        <strong>本地新闻预告的常用套路：</strong><br>
+        "一种新药物正在青少年间盛行——可能就在你家药箱里"<br>
+        "你家有一种看不见的化学物质——而且可能马上害死你"
+      </div>
+    </section>
+
+    <section>
+      <h2>七、克服过度自信：先让对方意识到缺口</h2>
+      <p>人们总是高估自己所知。如果受众觉得自己已经懂了，缺口理论就失效。必须先让他们意识到"原来我不知道"。</p>
+      <div class="case">
+        <h4>案例：哈佛物理教授埃里克·梅热的"概念测试"</h4>
+        <p>梅热在课堂上提出一个概念问题，让学生公开投票表决。要求大家表态的做法，会让学生更投入，也对结果更好奇。</p>
+      </div>
+      <div class="case">
+        <h4>案例：课堂讨论中的分歧</h4>
+        <p>研究发现，意见分歧的学生比很快达成共识的学生更有兴趣：课后相关短片的观看率，分歧组是 45%，共识组只有 18%。</p>
+      </div>
+      <p>诺拉·埃夫龙的新闻课老师也是这个策略：先让学生用错误基模实践，再出其不意地打破它。</p>
+    </section>
+
+    <section>
+      <h2>八、先给背景，再指出缺口</h2>
+      <p>如果受众对某个主题一无所知，缺口可能不是"缺口"而是"深渊"。这时要先补充背景知识，把"深渊"变成"缺口"。</p>
+      <div class="case">
+        <h4>案例：鲁恩·阿利奇与大学橄榄球转播</h4>
+        <p>20世纪60年代，美国广播公司签约转播大学橄榄球赛。但观众只关心自己学校的球队，对其他州的比赛毫无兴趣。</p>
+        <p>29岁的阿利奇提出：不要直接切入球场全景，而要先播出校园、球迷、城市、历史交锋的镜头，让观众"身临其境"。</p>
+        <p>他的理念是："迄今为止，电视的杰出功能就是把比赛带到观众面前，但现在我们要把观众带进球场里。"</p>
+        <p>等到比赛开始时，观众已经开始关心哪队会赢了。</p>
+      </div>
+      <div class="highlight">
+        <strong>教学启示：</strong>好老师也常用"高级组织者"策略——先点出学生已知的事，再引出新知识。地理老师先让学生看地震灾害照片，再讲板块构造；化学老师先讲门捷列夫整理元素的故事，再进入元素周期表。
+      </div>
+    </section>
+
+    <section>
+      <h2>九、大胆而可抵达的意外愿景</h2>
+      <p>最打动人心的意外观念，往往既大胆到令人惊讶，又没有大到让人绝望。它们像寻宝图上的大红叉，醒目但不告诉具体路径，从而驱动人们长期投入。</p>
+      <div class="case">
+        <h4>案例：索尼的"口袋型收音机"</h4>
+        <p>20世纪50年代，收音机是家具，不是口袋里的东西。井深大却向团队提出愿景：做一台<strong>口袋型收音机</strong>。</p>
+        <p>这个观念意外、大胆，又充满内涵。它驱动索尼工程师奋斗多年，最终在1957年推出世界上第一台便携式晶体管收音机 TR-55，销量 150 万台。</p>
+      </div>
+      <div class="case">
+        <h4>案例：肯尼迪的"登月演讲"</h4>
+        <p>1961年，肯尼迪提出："10年内将人类送上月球，再平安接回地球。"</p>
+        <p>在当时，人类登陆月球听起来像科幻小说。但这个愿景既意外大胆，又没有大到不可实现——工程师听完会立刻开始想："首先要解决什么问题？其次要开发什么技术？"</p>
+        <p>这一句话激励了数十家机构的成千上万人奋斗近10年。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>十、本课核心清单</h2>
+      <ul class="checklist">
+        <li>意外要服务于核心信息，不能沦为噱头</li>
+        <li>惊讶来自预测基模的失灵；有内涵的惊讶可以"后测"</li>
+        <li>用非常识打破常识，揭示信息中违反直觉的部分</li>
+        <li>维持注意靠好奇心，好奇心来自知识缺口</li>
+        <li>先打开缺口，再逐步填补；不要一次性把所有信息倾倒出去</li>
+        <li>面对知识匮乏的受众，先建立背景，再指出缺口</li>
+        <li>最好的意外愿景大胆但有可达性，能驱动长期行动</li>
+      </ul>
+    </section>
+
+    <section class="practice">
+      <h3>课后练习</h3>
+      <ol>
+        <li><strong>意外开场：</strong>选择一个你即将做的汇报或演讲主题，设计一个能打破听众基模的开场，并确保它服务于核心信息。</li>
+        <li><strong>噱头识别：</strong>找一则你印象深刻的广告或短视频，判断它的惊讶是"有内涵"还是"噱头"，并说明理由。</li>
+        <li><strong>缺口设计：</strong>把你下次要解释的一个知识点，改写成"先提问、后揭晓"的结构。列出你会在哪些节点释放线索。</li>
+        <li><strong>SUCCESs 检查：</strong>用"意外"原则检查你的开场或结构——它是否既吸引了注意，又能维持注意？</li>
+      </ol>
+    </section>
+
+    <footer>
+      <p>下一课预告：第4课 具体——让别人听懂并记住</p>
+      <p>让创意更有黏性 · 课程系列</p>
+    </footer>
+  </div>
+</body>
+</html>

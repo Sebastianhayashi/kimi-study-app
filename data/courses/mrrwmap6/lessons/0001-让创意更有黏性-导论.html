@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第1课 让创意更有黏性：导论</title>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --text: #2c3e50;
+      --muted: #6c757d;
+      --accent: #e74c3c;
+      --accent-light: #fdf2f2;
+      --secondary: #3498db;
+      --secondary-light: #eaf5fb;
+      --success: #27ae60;
+      --border: #e9ecef;
+      --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+    header {
+      text-align: center;
+      padding: 48px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border-radius: 16px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow);
+    }
+    header h1 {
+      margin: 0 0 12px;
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    header .subtitle {
+      font-size: 1.1rem;
+      opacity: 0.95;
+    }
+    .meta {
+      margin-top: 16px;
+      font-size: 0.9rem;
+      opacity: 0.85;
+    }
+    section {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1.4rem;
+      border-left: 4px solid var(--accent);
+      padding-left: 12px;
+    }
+    h3 {
+      font-size: 1.15rem;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    p {
+      margin: 12px 0;
+    }
+    .highlight {
+      background: var(--accent-light);
+      border-left: 4px solid var(--accent);
+      padding: 16px;
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+    }
+    .formula {
+      background: var(--secondary-light);
+      border: 2px dashed var(--secondary);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--secondary);
+      margin: 20px 0;
+    }
+    .principles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .principle-card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .principle-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .principle-card .letter {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      line-height: 32px;
+      text-align: center;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      margin-right: 8px;
+    }
+    .principle-card h4 {
+      margin: 0 0 8px;
+      font-size: 1.05rem;
+    }
+    .principle-card p {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+    .example-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 14px 0;
+    }
+    .example-box strong {
+      color: #92400e;
+    }
+    ul, ol {
+      padding-left: 22px;
+    }
+    li {
+      margin: 8px 0;
+    }
+    .checklist {
+      list-style: none;
+      padding-left: 0;
+    }
+    .checklist li {
+      padding-left: 28px;
+      position: relative;
+    }
+    .checklist li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--success);
+      font-weight: 700;
+    }
+    .practice {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .practice h3 {
+      margin-top: 0;
+      color: var(--success);
+    }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 40px;
+      padding: 20px;
+    }
+    .tag {
+      display: inline-block;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>第1课 让创意更有黏性：导论</h1>
+      <div class="subtitle">掌握创意直抵人心的六条路径</div>
+      <div class="meta">教材：《让创意更有黏性》| 作者：奇普·希思、丹·希思</div>
+    </header>
+
+    <section>
+      <h2>本课目标</h2>
+      <ul class="checklist">
+        <li>理解"黏性"的含义：让人听懂、记住并产生持久影响</li>
+        <li>建立全书框架：六大原则 SUCCESs 检查表</li>
+        <li>认识最大敌人：知识的诅咒</li>
+        <li>明确学习方法：读案例、做诊断、勤练习</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>一、这本书讲什么？</h2>
+      <p>为什么有些想法能口口相传，有些却石沉大海？</p>
+      <p>为什么"偷肾传说"你能讲得八九不离十，而一段组织宣传文案却转眼就忘？</p>
+      <p>《让创意更有黏性》要回答的就是这个问题：<strong>如何让真实、重要但未必耸人听闻的观点，也能像都市传说一样被人记住和传播？</strong></p>
+      <div class="formula">
+        让创意产生黏性 = 找到核心 + 用六大原则检查表转换核心
+      </div>
+      <p>这不是艺术天赋，而是一套可以后天学习、系统应用的方法。</p>
+    </section>
+
+    <section>
+      <h2>二、什么是"黏性"？</h2>
+      <div class="highlight">
+        <strong>黏性（Stickiness）</strong>是指你的创意或观点能够：<br>
+        ① 被人<strong>理解</strong>；② 被人<strong>记住</strong>；③ 产生<strong>持久影响</strong>（改变思想或行为）。
+      </div>
+      <p>作者借用了马尔科姆·格拉德韦尔在《引爆点》中提出的"黏性"一词，但本书更聚焦于：一个想法<strong>本身</strong>是如何构成的。</p>
+      <p>我们每天大约会有 12~52 次机会需要让别人记住自己的想法——经理讲战略、老师教概念、作家改观点、公益组织募款……黏性不是奢侈品，而是沟通的基本功。</p>
+    </section>
+
+    <section>
+      <h2>三、六大原则检查表：SUCCESs</h2>
+      <p>作者研究了数百个天生具有黏性的创意（都市传说、谚语、获奖广告、伟大演讲等），发现它们反复体现出六项共同特征。</p>
+      <div class="principles">
+        <div class="principle-card">
+          <h4><span class="letter">S</span>简单 Simplicity</h4>
+          <p>找到核心信息，并精炼表达。不是化智为愚，而是像谚语一样"简短而深刻"。</p>
+        </div>
+        <div class="principle-card">
+          <h4><span class="letter">U</span>意外 Unexpectedness</h4>
+          <p>打破预期，制造惊讶；再用"知识缺口"激发好奇心，让人想听下去。</p>
+        </div>
+        <div class="principle-card">
+          <h4><span class="letter">C</span>具体 Concreteness</h4>
+          <p>用感官信息和具体形象说话。抽象词汇无法黏住大脑，具体细节才可以。</p>
+        </div>
+        <div class="principle-card">
+          <h4><span class="letter">C</span>可信 Credibility</h4>
+          <p>不是每句话都能靠权威背书。要帮助听众"先试再买"，自己验证观点。</p>
+        </div>
+        <div class="principle-card">
+          <h4><span class="letter">E</span>情感 Emotions</h4>
+          <p>让人"有所感觉"。人们更容易对具体的人产生共情，而非抽象的数据。</p>
+        </div>
+        <div class="principle-card">
+          <h4><span class="letter">S</span>故事 Stories</h4>
+          <p>用故事让人在脑中"预演"场景，从而更愿意在真实世界中采取行动。</p>
+        </div>
+      </div>
+      <div class="example-box">
+        <strong>记忆口诀：</strong>简、奇、具、信、情、事——六个字的英文首字母恰好组成 <strong>SUCCESs（成功）</strong>。
+      </div>
+    </section>
+
+    <section>
+      <h2>四、最大敌人：知识的诅咒</h2>
+      <p>我们已经知道一件事，就很难想象不知道这件事的人是什么状态。这叫<strong>"知识的诅咒"</strong>。</p>
+      <div class="example-box">
+        <strong>击节者与听猜者实验：</strong>击节者敲击著名歌曲的节奏，预估听猜者能猜对 50%，实际只有 2.5%。因为击节者脑中响着旋律，而听猜者只听到一串不连贯的敲击声。
+      </div>
+      <p>CEO 讲"释放股东价值"、老师讲解"有丝分裂"、专家写"综合性社区建设"——他们都可能是"击节者"，而受众只是听到"敲击声"。</p>
+      <div class="highlight">
+        <strong>破解方法：</strong>把已有的观点改头换面。六大原则就是你的武器。
+      </div>
+    </section>
+
+    <section>
+      <h2>五、学习路径预览</h2>
+      <ol>
+        <li><strong>第1章 简单</strong>：找到核心，像"指挥官意图"一样精炼。</li>
+        <li><strong>第2章 意外</strong>：用惊讶和缺口抓住注意力。</li>
+        <li><strong>第3章 具体</strong>：用感官语言替代抽象概念。</li>
+        <li><strong>第4章 可信</strong>：让观点可检验、可体验。</li>
+        <li><strong>第5章 情感</strong>：激发关心，而不是堆砌数据。</li>
+        <li><strong>第6章 故事</strong>：用故事作为"心理飞行模拟器"。</li>
+        <li><strong>综合应用</strong>：把 SUCCESs 变成日常沟通习惯。</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>六、一个令人难忘的对比</h2>
+      <table style="width:100%; border-collapse:collapse; margin-top:12px;">
+        <thead>
+          <tr style="background:#f1f3f5;">
+            <th style="padding:10px; border:1px solid var(--border); text-align:left;">失败的表达</th>
+            <th style="padding:10px; border:1px solid var(--border); text-align:left;">为什么失败</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:10px; border:1px solid var(--border);">"综合性社区的建设理应适宜于投资回报的基本原理……"</td>
+            <td style="padding:10px; border:1px solid var(--border);">抽象、冗长、没有核心</td>
+          </tr>
+          <tr>
+            <td style="padding:10px; border:1px solid var(--border);">"股东价值最大化"</td>
+            <td style="padding:10px; border:1px solid var(--border);">准确但无法指导具体行为</td>
+          </tr>
+        </tbody>
+      </table>
+      <table style="width:100%; border-collapse:collapse; margin-top:16px;">
+        <thead>
+          <tr style="background:#f0fdf4;">
+            <th style="padding:10px; border:1px solid var(--border); text-align:left;">成功的表达</th>
+            <th style="padding:10px; border:1px solid var(--border); text-align:left;">为什么成功</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:10px; border:1px solid var(--border);">"我们是全球票价最低的航空公司"（西南航空）</td>
+            <td style="padding:10px; border:1px solid var(--border);">简单、可执行、能指导决策</td>
+          </tr>
+          <tr>
+            <td style="padding:10px; border:1px solid var(--border);">"关键是经济啦，笨蛋"（克林顿竞选）</td>
+            <td style="padding:10px; border:1px solid var(--border);">一句话点明优先级</td>
+          </tr>
+          <tr>
+            <td style="padding:10px; border:1px solid var(--border);">"10年内将人类送上月球并安全接回"（肯尼迪）</td>
+            <td style="padding:10px; border:1px solid var(--border);">简单、意外、具体、可信、有情感、是故事</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="practice">
+      <h3>课后练习</h3>
+      <ol>
+        <li>用一句话向朋友解释："创意黏性"是什么？</li>
+        <li>回忆一个你最近听到的、让你印象深刻的说法或广告，试着用 SUCCESs 的某一条解释它为什么有效。</li>
+        <li>找一个你工作中常用的专业术语或表达，思考是否存在"知识的诅咒"，并尝试用更通俗的语言改写。</li>
+      </ol>
+    </section>
+
+    <footer>
+      <p>下一课预告：第2课 简单——精炼核心信息</p>
+      <p>让创意更有黏性 · 课程系列</p>
+    </footer>
+  </div>
+</body>
+</html>

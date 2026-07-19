@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第2课 简单：精炼核心信息</title>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --text: #2c3e50;
+      --muted: #6c757d;
+      --accent: #e74c3c;
+      --accent-light: #fdf2f2;
+      --secondary: #3498db;
+      --secondary-light: #eaf5fb;
+      --success: #27ae60;
+      --border: #e9ecef;
+      --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+    header {
+      text-align: center;
+      padding: 48px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border-radius: 16px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow);
+    }
+    header h1 {
+      margin: 0 0 12px;
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    header .subtitle {
+      font-size: 1.1rem;
+      opacity: 0.95;
+    }
+    section {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1.4rem;
+      border-left: 4px solid var(--accent);
+      padding-left: 12px;
+    }
+    h3 {
+      font-size: 1.15rem;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    p { margin: 12px 0; }
+    .highlight {
+      background: var(--accent-light);
+      border-left: 4px solid var(--accent);
+      padding: 16px;
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+    }
+    .formula {
+      background: var(--secondary-light);
+      border: 2px dashed var(--secondary);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--secondary);
+      margin: 20px 0;
+    }
+    .example-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 14px 0;
+    }
+    .example-box strong { color: #92400e; }
+    .case {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    .case h4 {
+      margin: 0 0 10px;
+      color: var(--secondary);
+      font-size: 1.05rem;
+    }
+    ul, ol { padding-left: 22px; }
+    li { margin: 8px 0; }
+    .checklist {
+      list-style: none;
+      padding-left: 0;
+    }
+    .checklist li {
+      padding-left: 28px;
+      position: relative;
+    }
+    .checklist li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--success);
+      font-weight: 700;
+    }
+    .practice {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .practice h3 {
+      margin-top: 0;
+      color: var(--success);
+    }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 40px;
+      padding: 20px;
+    }
+    .tag {
+      display: inline-block;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    th { background: #f1f3f5; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>第2课 简单：精炼核心信息</h1>
+      <div class="subtitle">SUCCESs 原则一：Simplicity</div>
+    </header>
+
+    <section>
+      <h2>本课目标</h2>
+      <ul class="checklist">
+        <li>理解"简单"不是化智为愚，而是找到核心 + 精炼表达</li>
+        <li>学会用"指挥官意图"思维排定优先次序</li>
+        <li>掌握避免"埋没导语"的方法</li>
+        <li>运用基模和类比让复杂概念变得简单可理解</li>
+        <li>完成一次"一句话核心"练习</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>一、什么是"简单"？</h2>
+      <div class="formula">
+        简单 = 找到核心 + 精炼表达
+      </div>
+      <p>所谓简单，不是用粗浅词汇、不是断章取义、不是讨好受众，而是<strong>剥去层层外壳，找到观点的根本核心，并用最精炼的方式表达出来</strong>。</p>
+      <div class="highlight">
+        圣埃克苏佩里在《小王子》中说："完美不在于无以复加，而在于无从删减。"
+      </div>
+      <p>简单追求的是<strong>简练精确、轻重有序</strong>。就像孔子的"己所不欲，勿施于人"——八个字，值得人用一生去体会力行。</p>
+    </section>
+
+    <section>
+      <h2>二、指挥官意图：找到唯一的北极星</h2>
+      <p>美国陆军在 20 世纪 80 年代提出了"指挥官意图"（Commander's Intent）的概念。它位于每道命令最前面，用一句话说明任务的最终目标。</p>
+      <div class="example-box">
+        <strong>例子：</strong>"我的目标是率领第3营攻占4305号山头，清扫全部敌军，只留无战斗力的残兵，进而掩护第3旅侧翼安全穿越防线。"
+      </div>
+      <p>指挥官意图的价值在于<strong>单一性</strong>。战场上计划随时会失效，但意图永远有效。它让下属在突发状况下仍能做出正确判断。</p>
+      <div class="case">
+        <h4>案例：西南航空</h4>
+        <p>西南航空前 CEO 赫伯·凯莱赫说："我可以在 30 秒内告诉你运营这家航空公司的秘诀——<strong>我们是全球票价最低的航空公司</strong>。"</p>
+        <p>当市场部门提议在航班上增加鸡肉凯撒沙拉时，标准答案只有一个："这会让我们的航线成为全球票价最低的航班吗？如果不能，就不提供。"</p>
+        <p><strong>启示：</strong>一句清晰的核心可以成为成千上万日常决策的过滤器。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>三、不要埋没导语</h2>
+      <p>新闻记者知道，报道的第一句话——<strong>导语</strong>——必须包含全文最重要的信息。这种"倒金字塔"结构让读者即使只读开头，也能获取核心。</p>
+      <p>很多人犯的错是：用有趣但不相干的细节开场，把真正重要的信息埋没在后面。这叫<strong>"埋没导语"</strong>。</p>
+      <div class="case">
+        <h4>案例：克林顿竞选</h4>
+        <p>1992 年，詹姆斯·卡维尔在克林顿竞选团队的白板上写下：</p>
+        <div class="highlight">
+          <strong>"关键是经济啦，笨蛋。"</strong>
+        </div>
+        <p>这句话不是给选民看的口号，而是给团队看的"导语"。它强迫所有人排定优先次序：无论有多少议题值得讨论，当前只有一个核心。</p>
+        <p>当克林顿想继续讨论预算平衡时，团队告诉他："要是说三件事，就等于一件也没说。"</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>四、决策瘫痪：为什么排定先后这么难？</h2>
+      <p>心理学家发现，<strong>不确定性和选择过多都会导致决策瘫痪</strong>。</p>
+      <ul>
+        <li>特韦尔斯基和沙菲尔的研究：不知道考试成绩的学生，反而比知道成绩的学生更不愿意立刻决定去夏威夷度假。</li>
+        <li>雷德尔迈耶和沙菲尔的研究：在两件有趣的事（讲座 vs 电影）之间选择学习，人们会犹豫；但给三个选择时，反而有更多人选择"安全"的学习。</li>
+      </ul>
+      <div class="highlight">
+        <strong>核心信息的价值：</strong>它提醒你真正重要的东西，帮助你在复杂情境中避免坏选择。
+      </div>
+    </section>
+
+    <section>
+      <h2>五、精炼：让核心像谚语一样流传</h2>
+      <p>找到核心只是第一步，还要把它表达出来。最有效的形式之一是<strong>谚语</strong>——长期经验提炼出的简短句子。</p>
+      <div class="example-box">
+        <strong>"双鸟在林不如一鸟在手"</strong>：一句话流传 2500 多年，跨越语言和文化。它的力量在于：核心深刻 + 表达精炼。
+      </div>
+      <p>邓恩日报创办人胡佛·亚当斯的核心表达是：</p>
+      <div class="highlight">
+        <strong>"人名、人名，还是人名。"</strong>
+      </div>
+      <p>他深知本地报纸的核心竞争力是"聚焦本地新闻"。为了让员工牢记，他用最具体、最重复、最无法误解的方式表达：报纸上要多登本地人名。</p>
+    </section>
+
+    <section>
+      <h2>六、抵制功能蔓延：只做最重要的事</h2>
+      <div class="case">
+        <h4>案例：奔迈掌上电脑（Palm Pilot）</h4>
+        <p>创始人杰夫·霍金斯给团队立下规矩：掌上电脑只能做四件事——<strong>日历、联系人、记事本、任务列表</strong>。</p>
+        <p>为了抵制"再加一个功能"的诱惑，他随身带着一块和掌上电脑一样大小的木头。每当有人提议增加功能，他就拿出木头问："你看哪里还放得下？"</p>
+        <p><strong>启示：</strong>界定产品"不该有什么"，往往比"该有什么"更重要。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>七、善用基模：用旧知识解释新概念</h2>
+      <p>有时我们必须传达复杂信息，无法压缩成一句话。这时可以利用<strong>基模</strong>——听众脑中已有的概念框架。</p>
+      <div class="case">
+        <h4>案例：西柚是什么？</h4>
+        <p><strong>解释一：</strong>西柚是柑橘属的亚热带水果，簇生成串，皮薄且软，果肉分瓣，颜色呈淡鹅黄到珊瑚红……</p>
+        <p><strong>解释二：</strong>西柚大致上是一种<strong>小型的柚子</strong>，形似葡萄，皮薄且软。</p>
+        <p>第二种解释更好，因为它调用了你已知的"柚子"基模。你不必从零学习，只需在已有概念上做少量修改。</p>
+      </div>
+      <p>好老师都善用基模：先讲最简单的贸易模型，再逐步扩展。初等物理从理想滑轮、光滑斜面开始，也是同样的道理。</p>
+    </section>
+
+    <section>
+      <h2>八、好莱坞高概念：一句话说清一部电影</h2>
+      <p>好莱坞用"高概念"（High Concept）来降低决策风险。一句话类比，就能让所有人迅速理解一部新片。</p>
+      <table>
+        <thead>
+          <tr>
+            <th>电影</th>
+            <th>高概念</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>《生死时速》</td><td>公交车版本的《虎胆龙威》</td></tr>
+          <tr><td>《女孩梦三十》</td><td>给女孩看的《飞进未来》</td></tr>
+          <tr><td>《异形》</td><td>太空船上的《大白鲨》</td></tr>
+        </tbody>
+      </table>
+      <p>这些类比调用了已有的电影基模，让投资方、导演、演员、营销团队瞬间做出无数正确决策。</p>
+    </section>
+
+    <section>
+      <h2>九、生成性类比：让类比持续指导工作</h2>
+      <p>好的类比不仅能解释概念，还能持续生成新的行为和决策。这叫<strong>生成性类比</strong>。</p>
+      <div class="case">
+        <h4>案例：迪士尼乐园的"演员"</h4>
+        <p>迪士尼不把员工叫"员工"，而叫"演员"；不叫顾客"顾客"，而叫"来宾"；制服叫"演出服"，在乐园走动叫"舞台表演"。</p>
+        <p>这个"剧场"类比指导了无数具体行为：穿着演出服不能当众抽烟聊天；清洁工不只是扫地，还要随时回答游客问题——因为他们的"出镜率最高"。</p>
+      </div>
+      <div class="case">
+        <h4>反面案例：赛百味的"三明治艺术家"</h4>
+        <p>赛百味也称员工为"艺术家"，但这个类比没有生成性。真正的艺术家强调个性表达，而赛百味并不希望员工在配料上任意发挥。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>十、本课核心清单</h2>
+      <ul class="checklist">
+        <li>简单 = 找到核心 + 精炼表达</li>
+        <li>用"指挥官意图"定义唯一目标</li>
+        <li>把最重要的信息放在最前面，不要埋没导语</li>
+        <li>核心信息能帮助人们避免决策瘫痪</li>
+        <li>好的核心表达应像谚语一样：简短、深刻、能指导行为</li>
+        <li>用基模和类比调用已有知识，降低理解成本</li>
+        <li>警惕"知识的诅咒"：准确不等于有用</li>
+      </ul>
+    </section>
+
+    <section class="practice">
+      <h3>课后练习</h3>
+      <ol>
+        <li><strong>一句话核心：</strong>选择一个你正在做的项目、课程或工作任务，用一句话写出它的"指挥官意图"。</li>
+        <li><strong>诊断导语：</strong>找一段你最近写的工作邮件或报告，判断是否有"埋没导语"的问题，尝试把核心信息移到最前面。</li>
+        <li><strong>基模练习：</strong>想一个对门外汉很难理解的专业概念，尝试用"就像……一样"的句式，调用对方已知的基模来解释它。</li>
+        <li><strong>SUCCESs 检查：</strong>用"简单"原则检查你的一句话核心——它是否既精炼又深刻？是否能指导具体决策？</li>
+      </ol>
+    </section>
+
+    <footer>
+      <p>下一课预告：第3课 意外——吸引和维持注意</p>
+      <p>让创意更有黏性 · 课程系列</p>
+    </footer>
+  </div>
+</body>
+</html>

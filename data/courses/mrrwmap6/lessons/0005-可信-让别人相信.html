@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第5课 可信：让别人相信</title>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --text: #2c3e50;
+      --muted: #6c757d;
+      --accent: #e74c3c;
+      --accent-light: #fdf2f2;
+      --secondary: #3498db;
+      --secondary-light: #eaf5fb;
+      --success: #27ae60;
+      --border: #e9ecef;
+      --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+    header {
+      text-align: center;
+      padding: 48px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border-radius: 16px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow);
+    }
+    header h1 {
+      margin: 0 0 12px;
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    header .subtitle {
+      font-size: 1.1rem;
+      opacity: 0.95;
+    }
+    section {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1.4rem;
+      border-left: 4px solid var(--accent);
+      padding-left: 12px;
+    }
+    h3 {
+      font-size: 1.15rem;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    p { margin: 12px 0; }
+    .highlight {
+      background: var(--accent-light);
+      border-left: 4px solid var(--accent);
+      padding: 16px;
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+    }
+    .formula {
+      background: var(--secondary-light);
+      border: 2px dashed var(--secondary);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--secondary);
+      margin: 20px 0;
+    }
+    .example-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 14px 0;
+    }
+    .example-box strong { color: #92400e; }
+    .case {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    .case h4 {
+      margin: 0 0 10px;
+      color: var(--secondary);
+      font-size: 1.05rem;
+    }
+    ul, ol { padding-left: 22px; }
+    li { margin: 8px 0; }
+    .checklist {
+      list-style: none;
+      padding-left: 0;
+    }
+    .checklist li {
+      padding-left: 28px;
+      position: relative;
+    }
+    .checklist li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--success);
+      font-weight: 700;
+    }
+    .practice {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .practice h3 {
+      margin-top: 0;
+      color: var(--success);
+    }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 40px;
+      padding: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    th { background: #f1f3f5; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>第5课 可信：让别人相信</h1>
+      <div class="subtitle">SUCCESs 原则四：Credibility</div>
+    </header>
+
+    <section>
+      <h2>本课目标</h2>
+      <ul class="checklist">
+        <li>理解可信度来源的多样性：权威、反权威、内在可信</li>
+        <li>学会用生动细节和统计数据增强可信度</li>
+        <li>掌握"西纳特拉测试"和"可检验性认证"两种强力工具</li>
+        <li>学会把统计数据转化为可理解的人性尺度</li>
+        <li>完成一次"可信增强"改写练习</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>一、为什么需要可信？</h2>
+      <p>1982年，澳大利亚医生巴里·马歇尔和罗宾·沃伦发现溃疡是由细菌引起的，这意味着溃疡可以用抗生素治愈。但没人相信他们：他们太年轻、资历太浅、身处偏远的珀斯，而且胃酸怎么可能让细菌存活？</p>
+      <p>1984年，马歇尔在实验室当着同事的面，喝下装有10亿幽门螺旋杆菌的水。几天后他患上胃炎，再用抗生素把自己治好。即使如此，医学界又争论了10年才接受这一理论。2005年，马歇尔和沃伦获得诺贝尔医学奖。</p>
+      <div class="highlight">
+        <strong>核心问题：</strong>即使一个观念真实、重要、能拯救生命，如果缺乏可信，也不会被人接受。
+      </div>
+    </section>
+
+    <section>
+      <h2>二、外来可信：权威与反权威</h2>
+      <p>最常见的可信来源是权威：专家、名人、机构。但不是每个人都有霍金或乔丹助阵。</p>
+      <div class="case">
+        <h4>案例：帕姆·拉芬——反权威的力量</h4>
+        <p>帕姆·拉芬不是名人，也不是健康专家。她10岁开始抽烟，24岁患肺气肿，29岁出现在反吸烟广告中。镜头记录下她垂死挣扎、接受支气管镜检查、背部手术疤痕的画面。</p>
+        <p>她说："我以前抽烟是为了想看起来年纪大些，很不幸，我现在成功了。"</p>
+        <p>拉芬的话之所以可信，不是因为她有证书，而是因为她说的是自己的真实经历。她31岁去世。</p>
+      </div>
+      <div class="case">
+        <h4>案例：多伊基金会</h4>
+        <p>多伊基金会帮助无家可归者重返社会。基金会派司机丹尼斯去接赞助机构代表。丹尼斯自己曾经也是无家可归者，45分钟的车程里，他把自己的故事讲给代表们听。</p>
+        <p>一位代表评价："我们可不是坐着听一群主管说自己的服务有多好；丹尼斯是多伊基金会能找到的最佳形象大使，他自己就是个活生生的例子。"</p>
+      </div>
+      <div class="highlight">
+        <strong>关键洞察：</strong>权威之所以权威，不在于社会地位，而在于诚实可靠。有时，反权威比权威更可信。
+      </div>
+    </section>
+
+    <section>
+      <h2>三、内在可信之一：生动细节</h2>
+      <p>当没有外来权威时，信息必须"内在可信"。生动的细节能让观点变得真实可信。</p>
+      <div class="case">
+        <h4>案例：约翰逊太太监护权案</h4>
+        <p>研究者给模拟陪审员看一份法庭记录，支持与反对约翰逊太太的证据各8条。唯一差别是：一方证词加入生动细节。</p>
+        <p>比如"约翰逊太太每天睡前看着儿子洗脸刷牙"被改成"他用的是一把长得像《星球大战》黑武士的牙刷"。</p>
+        <p>结果：听到有利细节的版本，10人中有5.8人判她适合监护；听到不利细节的版本，10人中只有4.3人。</p>
+      </div>
+      <div class="case">
+        <h4>案例：莉兹·莱尔曼舞蹈团的多样性</h4>
+        <p>当被质疑"你们真的有多样性吗？"时，艺术总监回答："团里待得最久的是一位73岁的退休公务员托马斯·德怀尔，他1988年退休后加入我们，之前没有任何舞蹈经验，现在已经在团里17年了。"</p>
+        <p>一个具体的人，比一百句宣言更有力。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>四、内在可信之二：统计数据</h2>
+      <p>统计数据本身往往没有意义，关键在于用它来阐明某种关联，并找到合适的人性尺度。</p>
+      <div class="case">
+        <h4>案例："远离战争"运动的BB枪子弹</h4>
+        <p>为了说明全球核武器规模，"远离战争"的代表在家庭聚会上拿出一个金属桶：</p>
+        <ul>
+          <li>扔进1颗BB枪子弹："这是广岛原子弹。"</li>
+          <li>扔进10颗："这是一艘核潜艇导弹的火力。"</li>
+          <li>倒进5000颗："这是目前全球所有核武器的总和。"</li>
+        </ul>
+        <p>没人能记住"5000颗核弹头"这个数字，但没人能忘记金属桶里子弹撞击的恐怖声音。</p>
+      </div>
+      <div class="case">
+        <h4>案例：思科无线网络的"每天两分钟"</h4>
+        <p>思科考虑是否给员工加装无线网络，每年每位员工成本约500美元。一位员工换了个说法："如果这样做可以每天增加员工一到两分钟的生产力，成本就能收回来。"</p>
+        <p>500美元难以直觉判断，但"每天省下一两分钟"人人都能理解。</p>
+      </div>
+      <div class="case">
+        <h4>案例：科维的足球队</h4>
+        <p>斯蒂芬·科维调查了2.3万名员工，发现：</p>
+        <ul>
+          <li>仅37%的人清楚公司目标</li>
+          <li>仅20%的人对公司目标充满热情</li>
+          <li>仅20%的人清楚自己工作与团队目标的关联</li>
+          <li>仅15%的人觉得公司信任他们达成重要目标</li>
+        </ul>
+        <p>他把这些数字转化为一个足球队画面：11名球员中只有4人知道哪个球门是自己的；只有2人在乎输赢；只有2人知道自己踢哪个位置；剩下9人或多或少在对抗自己的队友。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>五、内在可信之三：西纳特拉测试</h2>
+      <div class="formula">
+        西纳特拉测试：如果你在那儿能成功，到哪儿都能成功。
+      </div>
+      <div class="case">
+        <h4>案例：顺风物流</h4>
+        <p>印度顺风物流想赢得宝莱坞一家电影制片厂的生意。对方起初怀疑："你是在开玩笑吧？"</p>
+        <p>贾因讲了两个小故事：</p>
+        <ul>
+          <li>顺风物流负责《哈利·波特》第五部在全印度的发行配送，每本书必须在发行日早上8点送达所有书店，严防盗版。</li>
+          <li>顺风物流还安全押运了制片厂经理弟弟的高中入学考试空白考卷和答题纸。</li>
+        </ul>
+        <p>两个月后，双方签了合同。这比"98.84%准时送达"的统计数据更有力。</p>
+      </div>
+      <div class="case">
+        <h4>案例：比尔·麦克多诺的"可吃布料"</h4>
+        <p>环保顾问麦克多诺受聘于瑞士纺织企业，要创造完全不用有毒化学原料的生产程序。他研究了8000种化学物质，只有38种达标——"安全到可以吃"。</p>
+        <p>政府检查员来检测工厂排出的废水，以为仪器坏了，因为水里检测不出任何东西。事实上，生产过程还进一步过滤了饮用水。</p>
+        <p>结果：成本降低20%，工人不再需要防护服，废弃物变成隔热毛毯卖给农民。这个故事通过西纳特拉测试，为麦克多诺在任何行业提案时提供了强大可信。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>六、内在可信之四：可检验性认证</h2>
+      <p>最强大的可信来源之一，是让听众自己验证。这是观念世界的"先试再买"。</p>
+      <div class="case">
+        <h4>案例：温迪汉堡"牛肉在哪里？"</h4>
+        <p>1984年，温迪汉堡推出广告：三位老太太看着一个巨大汉堡，掀开面包后发现里面只有一小块肉饼。克拉拉·佩勒喊道："牛肉在哪里？"</p>
+        <p>温迪没有请权威背书，也没有列统计数据，而是让观众自己去看、去比较。广告播出一年内，营业额上升了31%。</p>
+      </div>
+      <div class="case">
+        <h4>案例：里根的问句</h4>
+        <p>1980年总统大选辩论，里根没有列举经济数据，而是问选民：</p>
+        <div class="highlight">
+          "各位投票前请先问问自己，你目前的经济状况有没有比四年前更好？"
+        </div>
+        <p>每个选民都可以自己检验这个问题。</p>
+      </div>
+      <div class="case">
+        <h4>案例：积极执教联盟的"情绪油箱"</h4>
+        <p>培训师让教练们练习：假想有人失误了关键一球，先说一句话排空他的情绪油箱；再说一句话灌满它。</p>
+        <p>结果是：泄气的话大家脱口而出，鼓励的话却要想很久。教练们亲身体验到"批评容易鼓励难"，这比任何说教都有效。</p>
+      </div>
+      <div class="case">
+        <h4>案例：NBA新秀艾滋病培训</h4>
+        <p>NBA让新秀参加集训。某天晚上，一些女球迷在酒吧主动搭讪球员。第二天早上，这些女球迷出现在教室里，逐一自我介绍："大家好，我是希拉，艾滋病感染者。"</p>
+        <p>球员们亲眼看见生活如何失控，一夜失足如何造成终身悔恨。这比听讲座或套香蕉上的安全套更有黏性。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>七、如何让人相信你的数据？</h2>
+      <p>使用统计数据时，把握三个原则：</p>
+      <ol>
+        <li><strong>数字是输入，不是输出。</strong>用数据帮助自己做决策，而不是先决定再找数据支持。</li>
+        <li><strong>阐明关联，而非堆砌数字。</strong>听众需要记住的是关联，不是精确数字。</li>
+        <li><strong>找到人性尺度。</strong>把抽象数字放到人们能直觉判断的日常语境中。</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>八、可信来源选择清单</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>可信来源</th>
+            <th>适用场景</th>
+            <th>案例</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>权威</td>
+            <td>你有专家、名人、机构背书</td>
+            <td>公共卫生部长谈健康议题</td>
+          </tr>
+          <tr>
+            <td>反权威</td>
+            <td>真实经历比头衔更有说服力</td>
+            <td>帕姆·拉芬反吸烟</td>
+          </tr>
+          <tr>
+            <td>生动细节</td>
+            <td>没有外来权威，需要让信息自身可信</td>
+            <td>黑武士牙刷、73岁舞者</td>
+          </tr>
+          <tr>
+            <td>统计数据</td>
+            <td>需要说明规模或关联</td>
+            <td>BB枪子弹、思科两分钟</td>
+          </tr>
+          <tr>
+            <td>西纳特拉测试</td>
+            <td>用一个极端成功案例证明能力</td>
+            <td>顺风物流运《哈利·波特》</td>
+          </tr>
+          <tr>
+            <td>可检验性认证</td>
+            <td>可以让受众亲自验证</td>
+            <td>牛肉在哪里、里根问句</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>九、本课核心清单</h2>
+      <ul class="checklist">
+        <li>可信是让创意被接受的前提</li>
+        <li>权威和反权威都是外来可信来源，真实经历往往比头衔更有力</li>
+        <li>生动细节能让信息自身变得可信</li>
+        <li>统计数据要阐明关联，并找到人性尺度</li>
+        <li>西纳特拉测试：一个极端成功案例胜过千言万语</li>
+        <li>可检验性认证：让听众"先试再买"，自己验证</li>
+        <li>把数据当输入而非输出，避免事后找数据支持偏见</li>
+      </ul>
+    </section>
+
+    <section class="practice">
+      <h3>课后练习</h3>
+      <ol>
+        <li><strong>可信诊断：</strong>选择一个你最近要表达的观点，列出目前它依赖哪些可信来源？还缺什么？</li>
+        <li>
+          <strong>可信增强：</strong>针对同一个观点，尝试用三种不同方式增强可信：
+          <ul>
+            <li>加一个生动细节</li>
+            <li>找一个可检验性认证</li>
+            <li>把某个数字转化为人性尺度</li>
+          </ul>
+        </li>
+        <li><strong>西纳特拉测试：</strong>你能举出一个证明自己或团队能力的"如果在那儿能成功，到哪儿都能成功"的例子吗？</li>
+        <li><strong>SUCCESs 检查：</strong>用"可信"原则检查——你的观点是否让听众感到可信，而不是只让自己觉得可信？</li>
+      </ol>
+    </section>
+
+    <footer>
+      <p>下一课预告：第6课 情感——让别人关心在乎</p>
+      <p>让创意更有黏性 · 课程系列</p>
+    </footer>
+  </div>
+</body>
+</html>
