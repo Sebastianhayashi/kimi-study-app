@@ -84,6 +84,23 @@
 
     let visible = false;
     let latest = null;
+    let liveRunId = null;
+    let liveMessage = '';
+    let liveHistory = [];
+
+    function variantForPhase(phase) {
+      return ({
+        extracting: 'material',
+        profiling: 'structure',
+        claims: 'claims',
+        blueprint: 'practice',
+        questions: 'questions',
+        quality: 'quality',
+        assembling: 'assembly',
+        validating: 'validation',
+        complete: 'ready',
+      })[phase] || null;
+    }
 
     function renderHistory(items = []) {
       history.innerHTML = items.map((item) => {
@@ -115,12 +132,12 @@
       latest = status;
       show();
       const value = Math.max(0, Math.min(100, Number(status.progress || 0)));
-      message.textContent = status.currentMessage || '正在创建课程…';
+      message.textContent = liveMessage || status.currentMessage || '正在创建课程…';
       progress.setAttribute('aria-valuenow', String(value));
       progressValue.style.width = `${value}%`;
-      canvas.dataset.variant = status.canvasVariant || 'material';
+      canvas.dataset.variant = status.canvasVariant || canvas.dataset.variant || 'material';
       chip.textContent = message.textContent.replace(/[…。]$/g, '');
-      renderHistory(status.history);
+      renderHistory(liveHistory.length ? liveHistory : status.history);
 
       canvas.classList.remove('is-refreshing');
       requestAnimationFrame(() => {
@@ -129,7 +146,44 @@
       });
     }
 
+
+    function appendEvent(event = {}) {
+      if (!event || !event.message) return;
+      if (event.runId && event.runId !== liveRunId) {
+        liveRunId = event.runId;
+        liveMessage = '';
+        liveHistory = [];
+        root.classList.remove('is-complete', 'is-error');
+      }
+
+      const key = event.key || `event:${event.id || `${event.kind}:${event.message}`}`;
+      const state = ['complete', 'active', 'error', 'pending'].includes(event.state)
+        ? event.state
+        : event.kind === 'run-complete' ? 'complete' : event.kind === 'run-failed' ? 'error' : 'active';
+      const item = { id: key, label: event.message, state };
+      const existing = liveHistory.findIndex((entry) => entry.id === key);
+      if (existing >= 0) liveHistory[existing] = item;
+      else liveHistory.push(item);
+      liveHistory = liveHistory.slice(-30);
+      liveMessage = event.message;
+
+      show();
+      message.textContent = liveMessage;
+      chip.textContent = liveMessage.replace(/[…。]$/g, '');
+      const variant = event.canvasVariant || variantForPhase(event.phase);
+      if (variant) canvas.dataset.variant = variant;
+      renderHistory(liveHistory);
+
+      if (event.kind === 'run-complete') {
+        complete({ ...(latest || {}), currentMessage: event.message, history: liveHistory });
+        window.setTimeout(() => hide(), 900);
+      } else if (event.kind === 'run-failed') {
+        fail({ ...(latest || {}), currentMessage: event.message, history: liveHistory });
+      }
+    }
+
     function complete(status = latest || {}) {
+      liveMessage = '课程已经准备好';
       update({
         ...status,
         progress: 100,
@@ -140,6 +194,7 @@
     }
 
     function fail(status = {}) {
+      liveMessage = status.currentMessage || '课程创建没有完成，请返回课程库后重试';
       update({
         ...status,
         canvasVariant: 'error',
@@ -165,13 +220,19 @@
     }
 
     function destroy() {
+      if (window.KimiGenerationPreview?.current === api) window.KimiGenerationPreview.current = null;
       root.remove();
       stage.classList.remove('is-generation-active', 'ks-generation-host');
       lessonFrame?.removeAttribute('aria-hidden');
     }
 
-    return { show, update, complete, fail, hide, destroy };
+    const api = { show, update, appendEvent, complete, fail, hide, destroy };
+    window.KimiGenerationPreview.current = api;
+    const queued = window.__kimiGenerationEventQueue || [];
+    window.__kimiGenerationEventQueue = [];
+    queued.forEach((event) => appendEvent(event));
+    return api;
   }
 
-  window.KimiGenerationPreview = { mount };
+  window.KimiGenerationPreview = { mount, current: null };
 })();
