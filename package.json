@@ -4,13 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "check": "node --check server.js && node --check public/glue.js && node --check public/lesson-tools.js",
+    "test": "node --test"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "dompurify": "^3.2.6",
     "express": "^5.2.1",
+    "marked": "^12.0.2",
     "multer": "^2.2.0"
   }
 }

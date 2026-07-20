@@ -1274,6 +1274,7 @@ svg { display: block; }
   }
 </style>
 
+<link rel="stylesheet" href="/lesson-tools.css">
 </head>
 <body>
 <div class="app">
@@ -1506,6 +1507,7 @@ svg { display: block; }
           </button>
           <span class="current-lesson">Lesson 1 · Life Is Not a Game</span>
         </div>
+        <nav class="lesson-resource-slot" id="lessonResourceSlot" aria-label="课节资料" hidden></nav>
         <div class="course-actions">
           <button class="course-control restore-control restore-left" id="restoreLeftButton" aria-label="恢复学习上下文" title="恢复学习上下文">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
@@ -1539,6 +1541,35 @@ svg { display: block; }
       </div>
       <div class="course-stage">
         <iframe id="lessonFrame" class="lesson-frame" title="课程内容"></iframe>
+        <section
+          class="lesson-resource-viewer"
+          id="lessonResourceViewer"
+          aria-hidden="true"
+          aria-labelledby="lessonResourceViewerTitle"
+          hidden
+        >
+          <header class="lesson-resource-viewer-header">
+            <div class="lesson-resource-viewer-heading">
+              <span class="lesson-resource-viewer-badge" id="lessonResourceViewerBadge" aria-hidden="true"></span>
+              <h2 class="lesson-resource-viewer-title" id="lessonResourceViewerTitle">课节资料</h2>
+            </div>
+            <button class="lesson-resource-viewer-close" id="lessonResourceViewerClose" type="button" aria-label="关闭课节资料">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </header>
+          <div class="lesson-resource-viewer-content">
+            <div class="lesson-resource-viewer-state" id="lessonResourceViewerState">正在打开课节资料…</div>
+            <iframe
+              class="lesson-resource-viewer-frame"
+              id="lessonResourceViewerFrame"
+              title="课节资料内容"
+              sandbox="allow-popups allow-popups-to-escape-sandbox"
+              referrerpolicy="no-referrer"
+            ></iframe>
+          </div>
+        </section>
       </div>
     </section>
 
@@ -2033,5 +2064,8 @@ document.querySelectorAll('.source-anchor').forEach(button => {
 });
 
 </script>
+<script src="/vendor/marked.umd.js"></script>
+<script src="/vendor/purify.min.js"></script>
+<script src="/lesson-tools.js"></script>
 </body>
 </html>
