@@ -179,10 +179,9 @@
   // ---------- 课程工作区：真实课节 + 下一课 + 助教 ----------
   if (path.startsWith('/course/')) {
     const courseId = path.split('/').pop();
-    const lessonTools = globalThis.KimiLessonTools?.mount({
-      courseId,
-      lessonFrame: document.getElementById('lessonFrame'),
-    });
+    const lessonFrame = document.getElementById('lessonFrame');
+    let currentLessonUrl = '';
+    let resourceTools = { reset() {} };
     let lessons = [];
     let current = 0;
     const titleOf = (f) => f.replace(/^\d+-?/, '').replace(/\.html$/, '');
@@ -201,17 +200,15 @@
 
     function showLesson(i) {
       current = i;
-      lessonTools?.reset();
-      fetch(`/api/courses/${courseId}/lessons/${encodeURIComponent(lessons[i])}`)
-        .then((r) => r.text())
-        .then((html) => {
-          lessonFrame.srcdoc = html;
-          document.querySelector('.current-lesson').textContent = `Lesson ${i + 1} · ${titleOf(lessons[i])}`;
-          const progress = document.querySelector('.compact-progress > span');
-          if (progress) progress.textContent = `${i + 1} / ${lessons.length}`;
-          renderList();
-          updateInfo();
-        });
+      resourceTools.reset();
+      currentLessonUrl = `/api/courses/${courseId}/lessons/${encodeURIComponent(lessons[i])}`;
+      lessonFrame.removeAttribute('srcdoc');
+      lessonFrame.src = currentLessonUrl;
+      document.querySelector('.current-lesson').textContent = `Lesson ${i + 1} · ${titleOf(lessons[i])}`;
+      const progress = document.querySelector('.compact-progress > span');
+      if (progress) progress.textContent = `${i + 1} / ${lessons.length}`;
+      renderList();
+      updateInfo();
     }
 
     let loaded = false;
@@ -426,6 +423,7 @@
     // 极简 markdown：加粗/行内代码/无序与有序列表/段落（先转义再替换，防注入）
     function mdToHtml(text) {
       const inline = (s) => escapeHtml(s)
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
         .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
         .replace(/`([^`]+)`/g, '<code>$1</code>');
       let html = '', listTag = null, inTable = false;
@@ -435,9 +433,18 @@
       };
       for (const line of String(text).split('\n')) {
         const t = line.trim();
+        const heading = t.match(/^(#{1,3})\s+(.*)/);
+        const quote = t.match(/^>\s?(.*)/);
         const ul = t.match(/^[-*]\s+(.*)/);
         const ol = t.match(/^\d+[.、]\s*(.*)/);
-        if (t.startsWith('|') && t.endsWith('|')) {
+        if (heading) {
+          closeBlocks();
+          const level = heading[1].length;
+          html += `<h${level}>${inline(heading[2])}</h${level}>`;
+        } else if (quote) {
+          closeBlocks();
+          html += `<blockquote>${inline(quote[1])}</blockquote>`;
+        } else if (t.startsWith('|') && t.endsWith('|')) {
           const cells = t.slice(1, -1).split('|').map((c) => c.trim());
           if (cells.every((c) => /^:?-{2,}:?$/.test(c))) continue; // 分隔行 |---|
           if (!inTable) { closeBlocks(); html += '<table>'; inTable = true; }
@@ -456,6 +463,106 @@
       closeBlocks();
       return html;
     }
+
+    function resourceDocument(markdown, baseUrl) {
+      const safeBase = escapeHtml(baseUrl).replace(/"/g, '&quot;');
+      return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="${safeBase}" target="_blank"><style>*{box-sizing:border-box}body{max-width:920px;margin:0 auto;padding:34px clamp(24px,6vw,72px) 52px;color:#3c4043;background:#fff;font-family:Inter,system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.78}h1,h2,h3{color:#1f1f1f}h1{font-size:28px}h2{margin-top:30px;font-size:20px}h3{margin-top:24px;font-size:17px}a{color:#0b57d0}table{display:block;max-width:100%;overflow:auto;border-collapse:collapse}th,td{padding:8px 10px;border:1px solid #dfe3ea;text-align:left}th{background:#f1f4f9}code{padding:2px 5px;border-radius:5px;background:#f1f4f9}blockquote{margin:18px 0;padding:10px 14px;border-left:3px solid #a9c7f4;background:#edf4ff}</style></head><body>${mdToHtml(markdown)}</body></html>`;
+    }
+
+    function mountResourceTools() {
+      const slot = document.getElementById('lessonResourceSlot');
+      if (!slot || !lessonFrame) return { reset() {} };
+
+      const tools = [
+        { kind: 'mission', label: '任务', pattern: /(?:^|\/)MISSION\.md(?:$|[?#])/i, icon: '<svg viewBox="0 0 24 24"><path d="M9 11l2 2 4-4"/><path d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>' },
+        { kind: 'resources', label: '资源', pattern: /(?:^|\/)RESOURCES\.md(?:$|[?#])/i, icon: '<svg viewBox="0 0 24 24"><path d="M3.5 6.5h6l2 2h9v9A2.5 2.5 0 0 1 18 20H6a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M3.5 9h17"/></svg>' },
+        { kind: 'success', label: 'SUCCESS', pattern: /(?:success|succes)[^/]*\.html?(?:$|[?#])/i, icon: '<svg viewBox="0 0 24 24"><path d="M12 3l1.4 4.1L17.5 8.5l-4.1 1.4L12 14l-1.4-4.1-4.1-1.4 4.1-1.4Z"/></svg>' },
+      ];
+      let showingResource = false;
+      let activeButton = null;
+      let requestId = 0;
+
+      const setActive = (button) => {
+        slot.querySelectorAll('button').forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+        activeButton = button;
+      };
+
+      const restoreLesson = () => {
+        requestId += 1;
+        showingResource = false;
+        setActive(null);
+        lessonFrame.removeAttribute('srcdoc');
+        lessonFrame.src = currentLessonUrl;
+      };
+
+      const openResource = async (resource, button) => {
+        if (showingResource && activeButton === button) {
+          restoreLesson();
+          return;
+        }
+        showingResource = true;
+        setActive(button);
+        const id = ++requestId;
+        if (/\.md(?:$|[?#])/i.test(resource.href)) {
+          try {
+            const response = await fetch(resource.href);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const markdown = await response.text();
+            if (id !== requestId) return;
+            lessonFrame.removeAttribute('src');
+            lessonFrame.srcdoc = resourceDocument(markdown, resource.href);
+          } catch {
+            if (id === requestId) restoreLesson();
+          }
+          return;
+        }
+        lessonFrame.removeAttribute('srcdoc');
+        lessonFrame.src = resource.href;
+      };
+
+      const sync = () => {
+        if (showingResource) return;
+        slot.replaceChildren();
+        let doc;
+        try { doc = lessonFrame.contentDocument; } catch { return; }
+        if (!doc) return;
+        const links = [...doc.querySelectorAll('a[href]')];
+        tools.forEach((tool) => {
+          const link = links.find((item) => tool.pattern.test(item.href || item.getAttribute('href') || ''));
+          if (!link || !link.href.startsWith(`${location.origin}/api/courses/${courseId}/`)) return;
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'pill lesson-resource-tool';
+          button.setAttribute('aria-pressed', 'false');
+          button.title = tool.label;
+          button.innerHTML = `${tool.icon}<span class="lesson-resource-tool-label">${tool.label}</span>`;
+          button.addEventListener('click', () => openResource({ href: link.href }, button));
+          slot.appendChild(button);
+          // 课节内的原始链接接进同一流程，避免 iframe 跳去显示裸 markdown
+          links.forEach((item) => {
+            if (!tool.pattern.test(item.href || item.getAttribute('href') || '')) return;
+            item.addEventListener('click', (event) => {
+              event.preventDefault();
+              openResource({ href: link.href }, button);
+            });
+          });
+        });
+        slot.hidden = slot.childElementCount === 0;
+      };
+
+      lessonFrame.addEventListener('load', sync);
+      return {
+        reset() {
+          requestId += 1;
+          showingResource = false;
+          activeButton = null;
+          slot.replaceChildren();
+          slot.hidden = true;
+        },
+      };
+    }
+
+    resourceTools = mountResourceTools();
 
     // 助教消息渲染（带 markdown），替代原型 addAssistantMessage 的纯文本 <p>
     function renderAssistant(body) {
