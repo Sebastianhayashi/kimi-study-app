@@ -44,12 +44,6 @@ const page = (file) => (req, res) => {
 app.get('/', page('index.html'));
 app.get('/app', page('app.html'));
 app.get('/course/:id', page('course.html'));
-app.get('/vendor/marked.umd.js', (req, res) => {
-  res.type('application/javascript').sendFile(path.join(ROOT, 'node_modules', 'marked', 'lib', 'marked.umd.js'));
-});
-app.get('/vendor/purify.min.js', (req, res) => {
-  res.type('application/javascript').sendFile(path.join(ROOT, 'node_modules', 'dompurify', 'dist', 'purify.min.js'));
-});
 app.use(express.static(path.join(ROOT, 'public'))); // 前端外壳资源
 
 // ---- 课程工作区 ----
