@@ -179,6 +179,10 @@
   // ---------- 课程工作区：真实课节 + 下一课 + 助教 ----------
   if (path.startsWith('/course/')) {
     const courseId = path.split('/').pop();
+    const lessonTools = globalThis.KimiLessonTools?.mount({
+      courseId,
+      lessonFrame: document.getElementById('lessonFrame'),
+    });
     let lessons = [];
     let current = 0;
     const titleOf = (f) => f.replace(/^\d+-?/, '').replace(/\.html$/, '');
@@ -197,6 +201,7 @@
 
     function showLesson(i) {
       current = i;
+      lessonTools?.reset();
       fetch(`/api/courses/${courseId}/lessons/${encodeURIComponent(lessons[i])}`)
         .then((r) => r.text())
         .then((html) => {
