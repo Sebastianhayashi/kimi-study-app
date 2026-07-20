@@ -487,6 +487,14 @@
       document.documentElement.style.setProperty('--kn-card-width', `${CARD_WIDTH}px`);
       document.documentElement.style.setProperty('--kn-card-gap', `${CARD_GAP}px`);
       document.documentElement.style.setProperty('--kn-rail-reserve', `${CARD_WIDTH + CARD_GAP + 16}px`);
+
+      // 笔记栏收起/展开状态，按课程+课节持久化（开关在父页顶部栏，经 postMessage 驱动）
+      this.storageKey = `kimi-study-notes-panel:${controller.courseId}:${location.pathname}`;
+      let stored = {};
+      try { stored = JSON.parse(localStorage.getItem(this.storageKey) || '{}'); } catch {}
+      this.collapsed = stored.userCollapsed === true;
+      if (this.collapsed) this.layer.classList.add('kn-panel-collapsed');
+
       this.onScroll = () => this.request();
       this.onResize = () => {
         this.clearReserve();
@@ -498,6 +506,19 @@
       this.resizeObserver = new ResizeObserver(() => this.request());
       this.resizeObserver.observe(document.documentElement);
       this.resizeObserver.observe(content);
+    }
+
+    setCollapsed(collapsed) {
+      this.collapsed = collapsed;
+      try { localStorage.setItem(this.storageKey, JSON.stringify({ userCollapsed: collapsed })); } catch {}
+      this.layer.classList.toggle('kn-panel-collapsed', collapsed);
+      if (collapsed) {
+        this.clearReserve();
+      } else {
+        this.mode = '';
+      }
+      this.request();
+      parent.postMessage({ type: 'notes-panel-state', collapsed }, '*');
     }
 
     clearReserve() {
@@ -532,6 +553,10 @@
     }
 
     position() {
+      if (this.collapsed) {
+        this.clearReserve();
+        return;
+      }
       let rect = this.content.getBoundingClientRect();
       // A reserved rail creates the space that it needs. Do not immediately
       // reinterpret that self-created gutter as a natural rail and oscillate.
@@ -632,6 +657,7 @@
       const notes = await this.store.load();
       for (const note of notes) this.renderNote(note);
       this.requestLayout();
+      parent.postMessage({ type: 'notes-panel-state', collapsed: this.layout.collapsed }, '*');
       return this;
     }
 
@@ -764,7 +790,16 @@
 
     handleMessage(event) {
       const data = event.data;
-      if (event.source !== parent || !data || data.type !== 'create-note') return;
+      if (event.source !== parent || !data) return;
+      if (data.type === 'toggle-notes-panel') {
+        this.layout.setCollapsed(typeof data.collapsed === 'boolean' ? data.collapsed : !this.layout.collapsed);
+        return;
+      }
+      if (data.type === 'notes-panel-query') {
+        parent.postMessage({ type: 'notes-panel-state', collapsed: this.layout.collapsed }, '*');
+        return;
+      }
+      if (data.type !== 'create-note') return;
       const note = Core.normalizeNote({
         id: `n${Date.now().toString(36)}`,
         anchor: data.anchor,

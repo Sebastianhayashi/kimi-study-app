@@ -482,8 +482,23 @@
       let activeButton = null;
       let requestId = 0;
 
+      // 笔记栏开关：暖橘色，跟随资源按钮家族样式；状态由课节 iframe 内的 MarginLayout 持有
+      const toggleStyle = document.createElement('style');
+      toggleStyle.textContent = `
+        .lesson-resource-tool.kn-notes-toggle { color: #b4620d; border-color: #f2c894; background: #fff7ec; }
+        .lesson-resource-tool.kn-notes-toggle:hover { background: #ffefd9; }
+        .lesson-resource-tool.kn-notes-toggle[aria-pressed="true"] { color: #fff; border-color: #f2994a; background: #f2994a; }
+      `;
+      document.head.appendChild(toggleStyle);
+      let notesButton = null;
+      window.addEventListener('message', (event) => {
+        if (event.data?.type === 'notes-panel-state' && notesButton) {
+          notesButton.setAttribute('aria-pressed', String(!!event.data.collapsed));
+        }
+      });
+
       const setActive = (button) => {
-        slot.querySelectorAll('button').forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+        slot.querySelectorAll('button:not(.kn-notes-toggle)').forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
         activeButton = button;
       };
 
@@ -548,6 +563,19 @@
           });
         });
         slot.hidden = slot.childElementCount === 0;
+
+        // 笔记栏开关（始终存在，不依赖链接发现）
+        notesButton = document.createElement('button');
+        notesButton.type = 'button';
+        notesButton.className = 'pill lesson-resource-tool kn-notes-toggle';
+        notesButton.setAttribute('aria-pressed', 'false');
+        notesButton.title = '收起 / 展开笔记栏';
+        notesButton.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span class="lesson-resource-tool-label">笔记</span>`;
+        notesButton.addEventListener('click', () => {
+          lessonFrame.contentWindow?.postMessage({ type: 'toggle-notes-panel' }, '*');
+        });
+        slot.appendChild(notesButton);
+        lessonFrame.contentWindow?.postMessage({ type: 'notes-panel-query' }, '*');
       };
 
       lessonFrame.addEventListener('load', sync);
