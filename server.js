@@ -2,11 +2,15 @@
 const express = require('express');
 const multer = require('multer');
 const { spawn } = require('child_process');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { validateLessonSpec, scoreActivity, computeClaimProgress, toPublicLessonSpec } = require('./lib/activity-engine');
 const { deriveGenerationStatus } = require('./lib/generation-status');
+const { runTrackedKimi } = require('./lib/kimi-generation-runner');
+const { appendGenerationEvent, readGenerationEvents, subscribeGenerationEvents } = require('./lib/generation-events');
+const { listCourseSources } = require('./lib/source-manifest');
 
 const ROOT = __dirname;
 const DATA = path.join(ROOT, 'data', 'courses');
@@ -56,14 +60,25 @@ const page = (file, { head = '', body = '' } = {}) => (req, res) => {
 app.get('/', page('index.html'));
 app.get('/app', page('app.html'));
 app.get('/course/:id', page('course.html', {
-  head: '<link rel="stylesheet" href="/generation-preview.css">',
-  body: '<script src="/generation-preview.js"></script>',
+  head: '<link rel="stylesheet" href="/generation-preview.css"><link rel="stylesheet" href="/source-viewer.css">',
+  body: '<script src="/generation-preview.js"></script><script src="/generation-events-client.js"></script><script src="/source-viewer.js"></script>',
 }));
+app.use('/vendor/lenis', express.static(path.join(ROOT, 'node_modules', 'lenis', 'dist')));
+app.use('/vendor/pdfjs', express.static(path.join(ROOT, 'node_modules', 'pdfjs-dist')));
+app.use('/vendor/epubjs', express.static(path.join(ROOT, 'node_modules', 'epubjs', 'dist')));
+app.use('/vendor/jszip', express.static(path.join(ROOT, 'node_modules', 'jszip', 'dist')));
 app.use(express.static(path.join(ROOT, 'public'))); // 前端外壳资源
 
 // ---- 课程工作区 ----
 const locks = new Set(); // 每门课同时只跑一个 kimi 进程
 const dirOf = (id) => path.join(DATA, id);
+const emitGenerationEvent = (id, event) => {
+  try { return appendGenerationEvent(dirOf(id), event); }
+  catch (error) {
+    console.log(`[generation ${id}] event log failed: ${error.message}`);
+    return null;
+  }
+};
 const jobFile = (id) => path.join(dirOf(id), 'job.json');
 const writeJob = (id, job) => fs.writeFileSync(jobFile(id), JSON.stringify(job));
 const readJob = (id) => { try { return JSON.parse(fs.readFileSync(jobFile(id), 'utf8')); } catch { return { stage: 'understanding' }; } };
@@ -72,11 +87,9 @@ const lessonsOf = (id) => {
   return fs.existsSync(d) ? fs.readdirSync(d).filter((f) => f.endsWith('.html') && f !== 'index.html').sort() : [];
 };
 
-// track=true 时把阶段写入 job.json（生成任务）；聊天不写，避免干扰进度轮询
-function runKimi(id, prompt, { cont = false, track = false } = {}) {
+function runPrintKimi(id, prompt, { cont = false } = {}) {
   return new Promise((resolve, reject) => {
     locks.add(id);
-    if (track) writeJob(id, { stage: lessonsOf(id).length ? 'generating' : 'understanding' });
     const args = ['-m', MODEL, '--skills-dir', SKILLS];
     if (cont) args.push('-c');
     args.push('-p', prompt);
@@ -85,14 +98,82 @@ function runKimi(id, prompt, { cont = false, track = false } = {}) {
     let out = '', err = '';
     p.stdout.on('data', (d) => (out += d));
     p.stderr.on('data', (d) => (err += d));
+    p.on('error', (error) => {
+      locks.delete(id);
+      reject(error);
+    });
     p.on('close', (code) => {
       locks.delete(id);
       console.log(`[kimi ${id}] exit ${code}`);
-      if (track) writeJob(id, code === 0 && lessonsOf(id).length ? { stage: 'ready' } : { stage: 'failed', error: err.slice(-500) });
       code === 0 ? resolve(out) : reject(new Error(err || `kimi exit ${code}`));
     });
   });
 }
+
+// 生成任务优先使用 Kimi Wire 的真实工具事件；聊天保留现有 print 模式，避免改变回复协议。
+function runKimi(id, prompt, { cont = false, track = false } = {}) {
+  if (!track) return runPrintKimi(id, prompt, { cont });
+
+  const runId = crypto.randomUUID();
+  const stage = lessonsOf(id).length ? 'generating' : 'understanding';
+  const startedAt = new Date().toISOString();
+  locks.add(id);
+  writeJob(id, { stage, runId, startedAt, updatedAt: startedAt });
+  emitGenerationEvent(id, {
+    runId,
+    kind: 'run-start',
+    key: `run:${runId}`,
+    state: 'active',
+    message: lessonsOf(id).length ? '正在生成下一课…' : '正在开始创建课程…',
+  });
+
+  return runTrackedKimi({
+    cwd: dirOf(id),
+    prompt,
+    cont,
+    model: MODEL,
+    skillsDir: SKILLS,
+    onEvent(event) {
+      if (event) emitGenerationEvent(id, { runId, ...event });
+    },
+  }).then(({ text, status, mode }) => {
+    if (status !== 'finished') throw new Error(`Kimi generation ended with status ${status}`);
+    if (!lessonsOf(id).length) throw new Error('Kimi finished without generating a lesson');
+    locks.delete(id);
+    const finishedAt = new Date().toISOString();
+    writeJob(id, { stage: 'ready', runId, mode, startedAt, updatedAt: finishedAt, finishedAt });
+    emitGenerationEvent(id, {
+      runId,
+      kind: 'run-complete',
+      key: `run:${runId}`,
+      phase: 'complete',
+      canvasVariant: 'ready',
+      state: 'complete',
+      message: '课程已经准备好',
+    });
+    return text;
+  }).catch((error) => {
+    locks.delete(id);
+    const failedAt = new Date().toISOString();
+    writeJob(id, {
+      stage: 'failed',
+      runId,
+      startedAt,
+      updatedAt: failedAt,
+      failedAt,
+      error: String(error.message || error).slice(-500),
+    });
+    emitGenerationEvent(id, {
+      runId,
+      kind: 'run-failed',
+      key: `run:${runId}`,
+      state: 'error',
+      message: '课程生成没有完成，请重试',
+    });
+    throw error;
+  });
+}
+
 
 // 上传一本书 -> 建课
 const upload = multer({ dest: os.tmpdir() });
@@ -184,6 +265,48 @@ app.get('/api/courses/:id/status', (req, res) => {
   });
 });
 
+// Kimi Wire 真实生成事件：SSE 实时推送；status 轮询继续负责百分比、ready/failed 和重启恢复。
+app.get('/api/courses/:id/generation-events', (req, res) => {
+  const id = req.params.id;
+  if (!validId(id) || !fs.existsSync(dirOf(id))) return res.status(404).end();
+
+  res.set({
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
+  res.flushHeaders?.();
+  res.write('retry: 2000\n\n');
+
+  const afterId = Number(req.get('Last-Event-ID') || req.query.after || 0);
+  const job = readJob(id);
+  const active = job.stage === 'understanding' || job.stage === 'generating';
+  const send = (event) => {
+    res.write(`id: ${event.id}\n`);
+    res.write('event: generation-event\n');
+    res.write(`data: ${JSON.stringify(event)}\n\n`);
+  };
+
+  if (active) {
+    readGenerationEvents(dirOf(id), { afterId, runId: job.runId || null }).forEach(send);
+  }
+  const unsubscribe = subscribeGenerationEvents(dirOf(id), send);
+  const heartbeat = setInterval(() => res.write(': keepalive\n\n'), 15_000);
+  heartbeat.unref?.();
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    unsubscribe();
+  });
+});
+
+// 原始材料与参考资料清单。只暴露允许预览的文件，不暴露题目答案或学习记录。
+app.get('/api/courses/:id/sources', (req, res) => {
+  const id = req.params.id;
+  if (!validId(id) || !fs.existsSync(dirOf(id))) return res.status(404).end();
+  res.json({ sources: listCourseSources(dirOf(id), id) });
+});
+
 // 课节列表 / 课节内容（注入 <base> 和划词脚本，磁盘课件不动）
 app.get('/api/courses/:id/lessons', (req, res) => res.json(lessonsOf(req.params.id)));
 app.get('/api/courses/:id/lessons/:file', (req, res) => {
@@ -191,7 +314,7 @@ app.get('/api/courses/:id/lessons/:file', (req, res) => {
   if (!f) return res.status(404).end();
   const html = fs.readFileSync(path.join(dirOf(req.params.id), 'lessons', f), 'utf8')
     .replace(/<head[^>]*>/i, (m) => `${m}<base href="/api/courses/${req.params.id}/lessons/">`)
-    .replace(/<\/body>/i, `<script>window.__courseId=${JSON.stringify(req.params.id)};window.__lessonFile=${JSON.stringify(f)}</script><link rel="stylesheet" href="/margin-notes.css"><link rel="stylesheet" href="/activity-runtime.css"><script src="/margin-notes-core.js"></script><script src="/margin-notes.js"></script><script src="/study-cards.js"></script><script src="/select.js"></script><script src="/activity-runtime.js"></script></body>`);
+    .replace(/<\/body>/i, `<script>window.__courseId=${JSON.stringify(req.params.id)};window.__lessonFile=${JSON.stringify(f)}</script><link rel="stylesheet" href="/vendor/lenis/lenis.css"><link rel="stylesheet" href="/margin-notes.css"><link rel="stylesheet" href="/activity-runtime.css"><script src="/margin-notes-core.js"></script><script src="/margin-notes.js"></script><script src="/study-cards.js"></script><script src="/select.js"></script><script src="/activity-runtime.js"></script><script src="/vendor/lenis/lenis.min.js"></script><script src="/lesson-scroll-policy.js"></script><script src="/lesson-shell.js"></script></body>`);
   res.type('html').send(html);
 });
 
@@ -287,7 +410,9 @@ app.get('/api/courses/:id/chat', (req, res) => {
 app.get('/api/courses/:id/*splat', (req, res) => {
   const root = dirOf(req.params.id);
   const relative = req.params.splat.join('/');
-  if (/^(assessments|learning-progress|learning-records)(\/|$)/i.test(relative) || /^(question-bank|quality-report|misconceptions|learning-claims|assessment-blueprint|source-profile)\.json$/i.test(relative)) return res.status(404).end();
+  if (/^(assessments|learning-progress|learning-records)(\/|$)/i.test(relative)
+    || /^(question-bank|quality-report|misconceptions|learning-claims|assessment-blueprint|source-profile)\.json$/i.test(relative)
+    || /^generation-events\.jsonl$/i.test(relative)) return res.status(404).end();
   const file = path.normalize(path.join(root, relative));
   if (!file.startsWith(root + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) return res.status(404).end();
   res.sendFile(file);

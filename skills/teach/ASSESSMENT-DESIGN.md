@@ -169,6 +169,22 @@ Every activity needs:
 
 The runtime, not the model, handles attempts, deterministic scoring, hints, progress and mastery. The model may provide explanatory feedback for genuinely open tasks later, but must not be required for ordinary choice, blank or ordering items.
 
+## Generation progress reporting
+
+When the host exposes the external tool `report_generation_progress`, call it at the start or completion of every major course-generation phase:
+
+1. material extraction
+2. source profiling
+3. learning claims
+4. assessment blueprint
+5. question candidates
+6. quality filtering
+7. lesson assembly
+8. assessment validation
+9. completion
+
+Use learner-facing Chinese in `message`. Report only observable product work and safe counts. Never include chain-of-thought, private reasoning, internal paths, shell commands, correct answers, grading keys, or hidden assessment content. The runtime may also infer progress from real tool calls and artifacts, so progress reporting must describe the work honestly rather than inventing percentages.
+
 ## Legacy compatibility
 
 Existing HTML-only lessons remain valid. If there is no matching assessment spec, the lesson is rendered exactly as before. Do not rewrite old lessons merely to satisfy the new format unless asked.
