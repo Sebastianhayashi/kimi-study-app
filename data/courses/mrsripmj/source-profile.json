@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "sourceId": "fep-english-grade4-vol1",
+  "title": "英语（三年级起点）四年级上册",
+  "publisher": "福建教育出版社",
+  "chiefEditor": "陈维振",
+  "associateEditors": ["张祥和", "黄远振"],
+  "standard": "义务教育英语课程标准（2011年版）",
+  "totalPages": 44,
+  "extractedText": "book2.txt",
+  "coverImage": "cover.jpg",
+  "units": [
+    {
+      "unit": 1,
+      "title": "Our Classroom",
+      "pages": "3-8",
+      "structures": ["dialogue", "vocabulary", "grammar pattern", "communicative function", "phonics"],
+      "functions": ["introduce one's class and grade", "give and follow classroom instructions"]
+    },
+    {
+      "unit": 2,
+      "title": "Our School",
+      "pages": "9-14",
+      "structures": ["dialogue", "vocabulary", "grammar pattern", "communicative function", "phonics"],
+      "functions": ["ask and answer about class", "introduce school places"]
+    },
+    {
+      "unit": 3,
+      "title": "Numbers and Animals",
+      "pages": "16-21",
+      "structures": ["dialogue", "vocabulary", "grammar pattern", "communicative function", "phonics"],
+      "functions": ["count animals on a farm", "perform simple addition in English"]
+    },
+    {
+      "unit": 4,
+      "title": "Numbers and Time",
+      "pages": "22-29",
+      "structures": ["dialogue", "vocabulary", "grammar pattern", "communicative function", "phonics"],
+      "functions": ["tell the time", "perform addition with tens"]
+    },
+    {
+      "unit": 5,
+      "title": "Daily Activities",
+      "pages": "30-35",
+      "structures": ["dialogue", "vocabulary", "grammar pattern", "communicative function", "phonics"],
+      "functions": ["describe daily routines using time"]
+    },
+    {
+      "unit": 6,
+      "title": "Meals",
+      "pages": "36-41",
+      "structures": ["dialogue", "vocabulary", "grammar pattern", "communicative function", "phonics"],
+      "functions": ["ask about meals", "express food preferences", "offer food politely"]
+    },
+    {
+      "unit": 7,
+      "title": "Christmas",
+      "pages": "42-47",
+      "structures": ["dialogue", "vocabulary", "grammar pattern", "communicative function", "phonics", "culture"],
+      "functions": ["express Christmas wishes", "talk about desired presents", "write a Christmas card"]
+    },
+    {
+      "unit": 8,
+      "title": "The Spring Festival",
+      "pages": "48-53",
+      "structures": ["dialogue", "vocabulary", "grammar pattern", "communicative function", "phonics", "culture"],
+      "functions": ["describe Spring Festival activities", "compare Chinese and Western festivals"]
+    }
+  ]
+}

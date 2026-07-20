@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unit 1 Our Classroom Part A</title>
+  <style>
+    :root {
+      --primary: #2c7be5;
+      --success: #00a65a;
+      --danger: #e53e3e;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .container { max-width: 760px; margin: 0 auto; padding: 24px; }
+    header { text-align: center; margin-bottom: 28px; }
+    header h1 { font-size: 1.75rem; margin: 0 0 8px; }
+    header p { color: var(--muted); margin: 0; }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .section-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--primary);
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 8px;
+    }
+    .dialogue { background: #f1f5f9; border-left: 4px solid var(--primary); padding: 12px 16px; margin: 10px 0; border-radius: 6px; }
+    .dialogue p { margin: 6px 0; }
+    .dialogue .en { font-weight: 500; color: #1e3a5f; }
+    .dialogue .cn { color: var(--muted); font-size: 0.9rem; }
+    .word-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+    .word-item { background: #eef6ff; border-radius: 8px; padding: 10px; text-align: center; }
+    .word-item .en { font-weight: 600; display: block; }
+    .word-item .cn { font-size: 0.85rem; color: var(--muted); }
+    .tip { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin: 12px 0; }
+    .activity { background: var(--card); border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .activity-title { font-weight: 600; margin-bottom: 10px; }
+    .options { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+    .options label { display: flex; align-items: center; gap: 8px; padding: 10px; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: background 0.15s; }
+    .options label:hover { background: #f9fafb; }
+    .options input[type="radio"] { accent-color: var(--primary); }
+    .fill-input, .ordering-list input { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem; }
+    .ordering-list { list-style: none; padding: 0; margin: 10px 0; }
+    .ordering-list li { background: #f3f4f6; border: 1px solid #e5e7eb; padding: 10px; margin-bottom: 6px; border-radius: 6px; cursor: move; }
+    .ordering-list li.dragging { opacity: 0.5; }
+    .btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      margin-top: 8px;
+    }
+    .btn:disabled { background: #93c5fd; cursor: not-allowed; }
+    .feedback { margin-top: 10px; padding: 10px; border-radius: 6px; font-weight: 500; }
+    .feedback.correct { background: #dcfce7; color: var(--success); }
+    .feedback.wrong { background: #fee2e2; color: var(--danger); }
+    .summary { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 16px; margin-top: 20px; }
+    .summary h3 { margin-top: 0; }
+    .speaking textarea { width: 100%; min-height: 80px; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem; }
+    .speaking-note { color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
+    @media (max-width: 480px) {
+      .container { padding: 16px; }
+      header h1 { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Unit 1 Our Classroom · Part A</h1>
+      <p>第 1 课：认识教室，学会介绍班级</p>
+    </header>
+
+    <div class="card">
+      <div class="section-title">学习目标</div>
+      <ul>
+        <li>能听懂、会说、会读教室相关单词：classroom, blackboard, desk, chair。</li>
+        <li>能用 <strong>I'm in Class..., Grade...</strong> 介绍自己所在的班级和年级。</li>
+        <li>能听懂并执行课堂指令：Look at the blackboard. Read after me.</li>
+        <li>初步感知字母组合 ar 的发音 /ɑː/。</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="section-title">情境对话</div>
+      <div class="dialogue">
+        <p class="en">A: I'm in Class Two, Grade Five.</p>
+        <p class="cn">我在五年级二班。</p>
+        <p class="en">B: I'm in Class Three, Grade Two.</p>
+        <p class="cn">我在二年级三班。</p>
+        <p class="en">A: Yes. Let's go and see our classroom.</p>
+        <p class="cn">好的。我们去看看我们的教室吧。</p>
+      </div>
+      <div class="dialogue">
+        <p class="en">Teacher: Now look at the blackboard. Read after me. A tiger.</p>
+        <p class="cn">老师：现在看黑板。跟着我读。一只老虎。</p>
+      </div>
+      <div class="tip">
+        <strong>小贴士：</strong>英语说班级要先说 Class，再说 Grade，而且首字母都要大写。例如：Class One, Grade Four（四年级一班）。
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">核心词汇</div>
+      <div class="word-list">
+        <div class="word-item"><span class="en">classroom</span><span class="cn">教室</span></div>
+        <div class="word-item"><span class="en">blackboard</span><span class="cn">黑板</span></div>
+        <div class="word-item"><span class="en">desk</span><span class="cn">书桌</span></div>
+        <div class="word-item"><span class="en">chair</span><span class="cn">椅子</span></div>
+        <div class="word-item"><span class="en">look at</span><span class="cn">看着</span></div>
+        <div class="word-item"><span class="en">read</span><span class="cn">读；阅读</span></div>
+        <div class="word-item"><span class="en">after</span><span class="cn">在……之后</span></div>
+        <div class="word-item"><span class="en">tiger</span><span class="cn">老虎</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">语音时间：ar /ɑː/</div>
+      <p>字母组合 <strong>ar</strong> 在这些单词中发 /ɑː/，像中文“啊”拉长音。</p>
+      <div class="word-list">
+        <div class="word-item"><span class="en">car</span><span class="cn">小轿车</span></div>
+        <div class="word-item"><span class="en">park</span><span class="cn">公园</span></div>
+        <div class="word-item"><span class="en">star</span><span class="cn">星星</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">课堂活动</div>
+      <div data-kimi-activity="u1pa-vocab-1"></div>
+      <div data-kimi-activity="u1pa-vocab-2"></div>
+      <div data-kimi-activity="u1pa-vocab-3"></div>
+      <div data-kimi-activity="u1pa-pattern-1"></div>
+      <div data-kimi-activity="u1pa-pattern-2"></div>
+      <div data-kimi-activity="u1pa-pattern-3"></div>
+      <div data-kimi-activity="u1pa-phonics-1"></div>
+      <div data-kimi-activity="u1pa-phonics-2"></div>
+      <div data-kimi-activity="u1pa-order-1"></div>
+      <div data-kimi-activity="u1pa-speaking-1"></div>
+    </div>
+
+    <div class="summary" id="summary" style="display:none;">
+      <h3>本课小结</h3>
+      <p id="summary-text"></p>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const assessmentPath = '../assessments/0001-our-classroom-part-a.json';
+      let activities = [];
+      let userAnswers = {};
+
+      async function loadAssessment() {
+        try {
+          const res = await fetch(assessmentPath);
+          const data = await res.json();
+          activities = data.activities || [];
+          activities.forEach(act => {
+            const container = document.querySelector(`[data-kimi-activity="${act.id}"]`);
+            if (!container) return;
+            container.className = 'activity';
+            renderActivity(container, act);
+          });
+        } catch (err) {
+          console.error('无法加载测评文件：', err);
+          const notice = document.createElement('div');
+          notice.className = 'tip';
+          notice.textContent = '提示：未能加载测评文件。若你直接双击打开本文件，请尝试通过本地服务器访问（如在终端运行 python3 -m http.server），或允许浏览器访问本地文件。答案与评分键保存在 assessments/0001-our-classroom-part-a.json 中。';
+          document.querySelector('.container').appendChild(notice);
+        }
+      }
+
+      function normalizeAnswer(value) {
+        return String(value).toLowerCase().replace(/\s+/g, ' ').trim();
+      }
+
+      function renderActivity(container, act) {
+        const title = document.createElement('div');
+        title.className = 'activity-title';
+        title.textContent = act.question;
+        container.appendChild(title);
+
+        if (act.type === 'choice') {
+          const opts = document.createElement('div');
+          opts.className = 'options';
+          act.options.forEach((opt, idx) => {
+            const label = document.createElement('label');
+            const input = document.createElement('input');
+            input.type = 'radio';
+            input.name = act.id;
+            input.value = opt;
+            input.addEventListener('change', () => { userAnswers[act.id] = opt; });
+            label.appendChild(input);
+            label.appendChild(document.createTextNode(opt));
+            opts.appendChild(label);
+          });
+          container.appendChild(opts);
+        } else if (act.type === 'fill_blank') {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'fill-input';
+          input.placeholder = '请填写答案';
+          input.addEventListener('input', (e) => { userAnswers[act.id] = e.target.value; });
+          container.appendChild(input);
+        } else if (act.type === 'ordering') {
+          const list = document.createElement('ul');
+          list.className = 'ordering-list';
+          const shuffled = act.items.slice().sort(() => Math.random() - 0.5);
+          shuffled.forEach((item, idx) => {
+            const li = document.createElement('li');
+            li.draggable = true;
+            li.textContent = item;
+            li.dataset.value = item;
+            li.addEventListener('dragstart', (e) => {
+              e.dataTransfer.setData('text/plain', idx);
+              li.classList.add('dragging');
+            });
+            li.addEventListener('dragend', () => li.classList.remove('dragging'));
+            li.addEventListener('dragover', (e) => e.preventDefault());
+            li.addEventListener('drop', (e) => {
+              e.preventDefault();
+              const fromIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
+              const children = Array.from(list.children);
+              const fromEl = children[fromIdx];
+              const toEl = li;
+              list.insertBefore(fromEl, toEl.nextSibling);
+              updateOrderingAnswer(list, act);
+            });
+            list.appendChild(li);
+          });
+          container.appendChild(list);
+          updateOrderingAnswer(list, act);
+        } else if (act.type === 'speaking') {
+          const wrap = document.createElement('div');
+          wrap.className = 'speaking';
+          const textarea = document.createElement('textarea');
+          textarea.placeholder = '可在此写下你朗读的内容或学习笔记';
+          textarea.addEventListener('input', (e) => { userAnswers[act.id] = e.target.value; });
+          wrap.appendChild(textarea);
+          const note = document.createElement('div');
+          note.className = 'speaking-note';
+          note.textContent = act.instructions || '此题不计入自动评分。';
+          wrap.appendChild(note);
+          container.appendChild(wrap);
+        }
+
+        if (act.type !== 'speaking') {
+          const btn = document.createElement('button');
+          btn.className = 'btn';
+          btn.textContent = '提交答案';
+          btn.addEventListener('click', () => checkAnswer(container, act));
+          container.appendChild(btn);
+        }
+      }
+
+      function updateOrderingAnswer(list, act) {
+        const values = Array.from(list.children).map(li => li.dataset.value);
+        userAnswers[act.id] = values;
+      }
+
+      function checkAnswer(container, act) {
+        const user = userAnswers[act.id];
+        if (user === undefined || user === '') {
+          alert('请先完成本题。');
+          return;
+        }
+        let correct = false;
+        if (act.type === 'choice') {
+          correct = normalizeAnswer(user) === normalizeAnswer(act.answer);
+        } else if (act.type === 'fill_blank') {
+          correct = normalizeAnswer(user) === normalizeAnswer(act.answer);
+        } else if (act.type === 'ordering') {
+          correct = JSON.stringify(user.map(normalizeAnswer)) === JSON.stringify(act.answer.map(normalizeAnswer));
+        }
+
+        const existing = container.querySelector('.feedback');
+        if (existing) existing.remove();
+        const fb = document.createElement('div');
+        fb.className = 'feedback ' + (correct ? 'correct' : 'wrong');
+        fb.textContent = correct ? '✓ 回答正确！' : '✗ 回答不正确，请再试一次。';
+        container.appendChild(fb);
+
+        updateSummary();
+      }
+
+      function updateSummary() {
+        const answered = activities.filter(act => act.type !== 'speaking' && userAnswers[act.id] !== undefined);
+        const scored = answered.filter(act => {
+          const user = userAnswers[act.id];
+          if (act.type === 'choice' || act.type === 'fill_blank') {
+            return normalizeAnswer(user) === normalizeAnswer(act.answer);
+          } else if (act.type === 'ordering') {
+            return JSON.stringify(user.map(normalizeAnswer)) === JSON.stringify(act.answer.map(normalizeAnswer));
+          }
+          return false;
+        });
+        const total = activities.filter(act => act.type !== 'speaking').length;
+        const summary = document.getElementById('summary');
+        const text = document.getElementById('summary-text');
+        summary.style.display = 'block';
+        text.textContent = `你已提交 ${answered.length} / ${total} 道计分题，答对 ${scored.length} 题。继续努力！`;
+      }
+
+      loadAssessment();
+    })();
+  </script>
+</body>
+</html>

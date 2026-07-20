@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "misconceptions": [
+    {
+      "id": "m-class-grade-order",
+      "belief": "英语介绍班级时先说年级再说班级，和中文顺序一样",
+      "correctUnderstanding": "英语先说 Class 再说 Grade，如 Class One, Grade Four（四年级一班）。",
+      "sourceRefs": ["source:book#unit1"]
+    },
+    {
+      "id": "m-capitalization",
+      "belief": "class 和 grade 在班级表达中不需要大写",
+      "correctUnderstanding": "Class 和 Grade 与具体数字连用表示班级年级时，首字母都要大写。",
+      "sourceRefs": ["source:book#unit1"]
+    },
+    {
+      "id": "m-look-at-omission",
+      "belief": "看黑板可以直接说 Look the blackboard，不需要 at",
+      "correctUnderstanding": "look 是不及物动词，后面接宾语时必须加 at，即 Look at the blackboard。",
+      "sourceRefs": ["source:book#unit1"]
+    },
+    {
+      "id": "m-teen-ty-confusion",
+      "belief": "thirteen 和 thirty 发音相同或容易混淆",
+      "correctUnderstanding": "thirteen 以 /tiːn/ 结尾，thirty 以 /ti/ 结尾，重音位置也不同。",
+      "sourceRefs": ["source:book#unit3", "source:book#unit4"]
+    },
+    {
+      "id": "m-time-half-past",
+      "belief": "九点半可以说 half to ten",
+      "correctUnderstanding": "半点用 half past，如 half past nine（九点半）。",
+      "sourceRefs": ["source:book#unit4"]
+    },
+    {
+      "id": "m-do-you-like-response",
+      "belief": "回答 Do you like...? 时用 Yes, I like.",
+      "correctUnderstanding": "应使用 Yes, I do. / No, I don't. 来回应以 do 开头的一般疑问句。",
+      "sourceRefs": ["source:book#unit6"]
+    },
+    {
+      "id": "m-merry-christmas-only",
+      "belief": "春节也可以用 Merry Christmas 来祝福",
+      "correctUnderstanding": "Merry Christmas 只用于圣诞节；春节用 Happy New Year 或 Happy Spring Festival。",
+      "sourceRefs": ["source:book#unit7", "source:book#unit8"]
+    }
+  ]
+}

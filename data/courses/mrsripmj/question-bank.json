@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "questions": [
+    {
+      "id": "u1pa-vocab-1",
+      "type": "single-choice",
+      "claimId": "c-u1-classroom-vocab",
+      "stage": "guided",
+      "title": "识别教室物品：黑板",
+      "prompt": "图片是教室里老师讲课用的黑色大板子，对应的英文单词是？",
+      "options": [
+        { "id": "a", "label": "desk" },
+        { "id": "b", "label": "chair" },
+        { "id": "c", "label": "blackboard" },
+        { "id": "d", "label": "classroom" }
+      ],
+      "correctOptionId": "c",
+      "sourceRefs": ["source:book#unit1"],
+      "misconceptionIds": []
+    },
+    {
+      "id": "u1pa-vocab-2",
+      "type": "single-choice",
+      "claimId": "c-u1-classroom-vocab",
+      "stage": "guided",
+      "title": "词义匹配：classroom",
+      "prompt": "classroom 的中文意思是？",
+      "options": [
+        { "id": "a", "label": "班级" },
+        { "id": "b", "label": "教室" },
+        { "id": "c", "label": "课程" },
+        { "id": "d", "label": "学校" }
+      ],
+      "correctOptionId": "b",
+      "sourceRefs": ["source:book#unit1"],
+      "misconceptionIds": []
+    },
+    {
+      "id": "u1pa-vocab-3",
+      "type": "fill-blank",
+      "claimId": "c-u1-classroom-vocab",
+      "stage": "independent",
+      "title": "拼写椅子",
+      "prompt": "根据中文提示补全单词：椅子 ch__r",
+      "answer": "chair",
+      "sourceRefs": ["source:book#unit1"],
+      "misconceptionIds": []
+    },
+    {
+      "id": "u1pa-pattern-1",
+      "type": "single-choice",
+      "claimId": "c-u1-class-intro",
+      "stage": "guided",
+      "title": "班级问答",
+      "prompt": "当别人问 Which class are you in? 时，正确回答是？",
+      "options": [
+        { "id": "a", "label": "I'm Class One, Grade Four.", "misconceptionId": "m-class-grade-order" },
+        { "id": "b", "label": "I'm in Class One, Grade Four." },
+        { "id": "c", "label": "I'm in Grade Four, Class One.", "misconceptionId": "m-class-grade-order" },
+        { "id": "d", "label": "I'm at Class One, Grade Four.", "misconceptionId": "m-class-grade-order" }
+      ],
+      "correctOptionId": "b",
+      "sourceRefs": ["source:book#unit1"],
+      "misconceptionIds": ["m-class-grade-order"]
+    },
+    {
+      "id": "u1pa-pattern-2",
+      "type": "single-choice",
+      "claimId": "c-u1-classroom-instructions",
+      "stage": "guided",
+      "title": "课堂指令：看黑板",
+      "prompt": "老师让大家看黑板，会说：",
+      "options": [
+        { "id": "a", "label": "Look at the blackboard." },
+        { "id": "b", "label": "Look the blackboard.", "misconceptionId": "m-look-at-omission" },
+        { "id": "c", "label": "See the blackboard at.", "misconceptionId": "m-look-at-omission" },
+        { "id": "d", "label": "Read the blackboard." }
+      ],
+      "correctOptionId": "a",
+      "sourceRefs": ["source:book#unit1"],
+      "misconceptionIds": ["m-look-at-omission"]
+    },
+    {
+      "id": "u1pa-pattern-3",
+      "type": "fill-blank",
+      "claimId": "c-u1-classroom-instructions",
+      "stage": "independent",
+      "title": "补全指令",
+      "prompt": "补全句子：Read ______ me.（跟着我读）",
+      "answer": "after",
+      "sourceRefs": ["source:book#unit1"],
+      "misconceptionIds": []
+    },
+    {
+      "id": "u1pa-phonics-1",
+      "type": "single-choice",
+      "claimId": "c-u1-phonics-ar",
+      "stage": "guided",
+      "title": "辨识 ar 发音",
+      "prompt": "下列哪个词与 car 有相同的发音规律（都含 ar）？",
+      "options": [
+        { "id": "a", "label": "cat" },
+        { "id": "b", "label": "park" },
+        { "id": "c", "label": "cup" },
+        { "id": "d", "label": "cake" }
+      ],
+      "correctOptionId": "b",
+      "sourceRefs": ["source:book#unit1-phonics"],
+      "misconceptionIds": []
+    },
+    {
+      "id": "u1pa-phonics-2",
+      "type": "fill-blank",
+      "claimId": "c-u1-phonics-ar",
+      "stage": "independent",
+      "title": "补全 star",
+      "prompt": "根据发音规律补全单词：st__（星星）",
+      "answer": "star",
+      "sourceRefs": ["source:book#unit1-phonics"],
+      "misconceptionIds": []
+    },
+    {
+      "id": "u1pa-order-1",
+      "type": "ordering",
+      "claimId": "c-u1-classroom-instructions",
+      "stage": "independent",
+      "title": "课堂指令顺序",
+      "prompt": "将下列课堂指令按正确顺序排列：",
+      "items": [
+        "Now look at the blackboard.",
+        "Read after me.",
+        "A tiger."
+      ],
+      "answer": [
+        "Now look at the blackboard.",
+        "Read after me.",
+        "A tiger."
+      ],
+      "sourceRefs": ["source:book#unit1"],
+      "misconceptionIds": []
+    }
+  ]
+}

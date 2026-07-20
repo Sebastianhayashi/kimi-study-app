@@ -1,0 +1,109 @@
+{
+  "id": "0001-our-classroom-part-a",
+  "title": "Unit 1 Our Classroom Part A",
+  "unit": 1,
+  "part": "A",
+  "passing_score": 8,
+  "activities": [
+    {
+      "id": "u1pa-vocab-1",
+      "type": "choice",
+      "question": "图片是教室里老师讲课用的黑色大板子，对应的英文单词是？",
+      "options": ["desk", "chair", "blackboard", "classroom"],
+      "answer": "blackboard",
+      "score": 1
+    },
+    {
+      "id": "u1pa-vocab-2",
+      "type": "choice",
+      "question": "classroom 的中文意思是？",
+      "options": ["班级", "教室", "课程", "学校"],
+      "answer": "教室",
+      "score": 1
+    },
+    {
+      "id": "u1pa-vocab-3",
+      "type": "fill_blank",
+      "question": "根据中文提示补全单词：椅子 ch__r",
+      "answer": "chair",
+      "score": 1,
+      "case_sensitive": false,
+      "trim_spaces": true
+    },
+    {
+      "id": "u1pa-pattern-1",
+      "type": "choice",
+      "question": "当别人问 Which class are you in? 时，正确回答是？",
+      "options": [
+        "I'm Class One, Grade Four.",
+        "I'm in Class One, Grade Four.",
+        "I'm in Grade Four, Class One.",
+        "I'm at Class One, Grade Four."
+      ],
+      "answer": "I'm in Class One, Grade Four.",
+      "score": 1
+    },
+    {
+      "id": "u1pa-pattern-2",
+      "type": "choice",
+      "question": "老师让大家看黑板，会说：",
+      "options": [
+        "Look at the blackboard.",
+        "Look the blackboard.",
+        "See the blackboard at.",
+        "Read the blackboard."
+      ],
+      "answer": "Look at the blackboard.",
+      "score": 1
+    },
+    {
+      "id": "u1pa-pattern-3",
+      "type": "fill_blank",
+      "question": "补全句子：Read ______ me.（跟着我读）",
+      "answer": "after",
+      "score": 1,
+      "case_sensitive": false,
+      "trim_spaces": true
+    },
+    {
+      "id": "u1pa-phonics-1",
+      "type": "choice",
+      "question": "下列哪个词与 car 有相同的发音规律（都含 ar）？",
+      "options": ["cat", "park", "cup", "cake"],
+      "answer": "park",
+      "score": 1
+    },
+    {
+      "id": "u1pa-phonics-2",
+      "type": "fill_blank",
+      "question": "根据发音规律补全单词：st__（星星）",
+      "answer": "star",
+      "score": 1,
+      "case_sensitive": false,
+      "trim_spaces": true
+    },
+    {
+      "id": "u1pa-order-1",
+      "type": "ordering",
+      "question": "将下列课堂指令按正确顺序排列：",
+      "items": [
+        "A tiger.",
+        "Now look at the blackboard.",
+        "Read after me."
+      ],
+      "answer": [
+        "Now look at the blackboard.",
+        "Read after me.",
+        "A tiger."
+      ],
+      "score": 1
+    },
+    {
+      "id": "u1pa-speaking-1",
+      "type": "speaking",
+      "question": "朗读并录音：I'm in Class One, Grade Four. Look at the blackboard. Read after me.",
+      "instructions": "请大声朗读以上句子，注意 Class 和 Grade 的首字母大写，以及句子的升降调。此题不计入自动评分，可请老师或家长听评。",
+      "score": 0
+    }
+  ]
+}

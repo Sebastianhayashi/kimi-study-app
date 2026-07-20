@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "claims": [
+    {
+      "id": "c-u1-class-intro",
+      "label": "介绍所在班级",
+      "description": "能够用 I'm in Class..., Grade... 句型正确介绍自己所在的班级和年级。",
+      "sourceRefs": ["source:book#unit1"],
+      "observableAction": "听到或看到 Which class are you in? 后，能口头或书面给出符合英语语序的正确答句。",
+      "requiredEvidence": "在 3 个不同班级/年级组合中，至少 2 次答句顺序正确、首字母大写规范。",
+      "transferDistance": "near-transfer",
+      "mastery": "correct on 2 of 3 novel prompts"
+    },
+    {
+      "id": "c-u1-classroom-vocab",
+      "label": "识别教室物品词汇",
+      "description": "能够认读、理解并在图片提示下正确匹配 classroom, blackboard, desk, chair 等核心词汇。",
+      "sourceRefs": ["source:book#unit1"],
+      "observableAction": "看到教室物品图片或中文释义，能说出或写出对应英文单词。",
+      "requiredEvidence": "在 4 个核心词中正确识别至少 3 个，拼写错误不超过 1 处。",
+      "transferDistance": "same-example",
+      "mastery": "3 of 4 words correct with no more than 1 spelling mistake"
+    },
+    {
+      "id": "c-u1-classroom-instructions",
+      "label": "执行课堂指令",
+      "description": "能够理解并执行 Look at the blackboard. / Read after me. 等课堂指令。",
+      "sourceRefs": ["source:book#unit1"],
+      "observableAction": "听到指令后，能选出对应的正确动作描述或补全指令中的关键词。",
+      "requiredEvidence": "在 2 个指令相关任务中全部正确。",
+      "transferDistance": "same-example",
+      "mastery": "2 of 2 correct"
+    },
+    {
+      "id": "c-u1-phonics-ar",
+      "label": "辨识 ar 字母组合发音",
+      "description": "能够识别字母组合 ar 在 car, park, star 中的 /ɑː/ 发音规律，并完成听音辨词或补全单词任务。",
+      "sourceRefs": ["source:book#unit1-phonics"],
+      "observableAction": "从选项中选出含 ar 发音规律的词，或根据提示补全 star / park 等单词。",
+      "requiredEvidence": "在 2 个语音任务中至少 1 个正确。",
+      "transferDistance": "near-transfer",
+      "mastery": "1 of 2 correct"
+    }
+  ]
+}

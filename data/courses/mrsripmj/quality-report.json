@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "reportDate": "2026-07-20",
+  "lessonId": "0001-our-classroom-part-a",
+  "published": [
+    "u1pa-vocab-1",
+    "u1pa-vocab-2",
+    "u1pa-vocab-3",
+    "u1pa-pattern-1",
+    "u1pa-pattern-2",
+    "u1pa-pattern-3",
+    "u1pa-phonics-1",
+    "u1pa-phonics-2",
+    "u1pa-order-1"
+  ],
+  "rejected": [
+    {
+      "id": "u1pa-vocab-4",
+      "reason": "redundant with u1pa-vocab-1 and u1pa-vocab-2; does not add new evidence for any claim"
+    },
+    {
+      "id": "u1pa-pattern-4",
+      "reason": "prompt would require the learner to know grade numbers beyond the textbook examples; adds reading load without aligned claim"
+    }
+  ],
+  "checks": {
+    "grounded": true,
+    "alignedToClaims": true,
+    "answerableFromSource": true,
+    "oneBestAnswer": true,
+    "noLeakage": true,
+    "distractorsMapToMisconceptions": true,
+    "difficultyFromReasoning": true,
+    "ageAndLanguageFit": true,
+    "notRedundant": true,
+    "updatesConfidence": true
+  },
+  "notes": "All published items passed the required quality gates. Distractors for class-intro and classroom-instructions items map directly to identified misconceptions."
+}
