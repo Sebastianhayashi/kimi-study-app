@@ -5,6 +5,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { validateLessonSpec, scoreActivity, computeClaimProgress, toPublicLessonSpec } = require('./lib/activity-engine');
 
 const ROOT = __dirname;
 const DATA = path.join(ROOT, 'data', 'courses');
@@ -19,17 +20,26 @@ const MAP_INSTRUCTION =
   `"methods":[{"name":"方法名","when":"何时使用","boundary":"边界"}],` +
   `"path":["第一步","第二步"]}。内容取自 MISSION.md、RESOURCES.md、reference/ 和 learning-records/。`;
 
+
+const ASSESSMENT_INSTRUCTION =
+  `\n\n互动教学要求：MISSION.md 是用户学习意图的权威来源；若已存在且已填写，不要重复 Mission 问答。` +
+  `按 skills/teach/ASSESSMENT-DESIGN.md 执行：分析材料单元，生成 learning claims、evidence requirements、` +
+  `assessment blueprint、misconceptions、answer-first question candidates 和 quality report。` +
+  `为生成的 lessons/NNNN-name.html 同时写 assessments/NNNN-name.json，并在 HTML 中放置对应的 ` +
+  '`<div data-kimi-activity="activity-id"></div>`。' +
+  `普通选择、填空、排序题必须可确定性评分；答案和评分键只能放在 assessments/，不要写入 HTML。`;
+
 const FIRST_PROMPT = (ext) =>
   `/skill:teach 用户上传了一本书想学习，材料是当前目录的 book${ext}` +
   `（如为 epub 可用 unzip 提取文本，如为 pdf 请自行想办法提取文本）。` +
   `请按 teach skill 的流程执行：先写 MISSION.md（mission：掌握这本书的核心内容）和 RESOURCES.md，` +
   `然后生成第一课 lessons/0001-*.html。所有产出用中文。` +
   `另外把书的封面图片提取保存到工作区根目录 cover.jpg（epub 解压后在 OPF manifest 里找 cover 项；` +
-  `pdf 可用 sips 把第一页转成 jpg）。` + MAP_INSTRUCTION;
+  `pdf 可用 sips 把第一页转成 jpg）。` + ASSESSMENT_INSTRUCTION + MAP_INSTRUCTION;
 
 const NEXT_PROMPT =
   `/skill:teach 继续。请根据 MISSION.md、learning-records 和已有 lessons，` +
-  `生成下一课（编号递增的新 lessons/*.html 文件）。用中文。同时更新 map.json 使其反映最新内容。`;
+  `生成下一课（编号递增的新 lessons/*.html 文件）。用中文。同时更新 map.json 使其反映最新内容。` + ASSESSMENT_INSTRUCTION;
 
 const app = express();
 app.use(express.json());
@@ -158,8 +168,75 @@ app.get('/api/courses/:id/lessons/:file', (req, res) => {
   if (!f) return res.status(404).end();
   const html = fs.readFileSync(path.join(dirOf(req.params.id), 'lessons', f), 'utf8')
     .replace(/<head[^>]*>/i, (m) => `${m}<base href="/api/courses/${req.params.id}/lessons/">`)
-    .replace(/<\/body>/i, `<script>window.__courseId=${JSON.stringify(req.params.id)}</script><link rel="stylesheet" href="/margin-notes.css"><script src="/margin-notes-core.js"></script><script src="/margin-notes.js"></script><script src="/study-cards.js"></script><script src="/select.js"></script></body>`);
+    .replace(/<\/body>/i, `<script>window.__courseId=${JSON.stringify(req.params.id)};window.__lessonFile=${JSON.stringify(f)}</script><link rel="stylesheet" href="/margin-notes.css"><link rel="stylesheet" href="/activity-runtime.css"><script src="/margin-notes-core.js"></script><script src="/margin-notes.js"></script><script src="/study-cards.js"></script><script src="/select.js"></script><script src="/activity-runtime.js"></script></body>`);
   res.type('html').send(html);
+});
+
+// 互动活动：私有题目规格、确定性评分、尝试记录与 claim 掌握度
+const safeLesson = (id, file) => lessonsOf(id).find((name) => name === file) || null;
+const lessonBase = (file) => String(file || '').replace(/\.html$/i, '');
+const assessmentFile = (id, file) => path.join(dirOf(id), 'assessments', `${lessonBase(file)}.json`);
+const progressFile = (id, file) => path.join(dirOf(id), 'learning-progress', `${lessonBase(file)}.json`);
+const readJson = (file, fallback) => { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; } };
+const writeJsonAtomic = (file, value) => {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const tmp = `${file}.${process.pid}.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify(value, null, 2));
+  fs.renameSync(tmp, file);
+};
+const loadLessonSpec = (id, file) => {
+  if (!safeLesson(id, file)) return { status: 404, error: 'lesson not found' };
+  const target = assessmentFile(id, file);
+  if (!fs.existsSync(target)) return { status: 404, error: 'interactive activities not found' };
+  const spec = readJson(target, null);
+  const validation = validateLessonSpec(spec);
+  if (!validation.ok) return { status: 422, error: 'invalid assessment spec', details: validation.errors };
+  return { status: 200, spec };
+};
+const readLessonProgress = (id, file, spec) => {
+  const progress = readJson(progressFile(id, file), { schemaVersion: 1, attempts: [] });
+  if (!Array.isArray(progress.attempts)) progress.attempts = [];
+  progress.mastery = computeClaimProgress(spec, progress.attempts);
+  return progress;
+};
+
+app.get('/api/courses/:id/lessons/:file/activities', (req, res) => {
+  const loaded = loadLessonSpec(req.params.id, req.params.file);
+  if (!loaded.spec) return res.status(loaded.status).json({ error: loaded.error, details: loaded.details });
+  res.json({ spec: toPublicLessonSpec(loaded.spec), progress: readLessonProgress(req.params.id, req.params.file, loaded.spec) });
+});
+
+app.get('/api/courses/:id/lessons/:file/progress', (req, res) => {
+  const loaded = loadLessonSpec(req.params.id, req.params.file);
+  if (!loaded.spec) return res.status(loaded.status).json({ error: loaded.error, details: loaded.details });
+  res.json(readLessonProgress(req.params.id, req.params.file, loaded.spec));
+});
+
+app.post('/api/courses/:id/lessons/:file/activities/:activityId/attempt', (req, res) => {
+  const loaded = loadLessonSpec(req.params.id, req.params.file);
+  if (!loaded.spec) return res.status(loaded.status).json({ error: loaded.error, details: loaded.details });
+  const activity = loaded.spec.activities.find((item) => item.id === req.params.activityId);
+  if (!activity) return res.status(404).json({ error: 'activity not found' });
+  const progress = readLessonProgress(req.params.id, req.params.file, loaded.spec);
+  const previous = progress.attempts.filter((item) => item.activityId === activity.id);
+  let result;
+  try { result = scoreActivity(activity, req.body && req.body.response); }
+  catch (error) { return res.status(400).json({ error: error.message }); }
+  const attempt = {
+    activityId: activity.id,
+    claimId: activity.claimId,
+    stage: activity.stage,
+    response: req.body && req.body.response,
+    attemptNumber: previous.length + 1,
+    passed: result.passed,
+    correct: result.correct,
+    misconceptionId: result.misconceptionId,
+    submittedAt: new Date().toISOString(),
+  };
+  progress.attempts.push(attempt);
+  progress.mastery = computeClaimProgress(loaded.spec, progress.attempts);
+  writeJsonAtomic(progressFile(req.params.id, req.params.file), progress);
+  res.json({ attempt, passed: result.passed, correct: result.correct, feedback: result.feedback, misconceptionId: result.misconceptionId, mastery: progress.mastery });
 });
 
 // 笔记（划词高亮 + 卡片），整体读写
@@ -186,7 +263,9 @@ app.get('/api/courses/:id/chat', (req, res) => {
 // 课节引用的相对资源（assets/style.css、map.json 等，须放在已有路由之后）
 app.get('/api/courses/:id/*splat', (req, res) => {
   const root = dirOf(req.params.id);
-  const file = path.normalize(path.join(root, req.params.splat.join('/')));
+  const relative = req.params.splat.join('/');
+  if (/^(assessments|learning-progress|learning-records)(\/|$)/i.test(relative) || /^(question-bank|quality-report|misconceptions|learning-claims|assessment-blueprint|source-profile)\.json$/i.test(relative)) return res.status(404).end();
+  const file = path.normalize(path.join(root, relative));
   if (!file.startsWith(root + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) return res.status(404).end();
   res.sendFile(file);
 });
