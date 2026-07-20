@@ -10,29 +10,45 @@ function isIgnoredRequestFailure(request) {
   return /ERR_ABORTED|NS_BINDING_ABORTED|cancelled/i.test(failure?.errorText || '');
 }
 
+function matches(matcher, text) {
+  if (typeof matcher === 'function') return matcher(text);
+  if (matcher instanceof RegExp) {
+    matcher.lastIndex = 0;
+    return matcher.test(text);
+  }
+  return text.includes(String(matcher));
+}
+
 function installBrowserGuards(page) {
   const errors = [];
+  const allowed = [];
+  const record = (text) => {
+    if (!allowed.some((matcher) => matches(matcher, text))) errors.push(text);
+  };
 
   page.on('pageerror', (error) => {
-    errors.push(`pageerror: ${error.message}`);
+    record(`pageerror: ${error.message}`);
   });
   page.on('console', (message) => {
     if (message.type() === 'error' && !isIgnoredConsole(message)) {
-      errors.push(`console.error: ${message.text()}`);
+      record(`console.error: ${message.text()}`);
     }
   });
   page.on('requestfailed', (request) => {
     if (!isIgnoredRequestFailure(request)) {
-      errors.push(`requestfailed: ${request.method()} ${request.url()} ${request.failure()?.errorText || ''}`);
+      record(`requestfailed: ${request.method()} ${request.url()} ${request.failure()?.errorText || ''}`);
     }
   });
   page.on('response', (response) => {
     const status = response.status();
-    if (status >= 500) errors.push(`http ${status}: ${response.request().method()} ${response.url()}`);
+    if (status >= 500) record(`http ${status}: ${response.request().method()} ${response.url()}`);
   });
 
   return {
     errors,
+    allow(matcher) {
+      allowed.push(matcher);
+    },
     assertClean() {
       if (errors.length) throw new Error(`Unexpected browser failures:\n${errors.join('\n')}`);
     },
