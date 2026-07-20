@@ -2,3 +2,7 @@ node_modules/
 *.pdf
 .stabilization/
 tests/.generated/
+playwright-report/
+test-results/
+blob-report/
+tests/.runtime/
