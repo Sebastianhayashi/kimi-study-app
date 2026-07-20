@@ -1,0 +1,281 @@
+/* Targeted UI polish for the current course shell. Existing layout and feature ownership stay unchanged. */
+:root {
+  --ks-control-radius: 999px;
+  --ks-focus-ring: 0 0 0 3px rgba(11, 87, 208, .18);
+}
+
+body,
+.app {
+  min-height: 100dvh;
+  height: 100dvh;
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+button:focus-visible,
+a:focus-visible,
+textarea:focus-visible,
+input:focus-visible {
+  outline: none;
+  box-shadow: var(--ks-focus-ring);
+}
+
+/* Rounded lesson tools: preserve the current slot and resource behavior, only refine presentation. */
+#lessonResourceSlot.ks-lesson-tools {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 3px;
+  border-radius: var(--ks-control-radius);
+  background: rgba(247, 249, 252, .82);
+}
+
+#lessonResourceSlot.ks-lesson-tools[hidden] {
+  display: none !important;
+}
+
+#lessonResourceSlot .lesson-resource-tool {
+  min-height: 30px;
+  padding: 0 11px;
+  border: 1px solid #d9dee7;
+  border-radius: var(--ks-control-radius);
+  gap: 6px;
+  color: #4b5360;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, .04);
+  font-size: 10px;
+  font-weight: 720;
+  transition: color .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease, transform .12s ease;
+}
+
+#lessonResourceSlot .lesson-resource-tool svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#lessonResourceSlot .lesson-resource-tool:hover {
+  color: var(--brand);
+  border-color: #b9cdf0;
+  background: #f5f8ff;
+  box-shadow: 0 2px 7px rgba(11, 87, 208, .08);
+}
+
+#lessonResourceSlot .lesson-resource-tool[aria-pressed="true"] {
+  color: #fff;
+  border-color: var(--brand);
+  background: var(--brand);
+  box-shadow: 0 3px 9px rgba(11, 87, 208, .18);
+}
+
+#lessonResourceSlot .lesson-resource-tool.kn-notes-toggle {
+  color: #a8570a !important;
+  border-color: #efc58f !important;
+  background: #fff8ed !important;
+}
+
+#lessonResourceSlot .lesson-resource-tool.kn-notes-toggle:hover {
+  background: #ffeed7 !important;
+}
+
+#lessonResourceSlot .lesson-resource-tool.kn-notes-toggle[aria-pressed="true"] {
+  color: #fff !important;
+  border-color: #e88d35 !important;
+  background: #e88d35 !important;
+}
+
+/* Tutor layout remains in the existing right panel; these rules prevent Markdown from stretching it. */
+.assistant-panel,
+.assistant-panel .chat-thread {
+  min-height: 0;
+}
+
+.assistant-panel .chat-thread {
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+
+.assistant-panel .message {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.assistant-panel .message.assistant.ks-markdown-message {
+  min-width: 0;
+  overflow: hidden;
+  padding: 13px 14px;
+  border-radius: 15px;
+  color: #343940;
+  background: #f1f4f9;
+}
+
+.assistant-panel .ks-markdown {
+  min-width: 0;
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 1.68;
+}
+
+.assistant-panel .ks-markdown > :first-child { margin-top: 0; }
+.assistant-panel .ks-markdown > :last-child { margin-bottom: 0; }
+.assistant-panel .ks-markdown p { margin: 0 0 9px; }
+.assistant-panel .ks-markdown h2,
+.assistant-panel .ks-markdown h3,
+.assistant-panel .ks-markdown h4,
+.assistant-panel .ks-markdown h5 {
+  margin: 15px 0 7px;
+  color: #20242a;
+  line-height: 1.38;
+  letter-spacing: -.01em;
+  text-wrap: balance;
+}
+.assistant-panel .ks-markdown h2 { font-size: 15px; }
+.assistant-panel .ks-markdown h3 { font-size: 14px; }
+.assistant-panel .ks-markdown h4,
+.assistant-panel .ks-markdown h5 { font-size: 13px; }
+.assistant-panel .ks-markdown ul,
+.assistant-panel .ks-markdown ol { margin: 7px 0 10px; padding-left: 20px; }
+.assistant-panel .ks-markdown li { margin: 4px 0; padding-left: 1px; }
+.assistant-panel .ks-markdown blockquote {
+  margin: 10px 0;
+  padding: 9px 11px;
+  border-left: 3px solid #8cb1e9;
+  border-radius: 0 9px 9px 0;
+  color: #44536b;
+  background: #eaf1fc;
+}
+.assistant-panel .ks-markdown hr { height: 1px; margin: 14px 0; border: 0; background: #dce2eb; }
+.assistant-panel .ks-markdown a { color: var(--brand); text-underline-offset: 2px; }
+.assistant-panel .ks-markdown code {
+  padding: 2px 5px;
+  border-radius: 5px;
+  color: #243b61;
+  background: #e5ecf8;
+  font-size: .92em;
+}
+.assistant-panel .ks-markdown pre {
+  max-width: 100%;
+  margin: 10px 0;
+  padding: 11px 12px;
+  overflow-x: auto;
+  border: 1px solid #dce2eb;
+  border-radius: 10px;
+  color: #29313c;
+  background: #fff;
+  white-space: pre;
+}
+.assistant-panel .ks-markdown pre code { padding: 0; color: inherit; background: transparent; }
+.assistant-panel .ks-markdown-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  margin: 10px 0;
+  overflow-x: auto;
+  border: 1px solid #dce2eb;
+  border-radius: 10px;
+  background: #fff;
+}
+.assistant-panel .ks-markdown table { width: 100%; margin: 0; border: 0; border-collapse: collapse; font-size: 11px; }
+.assistant-panel .ks-markdown th,
+.assistant-panel .ks-markdown td { min-width: 92px; padding: 7px 9px; border: 0; border-right: 1px solid #e3e7ed; border-bottom: 1px solid #e3e7ed; vertical-align: top; text-align: left; }
+.assistant-panel .ks-markdown th:last-child,
+.assistant-panel .ks-markdown td:last-child { border-right: 0; }
+.assistant-panel .ks-markdown tbody tr:last-child td { border-bottom: 0; }
+.assistant-panel .ks-markdown th { color: #343a43; background: #f6f8fb; font-weight: 720; }
+
+.quick-prompts {
+  scrollbar-width: thin;
+}
+
+.quick-prompt,
+.ks-new-chat-button {
+  transition: color .15s ease, border-color .15s ease, background .15s ease, transform .12s ease;
+}
+
+.ks-new-chat-button {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid #d9dee7;
+  border-radius: var(--ks-control-radius);
+  color: #59616d;
+  background: #fff;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 680;
+}
+
+.ks-new-chat-button:hover {
+  color: var(--brand);
+  border-color: #b9cdf0;
+  background: #f5f8ff;
+}
+
+/* Quoted lesson context above the composer. */
+.ks-selection-quote {
+  margin: 7px 11px;
+  padding: 9px 10px 9px 12px;
+  border: 1px solid #cbdaf3;
+  border-radius: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #34547f;
+  background: #edf3fd;
+  box-shadow: 0 2px 8px rgba(46, 81, 132, .05);
+  font-size: 11px;
+  line-height: 1.48;
+}
+
+.ks-selection-quote::before {
+  content: "“";
+  flex: none;
+  color: #7094cb;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.ks-selection-quote-copy {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.ks-selection-quote-close {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #5f78a0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.ks-selection-quote-close:hover { background: rgba(91, 126, 180, .12); }
+
+@media (max-width: 620px) {
+  #lessonResourceSlot.ks-lesson-tools { gap: 3px; background: transparent; }
+  #lessonResourceSlot .lesson-resource-tool { min-width: 32px; padding: 0 8px; }
+  #lessonResourceSlot .lesson-resource-tool-label { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #lessonResourceSlot .lesson-resource-tool,
+  .quick-prompt,
+  .ks-new-chat-button { transition: none; }
+}

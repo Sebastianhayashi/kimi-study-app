@@ -60,8 +60,8 @@ const page = (file, { head = '', body = '' } = {}) => (req, res) => {
 app.get('/', page('index.html'));
 app.get('/app', page('app.html'));
 app.get('/course/:id', page('course.html', {
-  head: '<link rel="stylesheet" href="/generation-preview.css"><link rel="stylesheet" href="/source-viewer.css">',
-  body: '<script src="/generation-preview.js"></script><script src="/generation-events-client.js"></script><script src="/source-viewer.js"></script>',
+  head: '<link rel="stylesheet" href="/generation-preview.css"><link rel="stylesheet" href="/source-viewer.css"><link rel="stylesheet" href="/frontend-shell.css">',
+  body: '<script src="/assistant-markdown.js"></script><script src="/generation-preview.js"></script><script src="/generation-events-client.js"></script><script src="/source-viewer.js"></script>',
 }));
 app.use('/vendor/lenis', express.static(path.join(ROOT, 'node_modules', 'lenis', 'dist')));
 app.use('/vendor/pdfjs', express.static(path.join(ROOT, 'node_modules', 'pdfjs-dist')));
