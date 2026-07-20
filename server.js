@@ -11,14 +11,15 @@ const { deriveGenerationStatus } = require('./lib/generation-status');
 const { runTrackedKimi } = require('./lib/kimi-generation-runner');
 const { appendGenerationEvent, readGenerationEvents, subscribeGenerationEvents } = require('./lib/generation-events');
 const { listCourseSources } = require('./lib/source-manifest');
-const { resolveDataDir } = require('./lib/runtime-config');
+const { resolveDataDir, assertSafeRuntime } = require('./lib/runtime-config');
 
 const ROOT = __dirname;
 const DATA = resolveDataDir({ root: ROOT });
-fs.mkdirSync(DATA, { recursive: true });
 const SKILLS = path.join(ROOT, 'skills');
 const MODEL = 'kimi-code/kimi-for-coding'; // K2.7 Coding
 const PORT = process.env.PORT || 3000;
+const RUNTIME = assertSafeRuntime({ root: ROOT, dataDir: DATA, port: PORT, env: process.env });
+fs.mkdirSync(DATA, { recursive: true });
 
 const MAP_INSTRUCTION =
   `最后，把本课程工作区的内容汇总写入 map.json（严格 JSON，不要任何多余文字），格式：` +
@@ -63,8 +64,8 @@ const page = (file, { head = '', body = '' } = {}) => (req, res) => {
 app.get('/', page('index.html'));
 app.get('/app', page('app.html'));
 app.get('/course/:id', page('course.html', {
-  head: '<link rel="stylesheet" href="/generation-preview.css"><link rel="stylesheet" href="/generation-preview-fidelity.css"><link rel="stylesheet" href="/source-viewer.css"><link rel="stylesheet" href="/frontend-shell.css">',
-  body: '<script src="/assistant-markdown.js"></script><script src="/generation-preview.js"></script><script src="/generation-preview-fidelity.js"></script><script src="/generation-events-client.js"></script><script src="/source-viewer.js"></script>',
+  head: '<link rel="stylesheet" href="/generation-preview-product.css"><link rel="stylesheet" href="/source-viewer.css"><link rel="stylesheet" href="/frontend-shell.css">',
+  body: '<script src="/assistant-markdown.js"></script><script src="/generation-preview-product.js"></script><script src="/generation-events-client.js"></script><script src="/source-viewer.js"></script>',
 }));
 app.use('/vendor/lenis', express.static(path.join(ROOT, 'node_modules', 'lenis', 'dist')));
 app.use('/vendor/pdfjs', express.static(path.join(ROOT, 'node_modules', 'pdfjs-dist')));
@@ -521,4 +522,6 @@ app.use((req, res) => {
   res.status(404).end();
 });
 
-app.listen(PORT, () => console.log(`Kimi Study → http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Kimi Study → http://localhost:${PORT} [${RUNTIME.mode}] data=${RUNTIME.dataDir}`);
+});

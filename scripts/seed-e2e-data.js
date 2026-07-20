@@ -3,7 +3,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { resolveDataDir, resolveFixtureDir } = require('../lib/runtime-config');
+const { resolveDataDir, resolveFixtureDir, assertSafeSeedTarget } = require('../lib/runtime-config');
 
 const ROOT = path.resolve(__dirname, '..');
 const arg = (name) => {
@@ -15,16 +15,13 @@ const clean = process.argv.includes('--clean');
 const fixtureDir = path.resolve(arg('--fixtures') || resolveFixtureDir({ root: ROOT }));
 const source = path.join(fixtureDir, 'courses');
 const target = path.resolve(arg('--target') || resolveDataDir({ root: ROOT }));
-const productionDefault = path.join(ROOT, 'data', 'courses');
+assertSafeSeedTarget({ root: ROOT, target });
 const marker = path.join(target, '.kimi-study-e2e-data');
 
 if (!fs.existsSync(path.join(fixtureDir, 'manifest.json'))) {
   throw new Error(`Fixture manifest not found at ${fixtureDir}. Run npm run fixtures:build first.`);
 }
 if (!fs.existsSync(source)) throw new Error(`Fixture courses not found at ${source}`);
-if (target === productionDefault && !force) {
-  throw new Error('Refusing to seed the production data directory. Set KIMI_STUDY_DATA_DIR or pass --target and --force.');
-}
 const targetIsEmpty = !fs.existsSync(target) || fs.readdirSync(target).length === 0;
 if (clean && fs.existsSync(target) && !targetIsEmpty && !fs.existsSync(marker) && !force) {
   throw new Error(`Refusing to clean unmarked non-empty directory ${target}. Use an isolated empty directory.`);

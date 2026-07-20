@@ -248,8 +248,9 @@
           }
           if (status.stage === 'ready' && status.lessons > 0) {
             if (generationWasActive) {
-              generationPreview.complete(status);
-              window.setTimeout(() => location.reload(), 650);
+              Promise.resolve(generationPreview.complete(status))
+                .catch(() => {})
+                .finally(() => location.reload());
               return;
             }
             generationPreview.hide({ immediate: true });
