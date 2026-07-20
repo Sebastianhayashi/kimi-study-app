@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "check": "node --check server.js && node --check lib/activity-engine.js && node --check public/activity-runtime.js && node --check public/glue.js && node --check public/select.js && node --check public/margin-notes-core.js && node --check public/margin-notes.js && node --check public/study-cards.js",
+    "check": "node --check server.js && node --check lib/activity-engine.js && node --check lib/generation-status.js && node --check public/activity-runtime.js && node --check public/generation-preview.js && node --check public/glue.js && node --check public/select.js && node --check public/margin-notes-core.js && node --check public/margin-notes.js && node --check public/study-cards.js",
     "test": "node --test"
   },
   "keywords": [],
