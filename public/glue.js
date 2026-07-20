@@ -413,13 +413,16 @@
       hideQuoteChip();
       selectionContext = ctx;
       chipEl = document.createElement('div');
-      chipEl.style.cssText = 'margin:6px 12px;padding:8px 10px;background:#f1f5ff;border:1px solid #d3e0fd;border-radius:8px;font-size:12px;display:flex;gap:8px;align-items:flex-start;';
+      chipEl.className = 'ks-selection-quote';
       const label = document.createElement('span');
-      label.style.cssText = 'flex:1;color:#34568c;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;';
+      label.className = 'ks-selection-quote-copy';
       label.textContent = `引用 · ${ctx.section || '当前课节'}：“${ctx.selectedText.slice(0, 80)}${ctx.selectedText.length > 80 ? '…' : ''}”`;
       const close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'ks-selection-quote-close';
       close.textContent = '×';
-      close.style.cssText = 'border:0;background:none;cursor:pointer;font-size:14px;color:#34568c;';
+      close.title = '移除引用';
+      close.setAttribute('aria-label', '移除引用');
       close.onclick = hideQuoteChip;
       chipEl.append(label, close);
       const composer = document.querySelector('.composer');
@@ -521,6 +524,7 @@
     function mountResourceTools() {
       const slot = document.getElementById('lessonResourceSlot');
       if (!slot || !lessonFrame) return { reset() {} };
+      slot.classList.add('ks-lesson-tools');
 
       const tools = [
         { kind: 'mission', label: '任务', pattern: /(?:^|\/)MISSION\.md(?:$|[?#])/i, icon: '<svg viewBox="0 0 24 24"><path d="M9 11l2 2 4-4"/><path d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>' },
@@ -643,11 +647,13 @@
 
     // 助教消息渲染（带 markdown），替代原型 addAssistantMessage 的纯文本 <p>
     function renderAssistant(body) {
+      const shouldStick = chatThread.scrollHeight - chatThread.scrollTop - chatThread.clientHeight < 96;
       const el = document.createElement('div');
-      el.className = 'message assistant';
-      el.innerHTML = mdToHtml(body);
+      el.className = 'message assistant ks-markdown-message';
+      const renderer = window.KimiAssistantMarkdown;
+      el.innerHTML = `<div class="ks-markdown">${renderer ? renderer.render(body) : mdToHtml(body)}</div>`;
       chatThread.appendChild(el);
-      chatThread.scrollTop = chatThread.scrollHeight;
+      if (shouldStick) requestAnimationFrame(() => { chatThread.scrollTop = chatThread.scrollHeight; });
     }
 
     function setQuickPromptsEnabled(on) {
@@ -758,9 +764,10 @@
 
     // 新对话：清空记录并让后端下轮开新 kimi 会话
     const newChatBtn = document.createElement('button');
+    newChatBtn.type = 'button';
+    newChatBtn.className = 'ks-new-chat-button';
     newChatBtn.textContent = '新对话';
     newChatBtn.title = '清空记录，开始新对话';
-    newChatBtn.style.cssText = 'border:1px solid #dedbd3;background:none;border-radius:6px;font-size:12px;padding:3px 8px;cursor:pointer;color:#4a4d52;';
     newChatBtn.addEventListener('click', () => {
       if (!confirm('清空当前对话记录并重新开始？')) return;
       fetch(`/api/courses/${courseId}/chat/reset`, { method: 'POST' }).then(() => {

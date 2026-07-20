@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "check": "node --check server.js && node --check lib/activity-engine.js && node --check lib/generation-status.js && node --check lib/source-manifest.js && node --check lib/generation-events.js && node --check lib/public-generation-event.js && node --check lib/kimi-generation-runner.js && node --check public/activity-runtime.js && node --check public/generation-preview.js && node --check public/generation-events-client.js && node --check public/source-viewer.js && node --check public/glue.js && node --check public/select.js && node --check public/margin-notes-core.js && node --check public/margin-notes.js && node --check public/study-cards.js && node --check public/lesson-scroll-policy.js && node --check public/lesson-shell.js",
+    "check": "node --check server.js && node --check lib/activity-engine.js && node --check lib/generation-status.js && node --check lib/source-manifest.js && node --check lib/generation-events.js && node --check lib/public-generation-event.js && node --check lib/kimi-generation-runner.js && node --check public/activity-runtime.js && node --check public/generation-preview.js && node --check public/generation-events-client.js && node --check public/source-viewer.js && node --check public/assistant-markdown.js && node --check public/glue.js && node --check public/select.js && node --check public/margin-notes-core.js && node --check public/margin-notes.js && node --check public/study-cards.js && node --check public/lesson-scroll-policy.js && node --check public/lesson-shell.js",
     "test": "node --test"
   },
   "keywords": [],
