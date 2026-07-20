@@ -158,7 +158,7 @@ app.get('/api/courses/:id/lessons/:file', (req, res) => {
   if (!f) return res.status(404).end();
   const html = fs.readFileSync(path.join(dirOf(req.params.id), 'lessons', f), 'utf8')
     .replace(/<head[^>]*>/i, (m) => `${m}<base href="/api/courses/${req.params.id}/lessons/">`)
-    .replace(/<\/body>/i, `<script>window.__courseId=${JSON.stringify(req.params.id)}</script><script src="/select.js"></script></body>`);
+    .replace(/<\/body>/i, `<script>window.__courseId=${JSON.stringify(req.params.id)}</script><link rel="stylesheet" href="/margin-notes.css"><script src="/margin-notes-core.js"></script><script src="/margin-notes.js"></script><script src="/study-cards.js"></script><script src="/select.js"></script></body>`);
   res.type('html').send(html);
 });
 
