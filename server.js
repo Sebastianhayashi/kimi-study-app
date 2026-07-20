@@ -11,9 +11,11 @@ const { deriveGenerationStatus } = require('./lib/generation-status');
 const { runTrackedKimi } = require('./lib/kimi-generation-runner');
 const { appendGenerationEvent, readGenerationEvents, subscribeGenerationEvents } = require('./lib/generation-events');
 const { listCourseSources } = require('./lib/source-manifest');
+const { resolveDataDir } = require('./lib/runtime-config');
 
 const ROOT = __dirname;
-const DATA = path.join(ROOT, 'data', 'courses');
+const DATA = resolveDataDir({ root: ROOT });
+fs.mkdirSync(DATA, { recursive: true });
 const SKILLS = path.join(ROOT, 'skills');
 const MODEL = 'kimi-code/kimi-for-coding'; // K2.7 Coding
 const PORT = process.env.PORT || 3000;
