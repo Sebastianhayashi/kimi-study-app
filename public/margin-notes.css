@@ -433,3 +433,8 @@ html.kn-reserve-both body {
   [data-study-ready="true"]:hover,
   [data-study-ready="true"]:active { transform: none; }
 }
+
+.kn-margin-layer.kn-panel-collapsed > * {
+  display: none;
+}
+
