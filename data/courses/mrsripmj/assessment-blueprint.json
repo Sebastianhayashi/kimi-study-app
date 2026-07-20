@@ -1,86 +1,40 @@
 {
   "schemaVersion": 1,
-  "lessonId": "0001-our-classroom-part-a",
-  "title": "Unit 1 Our Classroom Part A",
-  "claims": ["c-u1-class-intro", "c-u1-classroom-vocab", "c-u1-classroom-instructions", "c-u1-phonics-ar"],
-  "stages": ["guided", "independent"],
-  "blueprint": [
+  "blueprints": [
     {
-      "claimId": "c-u1-classroom-vocab",
-      "stage": "guided",
-      "taskFamily": "recognition",
-      "type": "single-choice",
-      "count": 2,
-      "difficulty": "low"
+      "lessonId": "0001-our-classroom-part-a",
+      "title": "Unit 1 Our Classroom Part A",
+      "claims": ["c-u1-class-intro", "c-u1-classroom-vocab", "c-u1-classroom-instructions", "c-u1-phonics-ar"],
+      "stages": ["guided", "independent"],
+      "blueprint": [
+        { "claimId": "c-u1-classroom-vocab", "stage": "guided", "taskFamily": "recognition", "type": "single-choice", "count": 2, "difficulty": "low" },
+        { "claimId": "c-u1-classroom-vocab", "stage": "independent", "taskFamily": "controlled-completion", "type": "fill-blank", "count": 1, "difficulty": "medium" },
+        { "claimId": "c-u1-class-intro", "stage": "guided", "taskFamily": "role response", "type": "single-choice", "count": 1, "difficulty": "medium" },
+        { "claimId": "c-u1-class-intro", "stage": "independent", "taskFamily": "transformation", "type": "fill-blank", "count": 1, "difficulty": "medium" },
+        { "claimId": "c-u1-classroom-instructions", "stage": "guided", "taskFamily": "role response", "type": "single-choice", "count": 1, "difficulty": "low" },
+        { "claimId": "c-u1-classroom-instructions", "stage": "independent", "taskFamily": "controlled-completion", "type": "fill-blank", "count": 1, "difficulty": "medium" },
+        { "claimId": "c-u1-phonics-ar", "stage": "guided", "taskFamily": "recognition", "type": "single-choice", "count": 1, "difficulty": "low" },
+        { "claimId": "c-u1-phonics-ar", "stage": "independent", "taskFamily": "controlled-completion", "type": "fill-blank", "count": 1, "difficulty": "medium" },
+        { "claimId": "c-u1-classroom-instructions", "stage": "independent", "taskFamily": "order-steps", "type": "ordering", "count": 1, "difficulty": "medium" }
+      ],
+      "passingRule": { "minScore": 8, "maxScore": 9, "requiredPercentage": 0.8 }
     },
     {
-      "claimId": "c-u1-classroom-vocab",
-      "stage": "independent",
-      "taskFamily": "controlled-completion",
-      "type": "fill-blank",
-      "count": 1,
-      "difficulty": "medium"
-    },
-    {
-      "claimId": "c-u1-class-intro",
-      "stage": "guided",
-      "taskFamily": "role response",
-      "type": "single-choice",
-      "count": 1,
-      "difficulty": "medium"
-    },
-    {
-      "claimId": "c-u1-class-intro",
-      "stage": "independent",
-      "taskFamily": "transformation",
-      "type": "fill-blank",
-      "count": 1,
-      "difficulty": "medium"
-    },
-    {
-      "claimId": "c-u1-classroom-instructions",
-      "stage": "guided",
-      "taskFamily": "role response",
-      "type": "single-choice",
-      "count": 1,
-      "difficulty": "low"
-    },
-    {
-      "claimId": "c-u1-classroom-instructions",
-      "stage": "independent",
-      "taskFamily": "controlled-completion",
-      "type": "fill-blank",
-      "count": 1,
-      "difficulty": "medium"
-    },
-    {
-      "claimId": "c-u1-phonics-ar",
-      "stage": "guided",
-      "taskFamily": "recognition",
-      "type": "single-choice",
-      "count": 1,
-      "difficulty": "low"
-    },
-    {
-      "claimId": "c-u1-phonics-ar",
-      "stage": "independent",
-      "taskFamily": "controlled-completion",
-      "type": "fill-blank",
-      "count": 1,
-      "difficulty": "medium"
-    },
-    {
-      "claimId": "c-u1-classroom-instructions",
-      "stage": "independent",
-      "taskFamily": "order-steps",
-      "type": "ordering",
-      "count": 1,
-      "difficulty": "medium"
+      "lessonId": "0002-our-classroom-part-b",
+      "title": "Unit 1 Our Classroom Part B",
+      "claims": ["c-u1-be-negation", "c-u1-phonics-er", "c-u1-classroom-song", "c-u1-classroom-vocab"],
+      "stages": ["guided", "independent"],
+      "blueprint": [
+        { "claimId": "c-u1-be-negation", "stage": "guided", "taskFamily": "recognition", "type": "single-choice", "count": 2, "difficulty": "low" },
+        { "claimId": "c-u1-be-negation", "stage": "independent", "taskFamily": "transformation", "type": "fill-blank", "count": 1, "difficulty": "medium" },
+        { "claimId": "c-u1-phonics-er", "stage": "guided", "taskFamily": "recognition", "type": "single-choice", "count": 1, "difficulty": "low" },
+        { "claimId": "c-u1-phonics-er", "stage": "independent", "taskFamily": "controlled-completion", "type": "fill-blank", "count": 1, "difficulty": "medium" },
+        { "claimId": "c-u1-classroom-song", "stage": "guided", "taskFamily": "recognition", "type": "single-choice", "count": 1, "difficulty": "low" },
+        { "claimId": "c-u1-classroom-song", "stage": "independent", "taskFamily": "controlled-completion", "type": "fill-blank", "count": 1, "difficulty": "medium" },
+        { "claimId": "c-u1-classroom-vocab", "stage": "independent", "taskFamily": "recognition", "type": "single-choice", "count": 1, "difficulty": "low" },
+        { "claimId": "c-u1-classroom-vocab", "stage": "independent", "taskFamily": "order-steps", "type": "ordering", "count": 1, "difficulty": "medium" }
+      ],
+      "passingRule": { "minScore": 7, "maxScore": 8, "requiredPercentage": 0.8 }
     }
-  ],
-  "passingRule": {
-    "minScore": 8,
-    "maxScore": 9,
-    "requiredPercentage": 0.8
-  }
+  ]
 }

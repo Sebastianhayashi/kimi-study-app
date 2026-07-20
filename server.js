@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { validateLessonSpec, scoreActivity, computeClaimProgress, toPublicLessonSpec } = require('./lib/activity-engine');
+const { deriveGenerationStatus } = require('./lib/generation-status');
 
 const ROOT = __dirname;
 const DATA = path.join(ROOT, 'data', 'courses');
@@ -45,15 +46,19 @@ const app = express();
 app.use(express.json());
 app.use((req, res, next) => { console.log(`[http] ${req.method} ${req.url}`); next(); });
 
-// ---- 冻结前端：原样输出，仅在 </body> 前注入 glue.js ----
-const page = (file) => (req, res) => {
+// ---- 冻结前端：原样输出，仅在响应中注入运行时资源 ----
+const page = (file, { head = '', body = '' } = {}) => (req, res) => {
   const html = fs.readFileSync(path.join(ROOT, 'public', file), 'utf8')
-    .replace('</body>', '<script src="/glue.js"></script></body>');
+    .replace('</head>', `${head}</head>`)
+    .replace('</body>', `${body}<script src="/glue.js"></script></body>`);
   res.type('html').send(html);
 };
 app.get('/', page('index.html'));
 app.get('/app', page('app.html'));
-app.get('/course/:id', page('course.html'));
+app.get('/course/:id', page('course.html', {
+  head: '<link rel="stylesheet" href="/generation-preview.css">',
+  body: '<script src="/generation-preview.js"></script>',
+}));
 app.use(express.static(path.join(ROOT, 'public'))); // 前端外壳资源
 
 // ---- 课程工作区 ----
@@ -158,7 +163,25 @@ app.get('/api/courses/:id/info', (req, res) => {
 
 // 进度轮询
 app.get('/api/courses/:id/status', (req, res) => {
-  res.json({ ...readJob(req.params.id), lessons: lessonsOf(req.params.id).length, busy: locks.has(req.params.id) });
+  const id = req.params.id;
+  const job = readJob(id);
+  const lessons = lessonsOf(id).length;
+  const busy = locks.has(id);
+  // 进程已不在（服务器重启/生成被杀）但状态停在生成中 → 判定为中断，避免前端动画空转
+  if (!busy && (job.stage === 'generating' || job.stage === 'understanding')) {
+    try {
+      if (Date.now() - fs.statSync(jobFile(id)).mtimeMs > 60_000) {
+        job.stage = 'failed';
+        job.error = '课程生成已中断，请重试';
+      }
+    } catch {}
+  }
+  res.json({
+    ...job,
+    ...deriveGenerationStatus(dirOf(id), job, { lessons, busy }),
+    lessons,
+    busy,
+  });
 });
 
 // 课节列表 / 课节内容（注入 <base> 和划词脚本，磁盘课件不动）

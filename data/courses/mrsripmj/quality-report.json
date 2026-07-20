@@ -1,39 +1,77 @@
 {
   "schemaVersion": 1,
-  "reportDate": "2026-07-20",
-  "lessonId": "0001-our-classroom-part-a",
-  "published": [
-    "u1pa-vocab-1",
-    "u1pa-vocab-2",
-    "u1pa-vocab-3",
-    "u1pa-pattern-1",
-    "u1pa-pattern-2",
-    "u1pa-pattern-3",
-    "u1pa-phonics-1",
-    "u1pa-phonics-2",
-    "u1pa-order-1"
-  ],
-  "rejected": [
+  "reports": [
     {
-      "id": "u1pa-vocab-4",
-      "reason": "redundant with u1pa-vocab-1 and u1pa-vocab-2; does not add new evidence for any claim"
+      "reportDate": "2026-07-20",
+      "lessonId": "0001-our-classroom-part-a",
+      "published": [
+        "u1pa-vocab-1",
+        "u1pa-vocab-2",
+        "u1pa-vocab-3",
+        "u1pa-pattern-1",
+        "u1pa-pattern-2",
+        "u1pa-pattern-3",
+        "u1pa-phonics-1",
+        "u1pa-phonics-2",
+        "u1pa-order-1"
+      ],
+      "rejected": [
+        {
+          "id": "u1pa-vocab-4",
+          "reason": "redundant with u1pa-vocab-1 and u1pa-vocab-2; does not add new evidence for any claim"
+        },
+        {
+          "id": "u1pa-pattern-4",
+          "reason": "prompt would require the learner to know grade numbers beyond the textbook examples; adds reading load without aligned claim"
+        }
+      ],
+      "checks": {
+        "grounded": true,
+        "alignedToClaims": true,
+        "answerableFromSource": true,
+        "oneBestAnswer": true,
+        "noLeakage": true,
+        "distractorsMapToMisconceptions": true,
+        "difficultyFromReasoning": true,
+        "ageAndLanguageFit": true,
+        "notRedundant": true,
+        "updatesConfidence": true
+      },
+      "notes": "All published items passed the required quality gates. Distractors for class-intro and classroom-instructions items map directly to identified misconceptions."
     },
     {
-      "id": "u1pa-pattern-4",
-      "reason": "prompt would require the learner to know grade numbers beyond the textbook examples; adds reading load without aligned claim"
+      "reportDate": "2026-07-20",
+      "lessonId": "0002-our-classroom-part-b",
+      "published": [
+        "u1pb-negation-1",
+        "u1pb-negation-2",
+        "u1pb-negation-3",
+        "u1pb-phonics-1",
+        "u1pb-phonics-2",
+        "u1pb-song-1",
+        "u1pb-song-2",
+        "u1pb-vocab-1",
+        "u1pb-order-1"
+      ],
+      "rejected": [
+        {
+          "id": "u1pb-negation-4",
+          "reason": "requires distinguishing between cat/tiger/teacher which is too similar to u1pb-negation-1 and adds confusion without new evidence"
+        }
+      ],
+      "checks": {
+        "grounded": true,
+        "alignedToClaims": true,
+        "answerableFromSource": true,
+        "oneBestAnswer": true,
+        "noLeakage": true,
+        "distractorsMapToMisconceptions": true,
+        "difficultyFromReasoning": true,
+        "ageAndLanguageFit": true,
+        "notRedundant": true,
+        "updatesConfidence": true
+      },
+      "notes": "Lesson 0002 focuses on be-negation, er phonics, and classroom song comprehension. Distractors map to m-is-not-isnt and m-er-ar-confusion."
     }
-  ],
-  "checks": {
-    "grounded": true,
-    "alignedToClaims": true,
-    "answerableFromSource": true,
-    "oneBestAnswer": true,
-    "noLeakage": true,
-    "distractorsMapToMisconceptions": true,
-    "difficultyFromReasoning": true,
-    "ageAndLanguageFit": true,
-    "notRedundant": true,
-    "updatesConfidence": true
-  },
-  "notes": "All published items passed the required quality gates. Distractors for class-intro and classroom-instructions items map directly to identified misconceptions."
+  ]
 }

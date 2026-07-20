@@ -1,0 +1,304 @@
+{
+  "schemaVersion": 1,
+  "lessonId": "0002-our-classroom-part-b",
+  "title": "Unit 1 Our Classroom Part B",
+  "claims": [
+    {
+      "id": "c-u1-be-negation",
+      "label": "使用 It is / It isn't 进行肯定与否定判断",
+      "description": "能够根据图片或情境，用 It's a ... / It isn't a ... 正确判断物品是否为某物。",
+      "sourceRefs": ["source:book#unit1-partB"],
+      "mastery": {
+        "requiredPassed": 2,
+        "requiredStages": ["guided", "independent"]
+      }
+    },
+    {
+      "id": "c-u1-phonics-er",
+      "label": "辨识 er 字母组合发音",
+      "description": "能够识别字母组合 er 在 ruler, tiger, teacher, father 中的 /ə/ 发音规律，并完成听音辨词或补全单词任务。",
+      "sourceRefs": ["source:book#unit1-partB-phonics"],
+      "mastery": {
+        "requiredPassed": 1,
+        "requiredStages": ["guided", "independent"]
+      }
+    },
+    {
+      "id": "c-u1-classroom-song",
+      "label": "理解并补全教室主题歌曲内容",
+      "description": "能够根据歌曲内容识别教室物品，并补全歌词中的关键词。",
+      "sourceRefs": ["source:book#unit1-song"],
+      "mastery": {
+        "requiredPassed": 1,
+        "requiredStages": ["guided", "independent"]
+      }
+    },
+    {
+      "id": "c-u1-classroom-vocab",
+      "label": "识别教室物品词汇",
+      "description": "能够认读、理解并在图片提示下正确匹配 classroom, blackboard, desk, chair 等核心词汇。",
+      "sourceRefs": ["source:book#unit1"],
+      "mastery": {
+        "requiredPassed": 1,
+        "requiredStages": ["independent"]
+      }
+    }
+  ],
+  "activities": [
+    {
+      "id": "u1pb-negation-1",
+      "type": "single-choice",
+      "claimId": "c-u1-be-negation",
+      "stage": "guided",
+      "title": "判断肯定与否定：猫不是老虎",
+      "prompt": "听到猫叫，你知道它不是老虎。正确的句子是？",
+      "options": [
+        { "id": "a", "label": "It's a cat. It isn't a tiger." },
+        { "id": "b", "label": "It's a cat. It not a tiger.", "misconceptionId": "m-is-not-isnt" },
+        { "id": "c", "label": "It's a cat. It no a tiger.", "misconceptionId": "m-is-not-isnt" },
+        { "id": "d", "label": "It's a tiger. It isn't a cat." }
+      ],
+      "correctOptionId": "a",
+      "misconceptions": [
+        {
+          "id": "m-is-not-isnt",
+          "belief": "“它不是老虎”要说 It not a tiger 或 It no a tiger",
+          "feedback": "be 动词的否定要用 is not 或其缩写 isn't，即 It isn't a tiger。"
+        }
+      ],
+      "feedback": {
+        "correct": "正确。It's a cat. It isn't a tiger. 表示“它是一只猫，不是老虎”。",
+        "incorrect": "注意否定句要用 isn't（= is not），不能说 It not 或 It no。"
+      },
+      "hints": [
+        { "content": "is not 的缩写形式是什么？" },
+        { "content": "答案是 It isn't a tiger。" }
+      ],
+      "sourceRefs": ["source:book#unit1-partB"]
+    },
+    {
+      "id": "u1pb-negation-2",
+      "type": "single-choice",
+      "claimId": "c-u1-be-negation",
+      "stage": "guided",
+      "title": "图片判断：不是书桌",
+      "prompt": "图片是一把椅子，应该怎么说？",
+      "options": [
+        { "id": "a", "label": "It's a chair. It isn't a desk." },
+        { "id": "b", "label": "It's a desk. It isn't a chair." },
+        { "id": "c", "label": "It isn't a chair. It's a desk." },
+        { "id": "d", "label": "It's not desk." }
+      ],
+      "correctOptionId": "a",
+      "feedback": {
+        "correct": "正确。图片是椅子，所以“它是椅子，不是书桌”。",
+        "incorrect": "先判断图片是什么，再用 It isn't a ... 说明它不是什么。"
+      },
+      "hints": [
+        { "content": "图片是 chair，不是 desk。" },
+        { "content": "正确句子：It's a chair. It isn't a desk." }
+      ],
+      "sourceRefs": ["source:book#unit1-partB"]
+    },
+    {
+      "id": "u1pb-negation-3",
+      "type": "fill-blank",
+      "claimId": "c-u1-be-negation",
+      "stage": "independent",
+      "title": "补全否定句",
+      "prompt": "看图是只猫，补全句子：It ______ a tiger.（它不是老虎。）",
+      "scoring": {
+        "mode": "exact",
+        "answer": "isn't",
+        "caseSensitive": false,
+        "ignoreWhitespace": true
+      },
+      "feedback": {
+        "correct": "正确。It isn't a tiger. 意思是“它不是老虎”。",
+        "incorrect": "“它不是”用 It isn't，是 is not 的缩写。"
+      },
+      "hints": [
+        { "content": "is not 的缩写是 isn't。" },
+        { "content": "答案是 isn't。" }
+      ],
+      "sourceRefs": ["source:book#unit1-partB"]
+    },
+    {
+      "id": "u1pb-phonics-1",
+      "type": "single-choice",
+      "claimId": "c-u1-phonics-er",
+      "stage": "guided",
+      "title": "辨识 er 发音",
+      "prompt": "下列哪个词与 teacher 有相同的发音规律（都含 er）？",
+      "options": [
+        { "id": "a", "label": "tiger" },
+        { "id": "b", "label": "car", "misconceptionId": "m-er-ar-confusion" },
+        { "id": "c", "label": "ruler" },
+        { "id": "d", "label": "star", "misconceptionId": "m-er-ar-confusion" }
+      ],
+      "correctOptionId": "c",
+      "misconceptions": [
+        {
+          "id": "m-er-ar-confusion",
+          "belief": "er 和 ar 发音相同",
+          "feedback": "ar 通常发 /ɑː/（如 car），er 通常发 /ə/（如 ruler, teacher）。"
+        }
+      ],
+      "feedback": {
+        "correct": "正确。ruler 和 teacher 都含有 er，发 /ə/。",
+        "incorrect": "teacher 的结尾是 er。选项中哪个词也含 er 且不是 tiger？"
+      },
+      "hints": [
+        { "content": "找一找哪个单词中间有 er 字母组合。" },
+        { "content": "答案是 ruler。" }
+      ],
+      "sourceRefs": ["source:book#unit1-partB-phonics"]
+    },
+    {
+      "id": "u1pb-phonics-2",
+      "type": "fill-blank",
+      "claimId": "c-u1-phonics-er",
+      "stage": "independent",
+      "title": "补全 tiger",
+      "prompt": "根据发音规律补全单词：tig__（老虎）",
+      "scoring": {
+        "mode": "exact",
+        "answer": "tiger",
+        "caseSensitive": false,
+        "ignoreWhitespace": true
+      },
+      "feedback": {
+        "correct": "正确。tiger 就是老虎。",
+        "incorrect": "tiger 末尾是 er，和 ruler / teacher / father 一样。"
+      },
+      "hints": [
+        { "content": "这个单词以 er 结尾。" },
+        { "content": "答案是 tiger。" }
+      ],
+      "sourceRefs": ["source:book#unit1-partB-phonics"]
+    },
+    {
+      "id": "u1pb-song-1",
+      "type": "single-choice",
+      "claimId": "c-u1-classroom-song",
+      "stage": "guided",
+      "title": "歌曲内容理解",
+      "prompt": "歌曲 In the Classroom 中，墙上有什么？",
+      "options": [
+        { "id": "a", "label": "a blackboard" },
+        { "id": "b", "label": "a window" },
+        { "id": "c", "label": "a desk" },
+        { "id": "d", "label": "a chair" }
+      ],
+      "correctOptionId": "a",
+      "feedback": {
+        "correct": "正确。歌词中有“there's a blackboard on the wall”。",
+        "incorrect": "回忆歌词：墙上挂着什么？"
+      },
+      "hints": [
+        { "content": "“on the wall” 表示在墙上。" },
+        { "content": "答案是 blackboard。" }
+      ],
+      "sourceRefs": ["source:book#unit1-song"]
+    },
+    {
+      "id": "u1pb-song-2",
+      "type": "fill-blank",
+      "claimId": "c-u1-classroom-song",
+      "stage": "independent",
+      "title": "补全歌词",
+      "prompt": "补全歌词：In my classroom, I can see desks and ______.（在我的教室里，我能看到书桌和椅子。）",
+      "scoring": {
+        "mode": "exact",
+        "answer": "chairs",
+        "caseSensitive": false,
+        "ignoreWhitespace": true
+      },
+      "feedback": {
+        "correct": "正确。desks and chairs 是“书桌和椅子”。",
+        "incorrect": "教室里的另一种家具，和 desk 配对出现。"
+      },
+      "hints": [
+        { "content": "学生坐在什么上面？" },
+        { "content": "答案是 chairs。" }
+      ],
+      "sourceRefs": ["source:book#unit1-song"]
+    },
+    {
+      "id": "u1pb-vocab-1",
+      "type": "single-choice",
+      "claimId": "c-u1-classroom-vocab",
+      "stage": "independent",
+      "title": "复习教室物品",
+      "prompt": "教室里学生用来写字的家具是？",
+      "options": [
+        { "id": "a", "label": "blackboard" },
+        { "id": "b", "label": "desk" },
+        { "id": "c", "label": "chair" },
+        { "id": "d", "label": "window" }
+      ],
+      "correctOptionId": "b",
+      "feedback": {
+        "correct": "正确。desk 是书桌，学生用来写字、放书。",
+        "incorrect": "回忆教室里的家具：哪个是“书桌”？"
+      },
+      "hints": [
+        { "content": "“书桌”的英文是 desk。" },
+        { "content": "答案是 desk。" }
+      ],
+      "sourceRefs": ["source:book#unit1"]
+    },
+    {
+      "id": "u1pb-order-1",
+      "type": "ordering",
+      "claimId": "c-u1-classroom-song",
+      "stage": "independent",
+      "title": "歌谣 My Classroom 顺序",
+      "prompt": "将歌谣 My Classroom 的歌词按正确顺序排列：",
+      "items": [
+        "I can see desks and chairs.",
+        "In my classroom,",
+        "For you and for me."
+      ],
+      "scoring": {
+        "mode": "exact-order",
+        "answer": [
+          "In my classroom,",
+          "I can see desks and chairs.",
+          "For you and for me."
+        ],
+        "caseSensitive": false
+      },
+      "feedback": {
+        "correct": "正确。歌谣的顺序是：In my classroom, I can see desks and chairs, for you and for me.",
+        "incorrect": "先地点，再看到什么，最后说明是给谁的。"
+      },
+      "hints": [
+        { "content": "第一句应该以 In my classroom 开头。" },
+        { "content": "正确顺序：In my classroom → I can see desks and chairs → For you and for me." }
+      ],
+      "sourceRefs": ["source:book#unit1-song"]
+    },
+    {
+      "id": "u1pb-recording-1",
+      "type": "recording",
+      "claimId": "c-u1-be-negation",
+      "stage": "independent",
+      "title": "朗读展示",
+      "prompt": "朗读并录音：It's a cat. It isn't a tiger. In my classroom, I can see desks and chairs.",
+      "scoring": {
+        "mode": "completion",
+        "minimumLength": 10
+      },
+      "feedback": {
+        "correct": "已记录。注意 isn't 的发音和句子节奏。",
+        "incorrect": "请至少朗读一句完整句子后再提交。"
+      },
+      "hints": [
+        { "content": "注意 It isn't 连读时 t 和 i 的发音。" },
+        { "content": "可以一边读一边用手指点对应的物品。" }
+      ],
+      "sourceRefs": ["source:book#unit1-partB"]
+    }
+  ]
+}

@@ -42,6 +42,18 @@
       "belief": "春节也可以用 Merry Christmas 来祝福",
       "correctUnderstanding": "Merry Christmas 只用于圣诞节；春节用 Happy New Year 或 Happy Spring Festival。",
       "sourceRefs": ["source:book#unit7", "source:book#unit8"]
+    },
+    {
+      "id": "m-is-not-isnt",
+      "belief": "“它不是老虎”要说 It not a tiger 或 It no a tiger",
+      "correctUnderstanding": "be 动词的否定要用 is not 或其缩写 isn't，即 It isn't a tiger。",
+      "sourceRefs": ["source:book#unit1-partB"]
+    },
+    {
+      "id": "m-er-ar-confusion",
+      "belief": "er 和 ar 发音相同",
+      "correctUnderstanding": "ar 通常发 /ɑː/（如 car），er 通常发 /ə/（如 ruler, teacher）。",
+      "sourceRefs": ["source:book#unit1-partA-phonics", "source:book#unit1-partB-phonics"]
     }
   ]
 }

@@ -43,9 +43,9 @@
           courseId = data.id;
           setStep(progressUpload, 'done', '✓');
           setStep(progressUnderstand, 'active', '2');
-          progressTitle.textContent = '正在理解材料';
-          progressCopy.textContent = 'Kimi 正在识别主题、章节结构、关键概念和材料依据。整本书通常需要几分钟。';
-          poll();
+          progressTitle.textContent = '正在打开课程生成界面';
+          progressCopy.textContent = '你会在课程页面看到材料分析、学习目标、练习设计和课程组装的实时进度。';
+          window.setTimeout(() => { location.href = `/course/${courseId}`; }, 180);
         })
         .catch(() => fail('上传失败，请重试'));
     };
@@ -180,6 +180,12 @@
   if (path.startsWith('/course/')) {
     const courseId = path.split('/').pop();
     const lessonFrame = document.getElementById('lessonFrame');
+    const courseStage = document.querySelector('.course-stage');
+    const generationPreview = window.KimiGenerationPreview?.mount(courseStage) || {
+      update() {}, complete() {}, fail() {}, hide() {},
+    };
+    let generationWasActive = false;
+    let generationPollTimer = null;
     let currentLessonUrl = '';
     let resourceTools = { reset() {} };
     let lessons = [];
@@ -222,6 +228,49 @@
             loaded = true;
             showLesson(0);
           }
+        });
+    }
+
+    function scheduleGenerationPoll() {
+      window.clearTimeout(generationPollTimer);
+      generationPollTimer = window.setTimeout(pollCourseGeneration, 1800);
+    }
+
+    function pollCourseGeneration() {
+      fetch(`/api/courses/${courseId}/status`)
+        .then((r) => r.json())
+        .then((status) => {
+          const nextButton = document.getElementById('nextLessonButton');
+          if (status.stage === 'failed') {
+            if (nextButton) nextButton.disabled = true;
+            generationPreview.fail(status);
+            return;
+          }
+          if (status.stage === 'ready' && status.lessons > 0) {
+            if (generationWasActive) {
+              generationPreview.complete(status);
+              window.setTimeout(() => location.reload(), 650);
+              return;
+            }
+            generationPreview.hide({ immediate: true });
+            if (nextButton) nextButton.disabled = false;
+            loadLessons();
+            return;
+          }
+          generationWasActive = true;
+          if (nextButton) nextButton.disabled = true;
+          generationPreview.update(status);
+          scheduleGenerationPoll();
+        })
+        .catch(() => {
+          generationWasActive = true;
+          generationPreview.update({
+            progress: 0,
+            canvasVariant: 'material',
+            currentMessage: '正在连接课程生成进度…',
+            history: [],
+          });
+          scheduleGenerationPoll();
         });
     }
 
@@ -721,6 +770,6 @@
     });
     document.querySelector('#assistantPanel .panel-header-actions')?.prepend(newChatBtn);
 
-    loadLessons();
+    pollCourseGeneration();
   }
 })();

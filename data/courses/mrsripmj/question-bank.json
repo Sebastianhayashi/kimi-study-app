@@ -138,6 +138,144 @@
       ],
       "sourceRefs": ["source:book#unit1"],
       "misconceptionIds": []
+    },
+    {
+      "id": "u1pb-negation-1",
+      "type": "single-choice",
+      "claimId": "c-u1-be-negation",
+      "stage": "guided",
+      "title": "判断肯定与否定：猫不是老虎",
+      "prompt": "听到猫叫，你知道它不是老虎。正确的句子是？",
+      "options": [
+        { "id": "a", "label": "It's a cat. It isn't a tiger." },
+        { "id": "b", "label": "It's a cat. It not a tiger.", "misconceptionId": "m-is-not-isnt" },
+        { "id": "c", "label": "It's a cat. It no a tiger.", "misconceptionId": "m-is-not-isnt" },
+        { "id": "d", "label": "It's a tiger. It isn't a cat." }
+      ],
+      "correctOptionId": "a",
+      "sourceRefs": ["source:book#unit1-partB"],
+      "misconceptionIds": ["m-is-not-isnt"]
+    },
+    {
+      "id": "u1pb-negation-2",
+      "type": "single-choice",
+      "claimId": "c-u1-be-negation",
+      "stage": "guided",
+      "title": "图片判断：不是书桌",
+      "prompt": "图片是一把椅子，应该怎么说？",
+      "options": [
+        { "id": "a", "label": "It's a chair. It isn't a desk." },
+        { "id": "b", "label": "It's a desk. It isn't a chair." },
+        { "id": "c", "label": "It isn't a chair. It's a desk." },
+        { "id": "d", "label": "It's not desk." }
+      ],
+      "correctOptionId": "a",
+      "sourceRefs": ["source:book#unit1-partB"],
+      "misconceptionIds": []
+    },
+    {
+      "id": "u1pb-negation-3",
+      "type": "fill-blank",
+      "claimId": "c-u1-be-negation",
+      "stage": "independent",
+      "title": "补全否定句",
+      "prompt": "看图是只猫，补全句子：It ______ a tiger.（它不是老虎。）",
+      "answer": "isn't",
+      "sourceRefs": ["source:book#unit1-partB"],
+      "misconceptionIds": ["m-is-not-isnt"]
+    },
+    {
+      "id": "u1pb-phonics-1",
+      "type": "single-choice",
+      "claimId": "c-u1-phonics-er",
+      "stage": "guided",
+      "title": "辨识 er 发音",
+      "prompt": "下列哪个词与 teacher 有相同的发音规律（都含 er）？",
+      "options": [
+        { "id": "a", "label": "tiger", "misconceptionId": "m-er-ar-confusion" },
+        { "id": "b", "label": "car", "misconceptionId": "m-er-ar-confusion" },
+        { "id": "c", "label": "ruler" },
+        { "id": "d", "label": "star", "misconceptionId": "m-er-ar-confusion" }
+      ],
+      "correctOptionId": "c",
+      "sourceRefs": ["source:book#unit1-partB-phonics"],
+      "misconceptionIds": ["m-er-ar-confusion"]
+    },
+    {
+      "id": "u1pb-phonics-2",
+      "type": "fill-blank",
+      "claimId": "c-u1-phonics-er",
+      "stage": "independent",
+      "title": "补全 tiger",
+      "prompt": "根据发音规律补全单词：tig__（老虎）",
+      "answer": "tiger",
+      "sourceRefs": ["source:book#unit1-partB-phonics"],
+      "misconceptionIds": []
+    },
+    {
+      "id": "u1pb-song-1",
+      "type": "single-choice",
+      "claimId": "c-u1-classroom-song",
+      "stage": "guided",
+      "title": "歌曲内容理解",
+      "prompt": "歌曲 In the Classroom 中，墙上有什么？",
+      "options": [
+        { "id": "a", "label": "a blackboard" },
+        { "id": "b", "label": "a window" },
+        { "id": "c", "label": "a desk" },
+        { "id": "d", "label": "a chair" }
+      ],
+      "correctOptionId": "a",
+      "sourceRefs": ["source:book#unit1-song"],
+      "misconceptionIds": []
+    },
+    {
+      "id": "u1pb-song-2",
+      "type": "fill-blank",
+      "claimId": "c-u1-classroom-song",
+      "stage": "independent",
+      "title": "补全歌词",
+      "prompt": "补全歌词：In my classroom, I can see desks and ______.（在我的教室里，我能看到书桌和椅子。）",
+      "answer": "chairs",
+      "sourceRefs": ["source:book#unit1-song"],
+      "misconceptionIds": []
+    },
+    {
+      "id": "u1pb-vocab-1",
+      "type": "single-choice",
+      "claimId": "c-u1-classroom-vocab",
+      "stage": "independent",
+      "title": "复习教室物品",
+      "prompt": "教室里学生用来写字的家具是？",
+      "options": [
+        { "id": "a", "label": "blackboard" },
+        { "id": "b", "label": "desk" },
+        { "id": "c", "label": "chair" },
+        { "id": "d", "label": "window" }
+      ],
+      "correctOptionId": "b",
+      "sourceRefs": ["source:book#unit1"],
+      "misconceptionIds": []
+    },
+    {
+      "id": "u1pb-order-1",
+      "type": "ordering",
+      "claimId": "c-u1-classroom-vocab",
+      "stage": "independent",
+      "title": "歌谣 My Classroom 顺序",
+      "prompt": "将歌谣 My Classroom 的歌词按正确顺序排列：",
+      "items": [
+        "I can see desks and chairs.",
+        "In my classroom,",
+        "For you and for me."
+      ],
+      "answer": [
+        "In my classroom,",
+        "I can see desks and chairs.",
+        "For you and for me."
+      ],
+      "sourceRefs": ["source:book#unit1-song"],
+      "misconceptionIds": []
     }
   ]
 }

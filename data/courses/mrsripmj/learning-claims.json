@@ -40,6 +40,36 @@
       "requiredEvidence": "在 2 个语音任务中至少 1 个正确。",
       "transferDistance": "near-transfer",
       "mastery": "1 of 2 correct"
+    },
+    {
+      "id": "c-u1-be-negation",
+      "label": "使用 It is / It isn't 进行肯定与否定判断",
+      "description": "能够根据图片或情境，用 It's a ... / It isn't a ... 正确判断物品是否为某物。",
+      "sourceRefs": ["source:book#unit1-partB"],
+      "observableAction": "看到动物或物品图片，能选择或写出正确的肯定或否定句。",
+      "requiredEvidence": "在 3 个判断任务中至少 2 个正确，包括 isn't 的缩写形式。",
+      "transferDistance": "near-transfer",
+      "mastery": "2 of 3 correct"
+    },
+    {
+      "id": "c-u1-phonics-er",
+      "label": "辨识 er 字母组合发音",
+      "description": "能够识别字母组合 er 在 ruler, tiger, teacher, father 中的 /ə/ 发音规律，并完成听音辨词或补全单词任务。",
+      "sourceRefs": ["source:book#unit1-partB-phonics"],
+      "observableAction": "从选项中选出含 er 发音规律的词，或根据提示补全 tiger / teacher / father 等单词。",
+      "requiredEvidence": "在 2 个语音任务中至少 1 个正确。",
+      "transferDistance": "near-transfer",
+      "mastery": "1 of 2 correct"
+    },
+    {
+      "id": "c-u1-classroom-song",
+      "label": "理解并补全教室主题歌曲内容",
+      "description": "能够根据歌曲内容识别教室物品，并补全歌词中的关键词。",
+      "sourceRefs": ["source:book#unit1-song"],
+      "observableAction": "听到或看到歌曲文本后，能补全 blackboard / chairs / windows 等关键词。",
+      "requiredEvidence": "在 2 个歌词补全任务中至少 1 个正确。",
+      "transferDistance": "same-example",
+      "mastery": "1 of 2 correct"
     }
   ]
 }

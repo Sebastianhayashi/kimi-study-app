@@ -1,109 +1,304 @@
 {
-  "id": "0001-our-classroom-part-a",
+  "schemaVersion": 1,
+  "lessonId": "0001-our-classroom-part-a",
   "title": "Unit 1 Our Classroom Part A",
-  "unit": 1,
-  "part": "A",
-  "passing_score": 8,
+  "claims": [
+    {
+      "id": "c-u1-class-intro",
+      "label": "介绍所在班级",
+      "description": "能够用 I'm in Class..., Grade... 句型正确介绍自己所在的班级和年级。",
+      "sourceRefs": ["source:book#unit1"],
+      "mastery": {
+        "requiredPassed": 2,
+        "requiredStages": ["guided", "independent"]
+      }
+    },
+    {
+      "id": "c-u1-classroom-vocab",
+      "label": "识别教室物品词汇",
+      "description": "能够认读、理解并在图片提示下正确匹配 classroom, blackboard, desk, chair 等核心词汇。",
+      "sourceRefs": ["source:book#unit1"],
+      "mastery": {
+        "requiredPassed": 2,
+        "requiredStages": ["guided", "independent"]
+      }
+    },
+    {
+      "id": "c-u1-classroom-instructions",
+      "label": "执行课堂指令",
+      "description": "能够理解并执行 Look at the blackboard. / Read after me. 等课堂指令。",
+      "sourceRefs": ["source:book#unit1"],
+      "mastery": {
+        "requiredPassed": 2,
+        "requiredStages": ["guided", "independent"]
+      }
+    },
+    {
+      "id": "c-u1-phonics-ar",
+      "label": "辨识 ar 字母组合发音",
+      "description": "能够识别字母组合 ar 在 car, park, star 中的 /ɑː/ 发音规律，并完成听音辨词或补全单词任务。",
+      "sourceRefs": ["source:book#unit1-phonics"],
+      "mastery": {
+        "requiredPassed": 1,
+        "requiredStages": ["guided", "independent"]
+      }
+    }
+  ],
   "activities": [
     {
       "id": "u1pa-vocab-1",
-      "type": "choice",
-      "question": "图片是教室里老师讲课用的黑色大板子，对应的英文单词是？",
-      "options": ["desk", "chair", "blackboard", "classroom"],
-      "answer": "blackboard",
-      "score": 1
+      "type": "single-choice",
+      "claimId": "c-u1-classroom-vocab",
+      "stage": "guided",
+      "title": "识别教室物品：黑板",
+      "prompt": "图片是教室里老师讲课用的黑色大板子，对应的英文单词是？",
+      "options": [
+        { "id": "a", "label": "desk" },
+        { "id": "b", "label": "chair" },
+        { "id": "c", "label": "blackboard" },
+        { "id": "d", "label": "classroom" }
+      ],
+      "correctOptionId": "c",
+      "feedback": {
+        "correct": "正确。blackboard 就是教室里老师写字用的黑板。",
+        "incorrect": "再想想：哪个词表示老师讲课用的黑色大板子？"
+      },
+      "hints": [
+        { "content": "这个单词由 black（黑色）和 board（板子）组成。" },
+        { "content": "答案是 blackboard。" }
+      ],
+      "sourceRefs": ["source:book#unit1"]
     },
     {
       "id": "u1pa-vocab-2",
-      "type": "choice",
-      "question": "classroom 的中文意思是？",
-      "options": ["班级", "教室", "课程", "学校"],
-      "answer": "教室",
-      "score": 1
+      "type": "single-choice",
+      "claimId": "c-u1-classroom-vocab",
+      "stage": "guided",
+      "title": "词义匹配：classroom",
+      "prompt": "classroom 的中文意思是？",
+      "options": [
+        { "id": "a", "label": "班级" },
+        { "id": "b", "label": "教室" },
+        { "id": "c", "label": "课程" },
+        { "id": "d", "label": "学校" }
+      ],
+      "correctOptionId": "b",
+      "feedback": {
+        "correct": "正确。classroom 是我们上课的房间。",
+        "incorrect": "class 是班级/课，room 是房间，合起来是什么地方？"
+      },
+      "hints": [
+        { "content": "classroom 是 class + room 合成的词。" },
+        { "content": "答案是教室。" }
+      ],
+      "sourceRefs": ["source:book#unit1"]
     },
     {
       "id": "u1pa-vocab-3",
-      "type": "fill_blank",
-      "question": "根据中文提示补全单词：椅子 ch__r",
-      "answer": "chair",
-      "score": 1,
-      "case_sensitive": false,
-      "trim_spaces": true
+      "type": "fill-blank",
+      "claimId": "c-u1-classroom-vocab",
+      "stage": "independent",
+      "title": "拼写椅子",
+      "prompt": "根据中文提示补全单词：椅子 ch__r",
+      "scoring": {
+        "mode": "exact",
+        "answer": "chair",
+        "caseSensitive": false,
+        "ignoreWhitespace": true
+      },
+      "feedback": {
+        "correct": "正确。chair 就是椅子。",
+        "incorrect": "注意中间是 ai，整个单词是 c-h-a-i-r。"
+      },
+      "hints": [
+        { "content": "中间缺两个字母，发音是 /eə/。" },
+        { "content": "答案是 chair。" }
+      ],
+      "sourceRefs": ["source:book#unit1"]
     },
     {
       "id": "u1pa-pattern-1",
-      "type": "choice",
-      "question": "当别人问 Which class are you in? 时，正确回答是？",
+      "type": "single-choice",
+      "claimId": "c-u1-class-intro",
+      "stage": "guided",
+      "title": "班级问答",
+      "prompt": "当别人问 Which class are you in? 时，正确回答是？",
       "options": [
-        "I'm Class One, Grade Four.",
-        "I'm in Class One, Grade Four.",
-        "I'm in Grade Four, Class One.",
-        "I'm at Class One, Grade Four."
+        { "id": "a", "label": "I'm Class One, Grade Four.", "misconceptionId": "m-class-grade-order" },
+        { "id": "b", "label": "I'm in Class One, Grade Four." },
+        { "id": "c", "label": "I'm in Grade Four, Class One.", "misconceptionId": "m-class-grade-order" },
+        { "id": "d", "label": "I'm at Class One, Grade Four.", "misconceptionId": "m-class-grade-order" }
       ],
-      "answer": "I'm in Class One, Grade Four.",
-      "score": 1
+      "correctOptionId": "b",
+      "misconceptions": [
+        {
+          "id": "m-class-grade-order",
+          "belief": "英语介绍班级时先说年级再说班级，和中文顺序一样",
+          "feedback": "英语先说 Class 再说 Grade，如 Class One, Grade Four。同时需要加介词 in。"
+        }
+      ],
+      "feedback": {
+        "correct": "正确。英语说班级要先说 Class，再说 Grade，并且用 in。",
+        "incorrect": "注意：英语顺序是 Class 在前、Grade 在后，还要用介词 in。"
+      },
+      "hints": [
+        { "content": "回答所在班级要用 I'm in ..." },
+        { "content": "英语顺序是 Class One, Grade Four。" }
+      ],
+      "sourceRefs": ["source:book#unit1"]
     },
     {
       "id": "u1pa-pattern-2",
-      "type": "choice",
-      "question": "老师让大家看黑板，会说：",
+      "type": "single-choice",
+      "claimId": "c-u1-classroom-instructions",
+      "stage": "guided",
+      "title": "课堂指令：看黑板",
+      "prompt": "老师让大家看黑板，会说：",
       "options": [
-        "Look at the blackboard.",
-        "Look the blackboard.",
-        "See the blackboard at.",
-        "Read the blackboard."
+        { "id": "a", "label": "Look at the blackboard." },
+        { "id": "b", "label": "Look the blackboard.", "misconceptionId": "m-look-at-omission" },
+        { "id": "c", "label": "See the blackboard at.", "misconceptionId": "m-look-at-omission" },
+        { "id": "d", "label": "Read the blackboard." }
       ],
-      "answer": "Look at the blackboard.",
-      "score": 1
+      "correctOptionId": "a",
+      "misconceptions": [
+        {
+          "id": "m-look-at-omission",
+          "belief": "看黑板可以直接说 Look the blackboard，不需要 at",
+          "feedback": "look 是不及物动词，后面接宾语时必须加 at，即 Look at the blackboard。"
+        }
+      ],
+      "feedback": {
+        "correct": "正确。Look at... 表示“看……”。",
+        "incorrect": "look 后面接看到的东西时，要加 at。"
+      },
+      "hints": [
+        { "content": "“看某物”用 look at something。" },
+        { "content": "答案是 Look at the blackboard." }
+      ],
+      "sourceRefs": ["source:book#unit1"]
     },
     {
       "id": "u1pa-pattern-3",
-      "type": "fill_blank",
-      "question": "补全句子：Read ______ me.（跟着我读）",
-      "answer": "after",
-      "score": 1,
-      "case_sensitive": false,
-      "trim_spaces": true
+      "type": "fill-blank",
+      "claimId": "c-u1-classroom-instructions",
+      "stage": "independent",
+      "title": "补全指令",
+      "prompt": "补全句子：Read ______ me.（跟着我读）",
+      "scoring": {
+        "mode": "exact",
+        "answer": "after",
+        "caseSensitive": false,
+        "ignoreWhitespace": true
+      },
+      "feedback": {
+        "correct": "正确。Read after me. 意思是“跟着我读”。",
+        "incorrect": "“跟着我读”用 Read after me.，after 表示“在……之后/跟着”。"
+      },
+      "hints": [
+        { "content": "“在……之后”是哪个介词？" },
+        { "content": "答案是 after。" }
+      ],
+      "sourceRefs": ["source:book#unit1"]
     },
     {
       "id": "u1pa-phonics-1",
-      "type": "choice",
-      "question": "下列哪个词与 car 有相同的发音规律（都含 ar）？",
-      "options": ["cat", "park", "cup", "cake"],
-      "answer": "park",
-      "score": 1
+      "type": "single-choice",
+      "claimId": "c-u1-phonics-ar",
+      "stage": "guided",
+      "title": "辨识 ar 发音",
+      "prompt": "下列哪个词与 car 有相同的发音规律（都含 ar）？",
+      "options": [
+        { "id": "a", "label": "cat" },
+        { "id": "b", "label": "park" },
+        { "id": "c", "label": "cup" },
+        { "id": "d", "label": "cake" }
+      ],
+      "correctOptionId": "b",
+      "feedback": {
+        "correct": "正确。park 和 car 都含有 ar，发 /ɑː/ 音。",
+        "incorrect": "找一找哪个选项里也有 ar 字母组合。"
+      },
+      "hints": [
+        { "content": "题目已经提示：要找含 ar 的词。" },
+        { "content": "答案是 park。" }
+      ],
+      "sourceRefs": ["source:book#unit1-phonics"]
     },
     {
       "id": "u1pa-phonics-2",
-      "type": "fill_blank",
-      "question": "根据发音规律补全单词：st__（星星）",
-      "answer": "star",
-      "score": 1,
-      "case_sensitive": false,
-      "trim_spaces": true
+      "type": "fill-blank",
+      "claimId": "c-u1-phonics-ar",
+      "stage": "independent",
+      "title": "补全 star",
+      "prompt": "根据发音规律补全单词：st__（星星）",
+      "scoring": {
+        "mode": "exact",
+        "answer": "star",
+        "caseSensitive": false,
+        "ignoreWhitespace": true
+      },
+      "feedback": {
+        "correct": "正确。star 就是星星。",
+        "incorrect": "星星 star 中间是 ar，和 car / park 一样。"
+      },
+      "hints": [
+        { "content": "发 /ɑː/ 的字母组合是什么？" },
+        { "content": "答案是 star。" }
+      ],
+      "sourceRefs": ["source:book#unit1-phonics"]
     },
     {
       "id": "u1pa-order-1",
       "type": "ordering",
-      "question": "将下列课堂指令按正确顺序排列：",
+      "claimId": "c-u1-classroom-instructions",
+      "stage": "independent",
+      "title": "课堂指令顺序",
+      "prompt": "将下列课堂指令按正确顺序排列：",
       "items": [
-        "A tiger.",
-        "Now look at the blackboard.",
-        "Read after me."
-      ],
-      "answer": [
         "Now look at the blackboard.",
         "Read after me.",
         "A tiger."
       ],
-      "score": 1
+      "scoring": {
+        "mode": "exact-order",
+        "answer": [
+          "Now look at the blackboard.",
+          "Read after me.",
+          "A tiger."
+        ],
+        "caseSensitive": false
+      },
+      "feedback": {
+        "correct": "正确。老师先让大家看黑板，再带领大家读，最后读出单词。",
+        "incorrect": "想想课堂上老师通常先说什么、再说什么、最后说什么。"
+      },
+      "hints": [
+        { "content": "第一步应该是让大家看黑板。" },
+        { "content": "正确顺序是：看黑板 → 跟我读 → 读出 A tiger。" }
+      ],
+      "sourceRefs": ["source:book#unit1"]
     },
     {
-      "id": "u1pa-speaking-1",
-      "type": "speaking",
-      "question": "朗读并录音：I'm in Class One, Grade Four. Look at the blackboard. Read after me.",
-      "instructions": "请大声朗读以上句子，注意 Class 和 Grade 的首字母大写，以及句子的升降调。此题不计入自动评分，可请老师或家长听评。",
-      "score": 0
+      "id": "u1pa-recording-1",
+      "type": "recording",
+      "claimId": "c-u1-class-intro",
+      "stage": "independent",
+      "title": "朗读展示",
+      "prompt": "朗读并录音：I'm in Class One, Grade Four. Look at the blackboard. Read after me.",
+      "scoring": {
+        "mode": "completion",
+        "minimumLength": 10
+      },
+      "feedback": {
+        "correct": "已记录。请对照课文检查 Class 和 Grade 是否大写，以及语音语调是否自然。",
+        "incorrect": "请至少朗读一句完整句子后再提交。"
+      },
+      "hints": [
+        { "content": "注意 Class 和 Grade 的首字母大写。" },
+        { "content": "尝试模仿录音中的语调和停顿。" }
+      ],
+      "sourceRefs": ["source:book#unit1"]
     }
   ]
 }
