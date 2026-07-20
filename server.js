@@ -51,6 +51,7 @@ const NEXT_PROMPT =
 const app = express();
 app.use(express.json());
 app.use((req, res, next) => { console.log(`[http] ${req.method} ${req.url}`); next(); });
+app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 // ---- 冻结前端：原样输出，仅在响应中注入运行时资源 ----
 const page = (file, { head = '', body = '' } = {}) => (req, res) => {
@@ -244,6 +245,13 @@ app.get('/api/courses/:id/info', (req, res) => {
   }
 });
 
+// 学习地图
+app.get('/api/courses/:id/map.json', (req, res) => {
+  const file = path.join(dirOf(req.params.id), 'map.json');
+  if (!fs.existsSync(file)) return res.status(404).end();
+  res.json(JSON.parse(fs.readFileSync(file, 'utf8')));
+});
+
 // 进度轮询
 app.get('/api/courses/:id/status', (req, res) => {
   const id = req.params.id;
@@ -282,15 +290,21 @@ app.get('/api/courses/:id/generation-events', (req, res) => {
   res.write('retry: 2000\n\n');
 
   const afterId = Number(req.get('Last-Event-ID') || req.query.after || 0);
-  const job = readJob(id);
-  const active = job.stage === 'understanding' || job.stage === 'generating';
+  let job = readJob(id);
+  // 与 status 轮询保持一致：僵死生成任务在 SSE 中也应表现为失败，避免前端被旧 run-start 事件重置错误状态。
+  const isStale = !locks.has(id) && (job.stage === 'generating' || job.stage === 'understanding')
+    && Date.now() - fs.statSync(jobFile(id)).mtimeMs > 60_000;
+  const active = !isStale && (job.stage === 'understanding' || job.stage === 'generating');
   const send = (event) => {
     res.write(`id: ${event.id}\n`);
     res.write('event: generation-event\n');
     res.write(`data: ${JSON.stringify(event)}\n\n`);
   };
 
-  if (active) {
+  if (isStale) {
+    const runId = job.runId || 'fixture-run';
+    send({ id: afterId + 1, runId, kind: 'run-failed', key: `run:${runId}`, state: 'error', message: '课程生成没有完成，请重试' });
+  } else if (active) {
     readGenerationEvents(dirOf(id), { afterId, runId: job.runId || null }).forEach(send);
   }
   const unsubscribe = subscribeGenerationEvents(dirOf(id), send);
@@ -408,6 +422,24 @@ app.get('/api/courses/:id/chat', (req, res) => {
   }
 });
 
+// 课程根目录的原始材料（book.pdf / book.epub / book.txt / cover.jpg 等）
+// Express 5 默认路径参数不跨 '.'，因此为常用根文件注册显式路由。
+function serveRootFile(name) {
+  return (req, res, next) => {
+    const root = dirOf(req.params.id);
+    const file = path.normalize(path.join(root, name));
+    if (!file.startsWith(root + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) return next();
+    res.sendFile(name, { root });
+  };
+}
+app.get('/api/courses/:id/book.pdf', serveRootFile('book.pdf'));
+app.get('/api/courses/:id/book.epub', serveRootFile('book.epub'));
+app.get('/api/courses/:id/book.txt', serveRootFile('book.txt'));
+app.get('/api/courses/:id/cover.jpg', serveRootFile('cover.jpg'));
+app.get('/api/courses/:id/cover.jpeg', serveRootFile('cover.jpeg'));
+app.get('/api/courses/:id/cover.png', serveRootFile('cover.png'));
+app.get('/api/courses/:id/cover.webp', serveRootFile('cover.webp'));
+
 // 课节引用的相对资源（assets/style.css、map.json 等，须放在已有路由之后）
 app.get('/api/courses/:id/*splat', (req, res) => {
   const root = dirOf(req.params.id);
@@ -417,7 +449,7 @@ app.get('/api/courses/:id/*splat', (req, res) => {
     || /^generation-events\.jsonl$/i.test(relative)) return res.status(404).end();
   const file = path.normalize(path.join(root, relative));
   if (!file.startsWith(root + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) return res.status(404).end();
-  res.sendFile(file);
+  res.sendFile(relative, { root });
 });
 
 // 生成下一课
@@ -482,6 +514,11 @@ app.post('/api/courses/:id/chat', async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+app.use((req, res) => {
+  if (process.env.NODE_ENV === 'test') console.log(`[404] ${req.method} ${req.url}`);
+  res.status(404).end();
 });
 
 app.listen(PORT, () => console.log(`Kimi Study → http://localhost:${PORT}`));
