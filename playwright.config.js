@@ -4,6 +4,9 @@ const path = require('path');
 const { defineConfig, devices } = require('@playwright/test');
 
 const port = Number(process.env.KIMI_STUDY_E2E_PORT || 3107);
+if (!Number.isInteger(port) || port <= 0 || port > 65535 || port === 3000) {
+  throw new Error(`Unsafe Playwright port: ${port}. E2E must use an isolated non-production port.`);
+}
 const baseURL = `http://127.0.0.1:${port}`;
 
 module.exports = defineConfig({
@@ -23,6 +26,7 @@ module.exports = defineConfig({
     baseURL,
     locale: 'zh-CN',
     timezoneId: 'Asia/Shanghai',
+    viewport: { width: 1440, height: 900 },
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -36,6 +40,7 @@ module.exports = defineConfig({
     reuseExistingServer: false,
     env: {
       ...process.env,
+      NODE_ENV: 'test',
       PORT: String(port),
       KIMI_STUDY_E2E_PORT: String(port),
     },
