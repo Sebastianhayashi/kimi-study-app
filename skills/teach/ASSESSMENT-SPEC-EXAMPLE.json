@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "lessonId": "0001-concreteness",
+  "title": "具体性：让抽象信息可感知",
+  "claims": [
+    {
+      "id": "identify-concreteness",
+      "label": "识别并解释具体性",
+      "description": "能够从新案例中识别具体表达，并引用细节说明理由。",
+      "sourceRefs": ["source:book#chapter-concreteness"],
+      "mastery": {
+        "requiredPassed": 2,
+        "requiredStages": ["independent"]
+      }
+    }
+  ],
+  "activities": [
+    {
+      "id": "concrete-choice-1",
+      "type": "single-choice",
+      "claimId": "identify-concreteness",
+      "stage": "guided",
+      "title": "识别具体表达",
+      "prompt": "下面哪个表达更容易让听众形成清晰图景？",
+      "options": [
+        { "id": "a", "label": "等待时间显著缩短" },
+        { "id": "b", "label": "顾客原来要等十分钟，现在一首歌还没播完就能取餐" },
+        { "id": "c", "label": "服务体验获得全面提升", "misconceptionId": "positive-is-concrete" }
+      ],
+      "correctOptionId": "b",
+      "misconceptions": [
+        {
+          "id": "positive-is-concrete",
+          "belief": "积极、完整的表达就是具体表达",
+          "feedback": "积极并不等于具体。具体表达需要让受众形成可感知的画面或尺度。"
+        }
+      ],
+      "feedback": {
+        "correct": "正确。这个表达提供了可感知的时间尺度和日常场景。",
+        "incorrect": "再看一次：哪一个选项让你能够在脑中看到或感受到变化？"
+      },
+      "hints": [
+        { "content": "不要只看表达是否积极，要看它能否形成清晰图景。" },
+        { "content": "寻找具体时间、动作或日常参照物。" }
+      ],
+      "sourceRefs": ["source:book#chapter-concreteness"]
+    },
+    {
+      "id": "concrete-rewrite-1",
+      "type": "short-answer",
+      "claimId": "identify-concreteness",
+      "stage": "independent",
+      "title": "改写抽象信息",
+      "prompt": "把“我们的检索速度很快”改写成一个更具体的表达，并写出至少一句完整说明。",
+      "scoring": {
+        "mode": "completion",
+        "minimumLength": 12
+      },
+      "feedback": {
+        "correct": "已记录。比较你的表达是否包含可感知的时间、动作、数量或场景。",
+        "incorrect": "请写出一个完整改写，而不只是添加“非常”或“特别”。"
+      },
+      "hints": [
+        { "content": "尝试加入一个用户场景和可比较的时间尺度。" }
+      ],
+      "sourceRefs": ["source:book#chapter-concreteness"]
+    }
+  ]
+}

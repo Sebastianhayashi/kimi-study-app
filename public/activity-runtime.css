@@ -1,0 +1,38 @@
+.kimi-activity {
+  margin: 28px 0;
+  padding: 22px;
+  border: 1px solid #dce3ee;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(31, 54, 88, 0.06);
+  color: #17263a;
+  font: inherit;
+}
+.kimi-activity * { box-sizing: border-box; }
+.kimi-activity__eyebrow { margin: 0 0 8px; color: #54708e; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.kimi-activity__title { margin: 0 0 10px; font-size: 18px; line-height: 1.4; }
+.kimi-activity__prompt { margin: 0 0 18px; line-height: 1.75; white-space: pre-wrap; }
+.kimi-activity__stimulus { margin: 0 0 16px; padding: 14px; border-left: 3px solid #2e73c5; border-radius: 8px; background: #f4f8fd; white-space: pre-wrap; }
+.kimi-activity__options { display: grid; gap: 10px; margin: 0 0 16px; }
+.kimi-activity__option { display: flex; align-items: flex-start; gap: 10px; width: 100%; padding: 12px 14px; border: 1px solid #d7dfeb; border-radius: 10px; background: #fff; cursor: pointer; text-align: left; line-height: 1.55; }
+.kimi-activity__option:hover, .kimi-activity__option:focus-within { border-color: #80a9dc; background: #f7fbff; }
+.kimi-activity__input, .kimi-activity__textarea { width: 100%; padding: 12px 14px; border: 1px solid #cad5e4; border-radius: 10px; background: #fff; color: inherit; font: inherit; }
+.kimi-activity__textarea { min-height: 120px; resize: vertical; }
+.kimi-activity__actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.kimi-activity__button { min-height: 40px; padding: 9px 16px; border: 1px solid #1f66b5; border-radius: 999px; background: #1f66b5; color: #fff; cursor: pointer; font: inherit; font-weight: 650; }
+.kimi-activity__button--secondary { border-color: #cad5e4; background: #fff; color: #27415e; }
+.kimi-activity__button:disabled { cursor: not-allowed; opacity: .55; }
+.kimi-activity__feedback { margin-top: 16px; padding: 13px 15px; border-radius: 10px; line-height: 1.65; }
+.kimi-activity__feedback[data-state="passed"] { background: #edf9f1; color: #155c34; }
+.kimi-activity__feedback[data-state="retry"] { background: #fff7e8; color: #77500c; }
+.kimi-activity__hint { margin-top: 10px; padding: 12px 14px; border-radius: 10px; background: #f4f6fa; color: #40536a; line-height: 1.6; }
+.kimi-activity__ordering { display: grid; gap: 8px; margin-bottom: 16px; }
+.kimi-activity__order-item { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 11px 13px; border: 1px solid #d7dfeb; border-radius: 10px; background: #fff; }
+.kimi-activity__order-controls { display: flex; gap: 6px; }
+.kimi-activity__icon-button { width: 34px; height: 34px; border: 1px solid #d7dfeb; border-radius: 8px; background: #fff; cursor: pointer; }
+.kimi-activity__recording { display: grid; gap: 12px; }
+.kimi-activity__progress { margin: 18px 0 4px; padding: 12px 14px; border-radius: 10px; background: #f6f8fb; color: #53677e; font-size: 13px; }
+.kimi-activity-error { margin: 24px 0; padding: 14px; border: 1px solid #f0c6c6; border-radius: 10px; background: #fff4f4; color: #8a2c2c; }
+@media (max-width: 680px) {
+  .kimi-activity { margin: 20px 0; padding: 17px; }
+}
