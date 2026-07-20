@@ -681,6 +681,7 @@
       const text = assistantInput.value.trim();
       if (!text) return;
       const ctx = selectionContext;
+      if (ctx) hideQuoteChip();
       const user = document.createElement('div');
       user.className = 'message user';
       user.innerHTML = `<p>${escapeHtml(text)}</p>`;
@@ -731,13 +732,11 @@
             lessonFrame.contentWindow.postMessage(
               { type: 'create-note', anchor: ctx.anchor, section: ctx.section, question: text, answer: reply }, '*');
           }
-          if (ctx) hideQuoteChip();
         })
         .catch(() => {
           stopThinking();
           renderAssistant('网络出错，请再试一次');
           renderSuggestions(DEFAULT_SUGGESTIONS);
-          if (ctx) hideQuoteChip();
         });
     };
 
