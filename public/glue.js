@@ -439,7 +439,7 @@
         </article>
       `;
 
-      const currentTitle = lessons[current] ? titleOf(lessons[current]) : '';
+      const currentTitle = lessons[current] ? escapeHtml(titleOf(lessons[current])) : '';
       const record2Html = `
         <article class="record">
           <span class="record-icon">${current + 1}</span>
