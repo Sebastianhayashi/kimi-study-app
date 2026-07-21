@@ -203,3 +203,106 @@ test('生成一致性人工截图', async ({ page }) => {
   await page.waitForTimeout(800);
   await page.screenshot({ path: '/Users/microseyuyu/Downloads/coherence-ready-course.png' });
 });
+
+test('验证 renderLearningRecords() 防御 HTML 注入 (XSS)', async ({ page }) => {
+  const xssTitle = '01-<img src=x onerror="window.__lessonTitleXss=1">.html';
+  await page.route('**/api/courses/readycourse/lessons', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([xssTitle]),
+    });
+  });
+
+  await page.route('**/api/courses/readycourse/lessons/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/html',
+      body: '<html><body>Mock Lesson</body></html>',
+    });
+  });
+
+  await page.goto('/course/readycourse');
+
+  const xssTriggered = await page.evaluate(() => typeof window.__lessonTitleXss !== 'undefined');
+  expect(xssTriggered).toBe(false);
+
+  const recordMeta = page.locator('#left-overview .record-list .record:nth-child(2) .record-meta');
+  await expect(recordMeta).toContainText('<img src=x onerror="window.__lessonTitleXss=1">');
+
+  const hasXssElements = await recordMeta.evaluate((el) => {
+    return el.querySelector('img') !== null || el.querySelector('svg') !== null || el.querySelector('script') !== null;
+  });
+  expect(hasXssElements).toBe(false);
+});
+
+test('在 1366x768 响应式断点下验证生成状态', async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+
+  const controller = await prepareControlledStatus(page, {
+    stage: 'generating',
+    runId: 'responsive-units',
+    progress: 27,
+    phase: 'profiling',
+    canvasVariant: 'questions',
+    lessons: 0,
+    busy: true,
+    currentMessage: '已识别 8 个内容单元，正在分析结构…',
+    history: [{ id: 'profile', label: '识别 8 个内容单元', state: 'active' }],
+    preview: { unitsFound: 8 },
+  });
+
+  await page.goto('/course/generatingcourse');
+  await page.waitForTimeout(500);
+
+  const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+  const innerWidth = await page.evaluate(() => window.innerWidth);
+  expect(scrollWidth).toBeLessThanOrEqual(innerWidth);
+
+  const compactProgress = page.locator('.compact-progress');
+  await expect(compactProgress).toBeVisible();
+
+  const activityBar = page.locator('.ks-generation-paper-activity');
+  await expect(activityBar).toBeVisible();
+
+  const overflowNote = page.locator('.ks-fidelity-chapter-overflow');
+  await expect(overflowNote).toBeVisible();
+  const noteBox = await overflowNote.boundingBox();
+  const barBox = await activityBar.boundingBox();
+  expect(noteBox).not.toBeNull();
+  expect(barBox).not.toBeNull();
+  expect(noteBox.y + noteBox.height).toBeLessThanOrEqual(barBox.y - 8);
+
+  const summaryBtn = page.locator('.ks-generation-summary');
+  await expect(summaryBtn).toBeVisible();
+  await summaryBtn.click();
+  await expect(summaryBtn).toHaveAttribute('aria-expanded', 'true');
+  await page.keyboard.press('Escape');
+
+  controller.set({
+    stage: 'ready',
+    progress: 100,
+    phase: 'complete',
+    canvasVariant: 'ready',
+    lessons: 1,
+    busy: false,
+    currentMessage: '课程已准备好',
+    history: [{ id: 'validate', label: '检查课程文件', state: 'complete' }],
+  });
+  await page.waitForTimeout(500);
+
+  const successTitle = page.locator('.ks-fidelity-lesson-title');
+  await expect(successTitle).toBeVisible();
+  await expect(successTitle).toHaveText('课程已准备好');
+
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  const isAtBottom = await page.evaluate(() => {
+    const scrollY = window.scrollY;
+    const visibleHeight = window.innerHeight;
+    const totalHeight = document.body.scrollHeight;
+    return scrollY + visibleHeight >= totalHeight - 2;
+  });
+  expect(isAtBottom).toBe(true);
+
+  await page.screenshot({ path: '/Users/microseyuyu/Downloads/responsive-1366x768.png', fullPage: true });
+});
