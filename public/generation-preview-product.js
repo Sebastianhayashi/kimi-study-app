@@ -247,7 +247,6 @@
           <div class="ks-fidelity-success-mark" aria-hidden="true">✓</div>
           <div class="ks-fidelity-lesson-eyebrow">课程已准备好</div>
           <h1 class="ks-fidelity-lesson-title">课程已准备好</h1>
-          <h1 style="position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0.001; pointer-events: none;" aria-hidden="true">课程已经准备好</h1>
           <p class="ks-fidelity-lesson-subtitle">${escapeHtml(lessonText)}</p>
           <div class="ks-fidelity-success-lines">${line(86, 'is-dark')}${line(72)}${line(54)}</div>
           <div class="ks-fidelity-ready-badge">课程可以开始</div>

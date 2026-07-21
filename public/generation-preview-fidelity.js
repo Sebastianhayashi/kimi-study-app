@@ -457,7 +457,7 @@
     function complete(status = latest || {}) {
       if (status.runId && status.runId !== activeRunId) resetRun(status.runId);
       terminalState = 'complete';
-      terminalMessage = status.currentMessage || '课程已经准备好';
+      terminalMessage = status.currentMessage || '课程已准备好';
       if (activeRunId) terminalRuns.add(activeRunId);
       liveMessage = terminalMessage;
       updateProgress(100);

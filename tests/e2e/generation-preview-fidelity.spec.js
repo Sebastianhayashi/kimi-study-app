@@ -179,11 +179,11 @@ test('真实生成阶段逐一切换为预览稿对应的中央动画内容', as
   await previewCall(page, 'complete', {
     runId: 'fidelity-run',
     progress: 100,
-    currentMessage: '第一课已经准备好',
+    currentMessage: '第一课已准备好',
   });
   await expect(preview).toHaveClass(/is-complete/);
   await expect(canvas).toHaveAttribute('data-variant', 'ready');
-  await expect(content.locator('h1', { hasText: '课程已经准备好' })).toBeVisible();
+  await expect(content.locator('h1', { hasText: '课程已准备好' })).toBeVisible();
   await expect(content).toContainText('课程可以开始');
 });
 

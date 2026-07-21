@@ -203,7 +203,7 @@
     const overviewProgressBar = overviewProgressSection?.querySelector('.progress-track span');
     const overviewProgressValue = overviewProgressSection?.querySelector('.progress-value');
     const overviewRecordList = document.querySelector('#left-overview .record-list');
-    const overviewRecordHtml = overviewRecordList?.innerHTML || '';
+    const contextBar = document.querySelector('.context-bar');
     const titleOf = (f) => f.replace(/^\d+-?/, '').replace(/\.html$/, '');
 
     const statusProgress = (status) => Math.max(0, Math.min(100, Number(status?.progress) || 0));
@@ -255,7 +255,7 @@
 
     function restoreLearningChrome() {
       if (overviewProgressTitle) overviewProgressTitle.textContent = '课程进度';
-      if (overviewRecordList) overviewRecordList.innerHTML = overviewRecordHtml;
+      renderLearningRecords();
       if (lessonResourceSlot) lessonResourceSlot.style.removeProperty('visibility');
       if (nextButton) {
         nextButton.hidden = false;
@@ -266,6 +266,9 @@
       if (lessons.length && currentLessonLabel) {
         currentLessonLabel.textContent = `Lesson ${current + 1} · ${titleOf(lessons[current])}`;
       }
+      if (contextBar && lessons.length) {
+        contextBar.textContent = `当前上下文：Lesson ${current + 1} · ${titleOf(lessons[current])}`;
+      }
     }
 
     function showLesson(i) {
@@ -275,6 +278,9 @@
       lessonFrame.removeAttribute('srcdoc');
       lessonFrame.src = currentLessonUrl;
       document.querySelector('.current-lesson').textContent = `Lesson ${i + 1} · ${titleOf(lessons[i])}`;
+      if (contextBar) {
+        contextBar.textContent = `当前上下文：Lesson ${i + 1} · ${titleOf(lessons[i])}`;
+      }
       const progress = document.querySelector('.compact-progress > span');
       if (progress) progress.textContent = `${i + 1} / ${lessons.length}`;
       renderList();
@@ -392,6 +398,74 @@
         cards[4]?.remove(); // “补充资料”演示卡
       });
 
+    function renderLearningRecords() {
+      if (!overviewRecordList) return;
+
+      const totalLessons = lessons.length;
+      const isGenerating = !!(generationWasActive || generationFinishing);
+
+      if (totalLessons === 0) {
+        if (isGenerating) {
+          overviewRecordList.innerHTML = `
+            <article class="record">
+              <span class="record-icon">…</span>
+              <div>
+                <div class="record-title">正在生成课程</div>
+                <div class="record-meta">请耐心等待</div>
+              </div>
+            </article>
+          `;
+        } else {
+          overviewRecordList.innerHTML = `
+            <article class="record warning">
+              <span class="record-icon">?</span>
+              <div>
+                <div class="record-title">课程未就绪</div>
+                <div class="record-meta">尚未生成课节文件</div>
+              </div>
+            </article>
+          `;
+        }
+        return;
+      }
+
+      const record1Html = `
+        <article class="record complete">
+          <span class="record-icon">✓</span>
+          <div>
+            <div class="record-title">课程已创建</div>
+            <div class="record-meta">已生成 ${totalLessons} 节课</div>
+          </div>
+        </article>
+      `;
+
+      const currentTitle = lessons[current] ? titleOf(lessons[current]) : '';
+      const record2Html = `
+        <article class="record">
+          <span class="record-icon">${current + 1}</span>
+          <div>
+            <div class="record-title">正在学习 Lesson ${current + 1}</div>
+            <div class="record-meta">${currentTitle}</div>
+          </div>
+        </article>
+      `;
+
+      let record3Html = '';
+      if (isGenerating) {
+        record3Html = `
+          <article class="record">
+            <span class="record-icon">…</span>
+            <div>
+              <div class="record-title">正在生成下一课</div>
+              <div class="record-meta">正在构建讲解与示范…</div>
+            </div>
+          </article>
+        `;
+      }
+
+      overviewRecordList.innerHTML = record1Html + record2Html + record3Html;
+    }
+
     // 头部 + 学习概览换成真实课程信息
     function updateInfo() {
       document.querySelector('.course-meta').textContent = `${lessons.length || '…'} 节课 · 1 份材料`;
@@ -405,6 +479,7 @@
       const bar = document.querySelector('.side-section .progress-track span');
       if (bar) bar.style.width = pct + '%';
       if (compactProgressBar) compactProgressBar.style.width = pct + '%';
+      renderLearningRecords();
     }
 
     fetch(`/api/courses/${courseId}/info`)

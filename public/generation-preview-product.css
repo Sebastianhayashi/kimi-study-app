@@ -315,7 +315,7 @@
 .ks-generation-fidelity .ks-generation-course-paper {
   width: min(100%, 920px);
   height: 100%;
-  min-height: 460px;
+  min-height: 560px;
   margin: 0 auto;
   position: relative;
   overflow: hidden;
@@ -378,7 +378,7 @@
 .ks-generation-fidelity .ks-generation-canvas-content {
   width: min(100% - 52px, 760px);
   margin: 0 auto;
-  padding: 30px 0 72px;
+  padding: 20px 0 80px;
   will-change: transform, opacity;
 }
 

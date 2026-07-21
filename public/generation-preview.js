@@ -183,12 +183,12 @@
     }
 
     function complete(status = latest || {}) {
-      liveMessage = '课程已经准备好';
+      liveMessage = '课程已准备好';
       update({
         ...status,
         progress: 100,
         canvasVariant: 'ready',
-        currentMessage: '课程已经准备好',
+        currentMessage: '课程已准备好',
       });
       root.classList.add('is-complete');
     }

@@ -153,7 +153,7 @@ function runKimi(id, prompt, { cont = false, track = false } = {}) {
       phase: 'complete',
       canvasVariant: 'ready',
       state: 'complete',
-      message: '课程已经准备好',
+      message: '课程已准备好',
     });
     return text;
   }).catch((error) => {
