@@ -12,6 +12,19 @@ const { runTrackedKimi } = require('./lib/kimi-generation-runner');
 const { appendGenerationEvent, readGenerationEvents, subscribeGenerationEvents } = require('./lib/generation-events');
 const { listCourseSources } = require('./lib/source-manifest');
 const { resolveDataDir, assertSafeRuntime } = require('./lib/runtime-config');
+const {
+  MAX_SOURCE_BYTES,
+  OnboardingError,
+  createCourseDraft,
+  markGenerationFailed,
+  markGenerationReady,
+  markGenerationRunning,
+  markGenerationStarting,
+  publicOnboarding,
+  readOnboarding,
+  reconcileOnboarding,
+  saveMission,
+} = require('./lib/onboarding');
 
 const ROOT = __dirname;
 const DATA = resolveDataDir({ root: ROOT });
@@ -42,6 +55,13 @@ const FIRST_PROMPT = (ext) =>
   `（如为 epub 可用 unzip 提取文本，如为 pdf 请自行想办法提取文本）。` +
   `请按 teach skill 的流程执行：先写 MISSION.md（mission：掌握这本书的核心内容）和 RESOURCES.md，` +
   `然后生成第一课 lessons/0001-*.html。所有产出用中文。` +
+  `另外把书的封面图片提取保存到工作区根目录 cover.jpg（epub 解压后在 OPF manifest 里找 cover 项；` +
+  `pdf 可用 sips 把第一页转成 jpg）。` + ASSESSMENT_INSTRUCTION + MAP_INSTRUCTION;
+
+const FIRST_ONBOARDING_PROMPT = (ext) =>
+  `/skill:teach 用户已经完成首次建课设置，材料是当前目录的 book${ext}。` +
+  `MISSION.md 已由系统根据用户明确选择生成，是学习意图的权威来源；不要覆盖、改写或重新询问其中的设置。` +
+  `请按 teach skill 的流程执行：读取 MISSION.md，写 RESOURCES.md，然后生成第一课 lessons/0001-*.html。所有产出用中文。` +
   `另外把书的封面图片提取保存到工作区根目录 cover.jpg（epub 解压后在 OPF manifest 里找 cover 项；` +
   `pdf 可用 sips 把第一页转成 jpg）。` + ASSESSMENT_INSTRUCTION + MAP_INSTRUCTION;
 
@@ -76,6 +96,7 @@ app.use(express.static(path.join(ROOT, 'public'))); // 前端外壳资源
 // ---- 课程工作区 ----
 const locks = new Set(); // 每门课同时只跑一个 kimi 进程
 const dirOf = (id) => path.join(DATA, id);
+const validId = (id) => /^[a-z0-9]+$/i.test(id);
 const emitGenerationEvent = (id, event) => {
   try { return appendGenerationEvent(dirOf(id), event); }
   catch (error) {
@@ -179,8 +200,117 @@ function runKimi(id, prompt, { cont = false, track = false } = {}) {
 }
 
 
+function firstLessonReadable(id) {
+  const [first] = lessonsOf(id);
+  if (!first) return false;
+  const file = path.join(dirOf(id), 'lessons', first);
+  try {
+    const stat = fs.lstatSync(file);
+    if (stat.isSymbolicLink() || !stat.isFile() || stat.size <= 0) return false;
+    const fd = fs.openSync(file, 'r');
+    try {
+      const probe = Buffer.alloc(1);
+      fs.readSync(fd, probe, 0, 1, 0);
+    } finally {
+      fs.closeSync(fd);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function jobMtimeMs(id) {
+  try { return fs.statSync(jobFile(id)).mtimeMs; }
+  catch { return 0; }
+}
+
+function reconcileCourseOnboarding(id) {
+  const record = readOnboarding(dirOf(id), { optional: true });
+  if (!record) return null;
+  const lessons = lessonsOf(id);
+  return reconcileOnboarding(dirOf(id), {
+    job: readJob(id),
+    busy: locks.has(id),
+    lessons: lessons.length,
+    lessonReadable: firstLessonReadable(id),
+    jobMtimeMs: jobMtimeMs(id),
+  });
+}
+
+function onboardingSnapshot(id, record = reconcileCourseOnboarding(id)) {
+  const job = readJob(id);
+  const preGeneration = record && ['draft', 'uploading', 'inspecting', 'awaiting_mission'].includes(record.state);
+  return {
+    id,
+    onboarding: publicOnboarding(record),
+    generation: {
+      stage: preGeneration ? 'idle' : job.stage,
+      runId: job.runId || null,
+      busy: locks.has(id),
+      lessons: lessonsOf(id).length,
+    },
+  };
+}
+
+function sendOnboardingError(res, error) {
+  const known = error instanceof OnboardingError;
+  const body = {
+    error: known ? error.code : 'ONBOARDING_ERROR',
+    message: known ? error.message : '新手引导操作失败',
+  };
+  if (known && error.details) body.details = error.details;
+  if (known && error.courseId) body.id = error.courseId;
+  if (known && error.onboarding) body.onboarding = error.onboarding;
+  return res.status(known ? error.status : 500).json(body);
+}
+
+function launchOnboardingGeneration(id, { retry = false } = {}) {
+  const courseDir = dirOf(id);
+  let record = reconcileCourseOnboarding(id);
+  if (!record) throw new OnboardingError('ONBOARDING_NOT_FOUND', '未找到新手引导状态', 404);
+
+  if (record.state === 'ready') {
+    return { status: 200, reused: true, record };
+  }
+  if (record.state === 'starting' || record.state === 'generating') {
+    return { status: 202, reused: true, record };
+  }
+  if (locks.has(id)) {
+    throw new OnboardingError('GENERATION_BUSY', '课程当前有任务正在运行', 409);
+  }
+
+  record = markGenerationStarting(courseDir, { retry });
+  let run;
+  try {
+    run = runKimi(id, FIRST_ONBOARDING_PROMPT(record.source.extension), { track: true });
+    record = markGenerationRunning(courseDir, readJob(id));
+  } catch (error) {
+    markGenerationFailed(courseDir, error);
+    throw error;
+  }
+
+  Promise.resolve(run)
+    .then(() => {
+      if (!firstLessonReadable(id)) {
+        throw new Error('Kimi finished but the first lesson is not readable');
+      }
+      markGenerationReady(courseDir, readJob(id));
+    })
+    .catch((error) => {
+      try { markGenerationFailed(courseDir, error); }
+      catch (stateError) { console.log(`[onboarding ${id}] failed to persist error: ${stateError.message}`); }
+    });
+
+  return { status: 202, reused: false, record };
+}
+
 // 上传一本书 -> 建课
 const upload = multer({ dest: os.tmpdir() });
+const onboardingUpload = multer({
+  dest: os.tmpdir(),
+  limits: { fileSize: MAX_SOURCE_BYTES, files: 1 },
+});
 app.post('/api/courses', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'missing file' });
   const id = Date.now().toString(36);
@@ -195,6 +325,44 @@ app.post('/api/courses', upload.single('file'), (req, res) => {
   res.json({ id });
 });
 
+app.post('/api/course-onboarding', (req, res) => {
+  onboardingUpload.single('file')(req, res, (uploadError) => {
+    if (uploadError) {
+      if (uploadError.code === 'LIMIT_FILE_SIZE') {
+        return sendOnboardingError(res, new OnboardingError(
+          'FILE_TOO_LARGE',
+          '文件超过 200 MB 限制',
+          413,
+          { maxBytes: MAX_SOURCE_BYTES },
+        ));
+      }
+      return sendOnboardingError(res, new OnboardingError('UPLOAD_FAILED', '文件上传失败', 400));
+    }
+    if (!req.file) {
+      return sendOnboardingError(res, new OnboardingError('MISSING_FILE', '请选择学习材料', 400));
+    }
+
+    try {
+      const created = createCourseDraft({
+        dataRoot: DATA,
+        tempFile: req.file.path,
+        originalFilename: req.file.originalname,
+        mimeType: req.file.mimetype,
+        sizeBytes: req.file.size,
+        title: req.body && req.body.title,
+      });
+      return res.status(201).json({
+        id: created.courseId,
+        onboarding: publicOnboarding(created.record),
+      });
+    } catch (error) {
+      return sendOnboardingError(res, error);
+    } finally {
+      try { if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path); } catch {}
+    }
+  });
+});
+
 // 课程列表（书架页真实数据）
 app.get('/api/courses', (req, res) => {
   const list = fs.readdirSync(DATA, { withFileTypes: true })
@@ -207,11 +375,17 @@ app.get('/api/courses', (req, res) => {
       const cover = fs.readdirSync(dirOf(id)).find((f) => /^cover\.(jpe?g|png|webp)$/i.test(f)) || null;
       let archived = false;
       try { archived = !!JSON.parse(fs.readFileSync(path.join(dirOf(id), 'meta.json'), 'utf8')).archived; } catch {}
+      let onboarding = null;
+      try { onboarding = readOnboarding(dirOf(id), { optional: true }); } catch {}
       return {
         id, title, cover, archived,
         ext: (path.extname(book).slice(1) || 'TXT').toUpperCase(),
         lessons: lessonsOf(id).length,
         stage: readJob(id).stage,
+        onboardingState: onboarding && onboarding.state || null,
+        onboardingErrorCode: onboarding
+          ? onboarding.inspection.errorCode || onboarding.generation.errorCode || null
+          : null,
         updated: fs.statSync(dirOf(id)).mtimeMs,
       };
     })
@@ -220,7 +394,6 @@ app.get('/api/courses', (req, res) => {
 });
 
 // 归档 / 删除课程
-const validId = (id) => /^[a-z0-9]+$/i.test(id);
 app.post('/api/courses/:id/archive', (req, res) => {
   if (!validId(req.params.id)) return res.status(400).end();
   try {
@@ -245,6 +418,52 @@ app.get('/api/courses/:id/info', (req, res) => {
     res.json({ title: '我的课程' });
   }
 });
+
+app.get('/api/courses/:id/onboarding', (req, res) => {
+  const id = req.params.id;
+  if (!validId(id) || !fs.existsSync(dirOf(id))) {
+    return sendOnboardingError(res, new OnboardingError('COURSE_NOT_FOUND', '课程不存在', 404));
+  }
+  try {
+    const record = reconcileCourseOnboarding(id);
+    if (!record) throw new OnboardingError('ONBOARDING_NOT_FOUND', '该课程没有新手引导状态', 404);
+    return res.json(onboardingSnapshot(id, record));
+  } catch (error) {
+    return sendOnboardingError(res, error);
+  }
+});
+
+app.put('/api/courses/:id/mission', (req, res) => {
+  const id = req.params.id;
+  if (!validId(id) || !fs.existsSync(dirOf(id))) {
+    return sendOnboardingError(res, new OnboardingError('COURSE_NOT_FOUND', '课程不存在', 404));
+  }
+  try {
+    const record = saveMission(dirOf(id), req.body && req.body.mission || req.body);
+    return res.json(onboardingSnapshot(id, record));
+  } catch (error) {
+    return sendOnboardingError(res, error);
+  }
+});
+
+function handleOnboardingStart(req, res, retry) {
+  const id = req.params.id;
+  if (!validId(id) || !fs.existsSync(dirOf(id))) {
+    return sendOnboardingError(res, new OnboardingError('COURSE_NOT_FOUND', '课程不存在', 404));
+  }
+  try {
+    const launched = launchOnboardingGeneration(id, { retry });
+    return res.status(launched.status).json({
+      ...onboardingSnapshot(id, launched.record),
+      reused: launched.reused,
+    });
+  } catch (error) {
+    return sendOnboardingError(res, error);
+  }
+}
+
+app.post('/api/courses/:id/start', (req, res) => handleOnboardingStart(req, res, false));
+app.post('/api/courses/:id/retry', (req, res) => handleOnboardingStart(req, res, true));
 
 // 学习地图
 app.get('/api/courses/:id/map.json', (req, res) => {
