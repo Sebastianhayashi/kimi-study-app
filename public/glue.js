@@ -1012,12 +1012,14 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: text,
-          context: ctx ? {
+          context: {
             lesson: document.querySelector('.current-lesson')?.textContent || '',
-            section: ctx.section,
-            selectedText: ctx.selectedText,
-            surrounding: ctx.surrounding,
-          } : undefined,
+            ...(ctx ? {
+              section: ctx.section,
+              selectedText: ctx.selectedText,
+              surrounding: ctx.surrounding,
+            } : {}),
+          },
         }),
       })
         .then((r) => r.json())
