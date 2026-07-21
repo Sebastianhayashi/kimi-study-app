@@ -185,12 +185,28 @@
       update() {}, complete() {}, fail() {}, hide() {},
     };
     let generationWasActive = false;
+    let generationFinishing = false;
     let generationPollTimer = null;
     let currentLessonUrl = '';
     let resourceTools = { reset() {} };
     let lessons = [];
     let current = 0;
+    const nextButton = document.getElementById('nextLessonButton');
+    const nextButtonHtml = nextButton?.innerHTML || '下一课';
+    const currentLessonLabel = document.querySelector('.current-lesson');
+    const compactProgressBar = document.querySelector('.compact-progress .progress-track span');
+    const compactProgressText = document.querySelector('.compact-progress > span');
+    const lessonResourceSlot = document.getElementById('lessonResourceSlot');
+    const overviewProgressSection = document.querySelector('#left-overview .side-section');
+    const overviewProgressTitle = overviewProgressSection?.querySelector('.side-title');
+    const overviewProgressNote = overviewProgressSection?.querySelector('.side-note');
+    const overviewProgressBar = overviewProgressSection?.querySelector('.progress-track span');
+    const overviewProgressValue = overviewProgressSection?.querySelector('.progress-value');
+    const overviewRecordList = document.querySelector('#left-overview .record-list');
+    const contextBar = document.querySelector('.context-bar');
     const titleOf = (f) => f.replace(/^\d+-?/, '').replace(/\.html$/, '');
+
+    const statusProgress = (status) => Math.max(0, Math.min(100, Number(status?.progress) || 0));
 
     function renderList() {
       document.querySelectorAll('.lesson-item').forEach((el, i) => {
@@ -204,6 +220,57 @@
       });
     }
 
+    function setGenerationChrome(status, { complete = false } = {}) {
+      const progress = complete ? 100 : statusProgress(status);
+      const progressText = `${progress}%`;
+      const initialGeneration = Number(status?.lessons || 0) === 0;
+
+      if (overviewProgressTitle) overviewProgressTitle.textContent = '课程创建进度';
+      if (overviewProgressNote) overviewProgressNote.textContent = complete ? '已完成' : '创建中';
+      if (overviewProgressValue) overviewProgressValue.textContent = progressText;
+      if (overviewProgressBar) overviewProgressBar.style.width = progressText;
+      if (compactProgressText) compactProgressText.textContent = progressText;
+      if (compactProgressBar) compactProgressBar.style.width = progressText;
+      if (currentLessonLabel) {
+        currentLessonLabel.textContent = complete
+          ? '课程已准备好'
+          : initialGeneration ? '第一课正在生成' : '正在生成下一课';
+      }
+      if (lessonResourceSlot) lessonResourceSlot.style.visibility = 'hidden';
+      if (overviewRecordList) {
+        const recordState = complete ? 'complete' : '';
+        const recordIcon = complete ? '✓' : '…';
+        const recordTitle = complete ? '课程已准备好' : '正在创建课程';
+        const recordMeta = complete ? '课节文件已经通过后端检查' : escapeHtml(status?.currentMessage || '正在等待新的生成进度');
+        overviewRecordList.innerHTML =
+          '<article class="record complete"><span class="record-icon">✓</span><div><div class="record-title">材料已经上传</div><div class="record-meta">正在根据材料建立课程</div></div></article>' +
+          `<article class="record ${recordState}"><span class="record-icon">${recordIcon}</span><div><div class="record-title">${recordTitle}</div><div class="record-meta">${recordMeta}</div></div></article>`;
+      }
+      if (nextButton) {
+        nextButton.disabled = true;
+        nextButton.hidden = initialGeneration || complete;
+        if (!nextButton.hidden) nextButton.textContent = '正在生成下一课';
+      }
+    }
+
+    function restoreLearningChrome() {
+      if (overviewProgressTitle) overviewProgressTitle.textContent = '课程进度';
+      renderLearningRecords();
+      if (lessonResourceSlot) lessonResourceSlot.style.removeProperty('visibility');
+      if (nextButton) {
+        nextButton.hidden = false;
+        nextButton.disabled = false;
+        nextButton.innerHTML = nextButtonHtml;
+      }
+      updateInfo();
+      if (lessons.length && currentLessonLabel) {
+        currentLessonLabel.textContent = `Lesson ${current + 1} · ${titleOf(lessons[current])}`;
+      }
+      if (contextBar && lessons.length) {
+        contextBar.textContent = `当前上下文：Lesson ${current + 1} · ${titleOf(lessons[current])}`;
+      }
+    }
+
     function showLesson(i) {
       current = i;
       resourceTools.reset();
@@ -211,6 +278,9 @@
       lessonFrame.removeAttribute('srcdoc');
       lessonFrame.src = currentLessonUrl;
       document.querySelector('.current-lesson').textContent = `Lesson ${i + 1} · ${titleOf(lessons[i])}`;
+      if (contextBar) {
+        contextBar.textContent = `当前上下文：Lesson ${i + 1} · ${titleOf(lessons[i])}`;
+      }
       const progress = document.querySelector('.compact-progress > span');
       if (progress) progress.textContent = `${i + 1} / ${lessons.length}`;
       renderList();
@@ -240,36 +310,45 @@
       fetch(`/api/courses/${courseId}/status`)
         .then((r) => r.json())
         .then((status) => {
-          const nextButton = document.getElementById('nextLessonButton');
           if (status.stage === 'failed') {
-            if (nextButton) nextButton.disabled = true;
+            setGenerationChrome(status);
             generationPreview.fail(status);
             return;
           }
           if (status.stage === 'ready' && status.lessons > 0) {
             if (generationWasActive) {
-              generationPreview.complete(status);
-              window.setTimeout(() => location.reload(), 650);
+              if (generationFinishing) return;
+              generationFinishing = true;
+              setGenerationChrome(status, { complete: true });
+              Promise.resolve(generationPreview.complete(status))
+                .catch(() => {})
+                .finally(() => location.reload());
               return;
             }
             generationPreview.hide({ immediate: true });
-            if (nextButton) nextButton.disabled = false;
-            loadLessons();
+            restoreLearningChrome();
+            loadLessons().then(restoreLearningChrome);
             return;
           }
           generationWasActive = true;
-          if (nextButton) nextButton.disabled = true;
+          generationFinishing = false;
+          setGenerationChrome(status);
           generationPreview.update(status);
           scheduleGenerationPoll();
         })
         .catch(() => {
           generationWasActive = true;
-          generationPreview.update({
+          const reconnecting = {
+            stage: 'generating',
             progress: 0,
+            phase: 'extracting',
+            lessons: lessons.length,
             canvasVariant: 'material',
             currentMessage: '正在连接课程生成进度…',
             history: [],
-          });
+          };
+          setGenerationChrome(reconnecting);
+          generationPreview.update(reconnecting);
           scheduleGenerationPoll();
         });
     }
@@ -319,6 +398,74 @@
         cards[4]?.remove(); // “补充资料”演示卡
       });
 
+    function renderLearningRecords() {
+      if (!overviewRecordList) return;
+
+      const totalLessons = lessons.length;
+      const isGenerating = !!(generationWasActive || generationFinishing);
+
+      if (totalLessons === 0) {
+        if (isGenerating) {
+          overviewRecordList.innerHTML = `
+            <article class="record">
+              <span class="record-icon">…</span>
+              <div>
+                <div class="record-title">正在生成课程</div>
+                <div class="record-meta">请耐心等待</div>
+              </div>
+            </article>
+          `;
+        } else {
+          overviewRecordList.innerHTML = `
+            <article class="record warning">
+              <span class="record-icon">?</span>
+              <div>
+                <div class="record-title">课程未就绪</div>
+                <div class="record-meta">尚未生成课节文件</div>
+              </div>
+            </article>
+          `;
+        }
+        return;
+      }
+
+      const record1Html = `
+        <article class="record complete">
+          <span class="record-icon">✓</span>
+          <div>
+            <div class="record-title">课程已创建</div>
+            <div class="record-meta">已生成 ${totalLessons} 节课</div>
+          </div>
+        </article>
+      `;
+
+      const currentTitle = lessons[current] ? escapeHtml(titleOf(lessons[current])) : '';
+      const record2Html = `
+        <article class="record">
+          <span class="record-icon">${current + 1}</span>
+          <div>
+            <div class="record-title">正在学习 Lesson ${current + 1}</div>
+            <div class="record-meta">${currentTitle}</div>
+          </div>
+        </article>
+      `;
+
+      let record3Html = '';
+      if (isGenerating) {
+        record3Html = `
+          <article class="record">
+            <span class="record-icon">…</span>
+            <div>
+              <div class="record-title">正在生成下一课</div>
+              <div class="record-meta">正在构建讲解与示范…</div>
+            </div>
+          </article>
+        `;
+      }
+
+      overviewRecordList.innerHTML = record1Html + record2Html + record3Html;
+    }
+
     // 头部 + 学习概览换成真实课程信息
     function updateInfo() {
       document.querySelector('.course-meta').textContent = `${lessons.length || '…'} 节课 · 1 份材料`;
@@ -331,6 +478,8 @@
       if (pv) pv.textContent = pct + '%';
       const bar = document.querySelector('.side-section .progress-track span');
       if (bar) bar.style.width = pct + '%';
+      if (compactProgressBar) compactProgressBar.style.width = pct + '%';
+      renderLearningRecords();
     }
 
     fetch(`/api/courses/${courseId}/info`)
@@ -372,11 +521,27 @@
     }, true);
 
     function nextLesson() {
-      const btn = document.getElementById('nextLessonButton');
-      const originalHtml = btn.innerHTML;
-      const restoreBtn = () => { btn.disabled = false; btn.innerHTML = originalHtml; };
-      btn.disabled = true;
-      btn.innerHTML = '正在生成<span class="thinking-dots"><i></i><i></i><i></i></span>';
+      if (!nextButton || nextButton.disabled) return;
+      const before = lessons.length;
+      const restoreBtn = () => {
+        generationWasActive = false;
+        generationFinishing = false;
+        generationPreview.hide({ immediate: true });
+        restoreLearningChrome();
+      };
+      generationWasActive = true;
+      generationFinishing = false;
+      const startingStatus = {
+        stage: 'generating',
+        progress: 0,
+        phase: 'extracting',
+        canvasVariant: 'material',
+        lessons: before,
+        currentMessage: '正在准备下一课…',
+        history: [],
+      };
+      setGenerationChrome(startingStatus);
+      generationPreview.update(startingStatus);
       showToast('Kimi 正在准备下一课，通常需要几分钟…');
       fetch(`/api/courses/${courseId}/lessons/next`, { method: 'POST' }).then((r) => {
         if (r.status === 409) {
@@ -384,20 +549,34 @@
           showToast('Kimi 正在忙，请等当前回答完成后再试');
           return;
         }
-        const timer = setInterval(() => {
+        const timer = window.setInterval(() => {
           fetch(`/api/courses/${courseId}/status`)
             .then((r) => r.json())
             .then((s) => {
-              if (s.busy) return;
-              clearInterval(timer);
-              restoreBtn();
-              const before = lessons.length;
-              loadLessons().then(() => {
-                if (lessons.length > before) showLesson(lessons.length - 1);
-                else showToast('下一课生成失败，请重试');
+              if (s.stage === 'failed') {
+                window.clearInterval(timer);
+                setGenerationChrome(s);
+                generationPreview.fail(s);
+                return;
+              }
+              if (s.stage !== 'ready' || s.busy) {
+                setGenerationChrome(s);
+                generationPreview.update(s);
+                return;
+              }
+              window.clearInterval(timer);
+              setGenerationChrome(s, { complete: true });
+              Promise.resolve(generationPreview.complete(s)).finally(() => {
+                loadLessons().then(() => {
+                  generationWasActive = false;
+                  generationFinishing = false;
+                  if (lessons.length > before) showLesson(lessons.length - 1);
+                  else showToast('下一课生成失败，请重试');
+                  restoreLearningChrome();
+                });
               });
             });
-        }, 4000);
+        }, 1800);
       }).catch(restoreBtn);
     }
 
