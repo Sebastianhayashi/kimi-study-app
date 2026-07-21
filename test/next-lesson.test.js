@@ -71,3 +71,29 @@ test('captures immutable baselines and creates a stream-json-first generator ses
     preferredMode: 'stream-json',
   });
 });
+
+
+test('workspace cleanup preserves runtime data and removes only current-run additions', () => {
+  const root = fixtureCourse();
+  fs.writeFileSync(path.join(root, 'job.json'), '{"stage":"ready"}');
+  const baseline = captureNextLessonBaseline(root);
+
+  assert.equal(Object.prototype.hasOwnProperty.call(baseline.workspaceFiles, 'job.json'), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(baseline.workspaceFiles, 'notes.json'), false);
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(baseline.workspaceFiles, 'learning-progress/0001-intro.json'),
+    false,
+  );
+
+  fs.writeFileSync(path.join(root, 'job.json'), '{"stage":"generating"}');
+  fs.writeFileSync(path.join(root, 'notes.json'), '[{"custom":"new note"}]');
+  fs.writeFileSync(path.join(root, 'unexpected.md'), 'remove me');
+  fs.writeFileSync(path.join(root, 'lessons', '0002-temp.html'), 'remove me');
+
+  const { removeNewWorkspaceFiles } = require('../lib/next-lesson');
+  const removed = removeNewWorkspaceFiles(root, baseline);
+  assert.deepEqual(removed, ['lessons/0002-temp.html', 'unexpected.md']);
+  assert.equal(fs.existsSync(path.join(root, 'job.json')), true);
+  assert.equal(fs.existsSync(path.join(root, 'notes.json')), true);
+  assert.equal(fs.existsSync(path.join(root, 'lessons', '0001-intro.html')), true);
+});
