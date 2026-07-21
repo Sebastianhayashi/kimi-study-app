@@ -84,6 +84,9 @@ const page = (file, { head = '', body = '' } = {}) => (req, res) => {
 };
 app.get('/', page('index.html'));
 app.get('/app', page('app.html'));
+app.get('/new-course', page('new-course.html', {
+  body: '<script src="/first-run-onboarding.js"></script>',
+}));
 app.get('/course/:id', page('course.html', {
   head: '<link rel="stylesheet" href="/generation-preview-product.css"><link rel="stylesheet" href="/source-viewer.css"><link rel="stylesheet" href="/frontend-shell.css">',
   body: '<script src="/assistant-markdown.js"></script><script src="/generation-preview-product.js"></script><script src="/generation-events-client.js"></script><script src="/source-viewer.js"></script>',

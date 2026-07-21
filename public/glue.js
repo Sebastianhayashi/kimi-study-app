@@ -17,6 +17,15 @@
 
   // ---------- 书架页：真实上传 + 轮询进度 + 进入课程 ----------
   if (path === '/app') {
+    // First-run 建课使用独立页面。捕获阶段阻止旧上传弹窗继续接管主入口。
+    document.addEventListener('click', (event) => {
+      const trigger = event.target.closest('.create-button');
+      if (!trigger) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      location.href = '/new-course';
+    }, true);
+
     let courseId = null;
     const setStep = (el, cls, mark) => {
       el.className = 'progress-item ' + cls;
@@ -132,6 +141,26 @@
       });
       setTimeout(() => document.addEventListener('click', closeCardMenu, { once: true }), 0);
     }
+
+    function courseDestination(course) {
+      if (course.onboardingState && course.onboardingState !== 'ready') {
+        return `/new-course?course=${encodeURIComponent(course.id)}`;
+      }
+      return `/course/${encodeURIComponent(course.id)}`;
+    }
+
+    function courseMeta(course) {
+      const material = `${course.ext} · 1 份材料`;
+      if (course.onboardingState === 'awaiting_mission') return `等待学习设置 · ${material}`;
+      if (course.onboardingState === 'starting' || course.onboardingState === 'generating') {
+        return `正在创建课程 · ${material}`;
+      }
+      if (course.onboardingState === 'failed' || course.onboardingState === 'interrupted') {
+        return `创建未完成，可重试 · ${material}`;
+      }
+      return `${course.lessons} 节课 · ${material}`;
+    }
+
     fetch('/api/courses').then((r) => r.json()).then((list) => {
       featuredSection.style.display = 'none'; // “继续学习”需要进度跟踪，v1 隐藏
       const grid = document.getElementById('courseGrid');
@@ -161,10 +190,10 @@
           if (ca) ca.textContent = `${c.ext} 材料`;
         }
         el.querySelector('.course-title').textContent = c.title;
-        el.querySelector('.course-meta').textContent = `${c.lessons} 节课 · ${c.ext} · 1 份材料`;
+        el.querySelector('.course-meta').textContent = courseMeta(c);
         el.addEventListener('click', (ev) => {
           if (ev.target.closest('.course-menu')) return;
-          location.href = '/course/' + c.id;
+          location.href = courseDestination(c);
         });
         el.querySelector('.course-menu').addEventListener('click', (ev) => {
           ev.stopPropagation();
