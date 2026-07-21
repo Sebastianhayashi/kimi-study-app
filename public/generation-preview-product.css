@@ -483,6 +483,16 @@
   gap: 11px;
 }
 
+.ks-generation-fidelity .ks-fidelity-chapter-overflow {
+  margin-top: 11px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  color: #68717e;
+  background: #f5f7fb;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
 .ks-generation-fidelity .ks-fidelity-chapter-row {
   min-height: 54px;
   display: grid;

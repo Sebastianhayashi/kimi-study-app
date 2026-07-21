@@ -24,6 +24,7 @@ test('derives progressive generation status from published artifacts', () => {
 
   const status = deriveGenerationStatus(root, { stage: 'generating' }, { busy: true, lessons: 0 });
   assert.equal(status.progress, 68);
+  assert.equal(status.phase, 'questions');
   assert.equal(status.canvasVariant, 'questions');
   assert.equal(status.preview.unitsFound, 3);
   assert.equal(status.preview.claimsFound, 2);
@@ -36,6 +37,7 @@ test('reports ready only when the existing job is ready and a lesson exists', ()
   fs.writeFileSync(path.join(root, 'book.epub'), 'fixture');
   const status = deriveGenerationStatus(root, { stage: 'ready' }, { busy: false, lessons: 1 });
   assert.equal(status.progress, 100);
+  assert.equal(status.phase, 'complete');
   assert.equal(status.canvasVariant, 'ready');
   assert.equal(status.currentMessage, '课程已经准备好');
   assert.equal(status.history.at(-1).state, 'complete');
