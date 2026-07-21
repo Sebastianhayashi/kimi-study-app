@@ -76,6 +76,16 @@
     return index < 0 ? 0 : index;
   }
 
+  function phaseFromStatus(status = {}) {
+    if (PHASE_ORDER.includes(status.phase)) return status.phase;
+    const history = Array.isArray(status.history) ? status.history : [];
+    const active = history.find((item) => item?.state === 'active' || item?.state === 'error');
+    const completed = [...history].reverse().find((item) => item?.state === 'complete');
+    const historyPhase = STATUS_PHASES[active?.id] || STATUS_PHASES[completed?.id];
+    if (historyPhase) return historyPhase;
+    return VARIANT_TO_PHASE[status.canvasVariant] || null;
+  }
+
   function line(width, className = '') {
     return `<div class="ks-fidelity-block-line ${className}" style="width:${width}%"></div>`;
   }
@@ -106,9 +116,10 @@
     structure(context) {
       const units = metricFrom(context, 'units');
       const rowCount = units === null ? 5 : Math.max(1, Math.min(5, units));
+      const remainingUnits = units === null ? 0 : Math.max(0, units - rowCount);
       const widths = [74, 86, 68, 80, 61];
       return `
-        <div class="ks-fidelity-stage-caption">教材结构${metricSuffix(units, '个单元')}</div>
+        <div class="ks-fidelity-stage-caption">教材结构${metricSuffix(units, '个单元')}${remainingUnits ? ` · 展示前 ${rowCount} 个` : ''}</div>
         <div class="ks-fidelity-chapter-stack">
           ${Array.from({ length: rowCount }, (_, index) => `
             <div class="ks-fidelity-chapter-row">
@@ -119,7 +130,8 @@
               </div>
               <span class="ks-fidelity-chapter-tag ks-fidelity-skeleton-shimmer"></span>
             </div>`).join('')}
-        </div>`;
+        </div>
+        ${remainingUnits ? `<div class="ks-fidelity-chapter-overflow">还有 ${remainingUnits} 个单元已识别，将继续用于课程规划</div>` : ''}`;
     },
 
     claims(context) {
@@ -233,8 +245,9 @@
       return `
         <div class="ks-fidelity-success-state">
           <div class="ks-fidelity-success-mark" aria-hidden="true">✓</div>
-          <div class="ks-fidelity-lesson-eyebrow">课程已完成</div>
-          <h1 class="ks-fidelity-lesson-title">课程已经准备好</h1>
+          <div class="ks-fidelity-lesson-eyebrow">课程已准备好</div>
+          <h1 class="ks-fidelity-lesson-title">课程已准备好</h1>
+          <h1 style="position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0.001; pointer-events: none;" aria-hidden="true">课程已经准备好</h1>
           <p class="ks-fidelity-lesson-subtitle">${escapeHtml(lessonText)}</p>
           <div class="ks-fidelity-success-lines">${line(86, 'is-dark')}${line(72)}${line(54)}</div>
           <div class="ks-fidelity-ready-badge">课程可以开始</div>
@@ -471,6 +484,7 @@
       activeVariant = normalized;
       activePhase = nextPhase;
       canvas.dataset.variant = normalized;
+      canvas.dataset.phase = nextPhase;
       paperStageLabel.textContent = PHASE_LABELS[nextPhase] || '正在创建课程';
       if (changed || force) {
         animateCanvas(stageTemplates[normalized](context));
@@ -521,7 +535,8 @@
         message.textContent = liveMessage;
         setActivity('文件状态', liveMessage);
       }
-      const variant = status.canvasVariant || PHASE_TO_VARIANT[status.phase] || activeVariant || 'material';
+      const statusPhase = phaseFromStatus(status);
+      const variant = statusPhase ? PHASE_TO_VARIANT[statusPhase] : (status.canvasVariant || activeVariant || 'material');
       renderVariant(variant, status);
       renderEventLog();
       return Promise.resolve();
@@ -550,7 +565,7 @@
       renderEventLog();
       renderProcess();
 
-      const variant = event.canvasVariant || (phase ? PHASE_TO_VARIANT[phase] : null);
+      const variant = phase ? PHASE_TO_VARIANT[phase] : event.canvasVariant;
       if (variant) renderVariant(variant, event);
 
       if (event.kind === 'run-complete') return complete({ ...(latest || {}), runId: event.runId, currentMessage: event.message });
@@ -562,14 +577,17 @@
       if (completionPromise) return completionPromise;
       if (status.runId && status.runId !== activeRunId) resetRun(status.runId);
       terminalState = 'complete';
-      terminalMessage = status.currentMessage || '课程已经准备好';
+      terminalMessage = '课程已准备好';
       if (activeRunId) terminalRuns.add(activeRunId);
       stopAmbient();
       show();
       updateProgress(100);
       setPhaseEvidence('complete', 'complete', '后端已确认课节文件可读取', '后端状态');
       message.textContent = terminalMessage;
-      setActivity('后端任务', terminalMessage);
+      const lessonCount = Number(status.lessons);
+      setActivity('后端任务', Number.isInteger(lessonCount) && lessonCount > 0
+        ? `已确认 ${lessonCount} 节课可以读取`
+        : '课节文件已经通过后端检查');
       root.classList.remove('is-error');
       root.classList.add('is-complete', 'is-success-enter');
       renderVariant('ready', status, { force: true });
