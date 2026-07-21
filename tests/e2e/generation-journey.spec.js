@@ -33,7 +33,7 @@ const readyStatus = (overrides = {}) => ({
   progress: 100,
   lessons: 1,
   busy: false,
-  currentMessage: '课程已经准备好',
+  currentMessage: '课程已准备好',
   history: [],
   canvasVariant: 'ready',
   ...overrides,

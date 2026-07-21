@@ -110,6 +110,7 @@ test('中央生成画布使用预览稿的 paper、header、双进度与扫描�
     const pulse = root.querySelector('.ks-generation-status-pulse');
     return {
       paperWidth: paper.getBoundingClientRect().width,
+      canvasWidth: root.querySelector('.ks-generation-canvas-wrap').getBoundingClientRect().width,
       paperRadius: getComputedStyle(paper).borderRadius,
       headerHeight: getComputedStyle(header).height,
       contentWidth: content.getBoundingClientRect().width,
@@ -119,7 +120,7 @@ test('中央生成画布使用预览稿的 paper、header、双进度与扫描�
     };
   });
 
-  expect(geometry.paperWidth).toBeGreaterThan(450);
+  expect(geometry.paperWidth / geometry.canvasWidth).toBeGreaterThanOrEqual(0.94);
   expect(geometry.paperWidth).toBeLessThanOrEqual(920);
   expect(geometry.paperRadius).toBe('14px');
   expect(geometry.headerHeight).toBe('48px');
@@ -150,7 +151,7 @@ test('真实生成阶段逐一切换为预览稿对应的中央动画内容', as
 
   await emitPhase(page, 'blueprint', '正在设计练习路线');
   await expect(canvas).toHaveAttribute('data-variant', 'practice');
-  await expect(content).toContainText('练习组合 · 引导 → 独立');
+  await expect(content).toContainText('练习路线 · 引导 → 独立 → 应用');
   await expect(content.locator('.ks-fidelity-exercise-card')).toHaveCount(3);
 
   await emitPhase(page, 'questions', '已生成 11 道候选题', { candidates: 11 });
@@ -162,26 +163,66 @@ test('真实生成阶段逐一切换为预览稿对应的中央动画内容', as
   await expect(canvas).toHaveAttribute('data-variant', 'quality');
   await expect(content).toContainText('题目质量检查 · 保留 9 / 移除 2');
   await expect(content.locator('.ks-fidelity-quality-check')).toHaveCount(5);
-  await expect(content.locator('.ks-fidelity-quality-card.is-rejected')).toHaveCount(1);
+  await expect(content.locator('.ks-fidelity-quality-state')).toContainText(['检查中', '比较中']);
+  await expect(content).not.toContainText('已移除');
 
   await emitPhase(page, 'assembling', '正在组装第一课', { lessonNumber: 1 });
   await expect(canvas).toHaveAttribute('data-variant', 'assembly');
-  await expect(content.getByRole('heading', { name: '第一课正在形成', includeHidden: true })).toBeVisible();
+  await expect(content.locator('h1', { hasText: '第 1 课正在形成' })).toBeVisible();
   await expect(content.locator('.ks-fidelity-vocab-card')).toHaveCount(6);
 
   await emitPhase(page, 'validating', '正在验证互动课程');
   await expect(canvas).toHaveAttribute('data-variant', 'validation');
-  await expect(content).toContainText('答案、提示与评分规则已连接');
+  await expect(content).toContainText('正在连接答案、提示与评分规则');
+  await expect(content).not.toContainText('答案、提示与评分规则已连接');
 
   await previewCall(page, 'complete', {
     runId: 'fidelity-run',
     progress: 100,
-    currentMessage: '第一课已经准备好',
+    currentMessage: '第一课已准备好',
   });
   await expect(preview).toHaveClass(/is-complete/);
   await expect(canvas).toHaveAttribute('data-variant', 'ready');
-  await expect(content.getByRole('heading', { name: '第一课已经准备好', includeHidden: true })).toBeVisible();
+  await expect(content.locator('h1', { hasText: '课程已准备好' })).toBeVisible();
   await expect(content).toContainText('课程可以开始');
+});
+
+test('等待动画可以循环，但阶段和文案只能由真实后端事件推进', async ({ page }) => {
+  await preparePreview(page, { ...ACTIVE_STATUS, progress: 7, canvasVariant: 'material', currentMessage: '正在读取材料' });
+  await page.goto('/course/generatingcourse');
+
+  const preview = page.locator('.ks-generation-preview');
+  const canvas = preview.locator('.ks-generation-canvas');
+  await expect(canvas).toHaveAttribute('data-variant', 'material');
+  await page.waitForTimeout(3900);
+  await expect(canvas).toHaveAttribute('data-variant', 'material');
+  await expect(preview.locator('.ks-generation-message')).toHaveText('正在读取材料');
+
+  await previewCall(page, 'appendEvent', {
+    id: 'tool-read-1',
+    runId: 'fixture-run-generating',
+    kind: 'tool',
+    key: 'tool:read-1',
+    state: 'active',
+    message: '正在定位并阅读与本课相关的材料…',
+  });
+  await expect(canvas).toHaveAttribute('data-variant', 'material');
+  await expect(preview.locator('.ks-generation-event-log')).toContainText('实际工具调用');
+  await expect(preview.locator('.ks-generation-event-log')).toContainText('正在定位并阅读与本课相关的材料');
+
+  await previewCall(page, 'appendEvent', {
+    id: 'phase-profile-1',
+    runId: 'fixture-run-generating',
+    kind: 'phase',
+    key: 'phase:profiling',
+    phase: 'profiling',
+    state: 'active',
+    message: '已识别 8 个内容单元，正在分析结构',
+    metrics: { units: 8 },
+  });
+  await expect(canvas).toHaveAttribute('data-variant', 'structure');
+  await expect(preview.locator('.ks-generation-canvas-content')).toContainText('教材结构 · 8 个单元');
+  await expect(preview.locator('.ks-generation-history')).toContainText('不会展示或推测隐藏推理');
 });
 
 test('扫描只在阶段切换时运行，失败后停止且迟到事件不能恢复', async ({ page }) => {
@@ -299,4 +340,47 @@ test('减少动态效果时不运行扫描并把动画压缩为单次极短状�
   expect(motion.pulseDuration).toBeLessThanOrEqual(0.01);
   expect(motion.pulseIterations).toBe('1');
   expect(motion.scanRunning).toBe(false);
+});
+
+test('生成人工视觉对比核对截图', async ({ page }, testInfo) => {
+  await preparePreview(page);
+  await page.goto('/course/generatingcourse');
+  await startFidelityRun(page);
+
+  // 1. extracting/material
+  await emitPhase(page, 'extracting', '正在读取教材内容…');
+  await page.waitForTimeout(500);
+  const p1 = testInfo.outputPath('extracting-material.png');
+  await page.screenshot({ path: p1 });
+  await testInfo.attach('extracting-material', { path: p1, contentType: 'image/png' });
+
+  // 2. profiling/structure (real units metric)
+  await emitPhase(page, 'profiling', '已识别 8 个单元', { units: 8 });
+  await page.waitForTimeout(500);
+  const p2 = testInfo.outputPath('profiling-structure.png');
+  await page.screenshot({ path: p2 });
+  await testInfo.attach('profiling-structure', { path: p2, contentType: 'image/png' });
+
+  // 3. questions or quality (no fictional questions)
+  await emitPhase(page, 'quality', '已保留 9 道题，移除 2 道', { accepted: 9, rejected: 2 });
+  await page.waitForTimeout(500);
+  const p3 = testInfo.outputPath('questions-quality.png');
+  await page.screenshot({ path: p3 });
+  await testInfo.attach('questions-quality', { path: p3, contentType: 'image/png' });
+
+  // 4. complete success state/before exit
+  await previewCall(page, 'complete', {
+    runId: 'fidelity-run',
+    progress: 100,
+    currentMessage: '课程准备完成！',
+    lessons: 1,
+  });
+  await expect(page.locator('.ks-generation-preview')).toHaveClass(/is-complete/);
+  
+  const p4 = testInfo.outputPath('complete.png');
+  await page.screenshot({ path: p4 });
+  await testInfo.attach('complete', { path: p4, contentType: 'image/png' });
+
+  const exitDuration = await page.evaluate(() => window.KimiGenerationPreview?.successExitMs || 1520);
+  await page.waitForTimeout(exitDuration + 100);
 });

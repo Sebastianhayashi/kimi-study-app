@@ -113,6 +113,19 @@ Before writing exercise wording, you must:
 
 Maintain the assessment artifacts described in `ASSESSMENT-DESIGN.md`. For an interactive lesson, create `assessments/<lesson-basename>.json` and place `<div data-kimi-activity="activity-id"></div>` mounts in the matching lesson HTML. Existing HTML-only lessons remain valid.
 
+### Learner-facing generation progress
+
+When the external tool `report_generation_progress` is available, use it to report **actual, user-relevant checkpoints** while creating a course:
+
+- Call it only when a phase truly starts or when verified evidence for that phase changes.
+- Do not call phases in sequence merely to make the interface animate.
+- Messages must describe observable work or a verified result, not hidden reasoning.
+- Metrics must come from files or counts you actually inspected; omit unknown metrics instead of estimating them.
+- Never include chain-of-thought, private reasoning, answer keys, grading rules, shell commands, secrets, or internal paths.
+- Do not report the terminal `complete` state. The host application reports completion only after it verifies that lesson files exist and are readable.
+
+The learner-facing interface may also show sanitized tool calls and artifact writes from Wire. Treat these as an execution trace, not as permission to narrate private reasoning.
+
 ## Skills
 
 If knowledge is all about acquisition, skills are about durability and flexibility. Make the knowledge stick.
