@@ -20,6 +20,7 @@ const {
   markGenerationReady,
   markGenerationRunning,
   markGenerationStarting,
+  onboardingGenerationStage,
   publicOnboarding,
   readOnboarding,
   reconcileOnboarding,
@@ -240,14 +241,14 @@ function reconcileCourseOnboarding(id) {
 
 function onboardingSnapshot(id, record = reconcileCourseOnboarding(id)) {
   const job = readJob(id);
-  const preGeneration = record && ['draft', 'uploading', 'inspecting', 'awaiting_mission'].includes(record.state);
+  const stage = onboardingGenerationStage(record, job.stage);
   return {
     id,
     onboarding: publicOnboarding(record),
     generation: {
-      stage: preGeneration ? 'idle' : job.stage,
-      runId: job.runId || null,
-      busy: locks.has(id),
+      stage,
+      runId: stage === 'idle' ? null : job.runId || null,
+      busy: stage === 'idle' ? false : locks.has(id),
       lessons: lessonsOf(id).length,
     },
   };
@@ -376,12 +377,16 @@ app.get('/api/courses', (req, res) => {
       let archived = false;
       try { archived = !!JSON.parse(fs.readFileSync(path.join(dirOf(id), 'meta.json'), 'utf8')).archived; } catch {}
       let onboarding = null;
-      try { onboarding = readOnboarding(dirOf(id), { optional: true }); } catch {}
+      try { onboarding = reconcileCourseOnboarding(id); }
+      catch {
+        try { onboarding = readOnboarding(dirOf(id), { optional: true }); } catch {}
+      }
+      const job = readJob(id);
       return {
         id, title, cover, archived,
         ext: (path.extname(book).slice(1) || 'TXT').toUpperCase(),
         lessons: lessonsOf(id).length,
-        stage: readJob(id).stage,
+        stage: onboardingGenerationStage(onboarding, job.stage),
         onboardingState: onboarding && onboarding.state || null,
         onboardingErrorCode: onboarding
           ? onboarding.inspection.errorCode || onboarding.generation.errorCode || null
