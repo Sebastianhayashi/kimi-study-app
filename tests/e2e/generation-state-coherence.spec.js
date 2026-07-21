@@ -77,6 +77,22 @@ test('单元总数超过画布容量时明确说明剩余数量', async ({ page 
   await expect(content.locator('.ks-fidelity-chapter-row')).toHaveCount(5);
   await expect(content).toContainText('教材结构 · 8 个单元 · 展示前 5 个');
   await expect(content).toContainText('还有 3 个单元已识别');
+
+  const overflowNote = page.locator('.ks-fidelity-chapter-overflow');
+  const activityBar = page.locator('.ks-generation-paper-activity');
+  await expect(overflowNote).toBeVisible();
+  await expect(activityBar).toBeVisible();
+
+  const noteBox = await overflowNote.boundingBox();
+  const barBox = await activityBar.boundingBox();
+
+  expect(noteBox).not.toBeNull();
+  expect(barBox).not.toBeNull();
+
+  const noteBottom = noteBox.y + noteBox.height;
+  const barTop = barBox.y;
+
+  expect(noteBottom).toBeLessThanOrEqual(barTop - 8);
 });
 
 test('完成状态把所有生成进度统一为 100%，隐藏下一课并使用同一成功文案', async ({ page }) => {
@@ -100,7 +116,7 @@ test('完成状态把所有生成进度统一为 100%，隐藏下一课并使用
     canvasVariant: 'ready',
     lessons: 1,
     busy: false,
-    currentMessage: '课程已经准备好',
+    currentMessage: '课程已准备好',
     history: [{ id: 'validate', label: '检查课程文件', state: 'complete' }],
   });
 

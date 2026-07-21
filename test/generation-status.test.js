@@ -39,7 +39,7 @@ test('reports ready only when the existing job is ready and a lesson exists', ()
   assert.equal(status.progress, 100);
   assert.equal(status.phase, 'complete');
   assert.equal(status.canvasVariant, 'ready');
-  assert.equal(status.currentMessage, '课程已经准备好');
+  assert.equal(status.currentMessage, '课程已准备好');
   assert.equal(status.history.at(-1).state, 'complete');
 });
 
