@@ -12,6 +12,7 @@ const {
   createTutorSessionState,
 } = require('./lib/tutor-context');
 const { validateLessonSpec, scoreActivity, computeClaimProgress, toPublicLessonSpec } = require('./lib/activity-engine');
+const { isPrivateCoursePath } = require('./lib/private-course-path');
 const { deriveGenerationStatus } = require('./lib/generation-status');
 const { runTrackedKimi } = require('./lib/kimi-generation-runner');
 const { appendGenerationEvent, readGenerationEvents, subscribeGenerationEvents } = require('./lib/generation-events');
@@ -679,9 +680,7 @@ app.get('/api/courses/:id/cover.webp', serveRootFile('cover.webp'));
 app.get('/api/courses/:id/*splat', (req, res) => {
   const root = dirOf(req.params.id);
   const relative = req.params.splat.join('/');
-  if (/^(assessments|learning-progress|learning-records)(\/|$)/i.test(relative)
-    || /^(question-bank|quality-report|misconceptions|learning-claims|assessment-blueprint|source-profile)\.json$/i.test(relative)
-    || /^generation-events\.jsonl$/i.test(relative)) return res.status(404).end();
+  if (isPrivateCoursePath(relative)) return res.status(404).end();
   const file = path.normalize(path.join(root, relative));
   if (!file.startsWith(root + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) return res.status(404).end();
   res.sendFile(relative, { root });
