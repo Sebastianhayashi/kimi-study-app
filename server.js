@@ -17,7 +17,10 @@ const {
   createGeneratorSessionState,
   withTeachSkill,
 } = require('./lib/next-lesson');
-const { validateNextLessonDelta } = require('./lib/lesson-publish-validator');
+const {
+  cleanupNextLessonDelta,
+  validateNextLessonDelta,
+} = require('./lib/lesson-publish-validator');
 const { validateLessonSpec, scoreActivity, computeClaimProgress, toPublicLessonSpec } = require('./lib/activity-engine');
 const { isPrivateCoursePath } = require('./lib/private-course-path');
 const { deriveGenerationStatus } = require('./lib/generation-status');
@@ -163,6 +166,7 @@ function runKimi(id, prompt, {
   preferredMode = null,
   kind = null,
   baseline = null,
+  onResult = null,
 } = {}) {
   if (!track) return runPrintKimi(id, prompt, { cont, sessionId });
 
@@ -213,6 +217,7 @@ function runKimi(id, prompt, {
   }).then((result) => {
     const { text, status, mode } = result;
     if (status !== 'finished') throw new Error(`Kimi generation ended with status ${status}`);
+    if (typeof onResult === 'function') onResult(result);
 
     let newLesson = null;
     if (isNextLesson) {
@@ -263,10 +268,17 @@ function runKimi(id, prompt, {
     return { text, mode, sessionId: result.sessionId || sessionId || null, newLesson };
   }).catch((error) => {
     locks.delete(id);
+    const cleanup = isNextLesson ? cleanupNextLessonDelta(dirOf(id), baseline) : {
+      removed: [],
+      changedExisting: [],
+    };
     const failedAt = new Date().toISOString();
     writeJob(id, {
       ...job,
       stage: 'failed',
+      cleanupRemoved: cleanup.removed,
+      repairRequired: cleanup.changedExisting.length > 0,
+      changedExisting: cleanup.changedExisting,
       currentMessage: isNextLesson ? '下一课生成没有完成，请重试' : '课程生成没有完成，请重试',
       updatedAt: failedAt,
       failedAt,
@@ -778,6 +790,13 @@ app.post('/api/courses/:id/lessons/next', (req, res) => {
   if (locks.has(id)) return res.status(409).json({ error: 'busy' });
 
   try {
+    const previousJob = readJob(id);
+    if (previousJob.repairRequired) {
+      return res.status(409).json({
+        error: 'course repair required',
+        details: previousJob.changedExisting || [],
+      });
+    }
     const baseline = captureNextLessonBaseline(dirOf(id));
     if (!baseline.lessons.length) return res.status(409).json({ error: 'first lesson is not ready' });
     const generator = readGeneratorSession(id);
@@ -785,24 +804,25 @@ app.post('/api/courses/:id/lessons/next', (req, res) => {
       buildNextLessonPrompt(dirOf(id), baseline),
       generator.initialized === true,
     );
+    const persistGeneratorResult = (result) => {
+      saveGeneratorSession(id, {
+        ...generator,
+        initialized: true,
+        sessionId: result.sessionId || generator.sessionId,
+        preferredMode: result.mode || generator.preferredMode || 'stream-json',
+        updatedAt: new Date().toISOString(),
+      });
+    };
     const run = runKimi(id, prompt, {
       track: true,
       kind: 'next-lesson',
       baseline,
       sessionId: generator.sessionId,
       preferredMode: generator.preferredMode || 'stream-json',
+      onResult: persistGeneratorResult,
     });
     const job = readJob(id);
     Promise.resolve(run)
-      .then((result) => {
-        saveGeneratorSession(id, {
-          ...generator,
-          initialized: true,
-          sessionId: result.sessionId || generator.sessionId,
-          preferredMode: result.mode === 'stream-json' ? 'stream-json' : null,
-          updatedAt: new Date().toISOString(),
-        });
-      })
       .catch((error) => console.log(`[kimi ${id}] failed: ${error.message}`));
     return res.status(202).json({ ok: true, runId: job.runId });
   } catch (error) {
