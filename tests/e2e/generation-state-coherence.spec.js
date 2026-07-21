@@ -141,7 +141,7 @@ test('正常 ready 课程不显示生成覆盖层，并恢复学习态控件', a
   await expect(page.locator('.current-lesson')).toContainText('Lesson 1');
 });
 
-test('生成一致性人工截图', async ({ page }) => {
+test('生成一致性人工截图', async ({ page }, testInfo) => {
   // 1. coherence-extracting.png
   const controller = await prepareControlledStatus(page, {
     stage: 'generating',
@@ -157,7 +157,9 @@ test('生成一致性人工截图', async ({ page }) => {
 
   await page.goto('/course/generatingcourse');
   await page.waitForTimeout(800);
-  await page.screenshot({ path: '/Users/microseyuyu/Downloads/coherence-extracting.png' });
+  const p1 = testInfo.outputPath('coherence-extracting.png');
+  await page.screenshot({ path: p1 });
+  await testInfo.attach('coherence-extracting', { path: p1, contentType: 'image/png' });
 
   // 2. coherence-structure.png
   controller.set({
@@ -173,18 +175,11 @@ test('生成一致性人工截图', async ({ page }) => {
     preview: { unitsFound: 8 },
   });
   await page.waitForTimeout(800);
-  await page.screenshot({ path: '/Users/microseyuyu/Downloads/coherence-structure.png' });
+  const p2 = testInfo.outputPath('coherence-structure.png');
+  await page.screenshot({ path: p2 });
+  await testInfo.attach('coherence-structure', { path: p2, contentType: 'image/png' });
 
   // 3. coherence-complete.png
-  await page.evaluate(() => {
-    if (window.KimiGenerationPreview?.current) {
-      const origComplete = window.KimiGenerationPreview.current.complete;
-      window.KimiGenerationPreview.current.complete = function(status) {
-        origComplete(status);
-        return new Promise(() => {});
-      };
-    }
-  });
   controller.set({
     stage: 'ready',
     progress: 100,
@@ -195,13 +190,21 @@ test('生成一致性人工截图', async ({ page }) => {
     currentMessage: '课程已准备好',
     history: [{ id: 'validate', label: '检查课程文件', state: 'complete' }],
   });
-  await page.waitForTimeout(800);
-  await page.screenshot({ path: '/Users/microseyuyu/Downloads/coherence-complete.png' });
+  await expect(page.locator('.ks-generation-preview')).toHaveClass(/is-complete/);
+  
+  const p3 = testInfo.outputPath('coherence-complete.png');
+  await page.screenshot({ path: p3 });
+  await testInfo.attach('coherence-complete', { path: p3, contentType: 'image/png' });
+
+  const exitDuration = await page.evaluate(() => window.KimiGenerationPreview?.successExitMs || 1520);
+  await page.waitForTimeout(exitDuration + 100);
 
   // 4. coherence-ready-course.png
   await page.goto('/course/readycourse');
   await page.waitForTimeout(800);
-  await page.screenshot({ path: '/Users/microseyuyu/Downloads/coherence-ready-course.png' });
+  const p4 = testInfo.outputPath('coherence-ready-course.png');
+  await page.screenshot({ path: p4 });
+  await testInfo.attach('coherence-ready-course', { path: p4, contentType: 'image/png' });
 });
 
 test('验证 renderLearningRecords() 防御 HTML 注入 (XSS)', async ({ page }) => {
@@ -236,7 +239,7 @@ test('验证 renderLearningRecords() 防御 HTML 注入 (XSS)', async ({ page })
   expect(hasXssElements).toBe(false);
 });
 
-test('在 1366x768 响应式断点下验证生成状态', async ({ page }) => {
+test('在 1366x768 响应式断点下验证生成状态', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1366, height: 768 });
 
   const controller = await prepareControlledStatus(page, {
@@ -255,16 +258,20 @@ test('在 1366x768 响应式断点下验证生成状态', async ({ page }) => {
   await page.goto('/course/generatingcourse');
   await page.waitForTimeout(500);
 
+  // 1. 验证没有水平页面滚动
   const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
   const innerWidth = await page.evaluate(() => window.innerWidth);
   expect(scrollWidth).toBeLessThanOrEqual(innerWidth);
 
+  // 2. 验证顶部生成状态可见
   const compactProgress = page.locator('.compact-progress');
   await expect(compactProgress).toBeVisible();
 
+  // 3. 验证 .ks-generation-paper-activity 可见
   const activityBar = page.locator('.ks-generation-paper-activity');
   await expect(activityBar).toBeVisible();
 
+  // 4. 验证 overflow note 不被 activity bar 遮挡 (保留现有 8px 几何断言)
   const overflowNote = page.locator('.ks-fidelity-chapter-overflow');
   await expect(overflowNote).toBeVisible();
   const noteBox = await overflowNote.boundingBox();
@@ -273,12 +280,40 @@ test('在 1366x768 响应式断点下验证生成状态', async ({ page }) => {
   expect(barBox).not.toBeNull();
   expect(noteBox.y + noteBox.height).toBeLessThanOrEqual(barBox.y - 8);
 
+  // 5. 验证实际中央生成区域的滚动容器
+  const viewport = page.locator('.ks-generation-canvas-viewport');
+  await expect(viewport).toBeVisible();
+
+  // - scrollHeight >= clientHeight
+  const scrollHeight = await viewport.evaluate((el) => el.scrollHeight);
+  const clientHeight = await viewport.evaluate((el) => el.clientHeight);
+  expect(scrollHeight).toBeGreaterThanOrEqual(clientHeight);
+
+  // - 设置 scrollTop = scrollHeight 后能够接近最大 scrollTop
+  const maxScrollTop = scrollHeight - clientHeight;
+  const actualScrollTop = await viewport.evaluate((el) => {
+    el.scrollTop = el.scrollHeight;
+    return el.scrollTop;
+  });
+  expect(actualScrollTop).toBeGreaterThanOrEqual(maxScrollTop - 2);
+
+  // - 纸张底部能够进入中央容器可视区域
+  const updatedNoteBox = await overflowNote.boundingBox();
+  const viewportBox = await viewport.boundingBox();
+  expect(updatedNoteBox).not.toBeNull();
+  expect(viewportBox).not.toBeNull();
+  const noteBottom = updatedNoteBox.y + updatedNoteBox.height;
+  const viewportBottom = viewportBox.y + viewportBox.height;
+  expect(noteBottom).toBeLessThanOrEqual(viewportBottom);
+
+  // 6. 验证生成过程按钮可点击并打开日志抽屉
   const summaryBtn = page.locator('.ks-generation-summary');
   await expect(summaryBtn).toBeVisible();
   await summaryBtn.click();
   await expect(summaryBtn).toHaveAttribute('aria-expanded', 'true');
   await page.keyboard.press('Escape');
 
+  // 7. 切换到 complete 状态并验证完成标题可见
   controller.set({
     stage: 'ready',
     progress: 100,
@@ -295,14 +330,7 @@ test('在 1366x768 响应式断点下验证生成状态', async ({ page }) => {
   await expect(successTitle).toBeVisible();
   await expect(successTitle).toHaveText('课程已准备好');
 
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  const isAtBottom = await page.evaluate(() => {
-    const scrollY = window.scrollY;
-    const visibleHeight = window.innerHeight;
-    const totalHeight = document.body.scrollHeight;
-    return scrollY + visibleHeight >= totalHeight - 2;
-  });
-  expect(isAtBottom).toBe(true);
-
-  await page.screenshot({ path: '/Users/microseyuyu/Downloads/responsive-1366x768.png', fullPage: true });
+  const p = testInfo.outputPath('responsive-1366x768.png');
+  await page.screenshot({ path: p, fullPage: true });
+  await testInfo.attach('responsive-1366x768', { path: p, contentType: 'image/png' });
 });

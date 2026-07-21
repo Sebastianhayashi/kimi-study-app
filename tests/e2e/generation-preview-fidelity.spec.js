@@ -342,7 +342,7 @@ test('减少动态效果时不运行扫描并把动画压缩为单次极短状�
   expect(motion.scanRunning).toBe(false);
 });
 
-test('生成人工视觉对比核对截图', async ({ page }) => {
+test('生成人工视觉对比核对截图', async ({ page }, testInfo) => {
   await preparePreview(page);
   await page.goto('/course/generatingcourse');
   await startFidelityRun(page);
@@ -350,29 +350,37 @@ test('生成人工视觉对比核对截图', async ({ page }) => {
   // 1. extracting/material
   await emitPhase(page, 'extracting', '正在读取教材内容…');
   await page.waitForTimeout(500);
-  await page.screenshot({ path: '/Users/microseyuyu/Downloads/extracting-material.png' });
+  const p1 = testInfo.outputPath('extracting-material.png');
+  await page.screenshot({ path: p1 });
+  await testInfo.attach('extracting-material', { path: p1, contentType: 'image/png' });
 
   // 2. profiling/structure (real units metric)
   await emitPhase(page, 'profiling', '已识别 8 个单元', { units: 8 });
   await page.waitForTimeout(500);
-  await page.screenshot({ path: '/Users/microseyuyu/Downloads/profiling-structure.png' });
+  const p2 = testInfo.outputPath('profiling-structure.png');
+  await page.screenshot({ path: p2 });
+  await testInfo.attach('profiling-structure', { path: p2, contentType: 'image/png' });
 
   // 3. questions or quality (no fictional questions)
   await emitPhase(page, 'quality', '已保留 9 道题，移除 2 道', { accepted: 9, rejected: 2 });
   await page.waitForTimeout(500);
-  await page.screenshot({ path: '/Users/microseyuyu/Downloads/questions-quality.png' });
+  const p3 = testInfo.outputPath('questions-quality.png');
+  await page.screenshot({ path: p3 });
+  await testInfo.attach('questions-quality', { path: p3, contentType: 'image/png' });
 
   // 4. complete success state/before exit
-  await page.evaluate(() => {
-    if (window.KimiGenerationPreview?.current) {
-      const origComplete = window.KimiGenerationPreview.current.complete;
-      window.KimiGenerationPreview.current.complete = function(status) {
-        origComplete(status);
-        return new Promise(() => {});
-      };
-    }
+  await previewCall(page, 'complete', {
+    runId: 'fidelity-run',
+    progress: 100,
+    currentMessage: '课程准备完成！',
+    lessons: 1,
   });
-  await emitPhase(page, 'complete', '课程准备完成！', { lessonNumber: 1 });
-  await page.waitForTimeout(500);
-  await page.screenshot({ path: '/Users/microseyuyu/Downloads/complete.png' });
+  await expect(page.locator('.ks-generation-preview')).toHaveClass(/is-complete/);
+  
+  const p4 = testInfo.outputPath('complete.png');
+  await page.screenshot({ path: p4 });
+  await testInfo.attach('complete', { path: p4, contentType: 'image/png' });
+
+  const exitDuration = await page.evaluate(() => window.KimiGenerationPreview?.successExitMs || 1520);
+  await page.waitForTimeout(exitDuration + 100);
 });
