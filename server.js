@@ -6,6 +6,11 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const {
+  buildTutorPrompt,
+  withHumanizerSkill,
+  createTutorSessionState,
+} = require('./lib/tutor-context');
 const { validateLessonSpec, scoreActivity, computeClaimProgress, toPublicLessonSpec } = require('./lib/activity-engine');
 const { deriveGenerationStatus } = require('./lib/generation-status');
 const { runTrackedKimi } = require('./lib/kimi-generation-runner');
@@ -116,13 +121,15 @@ const lessonsOf = (id) => {
   return fs.existsSync(d) ? fs.readdirSync(d).filter((f) => f.endsWith('.html') && f !== 'index.html').sort() : [];
 };
 
-function runPrintKimi(id, prompt, { cont = false } = {}) {
+function runPrintKimi(id, prompt, { cont = false, sessionId = null } = {}) {
   return new Promise((resolve, reject) => {
     locks.add(id);
     const args = ['-m', MODEL, '--skills-dir', SKILLS];
-    if (cont) args.push('-c');
+    if (sessionId) args.push('--session', sessionId);
+    else if (cont) args.push('-c');
     args.push('-p', prompt);
-    console.log(`[kimi ${id}] start${cont ? ' (continue)' : ''}: ${prompt.slice(0, 50)}...`);
+    const sessionLabel = sessionId ? ' (tutor session)' : cont ? ' (continue)' : '';
+    console.log(`[kimi ${id}] start${sessionLabel}: ${prompt.slice(0, 50)}...`);
     const p = spawn('kimi', args, { cwd: dirOf(id) });
     let out = '', err = '';
     p.stdout.on('data', (d) => (out += d));
@@ -139,9 +146,9 @@ function runPrintKimi(id, prompt, { cont = false } = {}) {
   });
 }
 
-// 生成任务优先使用 Kimi Wire 的真实工具事件；聊天保留现有 print 模式，避免改变回复协议。
-function runKimi(id, prompt, { cont = false, track = false } = {}) {
-  if (!track) return runPrintKimi(id, prompt, { cont });
+// 生成任务优先使用 Kimi Wire 的真实工具事件；聊天使用独立的显式 session。
+function runKimi(id, prompt, { cont = false, track = false, sessionId = null } = {}) {
+  if (!track) return runPrintKimi(id, prompt, { cont, sessionId });
 
   const runId = crypto.randomUUID();
   const stage = lessonsOf(id).length ? 'generating' : 'understanding';
@@ -688,8 +695,7 @@ app.post('/api/courses/:id/lessons/next', (req, res) => {
   res.json({ ok: true });
 });
 
-// 助教问答（继续该课会话，保留教学上下文；可带划词上下文）
-// chat.json 不存在（新对话首轮）时不传 -c，即开新 kimi 会话
+// 助教问答：显式 tutor session + 确定性学习者上下文；首次会话原样加载 humanizer-zh Skill。
 const SUGGEST_MARKER = '<<<SUGGESTIONS>>>';
 const SUGGEST_INSTRUCTION =
   `\n\n回答完用户问题后，在回复最后一行单独输出一行，格式严格为：\n` +
@@ -711,9 +717,22 @@ function parseSuggestions(text) {
   }
 }
 
+const tutorSessionFile = (id) => path.join(dirOf(id), 'tutor-session.json');
+function readTutorSession(id) {
+  const existing = readJson(tutorSessionFile(id), null);
+  if (existing && typeof existing.sessionId === 'string' && existing.sessionId) return existing;
+  const created = createTutorSessionState(id);
+  writeJsonAtomic(tutorSessionFile(id), created);
+  return created;
+}
+function saveTutorSession(id, value) {
+  writeJsonAtomic(tutorSessionFile(id), value);
+}
+
 app.post('/api/courses/:id/chat/reset', (req, res) => {
   if (locks.has(req.params.id)) return res.status(409).json({ error: 'busy' });
   try { fs.unlinkSync(chatFile(req.params.id)); } catch {}
+  try { fs.unlinkSync(tutorSessionFile(req.params.id)); } catch {}
   res.json({ ok: true });
 });
 
@@ -721,14 +740,16 @@ app.post('/api/courses/:id/chat', async (req, res) => {
   const id = req.params.id;
   if (locks.has(id)) return res.status(409).json({ error: '老师正在备课，请稍后再问' });
   const { message, context } = req.body || {};
-  let prompt = String(message || '');
-  if (context && context.selectedText) {
-    prompt = `你正在回答用户对当前课程内容的疑问。\n当前课节：${context.lesson || ''} ${context.section || ''}\n` +
-      `用户选中的原文：\n<selection>\n${context.selectedText}\n</selection>\n` +
-      `所在段落：\n<context>\n${context.surrounding || ''}\n</context>\n用户问题：${message}`;
-  }
+  const tutorSession = readTutorSession(id);
+  const tutorPrompt = buildTutorPrompt({
+    courseDir: dirOf(id),
+    message: String(message || ''),
+    context: context || {},
+  }) + SUGGEST_INSTRUCTION;
+  const prompt = withHumanizerSkill(tutorPrompt, tutorSession.initialized === true);
   try {
-    const out = await runKimi(id, prompt + SUGGEST_INSTRUCTION, { cont: fs.existsSync(chatFile(id)) });
+    const out = await runKimi(id, prompt, { sessionId: tutorSession.sessionId });
+    if (!tutorSession.initialized) saveTutorSession(id, { ...tutorSession, initialized: true });
     const idx = out.lastIndexOf(SUGGEST_MARKER);
     const raw = idx >= 0 ? out.slice(0, idx) : out;
     const suggestions = idx >= 0 ? parseSuggestions(out.slice(idx + SUGGEST_MARKER.length).trim()) : null;
