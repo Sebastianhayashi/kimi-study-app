@@ -466,6 +466,7 @@
     loadingError.textContent = message || '课程创建没有完成，请重试。';
     loadingError.hidden = false;
     retryButton.hidden = !retryable;
+    retryButton.disabled = false;
     backgroundButton.hidden = false;
     loadingHint.hidden = true;
   }

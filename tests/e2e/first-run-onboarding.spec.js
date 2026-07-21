@@ -387,3 +387,92 @@ test('高频 SSE 事件不会创建并行的 First-run 状态轮询链', async (
   expect(onboardingMaxActive).toBe(1);
   expect(statusMaxActive).toBe(1);
 });
+
+test('重试生成再次失败后重试按钮恢复为可操作状态', async ({ page }) => {
+  await installSilentEventSource(page);
+
+  let state = 'failed';
+  let retryCalls = 0;
+  let statusCalls = 0;
+
+  const generationFor = () => ({
+    attempts: state === 'failed' ? 2 : 1,
+    activeRunId: state === 'generating' ? 'retry-run' : null,
+    startedAt: '2026-07-21T00:00:01.000Z',
+    readyAt: null,
+    failedAt: state === 'failed' ? '2026-07-21T00:00:03.000Z' : null,
+    errorCode: state === 'failed' ? 'GENERATION_FAILED' : null,
+    errorMessage: state === 'failed' ? '再次生成失败' : null,
+  });
+
+  await page.route('**/api/courses/firstrunfixture/onboarding', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'firstrunfixture',
+        onboarding: onboardingRecord(state, { generation: generationFor() }),
+        generation: {
+          stage: state === 'failed' ? 'failed' : 'understanding',
+          runId: state === 'generating' ? 'retry-run' : null,
+          busy: state === 'generating',
+          lessons: 0,
+        },
+      }),
+    });
+  });
+
+  await page.route('**/api/courses/firstrunfixture/retry', async (route) => {
+    retryCalls += 1;
+    state = 'generating';
+    await route.fulfill({
+      status: 202,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'firstrunfixture',
+        onboarding: onboardingRecord('generating', { generation: generationFor() }),
+        generation: {
+          stage: 'understanding',
+          runId: 'retry-run',
+          busy: true,
+          lessons: 0,
+        },
+        reused: false,
+      }),
+    });
+  });
+
+  await page.route('**/api/courses/firstrunfixture/status', async (route) => {
+    statusCalls += 1;
+    if (statusCalls >= 2) state = 'failed';
+    const failed = state === 'failed';
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        stage: failed ? 'failed' : 'generating',
+        runId: 'retry-run',
+        progress: failed ? 35 : 20,
+        phase: failed ? 'profiling' : 'extracting',
+        canvasVariant: failed ? 'structure' : 'source',
+        lessons: 0,
+        busy: !failed,
+        error: failed ? '再次生成失败' : null,
+        currentMessage: failed ? '课程创建没有完成' : '正在重新读取材料',
+        history: [],
+      }),
+    });
+  });
+
+  await page.goto('/new-course?course=firstrunfixture');
+  const retryButton = page.locator('#retryButton');
+  await expect(retryButton).toBeVisible();
+  await expect(retryButton).toBeEnabled();
+
+  await retryButton.click();
+  await expect.poll(() => retryCalls).toBe(1);
+  await expect.poll(() => statusCalls, { timeout: 5000 }).toBeGreaterThanOrEqual(2);
+  await expect(page.locator('#loadingError')).toContainText('再次生成失败');
+  await expect(retryButton).toBeVisible();
+  await expect(retryButton).toBeEnabled();
+});
