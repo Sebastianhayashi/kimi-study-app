@@ -13,6 +13,7 @@ const {
   createCourseDraft,
   markGenerationRunning,
   markGenerationStarting,
+  onboardingGenerationStage,
   readOnboarding,
   reconcileOnboarding,
   saveMission,
@@ -228,4 +229,95 @@ test('atomic JSON writes leave no temporary files behind', () => {
   readOnboarding(courseDir);
   assert.deepEqual(fs.readdirSync(courseDir).filter((name) => name.endsWith('.tmp')), []);
   fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('validates the complete UTF-8 text file instead of only the first inspection window', () => {
+  const root = tempRoot();
+  const content = Buffer.concat([
+    Buffer.alloc(128 * 1024 + 32, 0x61),
+    Buffer.from([0xc3]),
+  ]);
+  const upload = tempUpload(root, 'late-invalid.tmp', content);
+
+  assert.throws(() => createCourseDraft({
+    dataRoot: root,
+    tempFile: upload,
+    originalFilename: 'late-invalid.txt',
+    mimeType: 'text/plain',
+    sizeBytes: content.length,
+    title: 'Late invalid UTF-8',
+  }), (error) => {
+    assert.equal(error.code, 'INVALID_TEXT_ENCODING');
+    assert.equal(error.onboarding.state, 'failed');
+    return true;
+  });
+
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('reconciliation interrupts a missing persisted job and revokes unreadable ready state', () => {
+  const root = tempRoot();
+  const { courseDir } = createTextDraft(root);
+  saveMission(courseDir, mission());
+  markGenerationStarting(courseDir, { now: 1_000 });
+
+  let record = reconcileOnboarding(courseDir, {
+    job: { stage: 'understanding' },
+    busy: false,
+    lessons: 0,
+    lessonReadable: false,
+    jobMtimeMs: 0,
+    now: 2_000,
+  });
+  assert.equal(record.state, 'interrupted');
+  assert.equal(record.generation.errorCode, 'GENERATION_INTERRUPTED');
+
+  const root2 = tempRoot();
+  const second = createTextDraft(root2);
+  saveMission(second.courseDir, mission());
+  markGenerationStarting(second.courseDir, { now: 1_000 });
+  markGenerationRunning(second.courseDir, {
+    runId: 'run-ready',
+    startedAt: new Date(1_000).toISOString(),
+  }, 1_001);
+  record = reconcileOnboarding(second.courseDir, {
+    job: { stage: 'ready', runId: 'run-ready', finishedAt: new Date(3_000).toISOString() },
+    busy: false,
+    lessons: 1,
+    lessonReadable: true,
+    now: 3_000,
+  });
+  assert.equal(record.state, 'ready');
+
+  record = reconcileOnboarding(second.courseDir, {
+    job: { stage: 'ready', runId: 'run-ready', finishedAt: new Date(3_000).toISOString() },
+    busy: false,
+    lessons: 0,
+    lessonReadable: false,
+    now: 4_000,
+  });
+  assert.equal(record.state, 'failed');
+  assert.match(record.generation.errorMessage, /不可读取/);
+
+  fs.rmSync(root, { recursive: true, force: true });
+  fs.rmSync(root2, { recursive: true, force: true });
+});
+
+test('maps pre-generation and terminal onboarding states to coherent public generation stages', () => {
+  assert.equal(onboardingGenerationStage({
+    state: 'awaiting_mission',
+    generation: { attempts: 0 },
+  }, 'understanding'), 'idle');
+  assert.equal(onboardingGenerationStage({
+    state: 'failed',
+    generation: { attempts: 0 },
+  }, 'understanding'), 'idle');
+  assert.equal(onboardingGenerationStage({
+    state: 'interrupted',
+    generation: { attempts: 1 },
+  }, 'understanding'), 'failed');
+  assert.equal(onboardingGenerationStage({
+    state: 'ready',
+    generation: { attempts: 1 },
+  }, 'understanding'), 'ready');
 });
