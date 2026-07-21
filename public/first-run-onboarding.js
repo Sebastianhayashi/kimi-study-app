@@ -106,6 +106,9 @@
   let answers = {};
   let uploadRequest = null;
   let pollTimer = null;
+  let pollInFlight = false;
+  let pollRequested = false;
+  let monitoring = false;
   let eventSource = null;
   let lastProgress = 0;
   let readyTimer = null;
@@ -281,18 +284,21 @@
     missionError.hidden = true;
     missionError.textContent = '';
     const question = questions[questionIndex];
+    const selectedIndex = question.options.findIndex(([value]) => answers[question.field] === value);
+    const tabbableIndex = selectedIndex >= 0 ? selectedIndex : 0;
     missionMeta.textContent = `${fileName.textContent || '学习材料'} · 问题 ${questionIndex + 1} / ${questions.length}`;
     questionTitle.textContent = question.title;
     missionNext.textContent = questionIndex === questions.length - 1 ? '创建课程' : '继续';
     missionBack.textContent = questionIndex === 0 ? '返回课程库' : '上一步';
     missionNext.disabled = !answers[question.field];
     options.replaceChildren();
-    question.options.forEach(([value, title, description]) => {
+    question.options.forEach(([value, title, description], optionIndex) => {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'option';
       button.setAttribute('role', 'radio');
       button.setAttribute('aria-checked', String(answers[question.field] === value));
+      button.tabIndex = optionIndex === tabbableIndex ? 0 : -1;
       button.classList.toggle('is-selected', answers[question.field] === value);
       const marker = document.createElement('span');
       marker.className = 'option-marker';
@@ -312,8 +318,23 @@
           const selected = child === button;
           child.classList.toggle('is-selected', selected);
           child.setAttribute('aria-checked', String(selected));
+          child.tabIndex = selected ? 0 : -1;
         });
         missionNext.disabled = false;
+      });
+      button.addEventListener('keydown', (event) => {
+        const radios = [...options.querySelectorAll('[role="radio"]')];
+        const currentIndex = radios.indexOf(button);
+        let nextIndex = null;
+        if (event.key === 'ArrowDown' || event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % radios.length;
+        if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + radios.length) % radios.length;
+        if (event.key === 'Home') nextIndex = 0;
+        if (event.key === 'End') nextIndex = radios.length - 1;
+        if (nextIndex == null) return;
+        event.preventDefault();
+        const next = radios[nextIndex];
+        next.click();
+        next.focus();
       });
       options.appendChild(button);
     });
@@ -412,11 +433,30 @@
     buildProcessList(Array.isArray(status.history) ? status.history : []);
   }
 
-  function stopMonitoring() {
+  function clearPollTimer() {
     clearTimeout(pollTimer);
     pollTimer = null;
+  }
+
+  function stopMonitoring() {
+    monitoring = false;
+    pollRequested = false;
+    clearPollTimer();
     eventSource?.close();
     eventSource = null;
+  }
+
+  function schedulePoll(delay = POLL_MS) {
+    if (!monitoring || !courseId) return;
+    if (pollInFlight) {
+      pollRequested = true;
+      return;
+    }
+    clearPollTimer();
+    pollTimer = setTimeout(() => {
+      pollTimer = null;
+      pollGeneration();
+    }, Math.max(0, delay));
   }
 
   function showFailure(message, { retryable = true, returnToMission = false } = {}) {
@@ -431,34 +471,50 @@
   }
 
   async function pollGeneration() {
-    if (!courseId) return;
+    if (!monitoring || !courseId) return;
+    if (pollInFlight) {
+      pollRequested = true;
+      return;
+    }
+    pollInFlight = true;
+    pollRequested = false;
+    let terminal = false;
     try {
       const [snapshot, status] = await Promise.all([
         requestJson(`/api/courses/${encodeURIComponent(courseId)}/onboarding`),
         requestJson(`/api/courses/${encodeURIComponent(courseId)}/status`),
       ]);
+      if (!monitoring) return;
       const state = snapshot.onboarding?.state;
       if (state === 'ready' && status.stage === 'ready' && Number(status.lessons) > 0) {
+        terminal = true;
         stopMonitoring();
         await showReady(status.lessons);
         return;
       }
       if (state === 'failed' || state === 'interrupted' || status.stage === 'failed') {
+        terminal = true;
         showFailure(snapshot.onboarding?.generation?.errorMessage || status.error || '课程创建没有完成，请重试。');
         return;
       }
       applyGenerationStatus(status);
     } catch (error) {
-      statusLine.textContent = '连接暂时中断，正在恢复…';
+      if (monitoring) statusLine.textContent = '连接暂时中断，正在恢复…';
+    } finally {
+      pollInFlight = false;
+      if (!monitoring || terminal) return;
+      const delay = pollRequested ? 0 : POLL_MS;
+      pollRequested = false;
+      schedulePoll(delay);
     }
-    pollTimer = setTimeout(pollGeneration, POLL_MS);
   }
 
   function startMonitoring() {
     if (!courseId) return;
     stopMonitoring();
+    monitoring = true;
     showLoading();
-    pollGeneration();
+    schedulePoll(0);
     try {
       eventSource = new EventSource(`/api/courses/${encodeURIComponent(courseId)}/generation-events`);
       eventSource.addEventListener('generation-event', (event) => {
@@ -467,8 +523,7 @@
           if (data.message && lastProgress < 100) statusLine.textContent = data.message;
           if (data.phase) setGenerationVisual(data.phase);
         } catch {}
-        clearTimeout(pollTimer);
-        pollTimer = setTimeout(pollGeneration, 80);
+        schedulePoll(80);
       });
     } catch {}
   }

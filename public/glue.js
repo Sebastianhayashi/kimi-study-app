@@ -161,47 +161,139 @@
       return `${course.lessons} 节课 · ${material}`;
     }
 
-    fetch('/api/courses').then((r) => r.json()).then((list) => {
-      featuredSection.style.display = 'none'; // “继续学习”需要进度跟踪，v1 隐藏
-      const grid = document.getElementById('courseGrid');
-      const demoCards = [...grid.querySelectorAll('.course-card')];
-      const tpl = demoCards.find((c) => c.querySelector('.generated-cover')) || demoCards[0];
-      demoCards.forEach((c) => c.remove());
-      emptyState.style.display = list.length ? 'none' : '';
-      list.forEach((c) => {
-        const el = tpl.cloneNode(true);
-        el.classList.add('ks-vertical');
-        el.dataset.title = c.title;
-        el.dataset.status = c.lessons ? 'learning' : 'mine';
-        if (c.cover) {
-          const cover = el.querySelector('.course-cover');
-          cover.className = 'course-cover real-cover';
-          cover.innerHTML = '';
-          const img = document.createElement('img');
-          img.src = `/api/courses/${c.id}/${c.cover}`;
-          img.alt = c.title;
-          cover.appendChild(img);
+    const SHELF_POLL_MS = 2500;
+    const grid = document.getElementById('courseGrid');
+    const demoCards = [...grid.querySelectorAll('.course-card')];
+    const tpl = demoCards.find((c) => c.querySelector('.generated-cover')) || demoCards[0];
+    const templateCover = tpl.querySelector('.course-cover');
+    const generatedCoverClass = templateCover.className;
+    const generatedCoverHtml = templateCover.innerHTML;
+    const courseCardsById = new Map();
+    let shelfPollTimer = null;
+    let shelfRequestInFlight = false;
+    let shelfHasActive = false;
+    let shelfLoaded = false;
+    let shelfStopped = false;
+
+    featuredSection.style.display = 'none'; // “继续学习”需要进度跟踪，v1 隐藏
+    demoCards.forEach((card) => card.remove());
+
+    function activeOnboarding(course) {
+      return course.onboardingState === 'starting' || course.onboardingState === 'generating';
+    }
+
+    function stopShelfPolling() {
+      shelfStopped = true;
+      clearTimeout(shelfPollTimer);
+      shelfPollTimer = null;
+    }
+
+    function scheduleShelfRefresh(delay = SHELF_POLL_MS) {
+      if (shelfStopped) return;
+      clearTimeout(shelfPollTimer);
+      shelfPollTimer = setTimeout(() => {
+        shelfPollTimer = null;
+        refreshCourses();
+      }, delay);
+    }
+
+    function updateCourseCard(el, course) {
+      el._course = course;
+      el.dataset.courseId = course.id;
+      el.dataset.title = course.title;
+      el.dataset.status = course.lessons ? 'learning' : 'mine';
+      el.setAttribute('aria-label', course.title);
+      const cover = el.querySelector('.course-cover');
+      if (course.cover) {
+        cover.className = 'course-cover real-cover';
+        const currentImage = cover.querySelector('img');
+        const src = `/api/courses/${course.id}/${course.cover}`;
+        if (!currentImage || currentImage.getAttribute('src') !== src) {
+          const image = document.createElement('img');
+          image.src = src;
+          image.alt = course.title;
+          cover.replaceChildren(image);
         } else {
-          const ct = el.querySelector('.cover-title');
-          if (ct) ct.textContent = c.title;
-          const ck = el.querySelector('.cover-kind');
-          if (ck) ck.textContent = 'KIMI STUDY';
-          const ca = el.querySelector('.cover-author');
-          if (ca) ca.textContent = `${c.ext} 材料`;
+          currentImage.alt = course.title;
         }
-        el.querySelector('.course-title').textContent = c.title;
-        el.querySelector('.course-meta').textContent = courseMeta(c);
-        el.addEventListener('click', (ev) => {
-          if (ev.target.closest('.course-menu')) return;
-          location.href = courseDestination(c);
-        });
-        el.querySelector('.course-menu').addEventListener('click', (ev) => {
-          ev.stopPropagation();
-          openCardMenu(ev.currentTarget, c, el);
-        });
-        grid.appendChild(el);
+      } else {
+        if (!cover.querySelector('.cover-title')) {
+          cover.className = generatedCoverClass;
+          cover.innerHTML = generatedCoverHtml;
+        }
+        const coverTitle = cover.querySelector('.cover-title');
+        if (coverTitle) coverTitle.textContent = course.title;
+        const coverKind = cover.querySelector('.cover-kind');
+        if (coverKind) coverKind.textContent = 'KIMI STUDY';
+        const coverAuthor = cover.querySelector('.cover-author');
+        if (coverAuthor) coverAuthor.textContent = `${course.ext} 材料`;
+      }
+      el.querySelector('.course-title').textContent = course.title;
+      el.querySelector('.course-meta').textContent = courseMeta(course);
+    }
+
+    function createCourseCard(course) {
+      const el = tpl.cloneNode(true);
+      el.classList.add('ks-vertical');
+      el.addEventListener('click', (event) => {
+        if (event.target.closest('.course-menu')) return;
+        location.href = courseDestination(el._course);
       });
-    });
+      el.addEventListener('keydown', (event) => {
+        if (event.target.closest('.course-menu')) return;
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        location.href = courseDestination(el._course);
+      });
+      el.querySelector('.course-menu').addEventListener('click', (event) => {
+        event.stopPropagation();
+        openCardMenu(event.currentTarget, el._course, el);
+      });
+      updateCourseCard(el, course);
+      return el;
+    }
+
+    function renderCourses(list) {
+      const seen = new Set();
+      list.forEach((course) => {
+        seen.add(course.id);
+        let card = courseCardsById.get(course.id);
+        if (!card) {
+          card = createCourseCard(course);
+          courseCardsById.set(course.id, card);
+        } else {
+          updateCourseCard(card, course);
+        }
+        grid.appendChild(card);
+      });
+      for (const [id, card] of courseCardsById) {
+        if (seen.has(id)) continue;
+        card.remove();
+        courseCardsById.delete(id);
+      }
+      emptyState.style.display = list.length ? 'none' : '';
+      shelfHasActive = list.some(activeOnboarding);
+    }
+
+    async function refreshCourses() {
+      if (shelfStopped || shelfRequestInFlight) return;
+      shelfRequestInFlight = true;
+      try {
+        const response = await fetch('/api/courses');
+        if (!response.ok) throw new Error(`Course list failed: ${response.status}`);
+        const list = await response.json();
+        renderCourses(Array.isArray(list) ? list : []);
+        shelfLoaded = true;
+      } catch {
+        // Keep the last coherent shelf and retry only while the initial load or an active course needs updates.
+      } finally {
+        shelfRequestInFlight = false;
+        if (!shelfStopped && (shelfHasActive || !shelfLoaded)) scheduleShelfRefresh();
+      }
+    }
+
+    window.addEventListener('pagehide', stopShelfPolling);
+    refreshCourses();
     return;
   }
 

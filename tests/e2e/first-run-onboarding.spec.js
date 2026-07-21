@@ -238,3 +238,152 @@ test('1366×768 与 reduced motion 下首次建课页面无水平溢出且核心
   await uploadContinue.focus();
   await expect(uploadContinue).toBeFocused();
 });
+
+test('后台生成课程在书架无需刷新即可变为 ready，并支持 Enter 键打开', async ({ page }) => {
+  let listCalls = 0;
+  await page.route('**/api/courses', (route) => {
+    listCalls += 1;
+    const ready = listCalls >= 2;
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([{
+        id: 'backgroundcourse',
+        title: '后台课程',
+        cover: null,
+        ext: 'TXT',
+        lessons: ready ? 1 : 0,
+        stage: ready ? 'ready' : 'generating',
+        onboardingState: ready ? 'ready' : 'generating',
+        onboardingErrorCode: null,
+      }]),
+    });
+  });
+  await page.route('**/course/backgroundcourse', (route) => route.fulfill({
+    status: 200,
+    contentType: 'text/html',
+    body: '<!doctype html><title>后台课程</title><main>第一课</main>',
+  }));
+
+  await page.goto('/app');
+  const card = page.locator('.course-card').filter({ hasText: '后台课程' });
+  await expect(card.locator('.course-meta')).toContainText('正在创建课程');
+  await expect.poll(() => listCalls, { timeout: 6000 }).toBeGreaterThanOrEqual(2);
+  await expect(card.locator('.course-meta')).toContainText('1 节课');
+
+  await card.focus();
+  await expect(card).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/course\/backgroundcourse$/);
+});
+
+test('Mission 单选组支持方向键移动焦点并同步选择', async ({ page }) => {
+  await page.route('**/api/courses/firstrunfixture/onboarding', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      id: 'firstrunfixture',
+      onboarding: onboardingRecord('awaiting_mission'),
+      generation: { stage: 'idle', runId: null, busy: false, lessons: 0 },
+    }),
+  }));
+
+  await page.goto('/new-course?course=firstrunfixture');
+  const radios = page.getByRole('radio');
+  await expect(radios).toHaveCount(4);
+  await expect(radios.nth(0)).toHaveAttribute('tabindex', '0');
+  await expect(radios.nth(1)).toHaveAttribute('tabindex', '-1');
+
+  await radios.nth(0).focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(radios.nth(1)).toBeFocused();
+  await expect(radios.nth(1)).toHaveAttribute('aria-checked', 'true');
+  await expect(radios.nth(1)).toHaveAttribute('tabindex', '0');
+  await expect(page.locator('#missionNext')).toBeEnabled();
+
+  await page.keyboard.press('ArrowRight');
+  await expect(radios.nth(2)).toBeFocused();
+  await expect(radios.nth(2)).toHaveAttribute('aria-checked', 'true');
+  await expect(radios.nth(1)).toHaveAttribute('tabindex', '-1');
+});
+
+test('高频 SSE 事件不会创建并行的 First-run 状态轮询链', async ({ page }) => {
+  await page.addInitScript(() => {
+    const listeners = new Set();
+    class ControllableEventSource {
+      constructor(url) { this.url = url; this.readyState = 1; }
+      addEventListener(type, listener) {
+        if (type === 'generation-event') listeners.add(listener);
+      }
+      removeEventListener(type, listener) {
+        if (type === 'generation-event') listeners.delete(listener);
+      }
+      close() { this.readyState = 2; }
+    }
+    window.EventSource = ControllableEventSource;
+    window.__emitFirstRunGenerationEvent = (payload) => {
+      const event = { data: JSON.stringify(payload || {}) };
+      listeners.forEach((listener) => listener(event));
+    };
+  });
+
+  let onboardingActive = 0;
+  let onboardingMaxActive = 0;
+  let onboardingCalls = 0;
+  let statusActive = 0;
+  let statusMaxActive = 0;
+  let statusCalls = 0;
+
+  await page.route('**/api/courses/firstrunfixture/onboarding', async (route) => {
+    onboardingCalls += 1;
+    onboardingActive += 1;
+    onboardingMaxActive = Math.max(onboardingMaxActive, onboardingActive);
+    await new Promise((resolve) => setTimeout(resolve, 160));
+    onboardingActive -= 1;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'firstrunfixture',
+        onboarding: onboardingRecord('generating'),
+        generation: { stage: 'understanding', runId: 'first-run-test', busy: true, lessons: 0 },
+      }),
+    });
+  });
+  await page.route('**/api/courses/firstrunfixture/status', async (route) => {
+    statusCalls += 1;
+    statusActive += 1;
+    statusMaxActive = Math.max(statusMaxActive, statusActive);
+    await new Promise((resolve) => setTimeout(resolve, 160));
+    statusActive -= 1;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        stage: 'generating',
+        runId: 'first-run-test',
+        progress: 27,
+        phase: 'profiling',
+        canvasVariant: 'structure',
+        lessons: 0,
+        busy: true,
+        currentMessage: '正在理解材料结构和章节关系…',
+        history: [{ id: 'profile', label: '理解材料结构', state: 'active' }],
+      }),
+    });
+  });
+
+  await page.goto('/new-course?course=firstrunfixture');
+  await expect.poll(() => statusCalls).toBeGreaterThanOrEqual(1);
+  await page.evaluate(() => {
+    for (let index = 0; index < 24; index += 1) {
+      window.__emitFirstRunGenerationEvent({ phase: 'profiling', message: `event-${index}` });
+    }
+  });
+  await page.waitForTimeout(700);
+
+  expect(onboardingCalls).toBeGreaterThanOrEqual(2);
+  expect(statusCalls).toBeGreaterThanOrEqual(2);
+  expect(onboardingMaxActive).toBe(1);
+  expect(statusMaxActive).toBe(1);
+});
