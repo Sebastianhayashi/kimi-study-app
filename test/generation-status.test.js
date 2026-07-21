@@ -52,3 +52,43 @@ test('returns an honest error state without inventing progress', () => {
   assert.match(status.currentMessage, /没有完成/);
   assert.ok(status.history.some((step) => step.state === 'error'));
 });
+
+
+test('next-lesson progress ignores old course-level artifacts and uses only the current run delta', () => {
+  const root = tempCourse();
+  fs.writeFileSync(path.join(root, 'RESOURCES.md'), '# old resources');
+  writeJson(root, 'source-profile.json', { units: [{}, {}, {}] });
+  writeJson(root, 'learning-claims.json', { claims: [{}, {}] });
+  writeJson(root, 'assessment-blueprint.json', { plans: [{}] });
+  writeJson(root, 'question-bank.json', { questions: [{}, {}, {}, {}] });
+  writeJson(root, 'quality-report.json', { accepted: 4 });
+
+  const job = {
+    stage: 'generating',
+    kind: 'next-lesson',
+    phase: 'extracting',
+    currentMessage: '正在读取学习记录',
+    baselineLessons: 2,
+    baselineAssessments: 2,
+  };
+  const initial = deriveGenerationStatus(root, job, { busy: true, lessons: 2, assessments: 2 });
+  assert.equal(initial.progress, 20);
+  assert.equal(initial.canvasVariant, 'material');
+  assert.equal(initial.currentMessage, '正在读取学习记录');
+
+  const withLesson = deriveGenerationStatus(root, { ...job, phase: 'assembling' }, {
+    busy: true,
+    lessons: 3,
+    assessments: 2,
+  });
+  assert.equal(withLesson.progress, 65);
+  assert.equal(withLesson.canvasVariant, 'assembly');
+
+  const validating = deriveGenerationStatus(root, { ...job, phase: 'validating' }, {
+    busy: true,
+    lessons: 3,
+    assessments: 3,
+  });
+  assert.equal(validating.progress, 92);
+  assert.equal(validating.canvasVariant, 'validation');
+});

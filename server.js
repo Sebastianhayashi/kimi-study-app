@@ -11,6 +11,13 @@ const {
   withHumanizerSkill,
   createTutorSessionState,
 } = require('./lib/tutor-context');
+const {
+  buildNextLessonPrompt,
+  captureNextLessonBaseline,
+  createGeneratorSessionState,
+  withTeachSkill,
+} = require('./lib/next-lesson');
+const { validateNextLessonDelta } = require('./lib/lesson-publish-validator');
 const { validateLessonSpec, scoreActivity, computeClaimProgress, toPublicLessonSpec } = require('./lib/activity-engine');
 const { isPrivateCoursePath } = require('./lib/private-course-path');
 const { deriveGenerationStatus } = require('./lib/generation-status');
@@ -72,9 +79,6 @@ const FIRST_ONBOARDING_PROMPT = (ext) =>
   `另外把书的封面图片提取保存到工作区根目录 cover.jpg（epub 解压后在 OPF manifest 里找 cover 项；` +
   `pdf 可用 sips 把第一页转成 jpg）。` + ASSESSMENT_INSTRUCTION + MAP_INSTRUCTION;
 
-const NEXT_PROMPT =
-  `/skill:teach 继续。请根据 MISSION.md、learning-records 和已有 lessons，` +
-  `生成下一课（编号递增的新 lessons/*.html 文件）。用中文。同时更新 map.json 使其反映最新内容。` + ASSESSMENT_INSTRUCTION;
 
 const app = express();
 app.use(express.json());
@@ -121,6 +125,10 @@ const lessonsOf = (id) => {
   const d = path.join(dirOf(id), 'lessons');
   return fs.existsSync(d) ? fs.readdirSync(d).filter((f) => f.endsWith('.html') && f !== 'index.html').sort() : [];
 };
+const assessmentsOf = (id) => {
+  const d = path.join(dirOf(id), 'assessments');
+  return fs.existsSync(d) ? fs.readdirSync(d).filter((f) => f.endsWith('.json')).sort() : [];
+};
 
 function runPrintKimi(id, prompt, { cont = false, sessionId = null } = {}) {
   return new Promise((resolve, reject) => {
@@ -147,38 +155,102 @@ function runPrintKimi(id, prompt, { cont = false, sessionId = null } = {}) {
   });
 }
 
-// 生成任务优先使用 Kimi Wire 的真实工具事件；聊天使用独立的显式 session。
-function runKimi(id, prompt, { cont = false, track = false, sessionId = null } = {}) {
+// 生成任务优先使用真实工具/文件事件；下一课额外记录本轮基线和独立 generator session。
+function runKimi(id, prompt, {
+  cont = false,
+  track = false,
+  sessionId = null,
+  preferredMode = null,
+  kind = null,
+  baseline = null,
+} = {}) {
   if (!track) return runPrintKimi(id, prompt, { cont, sessionId });
 
   const runId = crypto.randomUUID();
+  const isNextLesson = kind === 'next-lesson';
   const stage = lessonsOf(id).length ? 'generating' : 'understanding';
   const startedAt = new Date().toISOString();
+  const job = {
+    stage,
+    runId,
+    kind: kind || 'course-generation',
+    phase: isNextLesson ? 'extracting' : null,
+    currentMessage: isNextLesson ? '正在读取学习记录并确定下一学习目标…' : null,
+    baselineLessons: isNextLesson ? baseline.lessons.length : undefined,
+    baselineAssessments: isNextLesson ? baseline.assessments.length : undefined,
+    startedAt,
+    updatedAt: startedAt,
+  };
   locks.add(id);
-  writeJob(id, { stage, runId, startedAt, updatedAt: startedAt });
+  writeJob(id, job);
   emitGenerationEvent(id, {
     runId,
     kind: 'run-start',
     key: `run:${runId}`,
+    phase: job.phase || undefined,
     state: 'active',
-    message: lessonsOf(id).length ? '正在生成下一课…' : '正在开始创建课程…',
+    message: isNextLesson ? job.currentMessage : lessonsOf(id).length ? '正在生成下一课…' : '正在开始创建课程…',
   });
+
+  const persistEvent = (event) => {
+    if (!event) return;
+    if (event.phase) job.phase = event.phase;
+    if (event.message) job.currentMessage = event.message;
+    job.updatedAt = new Date().toISOString();
+    writeJob(id, job);
+    emitGenerationEvent(id, { runId, ...event });
+  };
 
   return runTrackedKimi({
     cwd: dirOf(id),
     prompt,
     cont,
+    sessionId,
+    preferredMode,
     model: MODEL,
     skillsDir: SKILLS,
-    onEvent(event) {
-      if (event) emitGenerationEvent(id, { runId, ...event });
-    },
-  }).then(({ text, status, mode }) => {
+    onEvent: persistEvent,
+  }).then((result) => {
+    const { text, status, mode } = result;
     if (status !== 'finished') throw new Error(`Kimi generation ended with status ${status}`);
-    if (!lessonsOf(id).length) throw new Error('Kimi finished without generating a lesson');
+
+    let newLesson = null;
+    if (isNextLesson) {
+      job.phase = 'validating';
+      job.currentMessage = '正在检查新增课节、活动挂载和评分规格…';
+      job.updatedAt = new Date().toISOString();
+      writeJob(id, job);
+      emitGenerationEvent(id, {
+        runId,
+        kind: 'phase',
+        key: 'phase:validating',
+        phase: 'validating',
+        canvasVariant: 'validation',
+        state: 'active',
+        message: job.currentMessage,
+      });
+      const validation = validateNextLessonDelta(dirOf(id), baseline);
+      if (!validation.ok) {
+        throw new Error(`新增课节未通过发布验证：${validation.errors.join('；')}`);
+      }
+      newLesson = validation.newLesson;
+    } else if (!lessonsOf(id).length) {
+      throw new Error('Kimi finished without generating a lesson');
+    }
+
     locks.delete(id);
     const finishedAt = new Date().toISOString();
-    writeJob(id, { stage: 'ready', runId, mode, startedAt, updatedAt: finishedAt, finishedAt });
+    writeJob(id, {
+      ...job,
+      stage: 'ready',
+      phase: 'complete',
+      currentMessage: isNextLesson ? '下一课已准备好' : '课程已准备好',
+      mode,
+      sessionId: result.sessionId || sessionId || null,
+      newLesson,
+      updatedAt: finishedAt,
+      finishedAt,
+    });
     emitGenerationEvent(id, {
       runId,
       kind: 'run-complete',
@@ -186,16 +258,16 @@ function runKimi(id, prompt, { cont = false, track = false, sessionId = null } =
       phase: 'complete',
       canvasVariant: 'ready',
       state: 'complete',
-      message: '课程已准备好',
+      message: isNextLesson ? '下一课已准备好' : '课程已准备好',
     });
-    return text;
+    return { text, mode, sessionId: result.sessionId || sessionId || null, newLesson };
   }).catch((error) => {
     locks.delete(id);
     const failedAt = new Date().toISOString();
     writeJob(id, {
+      ...job,
       stage: 'failed',
-      runId,
-      startedAt,
+      currentMessage: isNextLesson ? '下一课生成没有完成，请重试' : '课程生成没有完成，请重试',
       updatedAt: failedAt,
       failedAt,
       error: String(error.message || error).slice(-500),
@@ -205,7 +277,7 @@ function runKimi(id, prompt, { cont = false, track = false, sessionId = null } =
       kind: 'run-failed',
       key: `run:${runId}`,
       state: 'error',
-      message: '课程生成没有完成，请重试',
+      message: isNextLesson ? '下一课生成没有完成，请重试' : '课程生成没有完成，请重试',
     });
     throw error;
   });
@@ -493,6 +565,7 @@ app.get('/api/courses/:id/status', (req, res) => {
   const id = req.params.id;
   const job = readJob(id);
   const lessons = lessonsOf(id).length;
+  const assessments = assessmentsOf(id).length;
   const busy = locks.has(id);
   // 进程已不在（服务器重启/生成被杀）但状态停在生成中 → 判定为中断，避免前端动画空转
   if (!busy && (job.stage === 'generating' || job.stage === 'understanding')) {
@@ -505,8 +578,9 @@ app.get('/api/courses/:id/status', (req, res) => {
   }
   res.json({
     ...job,
-    ...deriveGenerationStatus(dirOf(id), job, { lessons, busy }),
+    ...deriveGenerationStatus(dirOf(id), job, { lessons, assessments, busy }),
     lessons,
+    assessments,
     busy,
   });
 });
@@ -686,12 +760,54 @@ app.get('/api/courses/:id/*splat', (req, res) => {
   res.sendFile(relative, { root });
 });
 
-// 生成下一课
+// 生成下一课：增量 Prompt、独立 generator session、stream-json 优先与发布验证。
+const generatorSessionFile = (id) => path.join(dirOf(id), 'generator-session.json');
+function readGeneratorSession(id) {
+  const existing = readJson(generatorSessionFile(id), null);
+  if (existing && typeof existing.sessionId === 'string' && existing.sessionId) return existing;
+  const created = createGeneratorSessionState(id);
+  writeJsonAtomic(generatorSessionFile(id), created);
+  return created;
+}
+function saveGeneratorSession(id, value) {
+  writeJsonAtomic(generatorSessionFile(id), value);
+}
+
 app.post('/api/courses/:id/lessons/next', (req, res) => {
-  if (locks.has(req.params.id)) return res.status(409).json({ error: 'busy' });
-  runKimi(req.params.id, NEXT_PROMPT, { cont: true, track: true })
-    .catch((e) => console.log(`[kimi ${req.params.id}] failed: ${e.message}`));
-  res.json({ ok: true });
+  const id = req.params.id;
+  if (locks.has(id)) return res.status(409).json({ error: 'busy' });
+
+  try {
+    const baseline = captureNextLessonBaseline(dirOf(id));
+    if (!baseline.lessons.length) return res.status(409).json({ error: 'first lesson is not ready' });
+    const generator = readGeneratorSession(id);
+    const prompt = withTeachSkill(
+      buildNextLessonPrompt(dirOf(id), baseline),
+      generator.initialized === true,
+    );
+    const run = runKimi(id, prompt, {
+      track: true,
+      kind: 'next-lesson',
+      baseline,
+      sessionId: generator.sessionId,
+      preferredMode: generator.preferredMode || 'stream-json',
+    });
+    const job = readJob(id);
+    Promise.resolve(run)
+      .then((result) => {
+        saveGeneratorSession(id, {
+          ...generator,
+          initialized: true,
+          sessionId: result.sessionId || generator.sessionId,
+          preferredMode: result.mode === 'stream-json' ? 'stream-json' : null,
+          updatedAt: new Date().toISOString(),
+        });
+      })
+      .catch((error) => console.log(`[kimi ${id}] failed: ${error.message}`));
+    return res.status(202).json({ ok: true, runId: job.runId });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
 });
 
 // 助教问答：显式 tutor session + 确定性学习者上下文；首次会话原样加载 humanizer-zh Skill。
