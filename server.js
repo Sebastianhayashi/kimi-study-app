@@ -848,11 +848,13 @@ app.post('/api/courses/:id/lessons/next', (req, res) => {
     const baseline = captureNextLessonBaseline(dirOf(id));
     if (!baseline.lessons.length) return res.status(409).json({ error: 'first lesson is not ready' });
     const generator = readGeneratorSession(id);
+    const resumedSession = generator.initialized === true;
     const prompt = withTeachSkill(
       buildNextLessonPrompt(dirOf(id), baseline, {
         validatorCommand: `node ${JSON.stringify(path.join(ROOT, 'lib', 'next-lesson-preflight.js'))}`,
+        resumedSession,
       }),
-      generator.initialized === true,
+      resumedSession,
     );
     const persistGeneratorResult = (result) => {
       const sessionId = result.sessionId || generatorSessionIdForRun(generator);
