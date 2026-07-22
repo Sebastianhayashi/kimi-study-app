@@ -66,6 +66,8 @@ test('builds a strict incremental prompt with learner context and no course-leve
   assert.match(prompt, /增长实验/);
   assert.match(prompt, /避免重复已掌握内容/);
   assert.equal(prompt.includes('同时更新 map.json'), false);
+  assert.equal(prompt.includes('\\n'), false);
+  assert.match(prompt, /只允许新增两个文件：\n1\. lessons\/0002-/);
 });
 
 test('loads the teach skill only on generator-session bootstrap', () => {
