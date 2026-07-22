@@ -55,7 +55,7 @@ test('Wire runner reports safe external progress and never emits ThinkPart', asy
 });
 
 
-test('preferred stream-json mode uses an explicit session and records the canonical session id', async () => {
+test('resumed stream-json mode uses an existing explicit session and records the canonical session id', async () => {
   let capturedArgs = null;
   const child = new EventEmitter();
   child.stdout = new PassThrough();
@@ -66,7 +66,7 @@ test('preferred stream-json mode uses an explicit session and records the canoni
     cwd: '/tmp',
     prompt: 'build next lesson',
     cont: false,
-    sessionId: 'kimi-study-course-generator-alias',
+    sessionId: 'session_existing123',
     preferredMode: 'stream-json',
     model: 'test',
     skillsDir: '/skills',
@@ -86,8 +86,45 @@ test('preferred stream-json mode uses an explicit session and records the canoni
   assert.equal(result.mode, 'stream-json');
   assert.equal(result.sessionId, 'session_canonical123');
   assert.deepEqual(capturedArgs.slice(0, 6), [
-    '-m', 'test', '--skills-dir', '/skills', '--session', 'kimi-study-course-generator-alias',
+    '-m', 'test', '--skills-dir', '/skills', '--session', 'session_existing123',
   ]);
   assert.equal(capturedArgs.includes('--wire'), false);
   assert.equal(capturedArgs.includes('-c'), false);
+});
+
+
+test('cold stream-json mode omits session flags and captures the newly created canonical session', async () => {
+  let capturedArgs = null;
+  const child = new EventEmitter();
+  child.stdout = new PassThrough();
+  child.stderr = new PassThrough();
+  child.stdin = new PassThrough();
+
+  const resultPromise = runTrackedKimi({
+    cwd: '/tmp',
+    prompt: 'bootstrap next lesson',
+    cont: false,
+    sessionId: null,
+    preferredMode: 'stream-json',
+    model: 'test',
+    skillsDir: '/skills',
+    spawnImpl(command, args) {
+      assert.equal(command, 'kimi');
+      capturedArgs = args;
+      process.nextTick(() => {
+        child.stdout.write(`${JSON.stringify({ role: 'assistant', content: 'done' })}\n`);
+        child.stderr.write('To resume this session: kimi -r session_new123\n');
+        child.emit('close', 0);
+      });
+      return child;
+    },
+  });
+
+  const result = await resultPromise;
+  assert.equal(result.mode, 'stream-json');
+  assert.equal(result.sessionId, 'session_new123');
+  assert.equal(capturedArgs.includes('--session'), false);
+  assert.equal(capturedArgs.includes('-S'), false);
+  assert.equal(capturedArgs.includes('-c'), false);
+  assert.equal(capturedArgs.includes('--wire'), false);
 });

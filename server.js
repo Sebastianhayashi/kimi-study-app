@@ -16,8 +16,10 @@ const {
   captureNextLessonBaseline,
   clearNextLessonTransaction,
   createGeneratorSessionState,
+  generatorSessionIdForRun,
   isGenerationJobActive,
   isStaleGenerationJob,
+  normalizeGeneratorSessionState,
   recoverInterruptedNextLesson,
   writeNextLessonTransaction,
   withTeachSkill,
@@ -806,17 +808,18 @@ app.get('/api/courses/:id/*splat', (req, res) => {
   res.sendFile(relative, { root });
 });
 
-// 生成下一课：增量 Prompt、独立 generator session、stream-json 优先与发布验证。
+// 生成下一课：首次创建新会话，后续只恢复 Kimi 已返回的真实 session。
 const generatorSessionFile = (id) => path.join(dirOf(id), 'generator-session.json');
 function readGeneratorSession(id) {
-  const existing = readJson(generatorSessionFile(id), null);
-  if (existing && typeof existing.sessionId === 'string' && existing.sessionId) return existing;
-  const created = createGeneratorSessionState(id);
-  writeJsonAtomic(generatorSessionFile(id), created);
-  return created;
+  const loaded = readJson(generatorSessionFile(id), null);
+  const normalized = normalizeGeneratorSessionState(loaded);
+  if (JSON.stringify(loaded) !== JSON.stringify(normalized)) {
+    writeJsonAtomic(generatorSessionFile(id), normalized);
+  }
+  return normalized;
 }
 function saveGeneratorSession(id, value) {
-  writeJsonAtomic(generatorSessionFile(id), value);
+  writeJsonAtomic(generatorSessionFile(id), normalizeGeneratorSessionState(value));
 }
 
 app.post('/api/courses/:id/lessons/next', (req, res) => {
@@ -842,19 +845,19 @@ app.post('/api/courses/:id/lessons/next', (req, res) => {
       generator.initialized === true,
     );
     const persistGeneratorResult = (result) => {
+      const sessionId = result.sessionId || generatorSessionIdForRun(generator);
       saveGeneratorSession(id, {
         ...generator,
-        initialized: true,
-        sessionId: result.sessionId || generator.sessionId,
+        initialized: Boolean(sessionId),
+        sessionId,
         preferredMode: result.mode || generator.preferredMode || 'stream-json',
-        updatedAt: new Date().toISOString(),
       });
     };
     const run = runKimi(id, prompt, {
       track: true,
       kind: 'next-lesson',
       baseline,
-      sessionId: generator.sessionId,
+      sessionId: generatorSessionIdForRun(generator),
       preferredMode: generator.preferredMode || 'stream-json',
       onResult: persistGeneratorResult,
     });
