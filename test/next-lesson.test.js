@@ -10,7 +10,9 @@ const {
   clearNextLessonTransaction,
   captureNextLessonBaseline,
   createGeneratorSessionState,
+  generatorSessionIdForRun,
   isStaleGenerationJob,
+  normalizeGeneratorSessionState,
   readNextLessonTransaction,
   recoverInterruptedNextLesson,
   writeNextLessonTransaction,
@@ -69,12 +71,29 @@ test('captures immutable baselines and creates a stream-json-first generator ses
   assert.match(baseline.protectedFiles['MISSION.md'], /^[0-9a-f]{64}$/);
   assert.match(baseline.protectedFiles['lessons/0001-intro.html'], /^[0-9a-f]{64}$/);
 
-  assert.deepEqual(createGeneratorSessionState('course1', 'fixed'), {
+  assert.deepEqual(createGeneratorSessionState(), {
+    schemaVersion: 2,
+    sessionId: null,
+    initialized: false,
+    preferredMode: 'stream-json',
+  });
+
+  const legacyAlias = normalizeGeneratorSessionState({
     schemaVersion: 1,
     sessionId: 'kimi-study-course1-generator-fixed',
     initialized: false,
     preferredMode: 'stream-json',
   });
+  assert.equal(legacyAlias.sessionId, null);
+  assert.equal(generatorSessionIdForRun(legacyAlias), null);
+
+  const resumed = normalizeGeneratorSessionState({
+    schemaVersion: 1,
+    sessionId: 'session_existing123',
+    initialized: true,
+    preferredMode: 'stream-json',
+  });
+  assert.equal(generatorSessionIdForRun(resumed), 'session_existing123');
 });
 
 
