@@ -65,9 +65,28 @@ test('builds a strict incremental prompt with learner context and no course-leve
   assert.match(prompt, /不得更新 map\.json/);
   assert.match(prompt, /增长实验/);
   assert.match(prompt, /避免重复已掌握内容/);
+  assert.match(prompt, /generator session 的首次任务/);
+  assert.match(prompt, /不要顺序扫描整本材料/);
+  assert.match(prompt, /正文目标 900—1400 个中文字符/);
+  assert.match(prompt, /硬上限 1800 个中文字符/);
+  assert.match(prompt, /只写 3 个主要 h2 内容段/);
+  assert.match(prompt, /不得写内联 CSS/);
   assert.equal(prompt.includes('同时更新 map.json'), false);
   assert.equal(prompt.includes('\\n'), false);
   assert.match(prompt, /只允许新增两个文件：\n1\. lessons\/0002-/);
+});
+
+test('uses the existing session as a bounded context cache for warm next-lesson generation', () => {
+  const root = fixtureCourse();
+  const baseline = captureNextLessonBaseline(root);
+  const prompt = buildNextLessonPrompt(root, baseline, { resumedSession: true });
+
+  assert.match(prompt, /已恢复的 generator session/);
+  assert.match(prompt, /不重新加载 Teach Skill/);
+  assert.match(prompt, /不重新扫描整本材料或全部旧课/);
+  assert.match(prompt, /最近两课及其 Assessment/);
+  assert.match(prompt, /除非这些信息不足/);
+  assert.equal(prompt.includes('generator session 的首次任务'), false);
 });
 
 test('loads the teach skill only on generator-session bootstrap', () => {
