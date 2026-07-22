@@ -7,7 +7,6 @@
   const MAX_SOURCE_BYTES = 200 * 1024 * 1024;
   const SUPPORTED_EXTENSIONS = new Set(['pdf', 'epub', 'md', 'markdown', 'txt']);
   const TRANSITION_MS = 220;
-  const MISSION_PREP_MS = 650;
   const POLL_MS = 1200;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -56,36 +55,7 @@
   const readyCourseSubtitle = byId('readyCourseSubtitle');
   const startFirstLesson = byId('startFirstLesson');
 
-  const questions = [
-    {
-      field: 'outcome',
-      title: '学完这份材料后，你最希望自己能做到什么？',
-      options: [
-        ['understand_main_ideas', '理解主要观点', '能清楚解释核心概念与框架。'],
-        ['remember_key_content', '记住关键内容', '适合复习、考试或长期记忆。'],
-        ['apply_real_scenarios', '应用到真实场景', '能把方法用于工作、写作或生活。'],
-        ['critical_reading', '进行批判性阅读', '能判断证据、边界与可能的反例。'],
-      ],
-    },
-    {
-      field: 'learningStyle',
-      title: '你希望课程更接近哪种学习方式？',
-      options: [
-        ['explain_then_practice', '短讲解后马上练习', '每个概念都配一个小任务。'],
-        ['understand_then_practice', '先完整理解再练习', '先建立框架，再集中应用。'],
-        ['cases_and_questions', '以案例和问题为主', '从真实情境中理解方法。'],
-      ],
-    },
-    {
-      field: 'sessionLength',
-      title: '你通常一次能投入多少时间？',
-      options: [
-        ['minutes_5_10', '5 到 10 分钟', '适合碎片时间。'],
-        ['minutes_15_25', '15 到 25 分钟', '适合完整完成一节课。'],
-        ['minutes_30_plus', '30 分钟以上', '可以加入更多练习和拓展。'],
-      ],
-    },
-  ];
+
 
   const phasePresentation = {
     extracting: ['orbit', '读取材料'],
@@ -102,8 +72,8 @@
   let currentStage = 'upload';
   let selectedFile = null;
   let courseId = new URLSearchParams(location.search).get('course');
-  let questionIndex = 0;
-  let answers = {};
+  let missionRecord = null;
+  let missionPollTimer = null;
   let uploadRequest = null;
   let pollTimer = null;
   let pollInFlight = false;
@@ -243,7 +213,7 @@
       updateUploadProgress(100, '上传完成，正在检查材料');
       uploadRequest = null;
       const data = await parseResponse(xhr);
-      if (xhr.status !== 201 || !data.id) {
+      if (xhr.status !== 202 || !data.id) {
         setUploadBusy(false);
         showStage('upload', 0);
         setUploadError(data.message || '材料上传或检查失败，请重试。');
@@ -252,9 +222,8 @@
       courseId = data.id;
       history.replaceState(null, '', `/new-course?course=${encodeURIComponent(courseId)}`);
       hydrateSource(data.onboarding?.source);
-      await showMissionPreparation();
-      renderQuestion();
-      showStage('mission', 1);
+      showMissionPreparation();
+      startMissionPolling();
     });
     xhr.addEventListener('error', () => {
       uploadRequest = null;
@@ -274,81 +243,83 @@
     fileRow.classList.add('is-visible');
   }
 
-  async function showMissionPreparation() {
-    setReadingMode('mission', '正在准备学习设置', '正在把材料信息整理成三张学习卡片。');
-    showStage('reading', 1);
-    await new Promise((resolve) => setTimeout(resolve, reducedMotion ? 20 : MISSION_PREP_MS));
+  function showMissionPreparation() {
+    setReadingMode('mission', 'Teach 正在快速通读材料', '默认一般模式会先理解材料结构，再开始 Mission 访谈。');
+    // Commit the reading-stage state immediately so a fast Mission response cannot
+    // be overwritten by the previous delayed transition.
+    showStage('reading', 1, { immediate: true });
   }
 
-  function renderQuestion() {
+  function renderMission(record) {
+    missionRecord = record;
+    const mission = record && record.mission || {};
     missionError.hidden = true;
     missionError.textContent = '';
-    const question = questions[questionIndex];
-    const selectedIndex = question.options.findIndex(([value]) => answers[question.field] === value);
-    const tabbableIndex = selectedIndex >= 0 ? selectedIndex : 0;
-    missionMeta.textContent = `${fileName.textContent || '学习材料'} · 问题 ${questionIndex + 1} / ${questions.length}`;
-    questionTitle.textContent = question.title;
-    missionNext.textContent = questionIndex === questions.length - 1 ? '创建课程' : '继续';
-    missionBack.textContent = questionIndex === 0 ? '返回课程库' : '上一步';
-    missionNext.disabled = !answers[question.field];
+    missionMeta.textContent = `${fileName.textContent || '学习材料'} · 一般模式 · Teach Mission`;
+    missionBack.textContent = '返回课程库';
     options.replaceChildren();
-    question.options.forEach(([value, title, description], optionIndex) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'option';
-      button.setAttribute('role', 'radio');
-      button.setAttribute('aria-checked', String(answers[question.field] === value));
-      button.tabIndex = optionIndex === tabbableIndex ? 0 : -1;
-      button.classList.toggle('is-selected', answers[question.field] === value);
-      const marker = document.createElement('span');
-      marker.className = 'option-marker';
-      marker.setAttribute('aria-hidden', 'true');
-      const content = document.createElement('span');
-      const optionTitle = document.createElement('span');
-      optionTitle.className = 'option-title';
-      optionTitle.textContent = title;
-      const optionDescription = document.createElement('span');
-      optionDescription.className = 'option-description';
-      optionDescription.textContent = description;
-      content.append(optionTitle, optionDescription);
-      button.append(marker, content);
-      button.addEventListener('click', () => {
-        answers[question.field] = value;
-        [...options.children].forEach((child) => {
-          const selected = child === button;
-          child.classList.toggle('is-selected', selected);
-          child.setAttribute('aria-checked', String(selected));
-          child.tabIndex = selected ? 0 : -1;
-        });
-        missionNext.disabled = false;
-      });
-      button.addEventListener('keydown', (event) => {
-        const radios = [...options.querySelectorAll('[role="radio"]')];
-        const currentIndex = radios.indexOf(button);
-        let nextIndex = null;
-        if (event.key === 'ArrowDown' || event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % radios.length;
-        if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + radios.length) % radios.length;
-        if (event.key === 'Home') nextIndex = 0;
-        if (event.key === 'End') nextIndex = radios.length - 1;
-        if (nextIndex == null) return;
-        event.preventDefault();
-        const next = radios[nextIndex];
-        next.click();
-        next.focus();
-      });
-      options.appendChild(button);
-    });
+    if (mission.materialSummary) {
+      const summary = document.createElement('p');
+      summary.className = 'mission-material-summary';
+      summary.textContent = `Teach 对材料的快速理解：${mission.materialSummary}`;
+      options.appendChild(summary);
+    }
+    if (mission.status === 'ready') {
+      questionTitle.textContent = '确认这份 Mission';
+      const summary = document.createElement('div');
+      summary.className = 'mission-summary';
+      summary.textContent = mission.summary || 'Teach 已经写好 MISSION.md。';
+      options.appendChild(summary);
+      missionNext.textContent = '确认并创建课程';
+      missionNext.disabled = false;
+    } else if (mission.status === 'failed') {
+      questionTitle.textContent = 'Mission 访谈没有完成';
+      missionError.textContent = mission.errorMessage || 'Teach 暂时没有完成材料理解，请重试。';
+      missionError.hidden = false;
+      missionNext.textContent = '重试';
+      missionNext.disabled = false;
+    } else {
+      questionTitle.textContent = mission.question || 'Teach 正在准备下一个问题';
+      const textarea = document.createElement('textarea');
+      textarea.className = 'mission-answer';
+      textarea.rows = 5;
+      textarea.maxLength = 4000;
+      textarea.placeholder = '用你自己的话回答。Teach 会根据回答决定是否继续追问。';
+      textarea.addEventListener('input', () => { missionNext.disabled = !textarea.value.trim(); });
+      options.appendChild(textarea);
+      missionNext.textContent = '回答 Teach';
+      missionNext.disabled = true;
+      setTimeout(() => textarea.focus(), 0);
+    }
+    showStage('mission', 1);
   }
 
-  function changeQuestion(nextIndex) {
-    missionQuestion.classList.add('is-changing');
-    setTimeout(() => {
-      questionIndex = nextIndex;
-      renderQuestion();
-      missionQuestion.classList.remove('is-changing');
-      missionQuestion.classList.add('is-entering');
-      setTimeout(() => missionQuestion.classList.remove('is-entering'), reducedMotion ? 1 : 300);
-    }, reducedMotion ? 1 : 160);
+  function stopMissionPolling() {
+    clearTimeout(missionPollTimer);
+    missionPollTimer = null;
+  }
+
+  async function pollMission() {
+    if (!courseId) return;
+    try {
+      const snapshot = await requestJson(`/api/courses/${encodeURIComponent(courseId)}/onboarding`);
+      const record = snapshot.onboarding;
+      hydrateSource(record?.source);
+      if (record?.state === 'planning_mission' || record?.mission?.status === 'planning') {
+        showMissionPreparation();
+        missionPollTimer = setTimeout(pollMission, POLL_MS);
+        return;
+      }
+      stopMissionPolling();
+      renderMission(record);
+    } catch {
+      missionPollTimer = setTimeout(pollMission, POLL_MS);
+    }
+  }
+
+  function startMissionPolling() {
+    stopMissionPolling();
+    pollMission();
   }
 
   async function requestJson(url, options = {}) {
@@ -371,20 +342,32 @@
     if (!courseId) return;
     missionNext.disabled = true;
     missionBack.disabled = true;
-    missionNext.textContent = '正在保存…';
     try {
-      await requestJson(`/api/courses/${encodeURIComponent(courseId)}/mission`, {
-        method: 'PUT',
-        body: JSON.stringify({ mission: answers }),
-      });
+      const mission = missionRecord?.mission || {};
+      if (mission.status === 'failed') {
+        showMissionPreparation();
+        await requestJson(`/api/courses/${encodeURIComponent(courseId)}/mission/retry`, { method: 'POST', body: '{}' });
+        startMissionPolling();
+        return;
+      }
+      if (mission.status !== 'ready') {
+        const answer = options.querySelector('textarea')?.value.trim();
+        showMissionPreparation();
+        await requestJson(`/api/courses/${encodeURIComponent(courseId)}/mission/answer`, {
+          method: 'POST',
+          body: JSON.stringify({ answer }),
+        });
+        startMissionPolling();
+        return;
+      }
+      await requestJson(`/api/courses/${encodeURIComponent(courseId)}/mission/confirm`, { method: 'POST', body: '{}' });
       showLoading();
       await requestJson(`/api/courses/${encodeURIComponent(courseId)}/start`, { method: 'POST', body: '{}' });
       startMonitoring();
     } catch (error) {
       missionNext.disabled = false;
       missionBack.disabled = false;
-      missionNext.textContent = '创建课程';
-      missionError.textContent = error.message || '学习设置没有保存，请重试。';
+      missionError.textContent = error.message || 'Teach Mission 没有完成，请重试。';
       missionError.hidden = false;
       showStage('mission', 1);
     }
@@ -565,10 +548,6 @@
     }, delay);
   }
 
-  function missionIsComplete(mission) {
-    return Boolean(mission?.outcome && mission?.learningStyle && mission?.sessionLength);
-  }
-
   async function resumeExistingCourse() {
     try {
       const snapshot = await requestJson(`/api/courses/${encodeURIComponent(courseId)}/onboarding`);
@@ -592,15 +571,19 @@
         }
         return;
       }
-      if (record.state === 'awaiting_mission') {
-        if (missionIsComplete(record.mission)) {
+      if (record.state === 'planning_mission' || record.mission?.status === 'planning') {
+        showMissionPreparation();
+        startMissionPolling();
+        return;
+      }
+      if (record.state === 'mission_ready' || record.state === 'awaiting_mission') {
+        if (record.mission?.status === 'confirmed') {
           showLoading();
           await requestJson(`/api/courses/${encodeURIComponent(courseId)}/start`, { method: 'POST', body: '{}' });
           startMonitoring();
           return;
         }
-        renderQuestion();
-        showStage('mission', 1, { immediate: true });
+        renderMission(record);
         return;
       }
       showStage('upload', 0, { immediate: true });
@@ -636,16 +619,8 @@
     clearTimeout(readyTimer);
     location.replace(`/course/${encodeURIComponent(courseId)}`);
   });
-  missionBack.addEventListener('click', () => {
-    if (questionIndex === 0) location.href = '/app';
-    else changeQuestion(questionIndex - 1);
-  });
-  missionNext.addEventListener('click', () => {
-    const question = questions[questionIndex];
-    if (!answers[question.field]) return;
-    if (questionIndex < questions.length - 1) changeQuestion(questionIndex + 1);
-    else submitMissionAndStart();
-  });
+  missionBack.addEventListener('click', () => { location.href = '/app'; });
+  missionNext.addEventListener('click', submitMissionAndStart);
   window.addEventListener('pagehide', stopMonitoring);
 
   if (courseId) resumeExistingCourse();
