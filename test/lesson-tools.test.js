@@ -1,26 +1,104 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
+const { once } = require('node:events');
 const fs = require('node:fs');
+const net = require('node:net');
+const os = require('node:os');
 const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..');
+const COURSE_ID = 'mrrxjoe1';
+const COURSE_FIXTURE_FILES = [
+  'RESOURCES.md',
+  'lessons/0001-what-makes-ideas-stick.html',
+  'reference/succes-framework.html',
+];
 
-function waitForServer(child, timeoutMs = 10000) {
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function reservePort() {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('server did not start')), timeoutMs);
-    const onData = (chunk) => {
-      if (String(chunk).includes('Kimi Study')) {
-        clearTimeout(timer);
-        resolve();
-      }
-    };
-    child.stdout.on('data', onData);
-    child.once('exit', (code) => {
-      clearTimeout(timer);
-      reject(new Error(`server exited early (${code})`));
+    const server = net.createServer();
+    server.unref();
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      server.close((error) => {
+        if (error) reject(error);
+        else resolve(address.port);
+      });
     });
   });
+}
+
+function createIsolatedCourseData(t) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'kimi-study-lesson-tools-'));
+  const dataDir = path.join(root, 'courses');
+  const courseDir = path.join(dataDir, COURSE_ID);
+
+  for (const relative of COURSE_FIXTURE_FILES) {
+    const source = path.join(ROOT, 'data', 'courses', COURSE_ID, relative);
+    const target = path.join(courseDir, relative);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.copyFileSync(source, target);
+  }
+
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  return dataDir;
+}
+
+async function stopChild(child) {
+  if (child.exitCode !== null || child.signalCode !== null) return;
+
+  let exited = once(child, 'exit');
+  child.kill('SIGTERM');
+  await Promise.race([exited, sleep(2000)]);
+
+  if (child.exitCode === null && child.signalCode === null) {
+    exited = once(child, 'exit');
+    child.kill('SIGKILL');
+    await Promise.race([exited, sleep(1000)]);
+  }
+}
+
+async function waitForHttp(child, url, diagnostics, timeoutMs = 10000) {
+  const deadline = Date.now() + timeoutMs;
+  let lastError = null;
+
+  while (Date.now() < deadline) {
+    if (child.exitCode !== null || child.signalCode !== null) {
+      throw new Error(
+        `server exited before HTTP readiness: exitCode=${child.exitCode} signalCode=${child.signalCode}\n${diagnostics()}`,
+      );
+    }
+
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(500) });
+      await response.body?.cancel();
+      if (response.ok) return;
+      lastError = new Error(`readiness endpoint returned ${response.status}`);
+    } catch (error) {
+      lastError = error;
+    }
+
+    await sleep(50);
+  }
+
+  throw new Error(`server did not become HTTP-ready: ${lastError?.message || 'unknown error'}\n${diagnostics()}`);
+}
+
+async function fetchRoute(child, url, diagnostics) {
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(3000) });
+    assert.equal(response.status, 200, `${url} returned ${response.status}\n${diagnostics()}`);
+    return response;
+  } catch (error) {
+    throw new Error(
+      `fetch failed for ${url}: exitCode=${child.exitCode} signalCode=${child.signalCode}\n${diagnostics()}`,
+      { cause: error },
+    );
+  }
 }
 
 test('lesson resources reuse the course iframe without overlay code or renderer dependencies', () => {
@@ -44,24 +122,45 @@ test('lesson resources reuse the course iframe without overlay code or renderer 
 });
 
 test('server keeps the existing course, lesson, markdown and styled HTML resource routes working', async (t) => {
-  const port = 32000 + Math.floor(Math.random() * 1000);
+  const port = await reservePort();
+  const dataDir = createIsolatedCourseData(t);
+  const env = {
+    ...process.env,
+    NODE_ENV: 'production',
+    PORT: String(port),
+    KIMI_STUDY_DATA_DIR: dataDir,
+  };
+  delete env.KIMI_STUDY_E2E_PORT;
+  delete env.KIMI_STUDY_FIXTURE_DIR;
+
   const child = spawn(process.execPath, ['server.js'], {
     cwd: ROOT,
-    env: { ...process.env, PORT: String(port) },
+    env,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
-  t.after(() => child.kill('SIGTERM'));
-  await waitForServer(child);
+
+  let stdout = '';
+  let stderr = '';
+  child.stdout.setEncoding('utf8');
+  child.stderr.setEncoding('utf8');
+  child.stdout.on('data', (chunk) => { stdout += chunk; });
+  child.stderr.on('data', (chunk) => { stderr += chunk; });
+  const diagnostics = () => `stdout:\n${stdout}\nstderr:\n${stderr}`;
+
+  t.after(async () => stopChild(child));
 
   const base = `http://127.0.0.1:${port}`;
-  const responses = await Promise.all([
-    fetch(`${base}/course/mrrxjoe1`),
-    fetch(`${base}/glue.js`),
-    fetch(`${base}/api/courses/mrrxjoe1/lessons/0001-what-makes-ideas-stick.html`),
-    fetch(`${base}/api/courses/mrrxjoe1/RESOURCES.md`),
-    fetch(`${base}/api/courses/mrrxjoe1/reference/succes-framework.html`),
-  ]);
-  responses.forEach((response) => assert.equal(response.status, 200));
+  await waitForHttp(child, `${base}/glue.js`, diagnostics);
+
+  const urls = [
+    `${base}/course/${COURSE_ID}`,
+    `${base}/glue.js`,
+    `${base}/api/courses/${COURSE_ID}/lessons/0001-what-makes-ideas-stick.html`,
+    `${base}/api/courses/${COURSE_ID}/RESOURCES.md`,
+    `${base}/api/courses/${COURSE_ID}/reference/succes-framework.html`,
+  ];
+  const responses = [];
+  for (const url of urls) responses.push(await fetchRoute(child, url, diagnostics));
 
   const [courseHtml, , lessonHtml, resourceMarkdown, successHtml] = await Promise.all(
     responses.map((response) => response.text()),
