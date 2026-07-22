@@ -14,7 +14,12 @@ const {
 const {
   buildNextLessonPrompt,
   captureNextLessonBaseline,
+  clearNextLessonTransaction,
   createGeneratorSessionState,
+  isGenerationJobActive,
+  isStaleGenerationJob,
+  recoverInterruptedNextLesson,
+  writeNextLessonTransaction,
   withTeachSkill,
 } = require('./lib/next-lesson');
 const {
@@ -185,16 +190,23 @@ function runKimi(id, prompt, {
     startedAt,
     updatedAt: startedAt,
   };
-  locks.add(id);
-  writeJob(id, job);
-  emitGenerationEvent(id, {
-    runId,
-    kind: 'run-start',
-    key: `run:${runId}`,
-    phase: job.phase || undefined,
-    state: 'active',
-    message: isNextLesson ? job.currentMessage : lessonsOf(id).length ? '正在生成下一课…' : '正在开始创建课程…',
-  });
+  try {
+    if (isNextLesson) writeNextLessonTransaction(dirOf(id), baseline);
+    locks.add(id);
+    writeJob(id, job);
+    emitGenerationEvent(id, {
+      runId,
+      kind: 'run-start',
+      key: `run:${runId}`,
+      phase: job.phase || undefined,
+      state: 'active',
+      message: isNextLesson ? job.currentMessage : lessonsOf(id).length ? '正在生成下一课…' : '正在开始创建课程…',
+    });
+  } catch (error) {
+    locks.delete(id);
+    if (isNextLesson) clearNextLessonTransaction(dirOf(id));
+    throw error;
+  }
 
   const persistEvent = (event) => {
     if (!event) return;
@@ -243,6 +255,7 @@ function runKimi(id, prompt, {
       throw new Error('Kimi finished without generating a lesson');
     }
 
+    if (isNextLesson) clearNextLessonTransaction(dirOf(id));
     locks.delete(id);
     const finishedAt = new Date().toISOString();
     writeJob(id, {
@@ -272,6 +285,7 @@ function runKimi(id, prompt, {
       removed: [],
       changedExisting: [],
     };
+    if (isNextLesson) clearNextLessonTransaction(dirOf(id));
     const failedAt = new Date().toISOString();
     writeJob(id, {
       ...job,
@@ -319,6 +333,36 @@ function firstLessonReadable(id) {
 function jobMtimeMs(id) {
   try { return fs.statSync(jobFile(id)).mtimeMs; }
   catch { return 0; }
+}
+
+function reconcileStaleGeneration(id, now = Date.now()) {
+  const job = readJob(id);
+  if (!isStaleGenerationJob(job, {
+    busy: locks.has(id),
+    mtimeMs: jobMtimeMs(id),
+    now,
+  })) return job;
+
+  const failedAt = new Date(now).toISOString();
+  const failed = job.kind === 'next-lesson'
+    ? recoverInterruptedNextLesson(dirOf(id), job, { now: new Date(now) })
+    : {
+      ...job,
+      stage: 'failed',
+      currentMessage: '课程生成已中断，请重试',
+      error: '课程生成已中断，请重试',
+      updatedAt: failedAt,
+      failedAt,
+    };
+  writeJob(id, failed);
+  emitGenerationEvent(id, {
+    runId: failed.runId || 'interrupted-run',
+    kind: 'run-failed',
+    key: `run:${failed.runId || 'interrupted-run'}`,
+    state: 'error',
+    message: failed.currentMessage,
+  });
+  return failed;
 }
 
 function reconcileCourseOnboarding(id) {
@@ -575,19 +619,10 @@ app.get('/api/courses/:id/map.json', (req, res) => {
 // 进度轮询
 app.get('/api/courses/:id/status', (req, res) => {
   const id = req.params.id;
-  const job = readJob(id);
+  const job = reconcileStaleGeneration(id);
   const lessons = lessonsOf(id).length;
   const assessments = assessmentsOf(id).length;
   const busy = locks.has(id);
-  // 进程已不在（服务器重启/生成被杀）但状态停在生成中 → 判定为中断，避免前端动画空转
-  if (!busy && (job.stage === 'generating' || job.stage === 'understanding')) {
-    try {
-      if (Date.now() - fs.statSync(jobFile(id)).mtimeMs > 60_000) {
-        job.stage = 'failed';
-        job.error = '课程生成已中断，请重试';
-      }
-    } catch {}
-  }
   res.json({
     ...job,
     ...deriveGenerationStatus(dirOf(id), job, { lessons, assessments, busy }),
@@ -612,20 +647,19 @@ app.get('/api/courses/:id/generation-events', (req, res) => {
   res.write('retry: 2000\n\n');
 
   const afterId = Number(req.get('Last-Event-ID') || req.query.after || 0);
-  let job = readJob(id);
-  // 与 status 轮询保持一致：僵死生成任务在 SSE 中也应表现为失败，避免前端被旧 run-start 事件重置错误状态。
-  const isStale = !locks.has(id) && (job.stage === 'generating' || job.stage === 'understanding')
-    && Date.now() - fs.statSync(jobFile(id)).mtimeMs > 60_000;
-  const active = !isStale && (job.stage === 'understanding' || job.stage === 'generating');
+  const previousJob = readJob(id);
+  const job = reconcileStaleGeneration(id);
+  const recovered = isGenerationJobActive(previousJob) && job.stage === 'failed';
+  const active = isGenerationJobActive(job);
   const send = (event) => {
     res.write(`id: ${event.id}\n`);
     res.write('event: generation-event\n');
     res.write(`data: ${JSON.stringify(event)}\n\n`);
   };
 
-  if (isStale) {
+  if (recovered) {
     const runId = job.runId || 'fixture-run';
-    send({ id: afterId + 1, runId, kind: 'run-failed', key: `run:${runId}`, state: 'error', message: '课程生成没有完成，请重试' });
+    send({ id: afterId + 1, runId, kind: 'run-failed', key: `run:${runId}`, state: 'error', message: job.currentMessage || '课程生成没有完成，请重试' });
   } else if (active) {
     readGenerationEvents(dirOf(id), { afterId, runId: job.runId || null }).forEach(send);
   }
@@ -790,7 +824,10 @@ app.post('/api/courses/:id/lessons/next', (req, res) => {
   if (locks.has(id)) return res.status(409).json({ error: 'busy' });
 
   try {
-    const previousJob = readJob(id);
+    const previousJob = reconcileStaleGeneration(id);
+    if (isGenerationJobActive(previousJob)) {
+      return res.status(409).json({ error: 'generation recovery pending' });
+    }
     if (previousJob.repairRequired) {
       return res.status(409).json({
         error: 'course repair required',
