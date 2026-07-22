@@ -96,36 +96,6 @@ Knowledge should first be gathered from trusted resources. Use `RESOURCES.md` to
 
 For acquiring knowledge, difficulty is the enemy. It eats working memory you need for understanding.
 
-## Evidence-Centered Assessment
-
-For every new lesson, follow the required assessment pipeline in [ASSESSMENT-DESIGN.md](./ASSESSMENT-DESIGN.md). `MISSION.md` remains the authoritative reason, success definition, constraints, and scope. Do not repeat Mission discovery when it is already populated.
-
-Before writing exercise wording, you must:
-
-1. profile the source unit,
-2. convert Mission outcomes into observable learning claims,
-3. define what learner performance would count as evidence,
-4. choose task families that elicit that evidence,
-5. create a difficulty and transfer blueprint,
-6. generate the supported answer or rubric first,
-7. generate and validate question candidates, and
-8. publish only candidates that pass grounding, alignment, answerability, leakage, misconception, difficulty, and redundancy checks.
-
-Maintain the assessment artifacts described in `ASSESSMENT-DESIGN.md`. For an interactive lesson, create `assessments/<lesson-basename>.json` and place `<div data-kimi-activity="activity-id"></div>` mounts in the matching lesson HTML. Existing HTML-only lessons remain valid.
-
-### Learner-facing generation progress
-
-When the external tool `report_generation_progress` is available, use it to report **actual, user-relevant checkpoints** while creating a course:
-
-- Call it only when a phase truly starts or when verified evidence for that phase changes.
-- Do not call phases in sequence merely to make the interface animate.
-- Messages must describe observable work or a verified result, not hidden reasoning.
-- Metrics must come from files or counts you actually inspected; omit unknown metrics instead of estimating them.
-- Never include chain-of-thought, private reasoning, answer keys, grading rules, shell commands, secrets, or internal paths.
-- Do not report the terminal `complete` state. The host application reports completion only after it verifies that lesson files exist and are readable.
-
-The learner-facing interface may also show sanitized tool calls and artifact writes from Wire. Treat these as an execution trace, not as permission to narrate private reasoning.
-
 ## Skills
 
 If knowledge is all about acquisition, skills are about durability and flexibility. Make the knowledge stick.

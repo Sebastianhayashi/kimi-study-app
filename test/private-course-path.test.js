@@ -12,6 +12,8 @@ test('blocks private course state and assessment artifacts from generic file ser
     'assessment-blueprint.json',
     'chat.json',
     'generation-events.jsonl',
+    'generator-session.json',
+    'mission-session.json',
     'job.json',
     'next-lesson-transaction.json',
     'learning-claims.json',

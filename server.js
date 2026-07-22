@@ -36,18 +36,31 @@ const { appendGenerationEvent, readGenerationEvents, subscribeGenerationEvents }
 const { listCourseSources } = require('./lib/source-manifest');
 const { resolveDataDir, assertSafeRuntime } = require('./lib/runtime-config');
 const {
+  answerMissionPrompt,
+  initialMissionPrompt,
+  parseMissionTurn,
+  promoteMissionSession,
+  readMissionSessionState,
+  validateMissionDocument,
+  writeMissionSessionState,
+} = require('./lib/standard-teach-mission');
+const {
   MAX_SOURCE_BYTES,
   OnboardingError,
+  confirmMission,
   createCourseDraft,
   markGenerationFailed,
   markGenerationReady,
   markGenerationRunning,
   markGenerationStarting,
+  markMissionFailed,
+  markMissionPlanning,
+  markMissionQuestion,
+  markMissionReady,
   onboardingGenerationStage,
   publicOnboarding,
   readOnboarding,
   reconcileOnboarding,
-  saveMission,
 } = require('./lib/onboarding');
 
 const ROOT = __dirname;
@@ -83,9 +96,8 @@ const FIRST_PROMPT = (ext) =>
   `pdf 可用 sips 把第一页转成 jpg）。` + ASSESSMENT_INSTRUCTION + MAP_INSTRUCTION;
 
 const FIRST_ONBOARDING_PROMPT = (ext) =>
-  `/skill:teach 用户已经完成首次建课设置，材料是当前目录的 book${ext}。` +
-  `MISSION.md 已由系统根据用户明确选择生成，是学习意图的权威来源；不要覆盖、改写或重新询问其中的设置。` +
-  `请按 teach skill 的流程执行：读取 MISSION.md，写 RESOURCES.md，然后生成第一课 lessons/0001-*.html。所有产出用中文。` +
+  `继续当前 teach Session。用户已经确认 MISSION.md；不要重新进行 Mission 访谈，也不要改写 Mission。` +
+  `材料是当前目录的 book${ext}。读取已确认的 MISSION.md，写 RESOURCES.md，然后生成第一课 lessons/0001-*.html。所有产出用中文。` +
   `另外把书的封面图片提取保存到工作区根目录 cover.jpg（epub 解压后在 OPF manifest 里找 cover 项；` +
   `pdf 可用 sips 把第一页转成 jpg）。` + ASSESSMENT_INSTRUCTION + MAP_INSTRUCTION;
 
@@ -166,6 +178,44 @@ function runPrintKimi(id, prompt, { cont = false, sessionId = null } = {}) {
 }
 
 // 生成任务优先使用真实工具/文件事件；下一课额外记录本轮基线和独立 generator session。
+function launchStandardMissionTurn(id, { answer = null, retry = false } = {}) {
+  const courseDir = dirOf(id);
+  if (locks.has(id)) throw new OnboardingError('MISSION_BUSY', 'Teach 正在处理上一轮回答', 409);
+  const record = markMissionPlanning(courseDir, { retry });
+  const state = readMissionSessionState(courseDir);
+  if (answer != null && (!state.initialized || !state.sessionId)) {
+    markMissionFailed(courseDir, new OnboardingError('MISSION_SESSION_MISSING', 'Mission 会话不可恢复', 409));
+    throw new OnboardingError('MISSION_SESSION_MISSING', 'Mission 会话不可恢复', 409);
+  }
+  const prompt = answer == null ? initialMissionPrompt(record.source.extension) : answerMissionPrompt(answer);
+  locks.add(id);
+  Promise.resolve(runTrackedKimi({
+    cwd: courseDir,
+    prompt,
+    sessionId: state.sessionId,
+    preferredMode: state.preferredMode,
+    model: MODEL,
+    skillsDir: SKILLS,
+  })).then((result) => {
+    const sessionId = result.sessionId || state.sessionId;
+    if (!sessionId) throw new OnboardingError('MISSION_SESSION_MISSING', 'Teach 没有返回可恢复的 Session', 502);
+    writeMissionSessionState(courseDir, {
+      ...state,
+      sessionId,
+      initialized: true,
+      preferredMode: result.mode || state.preferredMode,
+    });
+    const turn = parseMissionTurn(result.text);
+    if (turn.status === 'question') return markMissionQuestion(courseDir, turn);
+    validateMissionDocument(courseDir);
+    return markMissionReady(courseDir, turn);
+  }).catch((error) => {
+    try { markMissionFailed(courseDir, error); }
+    catch (persistError) { console.log(`[mission ${id}] failed to persist error: ${persistError.message}`); }
+  }).finally(() => locks.delete(id));
+  return record;
+}
+
 function runKimi(id, prompt, {
   cont = false,
   track = false,
@@ -433,7 +483,12 @@ function launchOnboardingGeneration(id, { retry = false } = {}) {
   record = markGenerationStarting(courseDir, { retry });
   let run;
   try {
-    run = runKimi(id, FIRST_ONBOARDING_PROMPT(record.source.extension), { track: true });
+    const missionSession = readMissionSessionState(courseDir);
+    run = runKimi(id, FIRST_ONBOARDING_PROMPT(record.source.extension), {
+      track: true,
+      sessionId: missionSession.sessionId,
+      preferredMode: missionSession.preferredMode,
+    });
     record = markGenerationRunning(courseDir, readJob(id));
   } catch (error) {
     markGenerationFailed(courseDir, error);
@@ -501,9 +556,10 @@ app.post('/api/course-onboarding', (req, res) => {
         sizeBytes: req.file.size,
         title: req.body && req.body.title,
       });
-      return res.status(201).json({
+      launchStandardMissionTurn(created.courseId);
+      return res.status(202).json({
         id: created.courseId,
-        onboarding: publicOnboarding(created.record),
+        onboarding: publicOnboarding(readOnboarding(created.courseDir)),
       });
     } catch (error) {
       return sendOnboardingError(res, error);
@@ -587,13 +643,41 @@ app.get('/api/courses/:id/onboarding', (req, res) => {
   }
 });
 
-app.put('/api/courses/:id/mission', (req, res) => {
+app.post('/api/courses/:id/mission/answer', (req, res) => {
   const id = req.params.id;
   if (!validId(id) || !fs.existsSync(dirOf(id))) {
     return sendOnboardingError(res, new OnboardingError('COURSE_NOT_FOUND', '课程不存在', 404));
   }
   try {
-    const record = saveMission(dirOf(id), req.body && req.body.mission || req.body);
+    const record = launchStandardMissionTurn(id, { answer: req.body && req.body.answer });
+    return res.status(202).json(onboardingSnapshot(id, record));
+  } catch (error) {
+    return sendOnboardingError(res, error);
+  }
+});
+
+app.post('/api/courses/:id/mission/retry', (req, res) => {
+  const id = req.params.id;
+  if (!validId(id) || !fs.existsSync(dirOf(id))) {
+    return sendOnboardingError(res, new OnboardingError('COURSE_NOT_FOUND', '课程不存在', 404));
+  }
+  try {
+    const record = launchStandardMissionTurn(id, { retry: true });
+    return res.status(202).json(onboardingSnapshot(id, record));
+  } catch (error) {
+    return sendOnboardingError(res, error);
+  }
+});
+
+app.post('/api/courses/:id/mission/confirm', (req, res) => {
+  const id = req.params.id;
+  if (!validId(id) || !fs.existsSync(dirOf(id))) {
+    return sendOnboardingError(res, new OnboardingError('COURSE_NOT_FOUND', '课程不存在', 404));
+  }
+  try {
+    validateMissionDocument(dirOf(id));
+    promoteMissionSession(dirOf(id));
+    const record = confirmMission(dirOf(id));
     return res.json(onboardingSnapshot(id, record));
   } catch (error) {
     return sendOnboardingError(res, error);

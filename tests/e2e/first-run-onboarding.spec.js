@@ -27,10 +27,17 @@ function onboardingRecord(state, overrides = {}) {
     },
     mission: {
       version: 1,
+      mode: 'standard',
+      status: 'question',
+      question: '你希望用这份材料改变哪一个现实问题？',
+      summary: null,
+      materialSummary: '材料讨论系统结构、反馈与延迟。',
+      turns: 1,
       outcome: null,
       learningStyle: null,
       sessionLength: null,
       completedAt: null,
+      confirmedAt: null,
     },
     generation: {
       attempts: state === 'awaiting_mission' ? 0 : 1,
@@ -61,26 +68,34 @@ test('真实上传进度、Mission 卡片过渡、学习设置与 ready 交接�
   await installSilentEventSource(page);
 
   let state = 'awaiting_mission';
-  let mission = null;
+  let missionStatus = 'question';
+  let missionAnswer = null;
   let lessons = 0;
 
   await page.route('**/api/course-onboarding', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 250));
     await route.fulfill({
-      status: 201,
+      status: 202,
       contentType: 'application/json',
-      body: JSON.stringify({ id: 'firstrunfixture', onboarding: onboardingRecord('awaiting_mission') }),
+      body: JSON.stringify({
+        id: 'firstrunfixture',
+        onboarding: onboardingRecord('planning_mission', {
+          mission: { ...onboardingRecord('awaiting_mission').mission, status: 'planning', question: null },
+        }),
+      }),
     });
   });
 
   await page.route('**/api/courses/firstrunfixture/onboarding', async (route) => {
-    const record = onboardingRecord(state, mission ? {
+    const record = onboardingRecord(state, {
       mission: {
-        version: 1,
-        ...mission,
-        completedAt: '2026-07-21T00:00:01.000Z',
+        ...onboardingRecord('awaiting_mission').mission,
+        status: missionStatus,
+        question: missionStatus === 'question' ? '你希望用系统思考改变哪一个现实决策？' : null,
+        summary: missionStatus === 'ready' ? '把系统思考用于团队项目决策，并能识别反馈、延迟和杠杆点。' : null,
+        confirmedAt: missionStatus === 'confirmed' ? '2026-07-21T00:00:01.000Z' : null,
       },
-    } : {});
+    });
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -92,13 +107,16 @@ test('真实上传进度、Mission 卡片过渡、学习设置与 ready 交接�
     });
   });
 
-  await page.route('**/api/courses/firstrunfixture/mission', async (route) => {
-    mission = route.request().postDataJSON().mission;
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ id: 'firstrunfixture', onboarding: onboardingRecord('awaiting_mission', { mission }) }),
-    });
+  await page.route('**/api/courses/firstrunfixture/mission/answer', async (route) => {
+    missionAnswer = route.request().postDataJSON().answer;
+    missionStatus = 'ready';
+    state = 'mission_ready';
+    await route.fulfill({ status: 202, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
+  });
+  await page.route('**/api/courses/firstrunfixture/mission/confirm', async (route) => {
+    missionStatus = 'confirmed';
+    state = 'awaiting_mission';
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
   });
 
   await page.route('**/api/courses/firstrunfixture/start', async (route) => {
@@ -158,23 +176,16 @@ test('真实上传进度、Mission 卡片过渡、学习设置与 ready 交接�
   await expect(page.locator('#uploadTransfer')).toBeVisible();
   await expect(page.locator('#uploadProgressLabel')).toContainText(/上传|检查/);
   await expect(page.locator('#uploadProgressValue')).toHaveText('100%');
-  await expect(page.locator('#missionCardVisual')).toBeVisible();
-  await expect(page.locator('#readingTitle')).toHaveText('正在准备学习设置');
-
   await expect(page.locator('[data-stage="mission"]')).toHaveClass(/is-visible/);
-  await expect(page.getByRole('radiogroup')).toBeVisible();
-  await page.getByRole('radio', { name: /理解主要观点/ }).click();
+  await expect(page.locator('#questionTitle')).toContainText('现实决策');
+  await expect(page.locator('.mission-material-summary')).toContainText('反馈');
+  await page.locator('.mission-answer').fill('我想改善团队的项目决策，避免只处理表面症状。');
   await page.locator('#missionNext').click();
-  await page.getByRole('radio', { name: /短讲解后马上练习/ }).click();
-  await page.locator('#missionNext').click();
-  await page.getByRole('radio', { name: /15 到 25 分钟/ }).click();
+  await expect(page.locator('#questionTitle')).toHaveText('确认这份 Mission');
+  await expect(page.locator('.mission-summary')).toContainText('团队项目决策');
   await page.locator('#missionNext').click();
 
-  await expect.poll(() => mission).toEqual({
-    outcome: 'understand_main_ideas',
-    learningStyle: 'explain_then_practice',
-    sessionLength: 'minutes_15_25',
-  });
+  await expect.poll(() => missionAnswer).toContain('团队的项目决策');
   await expect(page.locator('[data-stage="loading"]')).toHaveClass(/is-visible/);
   await expect(page.locator('#progressValue')).toHaveText('40%');
   await expect(page.locator('#statusLine')).toContainText('学习目标');
@@ -277,7 +288,7 @@ test('后台生成课程在书架无需刷新即可变为 ready，并支持 Ente
   await expect(page).toHaveURL(/\/course\/backgroundcourse$/);
 });
 
-test('Mission 单选组支持方向键移动焦点并同步选择', async ({ page }) => {
+test('Teach Mission 使用自由文本回答并支持键盘输入', async ({ page }) => {
   await page.route('**/api/courses/firstrunfixture/onboarding', (route) => route.fulfill({
     status: 200,
     contentType: 'application/json',
@@ -287,24 +298,12 @@ test('Mission 单选组支持方向键移动焦点并同步选择', async ({ pag
       generation: { stage: 'idle', runId: null, busy: false, lessons: 0 },
     }),
   }));
-
   await page.goto('/new-course?course=firstrunfixture');
-  const radios = page.getByRole('radio');
-  await expect(radios).toHaveCount(4);
-  await expect(radios.nth(0)).toHaveAttribute('tabindex', '0');
-  await expect(radios.nth(1)).toHaveAttribute('tabindex', '-1');
-
-  await radios.nth(0).focus();
-  await page.keyboard.press('ArrowDown');
-  await expect(radios.nth(1)).toBeFocused();
-  await expect(radios.nth(1)).toHaveAttribute('aria-checked', 'true');
-  await expect(radios.nth(1)).toHaveAttribute('tabindex', '0');
+  const answer = page.locator('.mission-answer');
+  await expect(answer).toBeVisible();
+  await answer.fill('我想用系统思考改善团队的项目决策。');
   await expect(page.locator('#missionNext')).toBeEnabled();
-
-  await page.keyboard.press('ArrowRight');
-  await expect(radios.nth(2)).toBeFocused();
-  await expect(radios.nth(2)).toHaveAttribute('aria-checked', 'true');
-  await expect(radios.nth(1)).toHaveAttribute('tabindex', '-1');
+  await expect(page.getByRole('radio')).toHaveCount(0);
 });
 
 test('高频 SSE 事件不会创建并行的 First-run 状态轮询链', async ({ page }) => {
