@@ -113,7 +113,14 @@ test('cold stream-json mode omits session flags and captures the newly created c
       capturedArgs = args;
       process.nextTick(() => {
         child.stdout.write(`${JSON.stringify({ role: 'assistant', content: 'done' })}\n`);
-        child.stderr.write('To resume this session: kimi -r session_new123\n');
+        child.stdout.write(`${JSON.stringify({
+          role: 'meta',
+          type: 'session.resume_hint',
+          session_id: 'session_new123',
+          command: 'kimi -r session_new123',
+          content: 'To resume this session: kimi -r session_new123',
+        })}\n`);
+        child.stderr.write('To resume this session: kimi -r session_stderr999\n');
         child.emit('close', 0);
       });
       return child;
