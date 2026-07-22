@@ -13,6 +13,7 @@ test('blocks private course state and assessment artifacts from generic file ser
     'chat.json',
     'generation-events.jsonl',
     'job.json',
+    'next-lesson-transaction.json',
     'learning-claims.json',
     'meta.json',
     'misconceptions.json',

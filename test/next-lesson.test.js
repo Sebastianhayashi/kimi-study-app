@@ -7,8 +7,13 @@ const os = require('os');
 const path = require('path');
 const {
   buildNextLessonPrompt,
+  clearNextLessonTransaction,
   captureNextLessonBaseline,
   createGeneratorSessionState,
+  isStaleGenerationJob,
+  readNextLessonTransaction,
+  recoverInterruptedNextLesson,
+  writeNextLessonTransaction,
   withTeachSkill,
 } = require('../lib/next-lesson');
 
@@ -96,4 +101,75 @@ test('workspace cleanup preserves runtime data and removes only current-run addi
   assert.equal(fs.existsSync(path.join(root, 'job.json')), true);
   assert.equal(fs.existsSync(path.join(root, 'notes.json')), true);
   assert.equal(fs.existsSync(path.join(root, 'lessons', '0001-intro.html')), true);
+});
+
+
+test('persists a private transaction baseline outside the workspace snapshot', () => {
+  const root = fixtureCourse();
+  const baseline = captureNextLessonBaseline(root);
+  writeNextLessonTransaction(root, baseline);
+
+  assert.deepEqual(readNextLessonTransaction(root).baseline, baseline);
+  assert.equal(
+    Object.prototype.hasOwnProperty.call(captureNextLessonBaseline(root).workspaceFiles, 'next-lesson-transaction.json'),
+    false,
+  );
+  clearNextLessonTransaction(root);
+  assert.equal(readNextLessonTransaction(root), null);
+});
+
+test('recovers an interrupted next lesson by removing current-run files and preserving old content', () => {
+  const root = fixtureCourse();
+  const baseline = captureNextLessonBaseline(root);
+  writeNextLessonTransaction(root, baseline);
+  fs.writeFileSync(path.join(root, 'lessons', '0002-temp.html'), 'partial');
+  fs.writeFileSync(path.join(root, 'assessments', '0002-temp.json'), '{}');
+  fs.writeFileSync(path.join(root, 'extra.tmp'), 'partial');
+
+  const recovered = recoverInterruptedNextLesson(root, {
+    stage: 'generating',
+    kind: 'next-lesson',
+    runId: 'run-1',
+  }, { now: new Date('2026-07-21T12:00:00.000Z') });
+
+  assert.equal(recovered.stage, 'failed');
+  assert.equal(recovered.repairRequired, false);
+  assert.deepEqual(recovered.cleanupRemoved, [
+    'assessments/0002-temp.json',
+    'extra.tmp',
+    'lessons/0002-temp.html',
+  ]);
+  assert.equal(fs.existsSync(path.join(root, 'lessons', '0001-intro.html')), true);
+  assert.equal(fs.existsSync(path.join(root, 'assessments', '0001-intro.json')), true);
+  assert.equal(readNextLessonTransaction(root), null);
+});
+
+test('stale detection is deterministic and missing or changed baselines block retry', () => {
+  assert.equal(isStaleGenerationJob(
+    { stage: 'generating' },
+    { busy: false, mtimeMs: 1_000, now: 62_000, staleAfterMs: 60_000 },
+  ), true);
+  assert.equal(isStaleGenerationJob(
+    { stage: 'generating' },
+    { busy: true, mtimeMs: 1_000, now: 62_000, staleAfterMs: 60_000 },
+  ), false);
+
+  const missing = fixtureCourse();
+  const missingResult = recoverInterruptedNextLesson(missing, {
+    stage: 'generating',
+    kind: 'next-lesson',
+  });
+  assert.equal(missingResult.repairRequired, true);
+  assert.deepEqual(missingResult.changedExisting, ['next-lesson transaction baseline missing']);
+
+  const changed = fixtureCourse();
+  const baseline = captureNextLessonBaseline(changed);
+  writeNextLessonTransaction(changed, baseline);
+  fs.writeFileSync(path.join(changed, 'map.json'), '{"path":["changed"]}');
+  const changedResult = recoverInterruptedNextLesson(changed, {
+    stage: 'generating',
+    kind: 'next-lesson',
+  });
+  assert.equal(changedResult.repairRequired, true);
+  assert.deepEqual(changedResult.changedExisting, ['map.json']);
 });
