@@ -231,6 +231,14 @@ function runKimi(id, prompt, {
   }).then((result) => {
     const { text, status, mode } = result;
     if (status !== 'finished') throw new Error(`Kimi generation ended with status ${status}`);
+    if (isNextLesson) {
+      persistEvent({
+        kind: 'runner-complete',
+        key: `runner:${runId}`,
+        state: 'complete',
+        message: '模型生成步骤已经结束',
+      });
+    }
     if (typeof onResult === 'function') onResult(result);
 
     let newLesson = null;
