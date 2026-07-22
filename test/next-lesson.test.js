@@ -46,10 +46,22 @@ function fixtureCourse() {
 test('builds a strict incremental prompt with learner context and no course-level regeneration', () => {
   const root = fixtureCourse();
   const baseline = captureNextLessonBaseline(root);
-  const prompt = buildNextLessonPrompt(root, baseline);
+  const prompt = buildNextLessonPrompt(root, baseline, {
+    validatorCommand: 'node "/repo/lib/next-lesson-preflight.js"',
+  });
 
   assert.match(prompt, /只允许新增两个文件/);
   assert.match(prompt, /0002-/);
+  assert.match(prompt, /assessment\.lessonId 必须逐字等于/);
+  assert.match(prompt, /恰好包含 1 个 claim 和 2 个 activities/);
+  assert.match(prompt, /"type": "single-choice"/);
+  assert.match(prompt, /"type": "short-answer"/);
+  assert.match(prompt, /"stage": "independent"/);
+  assert.match(prompt, /sourceRefs/);
+  assert.match(prompt, /feedback/);
+  assert.match(prompt, /hints/);
+  assert.match(prompt, /node "\/repo\/lib\/next-lesson-preflight\.js"/);
+  assert.match(prompt, /预检成功前结束任务/);
   assert.match(prompt, /不得更新 map\.json/);
   assert.match(prompt, /增长实验/);
   assert.match(prompt, /避免重复已掌握内容/);
