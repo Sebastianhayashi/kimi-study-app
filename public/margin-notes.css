@@ -434,7 +434,43 @@ html.kn-reserve-both body {
   [data-study-ready="true"]:active { transform: none; }
 }
 
-.kn-margin-layer.kn-panel-collapsed > * {
+.kn-panel-toggle {
+  position: fixed;
+  top: 14px;
+  right: 12px;
+  z-index: 2147483500;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #e1cf83;
+  border-radius: 999px;
+  pointer-events: auto;
+  color: #715900;
+  background: rgba(255, 251, 234, .96);
+  box-shadow: 0 5px 18px rgba(76, 63, 20, .14);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 720;
+  transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+}
+
+.kn-panel-toggle:hover,
+.kn-panel-toggle:focus-visible {
+  background: #fff4c7;
+  box-shadow: 0 7px 22px rgba(76, 63, 20, .18);
+  outline: none;
+}
+
+.kn-panel-toggle[data-collapsed="true"] {
+  color: #fff;
+  border-color: #9c7900;
+  background: #9c7900;
+}
+
+.kn-margin-layer.kn-panel-collapsed > *:not(.kn-panel-toggle) {
   display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kn-panel-toggle { transition: none; }
 }
 

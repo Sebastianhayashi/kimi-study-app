@@ -11,6 +11,8 @@ const {
   buildTutorPrompt,
   withHumanizerSkill,
   createTutorSessionState,
+  normalizeTutorSessionState,
+  isTutorSessionMissingError,
 } = require('../lib/tutor-context');
 
 function fixtureCourse() {
@@ -86,11 +88,33 @@ test('uses the uploaded humanizer skill only for tutor session bootstrap', () =>
   assert.equal(withHumanizerSkill(prompt, true), prompt);
 });
 
-test('creates a role-specific tutor session id without using the latest workspace session', () => {
-  const state = createTutorSessionState('course123', 'fixed-nonce');
-  assert.deepEqual(state, {
+test('bootstraps tutor without inventing a Kimi session id', () => {
+  assert.deepEqual(createTutorSessionState(), {
     schemaVersion: 1,
-    sessionId: 'kimi-study-course123-tutor-fixed-nonce',
+    sessionId: null,
     initialized: false,
+    preferredMode: 'stream-json',
   });
+});
+
+test('discards legacy fabricated tutor sessions and keeps real Kimi sessions', () => {
+  assert.equal(normalizeTutorSessionState({
+    sessionId: 'kimi-study-course123-tutor-fixed-nonce',
+    initialized: true,
+  }).initialized, false);
+  assert.deepEqual(normalizeTutorSessionState({
+    sessionId: 'session_real_123',
+    initialized: true,
+    preferredMode: 'wire',
+  }), {
+    schemaVersion: 1,
+    sessionId: 'session_real_123',
+    initialized: true,
+    preferredMode: 'wire',
+  });
+});
+
+test('recognizes missing-session failures so the tutor can self-heal once', () => {
+  assert.equal(isTutorSessionMissingError(new Error('Session "session_old" not found.')), true);
+  assert.equal(isTutorSessionMissingError(new Error('network timeout')), false);
 });

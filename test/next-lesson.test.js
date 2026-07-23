@@ -50,13 +50,16 @@ test('builds a strict incremental prompt with learner context and no course-leve
     validatorCommand: 'node "/repo/lib/next-lesson-preflight.js"',
   });
 
-  assert.match(prompt, /只允许新增两个文件/);
+  assert.match(prompt, /只允许新增两个必需文件，以及最多一个可选的 Curiosity 文件/);
   assert.match(prompt, /0002-/);
   assert.match(prompt, /assessment\.lessonId 必须逐字等于/);
   assert.match(prompt, /恰好包含 1 个 claim 和 2 个 activities/);
-  assert.match(prompt, /"type": "single-choice"/);
-  assert.match(prompt, /"type": "short-answer"/);
-  assert.match(prompt, /"stage": "independent"/);
+  assert.match(prompt, /"type"\s*:\s*"single-choice"/);
+  assert.match(prompt, /"type"\s*:\s*"short-answer"/);
+  assert.match(prompt, /"stage"\s*:\s*"independent"/);
+  assert.match(prompt, /"stage"\s*:\s*"transfer"/);
+  assert.match(prompt, /misconceptionId/);
+  assert.match(prompt, /minimumLength\"?:?40|minimumLength\s+至少 40/);
   assert.match(prompt, /sourceRefs/);
   assert.match(prompt, /feedback/);
   assert.match(prompt, /hints/);
@@ -73,7 +76,10 @@ test('builds a strict incremental prompt with learner context and no course-leve
   assert.match(prompt, /不得写内联 CSS/);
   assert.equal(prompt.includes('同时更新 map.json'), false);
   assert.equal(prompt.includes('\\n'), false);
-  assert.match(prompt, /只允许新增两个文件：\n1\. lessons\/0002-/);
+  assert.match(prompt, /只允许新增两个必需文件，以及最多一个可选的 Curiosity 文件：\n1\. lessons\/0002-/);
+  assert.match(prompt, /data-kimi-activity="hinge-1"/);
+  assert.match(prompt, /data-kimi-activity="transfer-1"/);
+  assert.doesNotMatch(prompt, /data-kimi-activity="guided-1"/);
 });
 
 test('uses the existing session as a bounded context cache for warm next-lesson generation', () => {

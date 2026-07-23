@@ -90,7 +90,8 @@ test('首课生成从轮询和真实事件进入 ready，并且只重新加载�
   const preview = page.locator('.ks-generation-preview');
   const progress = preview.locator('.ks-generation-progress');
   await expect(preview).toBeVisible();
-  await expect(progress).toHaveAttribute('aria-valuenow', '15');
+  await expect(progress).toHaveAttribute('aria-valuenow', '0');
+  await expect(progress).toHaveClass(/is-indeterminate/);
 
   await emitGenerationEvent(page, {
     id: 1,
@@ -102,7 +103,8 @@ test('首课生成从轮询和真实事件进入 ready，并且只重新加载�
     message: '已确定 4 个学习目标',
   });
   status.set(activeStatus({ progress: 53, currentMessage: '正在设计练习路线…', canvasVariant: 'practice' }));
-  await expect(progress).toHaveAttribute('aria-valuenow', '53');
+  await expect(progress).toHaveAttribute('aria-valuenow', '0');
+  await expect(progress).toHaveClass(/is-indeterminate/);
 
   await emitGenerationEvent(page, {
     id: 2,
@@ -272,8 +274,9 @@ test('status 临时断线不会清空已经收到的真实生成事件', async (
   });
   await preview.locator('.ks-generation-summary').click();
   await expect(preview.locator('.ks-generation-history')).toContainText('已确定 3 个学习目标');
-  await expect(preview.locator('.ks-generation-progress')).toHaveAttribute('aria-valuenow', '40');
-  expect(status.calls()).toBeGreaterThanOrEqual(2);
+  await expect(preview.locator('.ks-generation-progress')).toHaveAttribute('aria-valuenow', '0');
+  await expect(preview.locator('.ks-generation-progress')).toHaveClass(/is-indeterminate/);
+  await expect.poll(() => status.calls()).toBeGreaterThanOrEqual(2);
 });
 
 test('生成下一课完成后进入 Lesson 2，并恢复进度和下一课按钮', async ({ page }) => {

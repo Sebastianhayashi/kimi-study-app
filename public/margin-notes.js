@@ -154,18 +154,33 @@
   }
 
   class AnnotationStore {
-    constructor(courseId) {
+    constructor(courseId, lessonFile) {
       this.courseId = courseId;
+      this.lessonFile = lessonFile;
       this.notes = [];
       this.timer = 0;
       this.saving = false;
       this.dirty = false;
     }
 
-    async load() {
-      const response = await fetch(`/api/courses/${this.courseId}/notes`);
+    endpoint() {
+      return `/api/courses/${this.courseId}/notes?lesson=${encodeURIComponent(this.lessonFile)}`;
+    }
+
+    async load(acceptLegacy = () => false) {
+      const response = await fetch(this.endpoint());
       const raw = response.ok ? await response.json() : [];
-      this.notes = Array.isArray(raw) ? raw.map(Core.normalizeNote) : [];
+      let migrated = false;
+      this.notes = (Array.isArray(raw) ? raw.map(Core.normalizeNote) : []).filter((note) => {
+        if (note.lessonFile === this.lessonFile) return true;
+        if (!note.lessonFile && acceptLegacy(note)) {
+          note.lessonFile = this.lessonFile;
+          migrated = true;
+          return true;
+        }
+        return false;
+      });
+      if (migrated) this.schedule();
       return this.notes;
     }
 
@@ -201,11 +216,12 @@
       this.saving = true;
       this.dirty = false;
       try {
-        await fetch(`/api/courses/${this.courseId}/notes`, {
+        const response = await fetch(this.endpoint(), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(this.notes.map(Core.serializeNote)),
         });
+        if (response.ok) parent.postMessage({ type: 'notes-changed' }, '*');
       } finally {
         this.saving = false;
         if (this.dirty) this.schedule();
@@ -494,6 +510,12 @@
       try { stored = JSON.parse(localStorage.getItem(this.storageKey) || '{}'); } catch {}
       this.collapsed = stored.userCollapsed === true;
       if (this.collapsed) this.layer.classList.add('kn-panel-collapsed');
+      this.toggle = document.createElement('button');
+      this.toggle.type = 'button';
+      this.toggle.className = 'kn-ui kn-panel-toggle';
+      this.toggle.addEventListener('click', () => this.setCollapsed(!this.collapsed));
+      this.layer.appendChild(this.toggle);
+      this.syncToggle();
 
       this.onScroll = () => this.request();
       this.onResize = () => {
@@ -508,10 +530,18 @@
       this.resizeObserver.observe(content);
     }
 
+    syncToggle() {
+      this.toggle.dataset.collapsed = String(this.collapsed);
+      this.toggle.setAttribute('aria-expanded', String(!this.collapsed));
+      this.toggle.setAttribute('aria-label', this.collapsed ? '展开笔记栏' : '收起笔记栏');
+      this.toggle.textContent = this.collapsed ? '展开笔记' : '收起笔记';
+    }
+
     setCollapsed(collapsed) {
       this.collapsed = collapsed;
       try { localStorage.setItem(this.storageKey, JSON.stringify({ userCollapsed: collapsed })); } catch {}
       this.layer.classList.toggle('kn-panel-collapsed', collapsed);
+      this.syncToggle();
       if (collapsed) {
         this.clearReserve();
       } else {
@@ -635,10 +665,11 @@
   class AnnotationController {
     constructor(courseId) {
       this.courseId = courseId;
+      this.lessonFile = String(window.__lessonFile || '');
       this.content = document.querySelector('.container, main, article') || document.body;
       this.textIndex = new TextIndex(document.body);
       this.highlights = new HighlightManager();
-      this.store = new AnnotationStore(courseId);
+      this.store = new AnnotationStore(courseId, this.lessonFile);
       this.cards = new Map();
       this.draft = null;
       this.savedRange = null;
@@ -654,7 +685,7 @@
     }
 
     async mount() {
-      const notes = await this.store.load();
+      const notes = await this.store.load((note) => Boolean(this.textIndex.rangeFromAnchor(note.anchor)));
       for (const note of notes) this.renderNote(note);
       this.requestLayout();
       parent.postMessage({ type: 'notes-panel-state', collapsed: this.layout.collapsed }, '*');
@@ -720,7 +751,10 @@
     }
 
     handleSelection(event) {
-      if (event.target.closest('.kn-ui, [data-study-ready="true"]')) return;
+      const eventTarget = event.target instanceof Element
+        ? event.target
+        : event.target && event.target.parentElement;
+      if (eventTarget?.closest?.('.kn-ui, [data-study-ready="true"]')) return;
       window.setTimeout(() => {
         const selection = window.getSelection();
         if (!selection || selection.isCollapsed || !selection.toString().trim()) {
@@ -762,6 +796,7 @@
           if (!text) return textarea.focus();
           const note = Core.normalizeNote({
             id: `n${Date.now().toString(36)}`,
+            lessonFile: this.lessonFile,
             anchor,
             section,
             custom: text,
@@ -802,6 +837,7 @@
       if (data.type !== 'create-note') return;
       const note = Core.normalizeNote({
         id: `n${Date.now().toString(36)}`,
+        lessonFile: this.lessonFile,
         anchor: data.anchor,
         section: data.section,
         question: data.question,

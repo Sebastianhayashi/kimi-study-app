@@ -1,0 +1,84 @@
+.left-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+#left-notes { min-height: 100%; }
+.ks-notes-index-tools {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.ks-notes-search,
+.ks-notes-lesson-filter {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: var(--text);
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+.ks-notes-search:focus,
+.ks-notes-lesson-filter:focus {
+  border-color: #9bb8e8;
+  box-shadow: 0 0 0 3px rgba(11,87,208,.10);
+}
+.ks-notes-index-list { display: grid; gap: 12px; }
+.ks-note-group { display: grid; gap: 6px; }
+.ks-note-group-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 750;
+}
+.ks-note-index-card {
+  width: 100%;
+  padding: 10px 11px;
+  border: 0;
+  border-radius: 11px;
+  color: var(--text-2);
+  background: var(--surface-2);
+  text-align: left;
+  cursor: pointer;
+}
+.ks-note-index-card:hover { background: #e8edf6; }
+.ks-note-index-card:focus-visible {
+  outline: 3px solid rgba(11,87,208,.22);
+  outline-offset: 2px;
+}
+.ks-note-index-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 9px;
+}
+.ks-note-index-copy {
+  margin-top: 5px;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.ks-notes-empty {
+  padding: 22px 14px;
+  border-radius: 13px;
+  color: var(--muted);
+  background: var(--surface-2);
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.6;
+}
+@media (max-width: 620px) {
+  .ks-notes-search,
+  .ks-notes-lesson-filter { min-height: 44px; font-size: 14px; }
+  .ks-note-index-card { min-height: 52px; }
+  .ks-note-index-copy { font-size: 13px; }
+  .ks-note-index-meta,
+  .ks-note-group-title { font-size: 12px; }
+}

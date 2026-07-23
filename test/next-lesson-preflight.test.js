@@ -32,38 +32,48 @@ function validSpec() {
       id: 'claim-1',
       label: '能应用核心方法',
       sourceRefs: ['source:book#chapter-2'],
-      mastery: { requiredPassed: 1, requiredStages: ['independent'] },
+      mastery: { requiredPassed: 2, requiredStages: ['independent', 'transfer'] },
     }],
     activities: [{
-      id: 'guided-1',
+      id: 'hinge-1',
       type: 'single-choice',
       claimId: 'claim-1',
-      stage: 'guided',
-      prompt: '哪个例子符合本课方法？',
-      options: [{ id: 'a', label: '例子 A' }, { id: 'b', label: '例子 B' }],
+      stage: 'independent',
+      prompt: '面对一个新场景，哪个判断真正使用了本课方法？',
+      options: [
+        { id: 'a', label: '先识别关键限制，再设计可执行的小动作' },
+        { id: 'b', label: '先增加外部奖励，再假设参与自然提高', misconceptionId: 'reward' },
+        { id: 'c', label: '先取消全部规则，再等待自由自动出现', misconceptionId: 'no-rules' },
+        { id: 'd', label: '先改变表达语气，再忽略行动结构变化', misconceptionId: 'tone' },
+      ],
       correctOptionId: 'a',
+      misconceptions: [
+        { id: 'reward', belief: '把奖励当成方法本身', feedback: '奖励没有回答动作空间如何变化。' },
+        { id: 'no-rules', belief: '认为没有规则才有自由', feedback: '限制有时会创造可行动的结构。' },
+        { id: 'tone', belief: '只关注表达而忽略机制', feedback: '需要判断真实行动是否变化。' },
+      ],
       sourceRefs: ['source:book#chapter-2'],
-      feedback: { correct: '正确', incorrect: '再比较一次' },
-      hints: [],
+      feedback: { correct: '正确', incorrect: '比较选项是否解释了结构和行动。' },
+      hints: [{ content: '寻找同时包含限制与动作空间的选项。' }],
     }, {
-      id: 'independent-1',
+      id: 'transfer-1',
       type: 'short-answer',
       claimId: 'claim-1',
-      stage: 'independent',
-      prompt: '把方法应用到你的场景。',
-      scoring: { mode: 'completion', minimumLength: 12 },
+      stage: 'transfer',
+      prompt: '把方法应用到一个正文未出现的新场景，并解释为什么有效。',
+      scoring: { mode: 'completion', minimumLength: 40 },
       sourceRefs: ['source:book#chapter-2'],
-      feedback: { correct: '已记录', incorrect: '请补充完整' },
-      hints: [],
+      feedback: { correct: '已记录', incorrect: '请补充场景、动作和理由。' },
+      hints: [{ content: '说明限制、动作空间和结果之间的关系。' }],
     }],
   };
 }
 
-test('preflight accepts the exact low-latency lesson and assessment contract', () => {
+test('preflight accepts the exact diagnostic lesson and assessment contract', () => {
   const root = course();
   fs.writeFileSync(
     path.join(root, 'lessons', '0002-apply.html'),
-    '<div data-kimi-activity="guided-1"></div><div data-kimi-activity="independent-1"></div>',
+    '<div data-kimi-activity="hinge-1"></div><div data-kimi-activity="transfer-1"></div>',
   );
   fs.writeFileSync(
     path.join(root, 'assessments', '0002-apply.json'),
