@@ -39,7 +39,12 @@ const { listCourseSources } = require('./lib/source-manifest');
 const { resolveDataDir, assertSafeRuntime } = require('./lib/runtime-config');
 const { validateCuriosityDocument } = require('./lib/curiosity-contract');
 const { createLearningActionService } = require('./lib/learning-action-router');
-const { normalizeStudySurfaceState } = require('./lib/study-surface-state');
+const {
+  MAX_STUDY_SURFACE_BYTES,
+  inspectStudySurfaceState,
+  normalizeStudySurfaceState,
+  studySurfaceByteLength,
+} = require('./lib/study-surface-state');
 const {
   answerMissionPrompt,
   initialMissionPrompt,
@@ -122,6 +127,10 @@ const FIRST_ONBOARDING_PROMPT = (ext) =>
 
 
 const app = express();
+// Scratch drawings can exceed Express' default 100kb JSON limit. Keep the
+// larger parser scoped to this one bounded endpoint; all other APIs retain the
+// default request-body limit.
+app.use('/api/courses/:id/study-surface', express.json({ limit: '1mb' }));
 app.use(express.json());
 app.use((req, res, next) => { console.log(`[http] ${req.method} ${req.url}`); next(); });
 app.get('/favicon.ico', (req, res) => res.status(204).end());
@@ -935,11 +944,28 @@ app.get('/api/courses/:id/study-surface', (req, res) => {
 app.put('/api/courses/:id/study-surface', (req, res) => {
   const lesson = requestedStudyLesson(req.params.id, req.query.lesson);
   if (!lesson) return res.status(400).json({ error: 'invalid lesson' });
+  const inspection = inspectStudySurfaceState(req.body);
+  if (!inspection.ok) {
+    return res.status(413).json({
+      error: 'study surface is too large to save safely',
+      code: 'STUDY_SURFACE_TOO_LARGE',
+      details: inspection.errors,
+      maxBytes: MAX_STUDY_SURFACE_BYTES,
+    });
+  }
+  const nextState = normalizeStudySurfaceState(req.body);
+  if (studySurfaceByteLength(nextState) > MAX_STUDY_SURFACE_BYTES) {
+    return res.status(413).json({
+      error: 'normalized study surface exceeds the save budget',
+      code: 'STUDY_SURFACE_TOO_LARGE',
+      maxBytes: MAX_STUDY_SURFACE_BYTES,
+    });
+  }
   const stored = readJson(studySurfaceFile(req.params.id), { version: 1, lessons: {} });
   const lessons = stored && typeof stored.lessons === 'object' ? stored.lessons : {};
-  lessons[lesson] = normalizeStudySurfaceState(req.body);
+  lessons[lesson] = nextState;
   writeJsonAtomic(studySurfaceFile(req.params.id), { version: 1, lessons, updatedAt: Date.now() });
-  return res.json({ ok: true, lesson });
+  return res.json({ ok: true, lesson, bytes: studySurfaceByteLength(nextState) });
 });
 
 const curiosityFileForLesson = (id, lesson) => path.join(dirOf(id), 'curiosity', lesson.replace(/\.html$/i, '') + '.json');
