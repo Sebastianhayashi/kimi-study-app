@@ -34,3 +34,17 @@ test('curiosity is inline and optional, not a replacement panel', () => {
   assert.match(runtime, /cards: \[\]/);
   assert.doesNotMatch(runtime, /assistantPanel/);
 });
+
+
+test('scratch persistence binds immutable lesson snapshots and surfaces save failures', () => {
+  const scratch = read('public/study-surface.js');
+  const server = read('server.js');
+  assert.match(scratch, /pendingSave/);
+  assert.match(scratch, /lessonFile: file/);
+  assert.match(scratch, /flushPendingSave/);
+  assert.match(scratch, /if \(!response\.ok\)/);
+  assert.match(scratch, /data-action="retry-save"/);
+  assert.match(server, /express\.json\(\{ limit: '1mb' \}\)/);
+  assert.match(server, /inspectStudySurfaceState\(req\.body\)/);
+  assert.match(server, /STUDY_SURFACE_TOO_LARGE/);
+});

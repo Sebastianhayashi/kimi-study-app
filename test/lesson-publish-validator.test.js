@@ -160,3 +160,28 @@ test('detects changed existing files and marks them as unrecoverable by cleanup'
   assert.equal(fs.existsSync(path.join(dir, 'lessons', '0002-two.html')), false);
   assert.equal(fs.readFileSync(path.join(dir, 'book.txt'), 'utf8'), 'changed source');
 });
+
+test('object-shaped assessments are normalized before quality and mount checks', () => {
+  const dir = root();
+  const spec = validSpec();
+  spec.claims = { 'claim-2': spec.claims[0] };
+  spec.activities = {
+    'hinge-2': {
+      ...spec.activities[0],
+      options: {
+        a: spec.activities[0].options[0],
+        b: { id: 'b', label: '过短错误项' },
+        c: spec.activities[0].options[2],
+      },
+      misconceptions: Object.fromEntries(spec.activities[0].misconceptions.map((item) => [item.id, item])),
+    },
+    'transfer-2': spec.activities[1],
+  };
+  writePair(dir, '<html><body><div data-kimi-activity="orphan"></div></body></html>', spec);
+  const result = validatePublishedLesson(dir, '0002-two.html');
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some((item) => item.includes('exactly 4 options')), result.errors.join('\n'));
+  assert.ok(result.errors.some((item) => item.includes('misconceptionId')), result.errors.join('\n'));
+  assert.ok(result.errors.some((item) => item.includes('no matching activity')), result.errors.join('\n'));
+  assert.ok(result.errors.some((item) => item.includes('not mounted')), result.errors.join('\n'));
+});
