@@ -1,0 +1,36 @@
+.ks-context-actions {
+  position: absolute;
+  z-index: 2147483000;
+  min-height: 40px;
+  padding: 4px;
+  border: 1px solid rgba(60,64,67,.16);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: #202124;
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 8px 28px rgba(32,33,36,.20), 0 2px 8px rgba(32,33,36,.10);
+  backdrop-filter: blur(14px);
+}
+.ks-context-actions[hidden] { display: none !important; }
+.ks-context-actions button {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  color: #3c4043;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 680;
+  white-space: nowrap;
+}
+.ks-context-actions button:hover,
+.ks-context-actions button:focus-visible { color: #0b57d0; background: #e8f0fe; outline: none; }
+.ks-context-actions-loading { padding: 0 9px; color: #747775; font-size: 11px; }
+@media (max-width: 620px) {
+  .ks-context-actions { min-height: 48px; max-width: calc(100vw - 16px); overflow-x: auto; }
+  .ks-context-actions button { min-height: 40px; font-size: 14px; }
+}
