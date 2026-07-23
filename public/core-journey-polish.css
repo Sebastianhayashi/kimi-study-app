@@ -1,0 +1,190 @@
+/* Core journey readability and state polish. Loaded after the frozen course shell CSS. */
+:root {
+  --ks-ui-copy: 13px;
+  --ks-ui-copy-small: 11px;
+  --ks-ui-title: 14px;
+  --ks-reading-measure: 68ch;
+  --ks-motion-fast: 150ms;
+  --ks-motion-standard: 240ms;
+}
+
+@media (min-width: 1180px) {
+  :root { --left: 282px; --right: 388px; }
+}
+
+.course-name { font-size: 18px; line-height: 1.28; }
+.course-meta { font-size: 12px; line-height: 1.4; }
+.panel-title,
+.current-lesson { font-size: var(--ks-ui-title); }
+.header-context,
+.context-bar,
+.mission-copy,
+.record-title,
+.lesson-item,
+.message,
+.composer textarea { font-size: var(--ks-ui-copy); }
+.side-title,
+.teach-card-title { font-size: 13px; }
+.side-note,
+.record-meta,
+.lesson-number,
+.assistant-status,
+.compact-progress,
+.quick-prompt,
+.grounding,
+.context-chip,
+.mission-detail-label,
+.mission-detail-list li,
+.teach-card-copy,
+.teach-card-meta,
+.method-title,
+.method-trigger,
+.method-boundary,
+.path-row,
+.source-meter-head { font-size: var(--ks-ui-copy-small); }
+
+.left-content { padding: 16px; }
+.mission-card { padding: 17px; }
+.record { padding: 11px; }
+.record-title { line-height: 1.5; }
+.record-meta { line-height: 1.55; }
+.lesson-item { min-height: 44px; padding: 11px 10px; }
+
+.assistant-panel .chat-thread { padding: 16px 14px 12px; gap: 13px; }
+.assistant-panel .message { max-width: 96%; padding: 12px 13px; line-height: 1.66; }
+.assistant-panel .message.assistant.ks-markdown-message { padding: 14px 15px; }
+.assistant-panel .ks-markdown { font-size: 13px; line-height: 1.72; }
+.assistant-panel .ks-markdown h2 { font-size: 16px; }
+.assistant-panel .ks-markdown h3 { font-size: 15px; }
+.assistant-panel .ks-markdown h4,
+.assistant-panel .ks-markdown h5 { font-size: 14px; }
+.quick-prompt { min-height: 32px; padding: 0 11px; }
+.composer textarea { min-height: 70px; line-height: 1.62; }
+.ks-new-chat-button { font-size: 11px; }
+
+#lessonResourceSlot .lesson-resource-tool { font-size: 11px; min-height: 32px; }
+
+.course-stage,
+.lesson-frame,
+.left-panel,
+.assistant-panel,
+.course-panel {
+  transition: opacity var(--ks-motion-standard) ease, transform var(--ks-motion-standard) ease, box-shadow var(--ks-motion-fast) ease;
+}
+.lesson-frame { opacity: 1; }
+.course-stage.is-loading-lesson .lesson-frame { opacity: .38; }
+
+.progress-track span,
+.ks-generation-progress > span {
+  transition: width 420ms cubic-bezier(.2,.7,.2,1);
+}
+
+.ks-tutor-error {
+  border: 1px solid #efd1cc;
+  color: #6f312b;
+  background: #fff6f4 !important;
+}
+.ks-tutor-error strong { display: block; margin-bottom: 5px; color: #8d2f28; }
+.ks-tutor-error button {
+  margin-top: 9px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #d9a39c;
+  border-radius: 9px;
+  color: #7a2f29;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+@media (max-width: 860px) {
+  .course-name { font-size: 16px; }
+  .assistant-panel .message,
+  .assistant-panel .ks-markdown,
+  .composer textarea { font-size: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .course-stage,
+  .lesson-frame,
+  .left-panel,
+  .assistant-panel,
+  .course-panel,
+  .progress-track span,
+  .ks-generation-progress > span { transition: none !important; }
+}
+
+/* Evidence-based generation feedback: stage count + elapsed time, never a guessed ETA. */
+.ks-generation-status-action {
+  gap: 8px !important;
+}
+.ks-generation-stage-progress,
+.ks-generation-elapsed {
+  color: #5f6368;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ks-generation-stage-progress {
+  color: #234f8d;
+  font-weight: 760;
+}
+.ks-generation-progress.is-indeterminate > span,
+.progress-track.is-indeterminate > span {
+  width: 38% !important;
+  animation: ksCoreJourneyIndeterminate 1.35s cubic-bezier(.4,0,.2,1) infinite;
+}
+@keyframes ksCoreJourneyIndeterminate {
+  0% { transform: translateX(-120%); }
+  55% { transform: translateX(105%); }
+  100% { transform: translateX(260%); }
+}
+
+/* Source-viewer recovery controls remain in context. */
+.ks-source-error-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ks-source-retry {
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid #b8cef4;
+  border-radius: 9px;
+  color: #0b57d0;
+  background: #fff;
+  cursor: pointer;
+  font: 700 12px/1 system-ui, -apple-system, "PingFang SC", sans-serif;
+}
+.ks-source-retry:hover { background: #edf4ff; }
+
+@media (max-width: 720px) {
+  .ks-generation-elapsed { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ks-generation-progress.is-indeterminate > span,
+  .progress-track.is-indeterminate > span { animation: none; transform: none; }
+}
+
+/* Keep the two learner-critical reading tools reachable on narrow screens. */
+@media (max-width: 860px) {
+  .lesson-resource-slot {
+    display: flex !important;
+    flex: 0 0 auto !important;
+    max-width: 76px;
+    gap: 5px !important;
+  }
+  .lesson-resource-slot .lesson-resource-tool:not(.ks-source-launch):not(.kn-notes-toggle) {
+    display: none !important;
+  }
+  .lesson-resource-slot .ks-source-launch,
+  .lesson-resource-slot .kn-notes-toggle {
+    width: 34px;
+    min-width: 34px;
+    padding: 0;
+  }
+}

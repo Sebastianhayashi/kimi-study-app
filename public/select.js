@@ -9,7 +9,10 @@
     .then(async () => {
       if (window.KimiMarginNotes) {
         const controller = await window.KimiMarginNotes.mount({ courseId: window.__courseId });
-        if (controller) cleanups.push(() => controller.destroy());
+        if (controller) {
+          if (window.KimiContextualActions) cleanups.push(window.KimiContextualActions.mount(controller));
+          cleanups.push(() => controller.destroy());
+        }
       }
       if (window.KimiStudyCards) {
         cleanups.push(window.KimiStudyCards.mount(document));

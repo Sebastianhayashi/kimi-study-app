@@ -302,12 +302,80 @@
     const courseId = path.split('/').pop();
     const lessonFrame = document.getElementById('lessonFrame');
     const courseStage = document.querySelector('.course-stage');
-    const generationPreview = window.KimiGenerationPreview?.mount(courseStage) || {
-      update() {}, complete() {}, fail() {}, hide() {},
+    const generationProgressTools = window.KimiCoreJourneyProgress;
+
+    function withLearnerGenerationFeedback(preview, host) {
+      const root = host?.querySelector('.ks-generation-preview');
+      const action = root?.querySelector('.ks-generation-status-action');
+      const progressBar = root?.querySelector('.ks-generation-progress');
+      const stageLabel = document.createElement('span');
+      const elapsedLabel = document.createElement('span');
+      stageLabel.className = 'ks-generation-stage-progress';
+      elapsedLabel.className = 'ks-generation-elapsed';
+      if (action) action.prepend(stageLabel, elapsedLabel);
+      let startedAt = null;
+      let activeRunId = null;
+      let elapsedTimer = 0;
+
+      const stopElapsed = () => {
+        window.clearInterval(elapsedTimer);
+        elapsedTimer = 0;
+      };
+      const renderElapsed = () => {
+        if (!startedAt || !generationProgressTools) return;
+        elapsedLabel.textContent = generationProgressTools.formatElapsed(startedAt);
+      };
+      const startElapsed = () => {
+        if (!startedAt || elapsedTimer) return;
+        renderElapsed();
+        elapsedTimer = window.setInterval(renderElapsed, 1000);
+      };
+      const decorate = (status = {}) => {
+        if (status.runId && status.runId !== activeRunId) {
+          activeRunId = status.runId;
+          startedAt = status.startedAt || null;
+          stopElapsed();
+        }
+        startedAt = status.startedAt || startedAt || new Date().toISOString();
+        const evidence = generationProgressTools?.deriveEvidenceProgress(status) || {
+          determinate: Number.isFinite(Number(status.progress)),
+          value: Number(status.progress) || 0,
+          label: Number.isFinite(Number(status.progress)) ? `${Number(status.progress)}%` : '进行中',
+        };
+        stageLabel.textContent = status.stage === 'ready' ? '已完成' : evidence.label;
+        progressBar?.classList.toggle('is-indeterminate', !evidence.determinate);
+        if (status.stage === 'ready' || status.stage === 'failed') stopElapsed();
+        else startElapsed();
+        return { ...status, progress: evidence.determinate ? evidence.value : 0 };
+      };
+
+      const wrapped = {
+        show: (...args) => preview.show?.(...args),
+        update(status) { return preview.update?.(decorate(status)); },
+        appendEvent(event) {
+          if (event?.kind === 'run-start' && !startedAt) {
+            startedAt = new Date().toISOString();
+            startElapsed();
+          }
+          return preview.appendEvent?.(event);
+        },
+        complete(status) { return preview.complete?.(decorate({ ...(status || {}), stage: 'ready' })); },
+        fail(status) { decorate({ ...(status || {}), stage: 'failed' }); return preview.fail?.(status); },
+        hide(options) { stopElapsed(); return preview.hide?.(options); },
+        destroy() { stopElapsed(); return preview.destroy?.(); },
+      };
+      if (window.KimiGenerationPreview?.current === preview) window.KimiGenerationPreview.current = wrapped;
+      return wrapped;
+    }
+
+    const rawGenerationPreview = window.KimiGenerationPreview?.mount(courseStage) || {
+      update() {}, complete() {}, fail() {}, hide() {}, appendEvent() {},
     };
+    const generationPreview = withLearnerGenerationFeedback(rawGenerationPreview, courseStage);
     let generationWasActive = false;
     let generationFinishing = false;
     let generationPollTimer = null;
+    let generationStartedAt = null;
     let currentLessonUrl = '';
     let resourceTools = { reset() {} };
     let lessons = [];
@@ -327,7 +395,17 @@
     const contextBar = document.querySelector('.context-bar');
     const titleOf = (f) => f.replace(/^\d+-?/, '').replace(/\.html$/, '');
 
-    const statusProgress = (status) => Math.max(0, Math.min(100, Number(status?.progress) || 0));
+    const generationEvidence = (status, complete = false) => {
+      if (complete) return { determinate: true, value: 100, label: '已完成' };
+      return generationProgressTools?.deriveEvidenceProgress(status) || {
+        determinate: Number.isFinite(Number(status?.progress)),
+        value: Math.max(0, Math.min(100, Number(status?.progress) || 0)),
+        label: Number.isFinite(Number(status?.progress)) ? `${Number(status.progress)}%` : '进行中',
+      };
+    };
+    const generationElapsed = (status) => generationProgressTools?.formatElapsed(
+      status?.startedAt || generationStartedAt || Date.now(),
+    ) || '已用时 00:00';
 
     function renderList() {
       document.querySelectorAll('.lesson-item').forEach((el, i) => {
@@ -342,27 +420,38 @@
     }
 
     function setGenerationChrome(status, { complete = false } = {}) {
-      const progress = complete ? 100 : statusProgress(status);
-      const progressText = `${progress}%`;
+      if (status?.startedAt) generationStartedAt = status.startedAt;
+      const evidence = generationEvidence(status, complete);
+      const progressWidth = evidence.determinate ? `${evidence.value}%` : '38%';
+      const elapsed = generationElapsed(status);
+      const shortElapsed = elapsed.replace('已用时 ', '');
       const initialGeneration = Number(status?.lessons || 0) === 0;
 
       if (overviewProgressTitle) overviewProgressTitle.textContent = '课程创建进度';
-      if (overviewProgressNote) overviewProgressNote.textContent = complete ? '已完成' : '创建中';
-      if (overviewProgressValue) overviewProgressValue.textContent = progressText;
-      if (overviewProgressBar) overviewProgressBar.style.width = progressText;
-      if (compactProgressText) compactProgressText.textContent = progressText;
-      if (compactProgressBar) compactProgressBar.style.width = progressText;
+      if (overviewProgressNote) overviewProgressNote.textContent = complete ? '已完成' : elapsed;
+      if (overviewProgressValue) overviewProgressValue.textContent = evidence.label;
+      if (overviewProgressBar) {
+        overviewProgressBar.style.width = progressWidth;
+        overviewProgressBar.parentElement?.classList.toggle('is-indeterminate', !evidence.determinate);
+      }
+      if (compactProgressText) compactProgressText.textContent = complete ? '已完成' : `${evidence.label} · ${shortElapsed}`;
+      if (compactProgressBar) {
+        compactProgressBar.style.width = progressWidth;
+        compactProgressBar.parentElement?.classList.toggle('is-indeterminate', !evidence.determinate);
+      }
       if (currentLessonLabel) {
         currentLessonLabel.textContent = complete
           ? '课程已准备好'
-          : initialGeneration ? '第一课正在生成' : '正在生成下一课';
+          : `${initialGeneration ? '第一课正在生成' : '正在生成下一课'} · ${shortElapsed}`;
       }
       if (lessonResourceSlot) lessonResourceSlot.style.visibility = 'hidden';
       if (overviewRecordList) {
         const recordState = complete ? 'complete' : '';
         const recordIcon = complete ? '✓' : '…';
         const recordTitle = complete ? '课程已准备好' : '正在创建课程';
-        const recordMeta = complete ? '课节文件已经通过后端检查' : escapeHtml(status?.currentMessage || '正在等待新的生成进度');
+        const recordMeta = complete
+          ? '课节文件已经通过后端检查'
+          : `${escapeHtml(status?.currentMessage || '正在等待新的生成进度')} · ${escapeHtml(elapsed)}`;
         overviewRecordList.innerHTML =
           '<article class="record complete"><span class="record-icon">✓</span><div><div class="record-title">材料已经上传</div><div class="record-meta">正在根据材料建立课程</div></div></article>' +
           `<article class="record ${recordState}"><span class="record-icon">${recordIcon}</span><div><div class="record-title">${recordTitle}</div><div class="record-meta">${recordMeta}</div></div></article>`;
@@ -370,7 +459,12 @@
       if (nextButton) {
         nextButton.disabled = true;
         nextButton.hidden = initialGeneration || complete;
-        if (!nextButton.hidden) nextButton.textContent = '正在生成下一课';
+        if (!nextButton.hidden) {
+          nextButton.classList.add('is-busy');
+          nextButton.setAttribute('aria-label', `正在生成下一课，${elapsed}`);
+          nextButton.title = `正在生成下一课，${elapsed}`;
+          nextButton.innerHTML = '<span class="next-lesson-label">生成中</span><span class="next-lesson-spinner" aria-hidden="true"></span>';
+        }
       }
     }
 
@@ -381,6 +475,9 @@
       if (nextButton) {
         nextButton.hidden = false;
         nextButton.disabled = false;
+        nextButton.classList.remove('is-busy');
+        nextButton.setAttribute('aria-label', '生成下一课');
+        nextButton.title = '生成下一课';
         nextButton.innerHTML = nextButtonHtml;
       }
       updateInfo();
@@ -395,6 +492,7 @@
     function showLesson(i) {
       current = i;
       resourceTools.reset();
+      courseStage?.classList.add('is-loading-lesson');
       currentLessonUrl = `/api/courses/${courseId}/lessons/${encodeURIComponent(lessons[i])}`;
       lessonFrame.removeAttribute('srcdoc');
       lessonFrame.src = currentLessonUrl;
@@ -652,8 +750,10 @@
       };
       generationWasActive = true;
       generationFinishing = false;
+      generationStartedAt = new Date().toISOString();
       const startingStatus = {
         stage: 'generating',
+        startedAt: generationStartedAt,
         progress: 0,
         phase: 'extracting',
         canvasVariant: 'material',
@@ -664,11 +764,15 @@
       setGenerationChrome(startingStatus);
       generationPreview.update(startingStatus);
       showToast('Kimi 正在准备下一课，通常需要几分钟…');
-      fetch(`/api/courses/${courseId}/lessons/next`, { method: 'POST' }).then((r) => {
+      fetch(`/api/courses/${courseId}/lessons/next`, { method: 'POST' }).then(async (r) => {
         if (r.status === 409) {
           restoreBtn();
           showToast('Kimi 正在忙，请等当前回答完成后再试');
           return;
+        }
+        if (!r.ok) {
+          const data = await r.json().catch(() => ({}));
+          throw new Error(data.error || `HTTP ${r.status}`);
         }
         const timer = window.setInterval(() => {
           fetch(`/api/courses/${courseId}/status`)
@@ -698,7 +802,10 @@
               });
             });
         }, 1800);
-      }).catch(restoreBtn);
+      }).catch(() => {
+        restoreBtn();
+        showToast('下一课没有开始。当前课程仍然安全，请重试。');
+      });
     }
 
     // 划词问助手：iframe 发来选中内容 -> 输入框上方引用 chip
@@ -729,8 +836,20 @@
       composer.parentElement.insertBefore(chipEl, composer);
     }
     window.addEventListener('message', (e) => {
+      if (e.source === lessonFrame.contentWindow && e.data?.type === 'lesson-visual-ready') {
+        courseStage?.classList.remove('is-loading-lesson');
+      }
       if (e.data && e.data.type === 'ask-selection') {
         showQuoteChip(e.data);
+        if (e.data.suggestedPrompt) {
+          assistantInput.value = String(e.data.suggestedPrompt).slice(0, 4000);
+          sendButton.disabled = !assistantInput.value.trim();
+        }
+        if (window.matchMedia('(max-width: 860px)').matches) {
+          document.getElementById('mobileAssistantButton')?.click();
+        } else {
+          document.getElementById('restoreAssistantButton')?.click();
+        }
         assistantInput.focus();
       }
     });
@@ -956,6 +1075,27 @@
       if (shouldStick) requestAnimationFrame(() => { chatThread.scrollTop = chatThread.scrollHeight; });
     }
 
+    function renderTutorError(message, retryText, retryContext) {
+      const el = document.createElement('div');
+      el.className = 'message assistant ks-tutor-error';
+      const title = document.createElement('strong');
+      title.textContent = '导师暂时没有完成回答';
+      const copy = document.createElement('div');
+      copy.textContent = message || '你的课程、进度和笔记都已保留。';
+      const retry = document.createElement('button');
+      retry.type = 'button';
+      retry.textContent = '重试这个问题';
+      retry.addEventListener('click', () => {
+        assistantInput.value = retryText;
+        if (retryContext) showQuoteChip(retryContext);
+        sendButton.disabled = false;
+        window.sendMessage();
+      });
+      el.append(title, copy, retry);
+      chatThread.appendChild(el);
+      chatThread.scrollTop = chatThread.scrollHeight;
+    }
+
     function setQuickPromptsEnabled(on) {
       quickPrompts.querySelectorAll('button').forEach((b) => (b.disabled = !on));
     }
@@ -1022,7 +1162,15 @@
           },
         }),
       })
-        .then((r) => r.json())
+        .then(async (response) => {
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            const error = new Error(data.error || '导师暂时无法回答');
+            error.code = data.code;
+            throw error;
+          }
+          return data;
+        })
         .then((data) => {
           stopThinking();
           const reply = data.reply || data.error || '出错了，请再试一次';
@@ -1035,9 +1183,9 @@
               { type: 'create-note', anchor: ctx.anchor, section: ctx.section, question: text, answer: reply }, '*');
           }
         })
-        .catch(() => {
+        .catch((error) => {
           stopThinking();
-          renderAssistant('网络出错，请再试一次');
+          renderTutorError(error.message, text, ctx);
           renderSuggestions(DEFAULT_SUGGESTIONS);
         });
     };
@@ -1077,6 +1225,10 @@
       });
     });
     document.querySelector('#assistantPanel .panel-header-actions')?.prepend(newChatBtn);
+
+    lessonFrame.addEventListener('load', () => {
+      window.setTimeout(() => courseStage?.classList.remove('is-loading-lesson'), 520);
+    });
 
     pollCourseGeneration();
   }
