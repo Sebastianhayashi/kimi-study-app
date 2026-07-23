@@ -79,7 +79,7 @@
         <div class="ks-source-error" hidden>
           <strong>暂时无法在这里打开这个文件</strong>
           <p></p>
-          <a target="_blank" rel="noopener noreferrer">在新窗口打开原文件</a>
+          <div class="ks-source-error-actions"><button class="ks-source-retry" type="button">重试</button><a target="_blank" rel="noopener noreferrer">在新窗口打开原文件</a></div>
         </div>
         <div class="ks-source-pdf" hidden><canvas></canvas></div>
         <div class="ks-source-epub" hidden></div>
@@ -123,6 +123,7 @@
     error: root.querySelector('.ks-source-error'),
     errorText: root.querySelector('.ks-source-error p'),
     errorLink: root.querySelector('.ks-source-error a'),
+    retry: root.querySelector('.ks-source-retry'),
     pdf: root.querySelector('.ks-source-pdf'),
     canvas: root.querySelector('.ks-source-pdf canvas'),
     epub: root.querySelector('.ks-source-epub'),
@@ -173,8 +174,9 @@
     setLoading(false);
     clearPanels();
     ui.error.hidden = false;
-    ui.errorText.textContent = error?.message || String(error || '未知错误');
+    ui.errorText.textContent = '文件仍然安全保存在课程中。请重试，或在新窗口打开原文件。';
     ui.errorLink.href = current?.url || '#';
+    ui.error.dataset.reason = String(error?.message || error || 'unknown').slice(0, 180);
     setStatus('资源打开失败');
   }
 
@@ -191,6 +193,20 @@
     });
     scriptPromises.set(src, promise);
     return promise;
+  }
+
+  async function withTimeout(promise, timeoutMs, message) {
+    let timer = null;
+    try {
+      return await Promise.race([
+        promise,
+        new Promise((_, reject) => {
+          timer = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+        }),
+      ]);
+    } finally {
+      window.clearTimeout(timer);
+    }
   }
 
   function extensionOf(url) {
@@ -456,12 +472,41 @@
     setStatus(current.name, results.length ? `找到 ${results.length} 个相关页面` : '没有找到相关内容');
   }
 
+  function flattenEpubToc(items, output = []) {
+    for (const item of Array.isArray(items) ? items : []) {
+      if (item && typeof item.href === 'string' && item.href) output.push(item.href);
+      flattenEpubToc(item && (item.subitems || item.children), output);
+    }
+    return output;
+  }
+
+  function isEpubFrontMatterHref(href) {
+    return /(?:^|[\/_-])(cover|title(?:page)?|toc|nav)(?:[.\/_-]|$)/i.test(String(href || ''));
+  }
+
+  function firstReadableEpubTarget(navigation, book) {
+    const tocHrefs = flattenEpubToc(navigation && navigation.toc);
+    const spineHrefs = (book && book.spine && Array.isArray(book.spine.spineItems) ? book.spine.spineItems : [])
+      .filter((item) => item && item.linear !== 'no')
+      .map((item) => item.href)
+      .filter(Boolean);
+    return tocHrefs.find((href) => !isEpubFrontMatterHref(href))
+      || spineHrefs.find((href) => !isEpubFrontMatterHref(href))
+      || tocHrefs[0]
+      || spineHrefs[0]
+      || null;
+  }
+
   async function openEpub(source) {
     await loadScript('/vendor/jszip/jszip.min.js', 'JSZip');
     await loadScript('/vendor/epubjs/epub.min.js', 'ePub');
     if (!window.ePub) throw new Error('EPUB 阅读器加载失败');
 
-    const book = window.ePub(source.url, { openAs: 'epub' });
+    const response = await withTimeout(fetch(source.url, { cache: 'no-store' }), 15000, 'EPUB 下载超时');
+    if (!response.ok) throw new Error(`EPUB 下载失败：HTTP ${response.status}`);
+    const buffer = await withTimeout(response.arrayBuffer(), 15000, 'EPUB 读取超时');
+    const book = window.ePub(buffer);
+    await withTimeout(book.opened, 30000, 'EPUB 结构解析超时');
     const rendition = book.renderTo(ui.epub, {
       width: '100%',
       height: '100%',
@@ -493,8 +538,10 @@
     applyReadingTheme();
     rendition.themes.fontSize(`${scale}%`);
 
-    await rendition.display();
-    const navigation = await book.loaded.navigation;
+    const navigation = await withTimeout(book.loaded.navigation, 8000, 'EPUB 目录读取超时').catch(() => null);
+    const firstTarget = firstReadableEpubTarget(navigation, book);
+    if (firstTarget) await withTimeout(rendition.display(firstTarget), 15000, 'EPUB 正文打开超时');
+    else await withTimeout(rendition.display(), 15000, 'EPUB 内容打开超时');
     renderEpubToc(navigation?.toc || []);
     rendition.on('relocated', (location) => {
       const start = location?.start;
@@ -655,7 +702,7 @@
     applyReadingTheme();
     ui.document.style.setProperty('--source-font-scale', String(scale / 100));
     renderDocumentToc();
-    setStatus(source.name, `${Math.max(1, text.length.toLocaleString())} 个字符`);
+    setStatus(source.name, `${Math.max(1, text.length).toLocaleString()} 个字符`);
   }
 
   function clearDocumentHighlights() {
@@ -806,6 +853,7 @@
   }
 
   ui.close.addEventListener('click', closeViewer);
+  ui.retry.addEventListener('click', () => current && openSource(current));
   ui.select.addEventListener('change', () => openSource(sources.find((item) => item.id === ui.select.value)));
   ui.toc.addEventListener('click', toggleSidebar);
   ui.searchButton.addEventListener('click', runSearch);

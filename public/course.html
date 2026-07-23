@@ -1345,6 +1345,262 @@ svg { display: block; }
     }
   }
 </style>
+<style id="mobile-drawer-and-next-lesson-adjustments">
+  .course-panel {
+    container-name: course-panel;
+    container-type: inline-size;
+  }
+
+  .course-actions {
+    min-width: 0;
+  }
+
+  .next-lesson-action {
+    min-width: 44px;
+    min-height: 44px;
+    flex: 0 0 auto;
+    padding: 0 14px;
+    border-radius: 22px;
+    white-space: nowrap;
+    word-break: keep-all;
+    writing-mode: horizontal-tb;
+    line-height: 1;
+    touch-action: manipulation;
+  }
+
+  .next-lesson-action svg {
+    width: 18px;
+    height: 18px;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .next-lesson-action:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  .next-lesson-action:focus-visible {
+    outline: 3px solid rgba(11, 87, 208, .28);
+    outline-offset: 2px;
+  }
+
+  .next-lesson-action:disabled {
+    opacity: .56;
+    cursor: wait;
+  }
+
+  .next-lesson-spinner {
+    width: 17px;
+    height: 17px;
+    flex: none;
+    border: 2px solid rgba(255,255,255,.42);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: kimiNextLessonSpin .8s linear infinite;
+  }
+
+  @keyframes kimiNextLessonSpin {
+    to { transform: rotate(360deg); }
+  }
+
+  .mobile-drawer-scrim {
+    display: none;
+  }
+
+  @container course-panel (max-width: 720px) {
+    .next-lesson-action {
+      width: 44px;
+      padding: 0;
+    }
+
+    .next-lesson-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+
+  @media (max-width: 860px) {
+    body,
+    .app {
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+
+    body.mobile-drawer-open {
+      overflow: hidden;
+    }
+
+    .mobile-drawer-scrim {
+      position: fixed;
+      inset: var(--topbar) 0 0;
+      z-index: 58;
+      display: block;
+      width: 100%;
+      height: auto;
+      padding: 0;
+      border: 0;
+      background: rgba(31, 31, 31, .34);
+      backdrop-filter: blur(2px);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity .18s ease-out;
+      cursor: default;
+    }
+
+    .mobile-drawer-scrim.is-open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .left-panel,
+    .assistant-panel {
+      top: calc(var(--topbar) + 8px);
+      bottom: max(8px, env(safe-area-inset-bottom));
+      z-index: 60;
+      width: min(390px, calc(100vw - 24px));
+      max-width: calc(100vw - 24px);
+      border: 1px solid rgba(60,64,67,.14);
+      border-radius: 22px;
+      box-shadow: 0 24px 70px rgba(31,31,31,.24), 0 8px 24px rgba(31,31,31,.13);
+      overflow: hidden;
+      transition: transform .22s cubic-bezier(.2,.8,.2,1);
+      will-change: transform;
+      overscroll-behavior: contain;
+    }
+
+    .left-panel {
+      left: 8px;
+      transform: translateX(calc(-100% - 18px));
+    }
+
+    .assistant-panel {
+      right: 8px;
+      transform: translateX(calc(100% + 18px));
+    }
+
+    .left-panel.mobile-open,
+    .assistant-panel.mobile-open {
+      transform: translateX(0);
+    }
+
+    .left-panel .panel-header,
+    .assistant-panel .panel-header {
+      min-height: 56px;
+      height: 56px;
+      padding: 0 12px 0 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .left-content,
+    .chat-thread,
+    .ks-source-sidebar-content {
+      overscroll-behavior: contain;
+    }
+
+    .composer {
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
+    }
+
+    .next-lesson-action {
+      width: 44px;
+      padding: 0;
+    }
+
+    .next-lesson-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+
+  @media (max-width: 620px) {
+    .left-panel,
+    .assistant-panel {
+      width: min(88vw, 360px);
+    }
+
+    .top-actions .mobile-action {
+      width: 44px;
+      min-width: 44px;
+      height: 44px;
+      padding: 0;
+      font-size: 0;
+    }
+
+    .top-actions .mobile-action svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .compact-progress,
+    #fullscreenButton {
+      display: none;
+    }
+
+    .icon-button,
+    .panel-control,
+    .course-control,
+    .send-button {
+      width: 44px;
+      min-width: 44px;
+      height: 44px;
+    }
+
+    .left-tab,
+    .quick-prompt {
+      min-height: 44px;
+    }
+
+    .panel-title {
+      font-size: 15px;
+    }
+
+    .mission-title {
+      font-size: 16px;
+    }
+
+    .mission-copy,
+    .message,
+    .context-bar {
+      font-size: 13px;
+    }
+
+    .composer textarea {
+      min-height: 72px;
+      font-size: 16px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-drawer-scrim,
+    .left-panel,
+    .assistant-panel,
+    .next-lesson-action {
+      transition: none !important;
+    }
+
+    .next-lesson-spinner {
+      animation: none;
+    }
+  }
+</style>
 </head>
 <body>
 <div class="app">
@@ -1600,7 +1856,10 @@ svg { display: block; }
               <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
-          <button class="pill primary" id="nextLessonButton">下一课</button>
+          <button class="pill primary next-lesson-action" id="nextLessonButton" aria-label="生成下一课" title="生成下一课">
+            <span class="next-lesson-label">下一课</span>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>
+          </button>
           <button class="course-control restore-control restore-right" id="restoreAssistantButton" aria-label="恢复 Kimi 助手" title="恢复 Kimi 助手">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
               <path d="M5 5h14v14H5V5Z" stroke="currentColor" stroke-width="1.6"/>
@@ -1677,6 +1936,8 @@ svg { display: block; }
   </main>
 </div>
 
+<button class="mobile-drawer-scrim" id="mobileDrawerScrim" type="button" aria-label="关闭侧栏" aria-hidden="true" tabindex="-1"></button>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1721,7 +1982,7 @@ document.querySelectorAll('.lesson-item').forEach((item, index) => {
     } else {
       showToast(`原型：切换到第 ${index + 1} 课`);
     }
-    leftPanel.classList.remove('mobile-open');
+    closeLeft({ restoreFocus: false });
   });
 });
 
@@ -1733,16 +1994,99 @@ document.getElementById('backButton').addEventListener('click', () => {
   showToast('原型：返回“我的学习”');
 });
 
-function openLeft() { leftPanel.classList.add('mobile-open'); }
-function closeLeft() { leftPanel.classList.remove('mobile-open'); }
-function openAssistant() { assistantPanel.classList.add('mobile-open'); }
-function closeAssistant() { assistantPanel.classList.remove('mobile-open'); }
+const mobileDrawerScrim = document.getElementById('mobileDrawerScrim');
+const mobileDrawerMedia = window.matchMedia('(max-width: 860px)');
+let lastMobileDrawerTrigger = null;
+
+function setMobileDrawerSemantics(panel, open, label) {
+  if (mobileDrawerMedia.matches && open) {
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'true');
+    panel.setAttribute('aria-label', label);
+    panel.setAttribute('aria-hidden', 'false');
+  } else {
+    panel.removeAttribute('role');
+    panel.removeAttribute('aria-modal');
+    panel.removeAttribute('aria-label');
+    panel.setAttribute('aria-hidden', String(mobileDrawerMedia.matches));
+  }
+}
+
+function syncMobileDrawerState() {
+  const leftOpen = mobileDrawerMedia.matches && leftPanel.classList.contains('mobile-open');
+  const assistantOpen = mobileDrawerMedia.matches && assistantPanel.classList.contains('mobile-open');
+  const anyOpen = leftOpen || assistantOpen;
+  mobileDrawerScrim.classList.toggle('is-open', anyOpen);
+  mobileDrawerScrim.setAttribute('aria-hidden', String(!anyOpen));
+  document.body.classList.toggle('mobile-drawer-open', anyOpen);
+  document.getElementById('coursePanel')?.toggleAttribute('inert', anyOpen);
+  setMobileDrawerSemantics(leftPanel, leftOpen, '学习上下文');
+  setMobileDrawerSemantics(assistantPanel, assistantOpen, 'Kimi 助手');
+  ['mobileContextButton', 'courseContextButton'].forEach(id => {
+    document.getElementById(id)?.setAttribute('aria-expanded', String(leftOpen));
+  });
+  document.getElementById('mobileAssistantButton')?.setAttribute('aria-expanded', String(assistantOpen));
+}
+
+function rememberDrawerTrigger(event) {
+  const trigger = event?.currentTarget;
+  if (trigger instanceof HTMLElement) lastMobileDrawerTrigger = trigger;
+}
+
+function openLeft(event) {
+  if (!mobileDrawerMedia.matches) return;
+  rememberDrawerTrigger(event);
+  assistantPanel.classList.remove('mobile-open');
+  leftPanel.classList.add('mobile-open');
+  syncMobileDrawerState();
+  requestAnimationFrame(() => document.getElementById('closeLeft')?.focus());
+}
+
+function closeLeft({ restoreFocus = true } = {}) {
+  leftPanel.classList.remove('mobile-open');
+  syncMobileDrawerState();
+  if (restoreFocus) requestAnimationFrame(() => lastMobileDrawerTrigger?.focus());
+}
+
+function openAssistant(event) {
+  if (!mobileDrawerMedia.matches) return;
+  rememberDrawerTrigger(event);
+  leftPanel.classList.remove('mobile-open');
+  assistantPanel.classList.add('mobile-open');
+  syncMobileDrawerState();
+  requestAnimationFrame(() => document.getElementById('closeAssistant')?.focus());
+}
+
+function closeAssistant({ restoreFocus = true } = {}) {
+  assistantPanel.classList.remove('mobile-open');
+  syncMobileDrawerState();
+  if (restoreFocus) requestAnimationFrame(() => lastMobileDrawerTrigger?.focus());
+}
+
+function closeMobileDrawers({ restoreFocus = true } = {}) {
+  const wasOpen = leftPanel.classList.contains('mobile-open') || assistantPanel.classList.contains('mobile-open');
+  leftPanel.classList.remove('mobile-open');
+  assistantPanel.classList.remove('mobile-open');
+  syncMobileDrawerState();
+  if (wasOpen && restoreFocus) requestAnimationFrame(() => lastMobileDrawerTrigger?.focus());
+}
 
 document.getElementById('mobileContextButton').addEventListener('click', openLeft);
 document.getElementById('courseContextButton').addEventListener('click', openLeft);
-document.getElementById('closeLeft').addEventListener('click', closeLeft);
+document.getElementById('closeLeft').addEventListener('click', () => closeLeft());
 document.getElementById('mobileAssistantButton').addEventListener('click', openAssistant);
-document.getElementById('closeAssistant').addEventListener('click', closeAssistant);
+document.getElementById('closeAssistant').addEventListener('click', () => closeAssistant());
+mobileDrawerScrim.addEventListener('click', () => closeMobileDrawers());
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && document.body.classList.contains('mobile-drawer-open')) {
+    event.preventDefault();
+    closeMobileDrawers();
+  }
+});
+const onMobileDrawerMediaChange = () => closeMobileDrawers({ restoreFocus: false });
+if (mobileDrawerMedia.addEventListener) mobileDrawerMedia.addEventListener('change', onMobileDrawerMediaChange);
+else mobileDrawerMedia.addListener(onMobileDrawerMediaChange);
+syncMobileDrawerState();
 
 document.querySelectorAll('.citation').forEach(button => {
   button.addEventListener('click', () => scrollLesson(button.dataset.target));

@@ -125,8 +125,8 @@ test('中央生成画布使用预览稿的 paper、header、双进度与扫描�
   expect(geometry.paperRadius).toBe('14px');
   expect(geometry.headerHeight).toBe('48px');
   expect(geometry.contentWidth).toBeLessThanOrEqual(760);
-  expect(geometry.topProgress).toBe('40%');
-  expect(geometry.paperProgress).toBe('40%');
+  expect(geometry.topProgress).toBe('0%');
+  expect(geometry.paperProgress).toBe('0%');
   expect(geometry.pulseAnimation).toContain('ksFidelityStatusPulse');
 });
 

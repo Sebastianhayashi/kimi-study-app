@@ -50,16 +50,20 @@
     const id = typeof source.id === 'string' && source.id
       ? source.id
       : `note-${createdAt.toString(36)}-${index}`;
+    const lessonFile = typeof source.lessonFile === 'string' ? source.lessonFile.trim().slice(0, 240) : '';
 
     return {
       id,
+      lessonFile,
       anchor: normalizeAnchor(source.anchor),
       section: typeof source.section === 'string' ? source.section : '',
       question: typeof source.question === 'string' ? source.question : '',
       answer: typeof source.answer === 'string' ? source.answer : '',
       custom: typeof source.custom === 'string' ? source.custom : '',
       side: source.side === 'left' || source.side === 'right' ? source.side : null,
-      kind: source.kind === 'assistant' || source.question ? 'assistant' : 'user',
+      kind: ['assistant', 'vocabulary', 'curiosity', 'scratch', 'user'].includes(source.kind)
+        ? source.kind
+        : source.question ? 'assistant' : 'user',
       createdAt,
       updatedAt: Number.isFinite(source.updatedAt) ? source.updatedAt : createdAt,
     };
@@ -68,6 +72,7 @@
   function serializeNote(note) {
     return {
       id: note.id,
+      lessonFile: note.lessonFile || undefined,
       anchor: {
         exact: note.anchor.textQuote.exact,
         prefix: note.anchor.textQuote.prefix,

@@ -273,10 +273,14 @@
       missionNext.textContent = '确认并创建课程';
       missionNext.disabled = false;
     } else if (mission.status === 'failed') {
-      questionTitle.textContent = 'Mission 访谈没有完成';
-      missionError.textContent = mission.errorMessage || 'Teach 暂时没有完成材料理解，请重试。';
+      questionTitle.textContent = 'Teach 没有完成学习目标整理';
+      missionError.textContent = mission.errorMessage || 'Teach 这次没有完成整理。你之前的回答和材料已保留，请重试。';
       missionError.hidden = false;
-      missionNext.textContent = '重试';
+      const recovery = document.createElement('p');
+      recovery.className = 'mission-recovery-copy';
+      recovery.textContent = '重试会从当前访谈继续，不需要重新上传材料，也不会提前开始生成课程。';
+      options.appendChild(recovery);
+      missionNext.textContent = '继续整理';
       missionNext.disabled = false;
     } else {
       questionTitle.textContent = mission.question || 'Teach 正在准备下一个问题';
@@ -367,7 +371,7 @@
     } catch (error) {
       missionNext.disabled = false;
       missionBack.disabled = false;
-      missionError.textContent = error.message || 'Teach Mission 没有完成，请重试。';
+      missionError.textContent = error.message || 'Teach 这次没有完成整理。你之前的回答和材料已保留，请重试。';
       missionError.hidden = false;
       showStage('mission', 1);
     }

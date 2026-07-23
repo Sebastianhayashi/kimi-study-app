@@ -10,6 +10,8 @@ const {
   buildTutorPrompt,
   withHumanizerSkill,
   createTutorSessionState,
+  normalizeTutorSessionState,
+  isTutorSessionMissingError,
 } = require('./lib/tutor-context');
 const {
   buildNextLessonPrompt,
@@ -28,19 +30,25 @@ const {
   cleanupNextLessonDelta,
   validateNextLessonDelta,
 } = require('./lib/lesson-publish-validator');
-const { validateLessonSpec, scoreActivity, computeClaimProgress, toPublicLessonSpec } = require('./lib/activity-engine');
+const { normalizeLessonSpecShape, validateLessonSpec, scoreActivity, computeClaimProgress, toPublicLessonSpec } = require('./lib/activity-engine');
 const { isPrivateCoursePath } = require('./lib/private-course-path');
 const { deriveGenerationStatus } = require('./lib/generation-status');
 const { runTrackedKimi } = require('./lib/kimi-generation-runner');
 const { appendGenerationEvent, readGenerationEvents, subscribeGenerationEvents } = require('./lib/generation-events');
 const { listCourseSources } = require('./lib/source-manifest');
 const { resolveDataDir, assertSafeRuntime } = require('./lib/runtime-config');
+const { validateCuriosityDocument } = require('./lib/curiosity-contract');
+const { createLearningActionService } = require('./lib/learning-action-router');
+const { normalizeStudySurfaceState } = require('./lib/study-surface-state');
 const {
   answerMissionPrompt,
   initialMissionPrompt,
+  isRepairableMissionError,
+  materializeMissionDocument,
   parseMissionTurn,
   promoteMissionSession,
   readMissionSessionState,
+  repairMissionPrompt,
   validateMissionDocument,
   writeMissionSessionState,
 } = require('./lib/standard-teach-mission');
@@ -70,6 +78,7 @@ const MODEL = 'kimi-code/kimi-for-coding'; // K2.7 Coding
 const PORT = process.env.PORT || 3000;
 const RUNTIME = assertSafeRuntime({ root: ROOT, dataDir: DATA, port: PORT, env: process.env });
 fs.mkdirSync(DATA, { recursive: true });
+const selectLearningActions = createLearningActionService();
 
 const MAP_INSTRUCTION =
   `最后，把本课程工作区的内容汇总写入 map.json（严格 JSON，不要任何多余文字），格式：` +
@@ -87,19 +96,29 @@ const ASSESSMENT_INSTRUCTION =
   '`<div data-kimi-activity="activity-id"></div>`。' +
   `普通选择、填空、排序题必须可确定性评分；答案和评分键只能放在 assessments/，不要写入 HTML。`;
 
+const CURIOSITY_INSTRUCTION =
+  `
+
+Curiosity 不是随机冷知识。完成课节与 Assessment 后，可选择生成 0—3 张高质量 Curiosity Card。` +
+  `只有当内容与本课目标高度相关、确实违反合理预期、一分钟内能理解且有可靠依据时才生成；达不到门槛就生成 0 张。` +
+  `写入 curiosity/<LESSON_BASE>.json，schemaVersion 为 1，lessonId 必须等于 LESSON_BASE。` +
+  `每张卡包含 id、hook、prediction.prompt、prediction.options（可选 2—4 项）、reveal、bridge、section 或 anchor、` +
+  `source.label 或 sourceRefs，以及 scores：relevance>=4、surprise>=3、clarity>=3、confidence>=4、load<=3。` +
+  `不得把答案、Assessment 评分键或无关趣闻写入 Curiosity。`;
+
 const FIRST_PROMPT = (ext) =>
   `/skill:teach 用户上传了一本书想学习，材料是当前目录的 book${ext}` +
   `（如为 epub 可用 unzip 提取文本，如为 pdf 请自行想办法提取文本）。` +
   `请按 teach skill 的流程执行：先写 MISSION.md（mission：掌握这本书的核心内容）和 RESOURCES.md，` +
   `然后生成第一课 lessons/0001-*.html。所有产出用中文。` +
   `另外把书的封面图片提取保存到工作区根目录 cover.jpg（epub 解压后在 OPF manifest 里找 cover 项；` +
-  `pdf 可用 sips 把第一页转成 jpg）。` + ASSESSMENT_INSTRUCTION + MAP_INSTRUCTION;
+  `pdf 可用 sips 把第一页转成 jpg）。` + ASSESSMENT_INSTRUCTION + CURIOSITY_INSTRUCTION + MAP_INSTRUCTION;
 
 const FIRST_ONBOARDING_PROMPT = (ext) =>
   `继续当前 teach Session。用户已经确认 MISSION.md；不要重新进行 Mission 访谈，也不要改写 Mission。` +
   `材料是当前目录的 book${ext}。读取已确认的 MISSION.md，写 RESOURCES.md，然后生成第一课 lessons/0001-*.html。所有产出用中文。` +
   `另外把书的封面图片提取保存到工作区根目录 cover.jpg（epub 解压后在 OPF manifest 里找 cover 项；` +
-  `pdf 可用 sips 把第一页转成 jpg）。` + ASSESSMENT_INSTRUCTION + MAP_INSTRUCTION;
+  `pdf 可用 sips 把第一页转成 jpg）。` + ASSESSMENT_INSTRUCTION + CURIOSITY_INSTRUCTION + MAP_INSTRUCTION;
 
 
 const app = express();
@@ -120,8 +139,8 @@ app.get('/new-course', page('new-course.html', {
   body: '<script src="/first-run-onboarding.js"></script>',
 }));
 app.get('/course/:id', page('course.html', {
-  head: '<link rel="stylesheet" href="/generation-preview-product.css"><link rel="stylesheet" href="/source-viewer.css"><link rel="stylesheet" href="/frontend-shell.css">',
-  body: '<script src="/assistant-markdown.js"></script><script src="/generation-preview-product.js"></script><script src="/generation-events-client.js"></script><script src="/source-viewer.js"></script>',
+  head: '<link rel="stylesheet" href="/generation-preview-product.css"><link rel="stylesheet" href="/source-viewer.css"><link rel="stylesheet" href="/frontend-shell.css"><link rel="stylesheet" href="/core-journey-polish.css"><link rel="stylesheet" href="/course-notes-index.css"><link rel="stylesheet" href="/study-surface.css">',
+  body: '<script src="/assistant-markdown.js"></script><script src="/core-journey-progress.js"></script><script src="/generation-preview-product.js"></script><script src="/generation-events-client.js"></script><script src="/source-viewer.js"></script><script src="/course-notes-index.js"></script><script src="/study-surface.js"></script>',
 }));
 app.use('/vendor/lenis', express.static(path.join(ROOT, 'node_modules', 'lenis', 'dist')));
 app.use('/vendor/pdfjs', express.static(path.join(ROOT, 'node_modules', 'pdfjs-dist')));
@@ -187,32 +206,61 @@ function launchStandardMissionTurn(id, { answer = null, retry = false } = {}) {
     markMissionFailed(courseDir, new OnboardingError('MISSION_SESSION_MISSING', 'Mission 会话不可恢复', 409));
     throw new OnboardingError('MISSION_SESSION_MISSING', 'Mission 会话不可恢复', 409);
   }
-  const prompt = answer == null ? initialMissionPrompt(record.source.extension) : answerMissionPrompt(answer);
-  locks.add(id);
-  Promise.resolve(runTrackedKimi({
+  const prompt = retry && state.initialized && state.sessionId
+    ? repairMissionPrompt()
+    : answer == null ? initialMissionPrompt(record.source.extension) : answerMissionPrompt(answer);
+
+  const runMissionPrompt = (missionPrompt, sessionState) => runTrackedKimi({
     cwd: courseDir,
-    prompt,
-    sessionId: state.sessionId,
-    preferredMode: state.preferredMode,
+    prompt: missionPrompt,
+    sessionId: sessionState.sessionId,
+    preferredMode: sessionState.preferredMode,
     model: MODEL,
     skillsDir: SKILLS,
-  })).then((result) => {
-    const sessionId = result.sessionId || state.sessionId;
+  });
+
+  const persistMissionSession = (result, previousState) => {
+    const sessionId = result.sessionId || previousState.sessionId;
     if (!sessionId) throw new OnboardingError('MISSION_SESSION_MISSING', 'Teach 没有返回可恢复的 Session', 502);
-    writeMissionSessionState(courseDir, {
-      ...state,
+    return writeMissionSessionState(courseDir, {
+      ...previousState,
       sessionId,
       initialized: true,
-      preferredMode: result.mode || state.preferredMode,
+      preferredMode: result.mode || previousState.preferredMode,
     });
-    const turn = parseMissionTurn(result.text);
-    if (turn.status === 'question') return markMissionQuestion(courseDir, turn);
-    validateMissionDocument(courseDir);
-    return markMissionReady(courseDir, turn);
-  }).catch((error) => {
-    try { markMissionFailed(courseDir, error); }
-    catch (persistError) { console.log(`[mission ${id}] failed to persist error: ${persistError.message}`); }
-  }).finally(() => locks.delete(id));
+  };
+
+  const acceptMissionResult = async (result, previousState, allowRepair) => {
+    const nextState = persistMissionSession(result, previousState);
+    try {
+      const turn = parseMissionTurn(result.text);
+      if (turn.status === 'question') return markMissionQuestion(courseDir, turn);
+      materializeMissionDocument(courseDir, turn);
+      return markMissionReady(courseDir, turn);
+    } catch (error) {
+      if (allowRepair && isRepairableMissionError(error)) {
+        const repaired = await runMissionPrompt(repairMissionPrompt(), nextState);
+        return acceptMissionResult(repaired, nextState, false);
+      }
+      if (isRepairableMissionError(error)) {
+        throw new OnboardingError(
+          'MISSION_REPAIR_FAILED',
+          'Teach 没有完成学习目标整理。你之前的回答和材料已保留，请重试。',
+          502,
+        );
+      }
+      throw error;
+    }
+  };
+
+  locks.add(id);
+  Promise.resolve(runMissionPrompt(prompt, state))
+    .then((result) => acceptMissionResult(result, state, true))
+    .catch((error) => {
+      try { markMissionFailed(courseDir, error); }
+      catch (persistError) { console.log(`[mission ${id}] failed to persist error: ${persistError.message}`); }
+    })
+    .finally(() => locks.delete(id));
   return record;
 }
 
@@ -780,7 +828,7 @@ app.get('/api/courses/:id/lessons/:file', (req, res) => {
   if (!f) return res.status(404).end();
   const html = fs.readFileSync(path.join(dirOf(req.params.id), 'lessons', f), 'utf8')
     .replace(/<head[^>]*>/i, (m) => `${m}<base href="/api/courses/${req.params.id}/lessons/">`)
-    .replace(/<\/body>/i, `<script>window.__courseId=${JSON.stringify(req.params.id)};window.__lessonFile=${JSON.stringify(f)}</script><link rel="stylesheet" href="/vendor/lenis/lenis.css"><link rel="stylesheet" href="/margin-notes.css"><link rel="stylesheet" href="/activity-runtime.css"><script src="/margin-notes-core.js"></script><script src="/margin-notes.js"></script><script src="/study-cards.js"></script><script src="/select.js"></script><script src="/activity-runtime.js"></script><script src="/vendor/lenis/lenis.min.js"></script><script src="/lesson-scroll-policy.js"></script><script src="/lesson-shell.js"></script></body>`);
+    .replace(/<\/body>/i, `<script>window.__courseId=${JSON.stringify(req.params.id)};window.__lessonFile=${JSON.stringify(f)}</script><link rel="stylesheet" href="/vendor/lenis/lenis.css"><link rel="stylesheet" href="/margin-notes.css"><link rel="stylesheet" href="/activity-runtime.css"><link rel="stylesheet" href="/lesson-content-normalizer.css"><link rel="stylesheet" href="/curiosity-runtime.css"><link rel="stylesheet" href="/contextual-actions.css"><script src="/margin-notes-core.js"></script><script src="/margin-notes.js"></script><script src="/study-cards.js"></script><script src="/contextual-actions.js"></script><script src="/select.js"></script><script src="/activity-runtime.js"></script><script src="/vendor/lenis/lenis.min.js"></script><script src="/lesson-scroll-policy.js"></script><script src="/lesson-content-normalizer.js"></script><script src="/curiosity-runtime.js"></script><script src="/lesson-shell.js"></script></body>`);
   res.type('html').send(html);
 });
 
@@ -800,9 +848,14 @@ const loadLessonSpec = (id, file) => {
   if (!safeLesson(id, file)) return { status: 404, error: 'lesson not found' };
   const target = assessmentFile(id, file);
   if (!fs.existsSync(target)) return { status: 404, error: 'interactive activities not found' };
-  const spec = readJson(target, null);
-  const validation = validateLessonSpec(spec);
-  if (!validation.ok) return { status: 422, error: 'invalid assessment spec', details: validation.errors };
+  const spec = normalizeLessonSpecShape(readJson(target, null));
+  let validation;
+  try {
+    validation = validateLessonSpec(spec);
+  } catch {
+    return { status: 422, error: 'invalid assessment spec', details: ['assessment shape could not be validated'] };
+  }
+  if (!validation.ok) return { status: 422, error: 'invalid assessment spec', details: validation.errors.slice(0, 40) };
   return { status: 200, spec };
 };
 const readLessonProgress = (id, file, spec) => {
@@ -851,15 +904,93 @@ app.post('/api/courses/:id/lessons/:file/activities/:activityId/attempt', (req, 
   res.json({ attempt, passed: result.passed, correct: result.correct, feedback: result.feedback, misconceptionId: result.misconceptionId, mastery: progress.mastery });
 });
 
-// 笔记（划词高亮 + 卡片），整体读写
+// Contextual learning actions are selected by the backend. The provider-neutral
+// service can accept a model selector later; this candidate uses a fast,
+// deterministic fallback and therefore adds no model call or selection latency.
+app.post('/api/courses/:id/learning-actions', async (req, res) => {
+  if (!validId(req.params.id) || !fs.existsSync(dirOf(req.params.id))) return res.status(404).json({ error: 'course not found' });
+  try {
+    const result = await selectLearningActions(req.body || {});
+    return res.json(result);
+  } catch {
+    return res.json({ source: 'safe-fallback', selectionType: 'passage', actions: [
+      { id: 'ask', label: '问 Tutor', kind: 'tutor' },
+      { id: 'note', label: '记笔记', kind: 'note' },
+      { id: 'scratch', label: '放到草稿', kind: 'scratch' },
+    ] });
+  }
+});
+
+const studySurfaceFile = (id) => path.join(dirOf(id), 'study-surface.json');
+const requestedStudyLesson = (id, value) => {
+  const requested = String(value || '').trim();
+  return requested ? safeLesson(id, requested) : null;
+};
+app.get('/api/courses/:id/study-surface', (req, res) => {
+  const lesson = requestedStudyLesson(req.params.id, req.query.lesson);
+  if (!lesson) return res.status(400).json({ error: 'invalid lesson' });
+  const stored = readJson(studySurfaceFile(req.params.id), { version: 1, lessons: {} });
+  return res.json(normalizeStudySurfaceState(stored?.lessons?.[lesson]));
+});
+app.put('/api/courses/:id/study-surface', (req, res) => {
+  const lesson = requestedStudyLesson(req.params.id, req.query.lesson);
+  if (!lesson) return res.status(400).json({ error: 'invalid lesson' });
+  const stored = readJson(studySurfaceFile(req.params.id), { version: 1, lessons: {} });
+  const lessons = stored && typeof stored.lessons === 'object' ? stored.lessons : {};
+  lessons[lesson] = normalizeStudySurfaceState(req.body);
+  writeJsonAtomic(studySurfaceFile(req.params.id), { version: 1, lessons, updatedAt: Date.now() });
+  return res.json({ ok: true, lesson });
+});
+
+const curiosityFileForLesson = (id, lesson) => path.join(dirOf(id), 'curiosity', lesson.replace(/\.html$/i, '') + '.json');
+app.get('/api/courses/:id/lessons/:file/curiosity', (req, res) => {
+  const lesson = safeLesson(req.params.id, req.params.file);
+  if (!lesson) return res.status(404).json({ cards: [] });
+  const raw = readJson(curiosityFileForLesson(req.params.id, lesson), { schemaVersion: 1, lessonId: lesson.replace(/\.html$/i, ''), cards: [] });
+  const validation = validateCuriosityDocument(raw);
+  if (!validation.ok) return res.status(422).json({ error: 'invalid curiosity document', details: validation.errors.slice(0, 20), cards: [] });
+  return res.json(validation.document);
+});
+
+// 笔记（划词高亮 + 卡片），按课节合并读写；无 lesson 参数时保留旧的整体接口。
 const notesFile = (id) => path.join(dirOf(id), 'notes.json');
+const readCourseNotes = (id) => {
+  const value = readJson(notesFile(id), []);
+  return Array.isArray(value) ? value.filter((note) => note && typeof note === 'object') : [];
+};
+const requestedNoteLesson = (id, value) => {
+  const requested = String(value || '').trim();
+  if (!requested) return null;
+  return safeLesson(id, requested);
+};
 app.get('/api/courses/:id/notes', (req, res) => {
-  try { res.json(JSON.parse(fs.readFileSync(notesFile(req.params.id), 'utf8'))); } catch { res.json([]); }
+  const requested = String(req.query.lesson || '').trim();
+  const lesson = requestedNoteLesson(req.params.id, requested);
+  if (requested && !lesson) return res.status(400).json({ error: 'invalid lesson' });
+  const notes = readCourseNotes(req.params.id);
+  if (!lesson) return res.json(notes);
+  return res.json(notes.filter((note) => !note.lessonFile || note.lessonFile === lesson));
 });
 app.put('/api/courses/:id/notes', (req, res) => {
   if (!Array.isArray(req.body)) return res.status(400).json({ error: 'expected array' });
-  fs.writeFileSync(notesFile(req.params.id), JSON.stringify(req.body));
-  res.json({ ok: true });
+  const requested = String(req.query.lesson || '').trim();
+  const lesson = requestedNoteLesson(req.params.id, requested);
+  if (requested && !lesson) return res.status(400).json({ error: 'invalid lesson' });
+  if (!lesson) {
+    fs.writeFileSync(notesFile(req.params.id), JSON.stringify(req.body));
+    return res.json({ ok: true });
+  }
+  const incoming = req.body
+    .filter((note) => note && typeof note === 'object')
+    .map((note) => ({ ...note, lessonFile: lesson }));
+  const incomingIds = new Set(incoming.map((note) => note.id).filter((id) => typeof id === 'string' && id));
+  const retained = readCourseNotes(req.params.id).filter((note) => {
+    if (note.lessonFile === lesson) return false;
+    if (incomingIds.has(note.id)) return false;
+    return true;
+  });
+  writeJsonAtomic(notesFile(req.params.id), [...retained, ...incoming]);
+  return res.json({ ok: true, lesson, notes: incoming.length });
 });
 
 // 聊天记录（须在 splat 静态路由之前注册，否则会被当成文件 404）
@@ -991,13 +1122,34 @@ function parseSuggestions(text) {
 const tutorSessionFile = (id) => path.join(dirOf(id), 'tutor-session.json');
 function readTutorSession(id) {
   const existing = readJson(tutorSessionFile(id), null);
-  if (existing && typeof existing.sessionId === 'string' && existing.sessionId) return existing;
-  const created = createTutorSessionState(id);
-  writeJsonAtomic(tutorSessionFile(id), created);
-  return created;
+  const normalized = normalizeTutorSessionState(existing);
+  if (JSON.stringify(existing) !== JSON.stringify(normalized)) {
+    writeJsonAtomic(tutorSessionFile(id), normalized);
+  }
+  return normalized;
 }
 function saveTutorSession(id, value) {
-  writeJsonAtomic(tutorSessionFile(id), value);
+  writeJsonAtomic(tutorSessionFile(id), normalizeTutorSessionState(value));
+}
+
+async function runTutorTurn(id, tutorPrompt, session) {
+  const result = await runTrackedKimi({
+    cwd: dirOf(id),
+    prompt: withHumanizerSkill(tutorPrompt, session.initialized === true),
+    sessionId: session.initialized ? session.sessionId : null,
+    preferredMode: session.preferredMode || 'stream-json',
+    model: MODEL,
+    skillsDir: SKILLS,
+  });
+  const next = normalizeTutorSessionState({
+    ...session,
+    sessionId: result.sessionId || session.sessionId,
+    initialized: Boolean(result.sessionId || session.sessionId),
+    preferredMode: result.mode || session.preferredMode,
+  });
+  if (!next.initialized) throw new Error('Tutor did not return a resumable Kimi session');
+  saveTutorSession(id, next);
+  return result.text;
 }
 
 app.post('/api/courses/:id/chat/reset', (req, res) => {
@@ -1009,18 +1161,30 @@ app.post('/api/courses/:id/chat/reset', (req, res) => {
 
 app.post('/api/courses/:id/chat', async (req, res) => {
   const id = req.params.id;
-  if (locks.has(id)) return res.status(409).json({ error: '老师正在备课，请稍后再问' });
+  if (locks.has(id)) return res.status(409).json({
+    error: '导师正在处理上一项任务。你的课程和笔记都已保留，请稍后重试。',
+    code: 'TUTOR_BUSY',
+    retryable: true,
+  });
   const { message, context } = req.body || {};
-  const tutorSession = readTutorSession(id);
+  if (!String(message || '').trim()) return res.status(422).json({ error: '请输入问题', code: 'TUTOR_MESSAGE_REQUIRED' });
+  let tutorSession = readTutorSession(id);
   const tutorPrompt = buildTutorPrompt({
     courseDir: dirOf(id),
     message: String(message || ''),
     context: context || {},
   }) + SUGGEST_INSTRUCTION;
-  const prompt = withHumanizerSkill(tutorPrompt, tutorSession.initialized === true);
+  locks.add(id);
   try {
-    const out = await runKimi(id, prompt, { sessionId: tutorSession.sessionId });
-    if (!tutorSession.initialized) saveTutorSession(id, { ...tutorSession, initialized: true });
+    let out;
+    try {
+      out = await runTutorTurn(id, tutorPrompt, tutorSession);
+    } catch (error) {
+      if (!tutorSession.initialized || !isTutorSessionMissingError(error)) throw error;
+      tutorSession = createTutorSessionState();
+      saveTutorSession(id, tutorSession);
+      out = await runTutorTurn(id, tutorPrompt, tutorSession);
+    }
     const idx = out.lastIndexOf(SUGGEST_MARKER);
     const raw = idx >= 0 ? out.slice(0, idx) : out;
     const suggestions = idx >= 0 ? parseSuggestions(out.slice(idx + SUGGEST_MARKER.length).trim()) : null;
@@ -1031,8 +1195,15 @@ app.post('/api/courses/:id/chat', async (req, res) => {
     history.push({ role: 'assistant', text: reply, suggestions });
     fs.writeFileSync(chatFile(id), JSON.stringify(history));
     res.json({ reply, suggestions });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
+  } catch (error) {
+    console.log(`[tutor ${id}] failed: ${error.message}`);
+    res.status(500).json({
+      error: '导师这次没有完成回答。你的课程、进度和笔记都已保留，请重试。',
+      code: 'TUTOR_FAILED',
+      retryable: true,
+    });
+  } finally {
+    locks.delete(id);
   }
 });
 
