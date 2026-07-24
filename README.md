@@ -2,11 +2,11 @@
 
 # Kimi Study
 
-**把教材、书籍和自己的材料，变成真正学得会的个人课程。**
+**Turn books and learning materials into personalized courses you can actually study.**
 
-上传 PDF、EPUB、Markdown 或文本，Kimi Code 在本地工作区中理解材料、生成互动课节，并在课程页提供绑定当前内容的学习助教。
+Upload a PDF, EPUB, Markdown file, or plain text. Kimi Code inspects the material in a local workspace, generates interactive lessons, and provides a course-grounded tutor inside the learning workspace.
 
-[English](README.en.md) · [30 秒看产品](#30-秒看产品) · [快速启动](#快速启动) · [产品原理](docs/PRODUCT.md) · [架构](docs/ARCHITECTURE.md) · [路线图](docs/ROADMAP.md)
+[简体中文](README.md) · [See the product](#see-the-product-first) · [Quick start](#quick-start) · [Product model](docs/PRODUCT.md) · [Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md)
 
 [![CI](https://github.com/Sebastianhayashi/kimi-study-app/actions/workflows/ci.yml/badge.svg)](https://github.com/Sebastianhayashi/kimi-study-app/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933?logo=nodedotjs&logoColor=white)](package.json)
@@ -15,64 +15,62 @@
 
 </div>
 
-![Kimi Study 产品界面](docs/images/hero-showcase.jpg)
+![Kimi Study product showcase](docs/images/hero-showcase.jpg)
 
-## 先看它能做出什么
+## See the product first
 
-Kimi Study 不是“把书总结一下”。它试图把一份材料重新组织成一条**可以学习、练习、追问和继续推进**的个人课程路径：
+Kimi Study is not a document summarizer. It reorganizes source material into a **studyable path** with goals, lessons, practice, notes, evidence, and a tutor that stays grounded in the current course.
 
-- **材料变课程**：从原书和学习目标生成 Mission、课程地图、课节和练习。
-- **互动课节**：正文、引导问题、检查理解、提示、重试和掌握记录在同一学习面中完成。
-- **课程内助教**：Kimi 优先依据当前课节、原始材料、笔记与学习记录回答。
-- **来源可回看**：课程中可以返回 PDF、EPUB、Markdown、文本或 HTML 原始材料。
-- **学习可延续**：课节、笔记、聊天、活动与下一课生成都绑定到同一课程工作区。
+- **Material to course**: create a Mission, course map, lessons, and assessments from the source and learning goal.
+- **Interactive lessons**: read, answer, request hints, retry, and record mastery in the same learning surface.
+- **Course-grounded tutor**: Kimi receives the current Mission, lesson, source context, notes, and learning record.
+- **Source access**: return to the original PDF, EPUB, Markdown, text, HTML, or image resources.
+- **Continuous learning**: lessons, notes, chat, activities, and next-lesson generation stay attached to one course workspace.
 
-![Kimi Study 演示](docs/images/kimi-study-demo.gif)
+![Kimi Study demo](docs/images/kimi-study-demo.gif)
 
-## 30 秒看产品
+## The 30-second workflow
 
-![从材料到个人课程](docs/images/product-flow.jpg)
+![Material to personal course](docs/images/product-flow.jpg)
 
 ```text
-选择或上传材料
-→ 检查材料并明确学习目标
-→ 生成 Mission、学习地图和第一课
-→ 在互动课节中阅读、练习、记笔记
-→ 结合当前课程向 Kimi 追问
-→ 根据学习记录继续生成下一课
+Choose or upload material
+→ inspect the source and clarify the learning goal
+→ generate a Mission, learning map, and first lesson
+→ read, practise, and take anchored notes
+→ ask Kimi in the context of the current course
+→ generate the next lesson from the learning record
 ```
 
-### 课程工作区
+### The learning workspace
 
-课程页使用三栏结构：左侧是目标、地图、目录和学习记录，中间是当前课节，右侧是绑定当前课程的 Kimi 助教。
+The desktop course view uses three coordinated regions: goals, maps, lessons, and records on the left; the active lesson in the center; and the course-grounded Kimi tutor on the right.
 
 <p align="center">
   <img src="docs/images/course.jpg" width="72%" alt="Kimi Study course workspace" />
   <img src="docs/images/mobile.png" width="24%" alt="Kimi Study mobile lesson" />
 </p>
 
-## 它解决什么问题
+## The problem it addresses
 
-| 常见学习工具 | Kimi Study 的处理方式 |
+| Common study experience | Kimi Study approach |
 |---|---|
-| 只生成摘要，读完后不知道下一步做什么 | 生成目标、顺序、课节、练习和下一课 |
-| 聊天助手脱离当前材料，容易给出泛化回答 | Tutor 上下文绑定 Mission、当前课节、原始材料、笔记和掌握情况 |
-| 页面显示“完成”，但其他区域仍显示“生成中” | 使用显式状态机、单一主进度面和终态一致性回归测试 |
-| 练习只有答案，没有学习诊断 | 支持误区、提示、重试、迁移证据和掌握记录 |
-| 上传后的生成过程不可解释 | 提供当前状态、真实事件历史和由后端产物推导的进度 |
+| A summary with no next action | Goals, sequence, lessons, practice, and next-lesson generation |
+| A generic chatbot detached from the source | Tutor context includes the Mission, lesson, source, notes, and mastery |
+| “Complete” in one region while another still says “running” | Explicit state machines, one primary progress surface, and terminal-state regression tests |
+| Practice that only reveals an answer | Misconceptions, hints, retry, transfer evidence, and mastery records |
+| An opaque generation spinner | Current state, real event history, and progress derived from backend artifacts |
 
-## 核心产物
+## Durable course artifacts
 
-每门课程保存在独立的文件工作区中：
+Each course is a file-backed workspace rather than a disposable chat response:
 
 ```text
 data/courses/<course-id>/
-├── 原始材料
+├── original source
 ├── MISSION.md
 ├── map.json
 ├── lessons/
-│   ├── 01-*.html
-│   └── ...
 ├── assessments/
 ├── notes.json
 ├── activity-state.json
@@ -80,36 +78,34 @@ data/courses/<course-id>/
 └── generation events / status
 ```
 
-这意味着课程不是一次性的聊天结果，而是一组可以检查、继续生成和恢复的学习产物。
-
-## 工作原理
+## How it works
 
 ```mermaid
 flowchart LR
-    A[PDF / EPUB / Markdown / Text] --> B[材料检查与隔离工作区]
-    B --> C[Mission: 目标、标准、约束]
+    A[PDF / EPUB / Markdown / Text] --> B[Source inspection and isolated workspace]
+    B --> C[Mission: goal, criteria, constraints]
     C --> D[Kimi Code + teach skill]
-    D --> E[课程地图与互动课节]
-    E --> F[学习记录、笔记与活动]
-    F --> G[课程内 Kimi Tutor]
-    F --> H[下一课生成]
+    D --> E[Course map and interactive lessons]
+    E --> F[Learning records, notes, activities]
+    F --> G[Course-grounded Kimi Tutor]
+    F --> H[Next lesson generation]
     H --> E
 ```
 
-详细说明见 [产品原理](docs/PRODUCT.md)、[用户工作流](docs/WORKFLOW.md) 和 [技术架构](docs/ARCHITECTURE.md)。
+Read [Product model](docs/PRODUCT.md), [Workflow](docs/WORKFLOW.md), and [Architecture](docs/ARCHITECTURE.md) for the detailed contracts.
 
-## 快速启动
+## Quick start
 
-### 前置条件
+### Prerequisites
 
 - Node.js 22+
-- 已安装并登录 [`kimi` CLI](https://github.com/MoonshotAI/kimi-cli)：
+- The [`kimi` CLI](https://github.com/MoonshotAI/kimi-cli), installed and authenticated:
 
 ```bash
 kimi login
 ```
 
-### 启动真实课程生成
+### Run with real course generation
 
 ```bash
 git clone https://github.com/Sebastianhayashi/kimi-study-app.git
@@ -118,9 +114,9 @@ npm ci
 npm start
 ```
 
-打开 `http://localhost:3000`。
+Open `http://localhost:3000`.
 
-### 不调用真实模型，先看固定演示数据
+### Explore deterministic fixtures without a real model call
 
 ```bash
 npm ci
@@ -128,42 +124,24 @@ npm run demo:seed
 KIMI_STUDY_DATA_DIR=tests/.runtime/courses PORT=3107 npm start
 ```
 
-打开 `http://localhost:3107/app`。Fixture 数据与生产 `data/courses` 隔离，适合查看 ready、generating、failed、notes 和 invalid-assessment 等状态。
+Open `http://localhost:3107/app`. Fixture data is isolated from production `data/courses` and includes ready, generating, failed, notes, and invalid-assessment scenarios.
 
-## 支持范围
+## Supported scope
 
-### 材料
+**Sources:** PDF, EPUB, Markdown, UTF-8 text, and controlled HTML/image resources inside a course workspace.
 
-- PDF
-- EPUB
-- Markdown
-- TXT / UTF-8 文本
-- 课程工作区中的受控 HTML 和图片资源
+**Learning surfaces:** Mission and course map, interactive lessons, selection-to-tutor context, anchored notes, study cards, hints and retry, source viewer, persistent tutor sessions, next-lesson generation, desktop workspace, and mobile drawers.
 
-### 学习能力
+## Engineering quality
 
-- Mission 与学习地图
-- 互动课节和质量门禁
-- 划词问助手
-- 锚定原文的课内笔记
-- 学习卡片、提示、重试和掌握记录
-- 原始材料阅读器
-- 连续 Tutor 会话
-- 下一课生成
-- 桌面三栏工作区与移动抽屉
+The repository treats UX as explicit state machines, not merely a set of clickable pages:
 
-## 工程质量
+- `116` Node tests cover generation state, assessment quality, tutor context, next-lesson transactions, and runtime safety.
+- Playwright covers the landing page, library, upload, ready/failed/generating courses, mobile drawers, and state coherence.
+- CI runs syntax checks, unit tests, Chromium E2E, and guards the production course directory from test writes.
+- Failed generation must move the header, sidebar, main canvas, and tutor context into the same terminal state, with only one workflow-primary progress bar.
 
-仓库把用户体验视为一组显式状态机，而不只是一组可点击页面：
-
-- `116` 个 Node 测试覆盖生成状态、评估质量、Tutor 上下文、下一课事务、运行时安全等逻辑。
-- Playwright 覆盖 landing、课程库、上传、ready/failed/generating 课程、移动抽屉和状态一致性。
-- CI 会检查静态语法、单元测试、Chromium E2E，并防止测试写入生产课程目录。
-- 生成失败时，页头、侧栏、主工作区和 Tutor 上下文必须同时进入终态；同一工作流只保留一个主进度条。
-
-![状态一致性修复前后](docs/images/quality-before-after.jpg)
-
-测试命令：
+![State consistency before and after](docs/images/quality-before-after.jpg)
 
 ```bash
 npm run check
@@ -173,49 +151,43 @@ KIMI_STUDY_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
 npm run test:e2e:ci
 ```
 
-更多内容见 [质量与测试](docs/QUALITY.md)、[`docs/stabilization`](docs/stabilization/README.md)，以及本次公开的 [中文 UX E2E 报告](docs/reports/kimi-study-ux-e2e-report.zh-CN.pdf) / [English UX E2E report](docs/reports/kimi-study-ux-e2e-report.en-US.pdf)。历史报告用于展示证据标准；当前提交仍以当前 CI 为准。
+See [Quality and testing](docs/QUALITY.md), [`docs/stabilization`](docs/stabilization/README.md), and the published [English UX E2E report](docs/reports/kimi-study-ux-e2e-report.en-US.pdf) / [中文 UX E2E 报告](docs/reports/kimi-study-ux-e2e-report.zh-CN.pdf). Historical reports demonstrate the evidence standard; current CI remains the source of truth for the current commit.
 
-## 当前状态
+## Project status
 
-Kimi Study 目前是一个**研究型开源原型**，适合本地实验、产品探索和贡献开发，不应直接当作已完成的生产 SaaS：
+Kimi Study is an **experimental open-source prototype** for local exploration and product research, not a finished production SaaS.
 
-- 模型调用依赖用户自己的 Kimi CLI 登录状态。
-- 课程数据保存在本地文件系统，但模型请求会通过 Kimi CLI 调用对应服务。
-- 生产级账号、多人权限、支付、云端队列和横向扩展不在当前范围内。
-- PDF/EPUB 的真实兼容性仍需要更大的文件矩阵和跨浏览器验证。
-- 模型输出具有非确定性，发布路径使用结构验证与质量门禁，而不是假设每次输出相同。
+- Model calls require the user's authenticated Kimi CLI.
+- Course artifacts are stored locally, while model requests are performed through the Kimi CLI and its configured service.
+- Production identity, multi-tenant permissions, billing, cloud queues, and horizontal scaling are out of scope.
+- Real-world PDF/EPUB compatibility still needs a larger file matrix and cross-browser validation.
+- Model output is non-deterministic; publication relies on structural validation and quality gates rather than identical generations.
 
-查看 [已知限制](docs/LIMITATIONS.md) 和 [路线图](docs/ROADMAP.md)。
+Read [Limitations](docs/LIMITATIONS.md) and [Roadmap](docs/ROADMAP.md).
 
-## 仓库结构
+## Repository map
 
 ```text
-public/                    前端页面与浏览器运行时
-server.js                  HTTP API、课程工作区与 Kimi 子进程
-lib/                       状态、生成、评估和安全领域逻辑
-skills/teach/              课程生成 skill
-skills/humanizer-zh/       Tutor 中文表达 skill
-data/courses/              本地课程工作区（不提交真实用户数据）
-test/                      Node 单元与契约测试
-tests/e2e/                 Playwright 用户旅程
-scripts/                   Fixture 与稳定性工具
-docs/                      产品、架构、质量和状态机文档
+public/                    pages and browser runtimes
+server.js                  HTTP API, course workspaces, Kimi processes
+lib/                       state, generation, assessment, and safety logic
+skills/teach/              course-generation skill
+skills/humanizer-zh/       Chinese tutor-expression skill
+data/courses/              local course workspaces; never commit user data
+test/                      Node unit and contract tests
+tests/e2e/                 Playwright user journeys
+scripts/                   fixtures and stabilization tools
+docs/                      product, architecture, quality, and state machines
 ```
 
-## 贡献
+## Contributing
 
-欢迎提交：
+Contributions are especially useful for source-format fixtures, state-machine and accessibility improvements, mobile behavior, tutor and notes regression tests, and usability research based on real learning goals.
 
-- 可复现的 PDF/EPUB 兼容性问题；
-- 新的课程与评估 Fixture；
-- 状态机、可访问性和移动端改进；
-- Tutor、笔记、互动活动与学习诊断的回归测试；
-- 面向真实学习目标的可用性研究。
+Read [CONTRIBUTING.md](CONTRIBUTING.md). Report security issues through [SECURITY.md](SECURITY.md).
 
-请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。安全问题请遵循 [SECURITY.md](SECURITY.md)。
+## License and naming
 
-## 许可证与说明
+Code is available under the [ISC License](LICENSE). Adapted third-party work is listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-代码使用 [ISC License](LICENSE)。第三方改编与许可见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
-
-Kimi Study 是独立的开源实验项目，不是 Moonshot AI 的官方产品；“Kimi”相关商标归其权利人所有。
+Kimi Study is an independent open-source experiment and is not an official Moonshot AI product. Kimi-related trademarks belong to their respective owners.
