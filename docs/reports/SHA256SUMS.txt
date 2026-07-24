@@ -1,0 +1,2 @@
+83ad609cb069861e8bae4b0d8b32b6a43364f365d9db25c34b87f7da5a9726f2  docs/reports/kimi-study-ux-e2e-report.en-US.pdf
+1369b6c4589a8e26bb93e982f98bb42bc377c54b89477d98cb60abbb5dc5291d  docs/reports/kimi-study-ux-e2e-report.zh-CN.pdf
