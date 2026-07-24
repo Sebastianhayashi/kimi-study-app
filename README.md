@@ -6,7 +6,7 @@
 
 Upload a PDF, EPUB, Markdown file, or plain text. Kimi Code inspects the material in a local workspace, generates interactive lessons, and provides a course-grounded tutor inside the learning workspace.
 
-[简体中文](README.md) · [See the product](#see-the-product-first) · [Quick start](#quick-start) · [Product model](docs/PRODUCT.md) · [Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md)
+[简体中文](README.zh-CN.md) · [See the product](#see-the-product-first) · [Quick start](#quick-start) · [Product model](docs/PRODUCT.md) · [Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md)
 
 [![CI](https://github.com/Sebastianhayashi/kimi-study-app/actions/workflows/ci.yml/badge.svg)](https://github.com/Sebastianhayashi/kimi-study-app/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933?logo=nodedotjs&logoColor=white)](package.json)

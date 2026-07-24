@@ -6,7 +6,7 @@
 
 上传 PDF、EPUB、Markdown 或文本，Kimi Code 在本地工作区中理解材料、生成互动课节，并在课程页提供绑定当前内容的学习助教。
 
-[English](README.en.md) · [30 秒看产品](#30-秒看产品) · [快速启动](#快速启动) · [产品原理](docs/PRODUCT.md) · [架构](docs/ARCHITECTURE.md) · [路线图](docs/ROADMAP.md)
+[English](README.md) · [30 秒看产品](#30-秒看产品) · [快速启动](#快速启动) · [产品原理](docs/PRODUCT.md) · [架构](docs/ARCHITECTURE.md) · [路线图](docs/ROADMAP.md)
 
 [![CI](https://github.com/Sebastianhayashi/kimi-study-app/actions/workflows/ci.yml/badge.svg)](https://github.com/Sebastianhayashi/kimi-study-app/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933?logo=nodedotjs&logoColor=white)](package.json)
