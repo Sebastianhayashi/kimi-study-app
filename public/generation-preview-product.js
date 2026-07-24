@@ -617,6 +617,7 @@
       if (activeRunId) terminalRuns.add(activeRunId);
       stopAmbient();
       show();
+      updateProgress(status.progress);
       message.textContent = terminalMessage;
       setActivity('后端任务', terminalMessage);
       setPhaseEvidence(activePhase, 'error', terminalMessage, '后端状态');

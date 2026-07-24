@@ -1,0 +1,81 @@
+name: Bug report
+description: Report a reproducible product, browser, generation, or data issue
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a problem. Remove private books, learner data, credentials, and Kimi session information before attaching evidence.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Landing page or course library
+        - Upload and onboarding
+        - Course generation or progress
+        - Lesson rendering or source viewer
+        - Tutor or contextual actions
+        - Notes, activities, or assessment
+        - Mobile or responsive layout
+        - Server, file system, or security
+        - Tests or documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Problem
+      description: What did the learner or maintainer observe?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Start with ...
+        2. Open ...
+        3. Click ...
+        4. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: Commit or version
+      placeholder: git rev-parse HEAD
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: macOS 15 / Node 22 / Chromium 144
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized evidence
+      description: Add screenshots, trace names, console excerpts, or failing test names. Do not upload copyrighted source materials or secrets.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: I removed credentials, private learner data, and copyrighted source files.
+          required: true
+        - label: I searched existing issues and known issues.
+          required: true
