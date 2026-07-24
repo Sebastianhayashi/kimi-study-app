@@ -55,6 +55,9 @@ test('明确阶段优先于过期 canvasVariant，生成状态在课程外壳中
   await expect(page.locator('#nextLessonButton')).toBeHidden();
   await expect(page.locator('#left-overview .record-list')).toContainText('正在创建课程');
   await expect(page.locator('#left-overview .record-list')).not.toContainText('正在学习 Lesson 1');
+  await expect(page.locator('.compact-progress .progress-track')).toBeHidden();
+  await expect(page.locator('#left-overview .side-section').first().locator('.progress-track')).toBeHidden();
+  await expect(page.locator('[role="progressbar"]:visible')).toHaveCount(1);
 });
 
 test('单元总数超过画布容量时明确说明剩余数量', async ({ page }) => {
@@ -128,6 +131,22 @@ test('完成状态把所有生成进度统一为 100%，隐藏下一课并使用
   await expect(page.locator('#left-overview .side-section').first().locator('.progress-value')).toHaveText(/^(已完成|100%)$/);
   await expect(page.locator('.compact-progress > span')).toHaveText(/^(已完成|100%)$/);
   await expect(page.locator('.current-lesson')).toHaveText('课程已准备好');
+  await expect(page.locator('#nextLessonButton')).toBeHidden();
+});
+
+test('失败终态停止外围运行文案，并只保留一个主进度面', async ({ page }) => {
+  await page.goto('/course/failedcourse');
+
+  await expect(page.locator('.ks-generation-preview')).toHaveClass(/is-error/);
+  await expect(page.locator('.current-lesson')).toHaveText('课程创建未完成');
+  await expect(page.locator('#left-overview .side-section').first().locator('.side-title')).toHaveText('课程创建未完成');
+  await expect(page.locator('#left-overview .side-section').first().locator('.side-note')).toHaveText('已停止');
+  await expect(page.locator('.context-bar')).toHaveText('当前上下文：课程创建未完成');
+  await expect(page.locator('#left-overview .record-list')).toContainText('课程创建未完成');
+  await expect(page.locator('#left-overview .record-list')).not.toContainText('正在创建课程');
+  await expect(page.locator('.compact-progress .progress-track')).toBeHidden();
+  await expect(page.locator('#left-overview .side-section').first().locator('.progress-track')).toBeHidden();
+  await expect(page.locator('[role="progressbar"]:visible')).toHaveCount(1);
   await expect(page.locator('#nextLessonButton')).toBeHidden();
 });
 

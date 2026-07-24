@@ -384,12 +384,14 @@
     const nextButtonHtml = nextButton?.innerHTML || '下一课';
     const currentLessonLabel = document.querySelector('.current-lesson');
     const compactProgressBar = document.querySelector('.compact-progress .progress-track span');
+    const compactProgressTrack = compactProgressBar?.parentElement;
     const compactProgressText = document.querySelector('.compact-progress > span');
     const lessonResourceSlot = document.getElementById('lessonResourceSlot');
     const overviewProgressSection = document.querySelector('#left-overview .side-section');
     const overviewProgressTitle = overviewProgressSection?.querySelector('.side-title');
     const overviewProgressNote = overviewProgressSection?.querySelector('.side-note');
     const overviewProgressBar = overviewProgressSection?.querySelector('.progress-track span');
+    const overviewProgressTrack = overviewProgressBar?.parentElement;
     const overviewProgressValue = overviewProgressSection?.querySelector('.progress-value');
     const overviewRecordList = document.querySelector('#left-overview .record-list');
     const contextBar = document.querySelector('.context-bar');
@@ -430,11 +432,15 @@
       if (overviewProgressTitle) overviewProgressTitle.textContent = '课程创建进度';
       if (overviewProgressNote) overviewProgressNote.textContent = complete ? '已完成' : elapsed;
       if (overviewProgressValue) overviewProgressValue.textContent = evidence.label;
+      // The central generation preview owns the only workflow-primary progress bar.
+      // Sidebar and header surfaces remain textual summaries instead of duplicating the same measure.
+      if (overviewProgressTrack) overviewProgressTrack.hidden = true;
       if (overviewProgressBar) {
         overviewProgressBar.style.width = progressWidth;
         overviewProgressBar.parentElement?.classList.toggle('is-indeterminate', !evidence.determinate);
       }
       if (compactProgressText) compactProgressText.textContent = complete ? '已完成' : `${evidence.label} · ${shortElapsed}`;
+      if (compactProgressTrack) compactProgressTrack.hidden = true;
       if (compactProgressBar) {
         compactProgressBar.style.width = progressWidth;
         compactProgressBar.parentElement?.classList.toggle('is-indeterminate', !evidence.determinate);
@@ -468,8 +474,38 @@
       }
     }
 
+    function setGenerationFailureChrome(status = {}) {
+      const evidence = generationEvidence(status);
+      const terminalMessage = status.currentMessage || status.error || '课程创建没有完成，请返回课程库后重试';
+      const stoppedLabel = evidence.label ? `已停止 · ${evidence.label}` : '已停止';
+
+      if (overviewProgressTitle) overviewProgressTitle.textContent = '课程创建未完成';
+      if (overviewProgressNote) overviewProgressNote.textContent = '已停止';
+      if (overviewProgressValue) overviewProgressValue.textContent = stoppedLabel;
+      if (overviewProgressTrack) overviewProgressTrack.hidden = true;
+      if (compactProgressText) compactProgressText.textContent = `创建未完成 · ${evidence.label || '已停止'}`;
+      if (compactProgressTrack) compactProgressTrack.hidden = true;
+      if (currentLessonLabel) currentLessonLabel.textContent = '课程创建未完成';
+      if (contextBar) contextBar.textContent = '当前上下文：课程创建未完成';
+      if (lessonResourceSlot) lessonResourceSlot.style.visibility = 'hidden';
+      if (overviewRecordList) {
+        overviewRecordList.innerHTML =
+          '<article class="record complete"><span class="record-icon">✓</span><div><div class="record-title">材料已经上传</div><div class="record-meta">材料已保留，可以返回课程库后重新创建</div></div></article>' +
+          `<article class="record is-error"><span class="record-icon">!</span><div><div class="record-title">课程创建未完成</div><div class="record-meta">${escapeHtml(terminalMessage)}</div></div></article>`;
+      }
+      if (nextButton) {
+        nextButton.hidden = true;
+        nextButton.disabled = true;
+        nextButton.classList.remove('is-busy');
+        nextButton.setAttribute('aria-label', '课程创建未完成');
+        nextButton.title = '课程创建未完成';
+      }
+    }
+
     function restoreLearningChrome() {
       if (overviewProgressTitle) overviewProgressTitle.textContent = '课程进度';
+      if (overviewProgressTrack) overviewProgressTrack.hidden = false;
+      if (compactProgressTrack) compactProgressTrack.hidden = false;
       renderLearningRecords();
       if (lessonResourceSlot) lessonResourceSlot.style.removeProperty('visibility');
       if (nextButton) {
@@ -530,7 +566,7 @@
         .then((r) => r.json())
         .then((status) => {
           if (status.stage === 'failed') {
-            setGenerationChrome(status);
+            setGenerationFailureChrome(status);
             generationPreview.fail(status);
             return;
           }
@@ -780,7 +816,7 @@
             .then((s) => {
               if (s.stage === 'failed') {
                 window.clearInterval(timer);
-                setGenerationChrome(s);
+                setGenerationFailureChrome(s);
                 generationPreview.fail(s);
                 return;
               }
