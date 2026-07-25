@@ -137,7 +137,7 @@ test('真实上传进度、Mission 卡片过渡、学习设置与 ready 交接�
     });
   });
 
-  await page.route('**/api/courses/firstrunfixture/status', async (route) => {
+  await page.route('**/api/courses/firstrunfixture/{status,operation}', async (route) => {
     const ready = state === 'ready';
     await route.fulfill({
       status: 200,
@@ -390,7 +390,7 @@ test('高频 SSE 事件不会创建并行的 First-run 状态轮询链', async (
       }),
     });
   });
-  await page.route('**/api/courses/firstrunfixture/status', async (route) => {
+  await page.route('**/api/courses/firstrunfixture/{status,operation}', async (route) => {
     statusCalls += 1;
     statusActive += 1;
     statusMaxActive = Math.max(statusMaxActive, statusActive);
@@ -482,7 +482,7 @@ test('重试生成再次失败后重试按钮恢复为可操作状态', async ({
     });
   });
 
-  await page.route('**/api/courses/firstrunfixture/status', async (route) => {
+  await page.route('**/api/courses/firstrunfixture/{status,operation}', async (route) => {
     statusCalls += 1;
     if (statusCalls >= 2) state = 'failed';
     const failed = state === 'failed';

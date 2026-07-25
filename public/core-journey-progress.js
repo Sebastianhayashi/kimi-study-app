@@ -16,40 +16,25 @@
   }
 
   function deriveEvidenceProgress(status = {}) {
-    const history = normalizedHistory(status);
-    const terminal = status.stage === 'ready' && Number(status.lessons || 0) > 0;
-    if (terminal) {
-      return {
-        determinate: true,
-        value: 100,
-        completed: history.length || 1,
-        total: history.length || 1,
-        current: history.length || 1,
-        label: '全部阶段已完成',
-      };
-    }
-    if (!history.length) {
+    const value = Number(status.progress);
+    if (!Number.isFinite(value)) {
       return {
         determinate: false,
         value: 0,
         completed: 0,
         total: 0,
         current: 0,
-        label: '正在等待后端阶段事件',
+        label: '正在等待 canonical operation 投影',
       };
     }
-    const completed = history.filter((item) => item.state === 'complete').length;
-    const activeIndex = history.findIndex((item) => item.state === 'active' || item.state === 'error');
-    const firstPending = history.findIndex((item) => item.state === 'pending');
-    const currentIndex = activeIndex >= 0 ? activeIndex : firstPending >= 0 ? firstPending : history.length - 1;
-    const value = Math.max(0, Math.min(100, Math.round((completed / history.length) * 100)));
+    const normalized = Math.max(0, Math.min(100, Math.round(value)));
     return {
       determinate: true,
-      value,
-      completed,
-      total: history.length,
-      current: currentIndex + 1,
-      label: `阶段 ${Math.min(currentIndex + 1, history.length)} / ${history.length}`,
+      value: normalized,
+      completed: null,
+      total: null,
+      current: null,
+      label: status.state === 'ready' || status.stage === 'ready' ? '已完成' : `${normalized}%`,
     };
   }
 

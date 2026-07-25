@@ -6,6 +6,7 @@ const { deriveEvidenceProgress, formatElapsed } = require('../public/core-journe
 test('derives progress only from backend-confirmed stages', () => {
   const result = deriveEvidenceProgress({
     stage: 'generating',
+    progress: 37,
     history: [
       { id: 'context', label: '读取学习记录', state: 'complete' },
       { id: 'lesson', label: '写入下一课页面', state: 'active' },
@@ -14,8 +15,8 @@ test('derives progress only from backend-confirmed stages', () => {
     ],
   });
   assert.equal(result.determinate, true);
-  assert.equal(result.value, 25);
-  assert.equal(result.label, '阶段 2 / 4');
+  assert.equal(result.value, 37);
+  assert.equal(result.label, '37%');
 });
 
 test('uses indeterminate progress before any backend stage is known', () => {

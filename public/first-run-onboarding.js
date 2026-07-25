@@ -489,6 +489,15 @@
     return data;
   }
 
+  async function requestOperation(courseId) {
+    try {
+      return await requestJson(`/api/courses/${encodeURIComponent(courseId)}/operation`);
+    } catch (error) {
+      if (error.status !== 404) throw error;
+      return requestJson(`/api/courses/${encodeURIComponent(courseId)}/status`);
+    }
+  }
+
   async function submitMissionAndStart() {
     if (!courseId) return;
     missionNext.disabled = true;
@@ -626,7 +635,7 @@
     try {
       const [snapshot, status] = await Promise.all([
         requestJson(`/api/courses/${encodeURIComponent(courseId)}/onboarding`),
-        requestJson(`/api/courses/${encodeURIComponent(courseId)}/status`),
+        requestOperation(courseId),
       ]);
       if (!monitoring) return;
       const state = snapshot.onboarding?.state;

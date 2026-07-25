@@ -30,7 +30,7 @@ async function createStatusController(page, courseId, initialStatus) {
   const queue = [];
   let calls = 0;
 
-  await page.route(`**/api/courses/${courseId}/status`, async (route) => {
+  const handleStatus = async (route) => {
     calls += 1;
     const next = queue.length ? queue.shift() : current;
     if (next?.abort) {
@@ -43,7 +43,9 @@ async function createStatusController(page, courseId, initialStatus) {
       contentType: 'application/json; charset=utf-8',
       body: JSON.stringify(response.body),
     });
-  });
+  };
+  await page.route(`**/api/courses/${courseId}/status`, handleStatus);
+  await page.route(`**/api/courses/${courseId}/operation`, handleStatus);
 
   return {
     set(status) {

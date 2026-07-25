@@ -3,6 +3,15 @@
 (() => {
   const path = location.pathname;
 
+  async function fetchCourseOperation(courseId) {
+    const operationResponse = await fetch(`/api/courses/${encodeURIComponent(courseId)}/operation`);
+    if (operationResponse.ok) return operationResponse.json();
+    if (operationResponse.status !== 404) throw new Error(`Operation request failed: ${operationResponse.status}`);
+    const legacyResponse = await fetch(`/api/courses/${encodeURIComponent(courseId)}/status`);
+    if (!legacyResponse.ok) throw new Error(`Status request failed: ${legacyResponse.status}`);
+    return legacyResponse.json();
+  }
+
   // ---------- 落地页：按钮进入书架 ----------
   if (path === '/') {
     document.addEventListener('click', (e) => {
@@ -69,8 +78,7 @@
     };
 
     function poll() {
-      fetch(`/api/courses/${courseId}/status`)
-        .then((r) => r.json())
+      fetchCourseOperation(courseId)
         .then((s) => {
           if (s.stage === 'ready' && s.lessons > 0) {
             setStep(progressUnderstand, 'done', '✓');
@@ -414,6 +422,7 @@
         show: (...args) => preview.show?.(...args),
         update(status) { return preview.update?.(decorate(status)); },
         appendEvent(event) {
+          if (window.LucubroBackgroundOperation) return null;
           if (event?.kind === 'run-start' && !startedAt) {
             startedAt = new Date().toISOString();
             startElapsed();
@@ -457,6 +466,7 @@
     const overviewRecordList = document.querySelector('#left-overview .record-list');
     const contextBar = document.querySelector('.context-bar');
     const titleOf = (f) => f.replace(/^\d+-?/, '').replace(/\.html$/, '');
+    const isBackgroundNextLesson = (status = {}) => status.kind === 'next-lesson' && Number(status.lessons || lessons.length) > 0;
 
     const generationEvidence = (status, complete = false) => {
       if (complete) return { determinate: true, value: 100, label: '已完成' };
@@ -489,8 +499,10 @@
       const elapsed = generationElapsed(status);
       const shortElapsed = elapsed.replace('已用时 ', '');
       const initialGeneration = Number(status?.lessons || 0) === 0;
+      const backgroundNextLesson = isBackgroundNextLesson(status);
+      window.LucubroBackgroundOperation = backgroundNextLesson;
 
-      if (overviewProgressTitle) overviewProgressTitle.textContent = '课程创建进度';
+      if (overviewProgressTitle) overviewProgressTitle.textContent = backgroundNextLesson ? '下一课生成进度' : '课程创建进度';
       if (overviewProgressNote) overviewProgressNote.textContent = complete ? '已完成' : elapsed;
       if (overviewProgressValue) overviewProgressValue.textContent = evidence.label;
       // The central generation preview owns the only workflow-primary progress bar.
@@ -501,7 +513,13 @@
         overviewProgressBar.parentElement?.classList.toggle('is-indeterminate', !evidence.determinate);
       }
       if (compactProgressText) compactProgressText.textContent = complete ? '已完成' : `${evidence.label} · ${shortElapsed}`;
-      if (compactProgressTrack) compactProgressTrack.hidden = true;
+      if (compactProgressTrack) {
+        compactProgressTrack.hidden = !backgroundNextLesson;
+        compactProgressTrack.setAttribute('aria-label', backgroundNextLesson ? '下一课生成进度' : '课程进度');
+        compactProgressTrack.setAttribute('aria-valuetext', complete ? '已完成' : `${evidence.label}，${elapsed}`);
+        if (evidence.determinate) compactProgressTrack.setAttribute('aria-valuenow', String(evidence.value));
+        else compactProgressTrack.removeAttribute('aria-valuenow');
+      }
       if (compactProgressBar) {
         compactProgressBar.style.width = progressWidth;
         compactProgressBar.parentElement?.classList.toggle('is-indeterminate', !evidence.determinate);
@@ -511,17 +529,21 @@
           ? '课程已准备好'
           : `${initialGeneration ? '第一课正在生成' : '正在生成下一课'} · ${shortElapsed}`;
       }
-      if (lessonResourceSlot) lessonResourceSlot.style.visibility = 'hidden';
+      if (lessonResourceSlot) lessonResourceSlot.style.visibility = backgroundNextLesson ? '' : 'hidden';
       if (overviewRecordList) {
-        const recordState = complete ? 'complete' : '';
-        const recordIcon = complete ? '✓' : '…';
-        const recordTitle = complete ? '课程已准备好' : '正在创建课程';
-        const recordMeta = complete
-          ? '课节文件已经通过后端检查'
-          : `${escapeHtml(status?.currentMessage || '正在等待新的生成进度')} · ${escapeHtml(elapsed)}`;
-        overviewRecordList.innerHTML =
-          '<article class="record complete"><span class="record-icon">✓</span><div><div class="record-title">材料已经上传</div><div class="record-meta">正在根据材料建立课程</div></div></article>' +
-          `<article class="record ${recordState}"><span class="record-icon">${recordIcon}</span><div><div class="record-title">${recordTitle}</div><div class="record-meta">${recordMeta}</div></div></article>`;
+        if (backgroundNextLesson) {
+          renderLearningRecords();
+        } else {
+          const recordState = complete ? 'complete' : '';
+          const recordIcon = complete ? '✓' : '…';
+          const recordTitle = complete ? '课程已准备好' : '正在创建课程';
+          const recordMeta = complete
+            ? '课节文件已经通过后端检查'
+            : `${escapeHtml(status?.currentMessage || '正在等待新的生成进度')} · ${escapeHtml(elapsed)}`;
+          overviewRecordList.innerHTML =
+            '<article class="record complete"><span class="record-icon">✓</span><div><div class="record-title">材料已经上传</div><div class="record-meta">正在根据材料建立课程</div></div></article>' +
+            `<article class="record ${recordState}"><span class="record-icon">${recordIcon}</span><div><div class="record-title">${recordTitle}</div><div class="record-meta">${recordMeta}</div></div></article>`;
+        }
       }
       if (nextButton) {
         nextButton.disabled = true;
@@ -539,34 +561,47 @@
       const evidence = generationEvidence(status);
       const terminalMessage = status.currentMessage || status.error || '课程创建没有完成，请返回课程库后重试';
       const stoppedLabel = evidence.label ? `已停止 · ${evidence.label}` : '已停止';
+      const backgroundNextLesson = isBackgroundNextLesson(status);
+      window.LucubroBackgroundOperation = backgroundNextLesson;
 
-      if (overviewProgressTitle) overviewProgressTitle.textContent = '课程创建未完成';
+      if (overviewProgressTitle) overviewProgressTitle.textContent = backgroundNextLesson ? '下一课生成未完成' : '课程创建未完成';
       if (overviewProgressNote) overviewProgressNote.textContent = '已停止';
       if (overviewProgressValue) overviewProgressValue.textContent = stoppedLabel;
       if (overviewProgressTrack) overviewProgressTrack.hidden = true;
       if (compactProgressText) compactProgressText.textContent = `创建未完成 · ${evidence.label || '已停止'}`;
-      if (compactProgressTrack) compactProgressTrack.hidden = true;
-      if (currentLessonLabel) currentLessonLabel.textContent = '课程创建未完成';
-      if (contextBar) contextBar.textContent = '当前上下文：课程创建未完成';
-      if (lessonResourceSlot) lessonResourceSlot.style.visibility = 'hidden';
+      if (compactProgressTrack) {
+        compactProgressTrack.hidden = !backgroundNextLesson;
+        compactProgressTrack.setAttribute('aria-label', backgroundNextLesson ? '下一课生成进度已停止' : '课程创建进度已停止');
+        compactProgressTrack.setAttribute('aria-valuetext', stoppedLabel);
+        if (evidence.determinate) compactProgressTrack.setAttribute('aria-valuenow', String(evidence.value));
+        else compactProgressTrack.removeAttribute('aria-valuenow');
+      }
+      if (currentLessonLabel) currentLessonLabel.textContent = backgroundNextLesson && lessons[current] ? `Lesson ${current + 1} · ${titleOf(lessons[current])}` : '课程创建未完成';
+      if (contextBar && !backgroundNextLesson) contextBar.textContent = '当前上下文：课程创建未完成';
+      if (lessonResourceSlot) lessonResourceSlot.style.visibility = backgroundNextLesson ? '' : 'hidden';
       if (overviewRecordList) {
         overviewRecordList.innerHTML =
           '<article class="record complete"><span class="record-icon">✓</span><div><div class="record-title">材料已经上传</div><div class="record-meta">材料已保留，可以返回课程库后重新创建</div></div></article>' +
           `<article class="record is-error"><span class="record-icon">!</span><div><div class="record-title">课程创建未完成</div><div class="record-meta">${escapeHtml(terminalMessage)}</div></div></article>`;
       }
       if (nextButton) {
-        nextButton.hidden = true;
-        nextButton.disabled = true;
+        nextButton.hidden = !backgroundNextLesson;
+        nextButton.disabled = !backgroundNextLesson;
         nextButton.classList.remove('is-busy');
-        nextButton.setAttribute('aria-label', '课程创建未完成');
-        nextButton.title = '课程创建未完成';
+        nextButton.setAttribute('aria-label', backgroundNextLesson ? '重试生成下一课' : '课程创建未完成');
+        nextButton.title = backgroundNextLesson ? '重试生成下一课' : '课程创建未完成';
+        if (backgroundNextLesson) nextButton.innerHTML = '<span class="next-lesson-label">重试下一课</span>';
       }
     }
 
     function restoreLearningChrome() {
+      window.LucubroBackgroundOperation = false;
       if (overviewProgressTitle) overviewProgressTitle.textContent = '课程进度';
       if (overviewProgressTrack) overviewProgressTrack.hidden = false;
-      if (compactProgressTrack) compactProgressTrack.hidden = false;
+      if (compactProgressTrack) {
+        compactProgressTrack.hidden = false;
+        compactProgressTrack.setAttribute('aria-label', '课程进度');
+      }
       renderLearningRecords();
       if (lessonResourceSlot) lessonResourceSlot.style.removeProperty('visibility');
       if (nextButton) {
@@ -623,12 +658,18 @@
     }
 
     function pollCourseGeneration() {
-      fetch(`/api/courses/${courseId}/status`)
-        .then((r) => r.json())
+      fetchCourseOperation(courseId)
         .then((status) => {
           if (status.stage === 'failed') {
-            setGenerationFailureChrome(status);
-            generationPreview.fail(status);
+            if (isBackgroundNextLesson(status)) {
+              generationPreview.hide({ immediate: true });
+              loadLessons()
+                .catch(() => {})
+                .finally(() => setGenerationFailureChrome(status));
+            } else {
+              setGenerationFailureChrome(status);
+              generationPreview.fail(status);
+            }
             return;
           }
           if (status.stage === 'ready' && status.lessons > 0) {
@@ -636,9 +677,18 @@
               if (generationFinishing) return;
               generationFinishing = true;
               setGenerationChrome(status, { complete: true });
-              Promise.resolve(generationPreview.complete(status))
-                .catch(() => {})
-                .finally(() => location.reload());
+              if (isBackgroundNextLesson(status)) {
+                generationPreview.hide({ immediate: true });
+                loadLessons().then(() => {
+                  generationWasActive = false;
+                  generationFinishing = false;
+                  restoreLearningChrome();
+                });
+              } else {
+                Promise.resolve(generationPreview.complete(status))
+                  .catch(() => {})
+                  .finally(() => location.reload());
+              }
               return;
             }
             generationPreview.hide({ immediate: true });
@@ -648,14 +698,22 @@
           }
           generationWasActive = true;
           generationFinishing = false;
-          setGenerationChrome(status);
-          generationPreview.update(status);
+          if (isBackgroundNextLesson(status)) {
+            generationPreview.hide({ immediate: true });
+            const renderBackgroundOperation = () => setGenerationChrome(status);
+            if (!lessons.length) loadLessons().catch(() => {}).finally(renderBackgroundOperation);
+            else renderBackgroundOperation();
+          } else {
+            setGenerationChrome(status);
+            generationPreview.update(status);
+          }
           scheduleGenerationPoll();
         })
         .catch(() => {
           generationWasActive = true;
           const reconnecting = {
             stage: 'generating',
+            kind: lessons.length ? 'next-lesson' : 'first-course',
             progress: 0,
             phase: 'extracting',
             lessons: lessons.length,
@@ -664,7 +722,8 @@
             history: [],
           };
           setGenerationChrome(reconnecting);
-          generationPreview.update(reconnecting);
+          if (isBackgroundNextLesson(reconnecting)) generationPreview.hide({ immediate: true });
+          else generationPreview.update(reconnecting);
           scheduleGenerationPoll();
         });
     }
@@ -850,6 +909,8 @@
       generationStartedAt = new Date().toISOString();
       const startingStatus = {
         stage: 'generating',
+        state: 'running',
+        kind: 'next-lesson',
         startedAt: generationStartedAt,
         progress: 0,
         phase: 'extracting',
@@ -859,7 +920,7 @@
         history: [],
       };
       setGenerationChrome(startingStatus);
-      generationPreview.update(startingStatus);
+      generationPreview.hide({ immediate: true });
       showToast('Kimi 正在准备下一课，通常需要几分钟…');
       fetch(`/api/courses/${courseId}/lessons/next`, { method: 'POST' }).then(async (r) => {
         if (r.status === 409) {
@@ -872,23 +933,27 @@
           throw new Error(data.error || `HTTP ${r.status}`);
         }
         const timer = window.setInterval(() => {
-          fetch(`/api/courses/${courseId}/status`)
-            .then((r) => r.json())
+          fetchCourseOperation(courseId)
             .then((s) => {
               if (s.stage === 'failed') {
                 window.clearInterval(timer);
                 setGenerationFailureChrome(s);
-                generationPreview.fail(s);
+                if (isBackgroundNextLesson(s)) generationPreview.hide({ immediate: true });
+                else generationPreview.fail(s);
                 return;
               }
               if (s.stage !== 'ready' || s.busy) {
                 setGenerationChrome(s);
-                generationPreview.update(s);
+                if (isBackgroundNextLesson(s)) generationPreview.hide({ immediate: true });
+                else generationPreview.update(s);
                 return;
               }
               window.clearInterval(timer);
               setGenerationChrome(s, { complete: true });
-              Promise.resolve(generationPreview.complete(s)).finally(() => {
+              const completion = isBackgroundNextLesson(s)
+                ? (generationPreview.hide({ immediate: true }), Promise.resolve())
+                : Promise.resolve(generationPreview.complete(s));
+              completion.finally(() => {
                 loadLessons().then(() => {
                   generationWasActive = false;
                   generationFinishing = false;

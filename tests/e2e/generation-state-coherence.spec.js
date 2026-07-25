@@ -15,7 +15,7 @@ async function prepareControlledStatus(page, initialStatus) {
     }
     window.EventSource = SilentEventSource;
   });
-  await page.route('**/api/courses/generatingcourse/status', (route) => route.fulfill({
+  await page.route('**/api/courses/generatingcourse/{status,operation}', (route) => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify(status),
@@ -50,8 +50,8 @@ test('明确阶段优先于过期 canvasVariant，生成状态在课程外壳中
 
   await expect(page.locator('.current-lesson')).toHaveText(/第一课正在生成 · \d{2}:\d{2}$/);
   await expect(page.locator('#left-overview .side-section').first().locator('.side-title')).toHaveText('课程创建进度');
-  await expect(page.locator('#left-overview .side-section').first().locator('.progress-value')).toHaveText('阶段 1 / 1');
-  await expect(page.locator('.compact-progress > span')).toHaveText(/阶段 1 \/ 1 · \d{2}:\d{2}$/);
+  await expect(page.locator('#left-overview .side-section').first().locator('.progress-value')).toHaveText('12%');
+  await expect(page.locator('.compact-progress > span')).toHaveText(/12% · \d{2}:\d{2}$/);
   await expect(page.locator('#nextLessonButton')).toBeHidden();
   await expect(page.locator('#left-overview .record-list')).toContainText('正在创建课程');
   await expect(page.locator('#left-overview .record-list')).not.toContainText('正在学习 Lesson 1');

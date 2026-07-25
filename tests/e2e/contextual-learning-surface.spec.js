@@ -16,6 +16,13 @@ async function waitForLessonFrame(page) {
   return frame;
 }
 
+test.beforeEach(async ({ request }) => {
+  const response = await request.put('/api/courses/readycourse/study-surface?lesson=0001-stabilization-fixture.html', {
+    data: { version: 1, cards: [], strokes: [] },
+  });
+  expect(response.ok()).toBe(true);
+});
+
 async function selectFirstText(page) {
   const frame = await waitForLessonFrame(page);
   await frame.evaluate(() => {

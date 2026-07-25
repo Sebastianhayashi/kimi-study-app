@@ -33,6 +33,12 @@ const {
 const { normalizeLessonSpecShape, validateLessonSpec, scoreActivity, computeClaimProgress, toPublicLessonSpec } = require('./lib/activity-engine');
 const { isPrivateCoursePath } = require('./lib/private-course-path');
 const { deriveGenerationStatus } = require('./lib/generation-status');
+const {
+  operationStateEnabled,
+  readOperation,
+  writeOperation,
+  projectOperation,
+} = require('./lib/operation-state');
 const { runTrackedKimi } = require('./lib/kimi-generation-runner');
 const { appendGenerationEvent, readGenerationEvents, subscribeGenerationEvents } = require('./lib/generation-events');
 const { listCourseSources } = require('./lib/source-manifest');
@@ -162,6 +168,9 @@ app.use(express.static(path.join(ROOT, 'public'))); // 前端外壳资源
 
 // ---- 课程工作区 ----
 const locks = new Set(); // 每门课同时只跑一个 kimi 进程
+const activeGenerationProcesses = new Map();
+const cancelledGenerationRuns = new Set();
+const operationStateOn = operationStateEnabled();
 const dirOf = (id) => path.join(DATA, id);
 const validId = (id) => /^[a-z0-9]+$/i.test(id);
 const emitGenerationEvent = (id, event) => {
@@ -182,6 +191,38 @@ const assessmentsOf = (id) => {
   const d = path.join(dirOf(id), 'assessments');
   return fs.existsSync(d) ? fs.readdirSync(d).filter((f) => f.endsWith('.json')).sort() : [];
 };
+
+const operationRuntime = (id) => ({
+  courseDir: dirOf(id),
+  lessons: lessonsOf(id).length,
+  assessments: assessmentsOf(id).length,
+  busy: locks.has(id),
+});
+
+function operationProjection(id) {
+  if (!operationStateOn) return null;
+  const snapshot = readOperation(dirOf(id));
+  return projectOperation(snapshot, operationRuntime(id));
+}
+
+function persistOperation(id, patch, options = {}) {
+  if (!operationStateOn) return null;
+  return writeOperation(dirOf(id), patch, options);
+}
+
+function trackedGenerationSpawn(id, runId) {
+  return (command, args, options) => {
+    const child = spawn(command, args, options);
+    activeGenerationProcesses.set(id, { runId, child });
+    const clear = () => {
+      const active = activeGenerationProcesses.get(id);
+      if (active && active.child === child) activeGenerationProcesses.delete(id);
+    };
+    child.once('close', clear);
+    child.once('error', clear);
+    return child;
+  };
+}
 
 function runPrintKimi(id, prompt, { cont = false, sessionId = null } = {}) {
   return new Promise((resolve, reject) => {
@@ -297,6 +338,7 @@ function runKimi(id, prompt, {
 
   const runId = crypto.randomUUID();
   const isNextLesson = kind === 'next-lesson';
+  const operationKind = isNextLesson ? 'next-lesson' : 'first-course';
   const stage = lessonsOf(id).length ? 'generating' : 'understanding';
   const startedAt = new Date().toISOString();
   const job = {
@@ -314,6 +356,16 @@ function runKimi(id, prompt, {
     if (isNextLesson) writeNextLessonTransaction(dirOf(id), baseline);
     locks.add(id);
     writeJob(id, job);
+    persistOperation(id, {
+      operationId: runId,
+      kind: operationKind,
+      state: 'running',
+      phase: job.phase || 'extracting',
+      progressEvidence: { lessons: lessonsOf(id).length },
+      startedAt,
+      currentMessageKey: `${operationKind}.${job.phase || 'extracting'}`,
+      retryable: false,
+    }, { now: new Date(startedAt) });
     emitGenerationEvent(id, {
       runId,
       kind: 'run-start',
@@ -334,6 +386,18 @@ function runKimi(id, prompt, {
     if (event.message) job.currentMessage = event.message;
     job.updatedAt = new Date().toISOString();
     writeJob(id, job);
+    persistOperation(id, {
+      operationId: runId,
+      kind: operationKind,
+      state: 'running',
+      phase: event.phase || job.phase || 'extracting',
+      progressEvidence: {
+        ...(event.metrics || {}),
+        lessons: lessonsOf(id).length,
+      },
+      currentMessageKey: `${operationKind}.${event.phase || job.phase || 'extracting'}`,
+      retryable: false,
+    }, { now: new Date(job.updatedAt) });
     emitGenerationEvent(id, { runId, ...event });
   };
 
@@ -346,6 +410,7 @@ function runKimi(id, prompt, {
     model: MODEL,
     skillsDir: SKILLS,
     onEvent: persistEvent,
+    spawnImpl: trackedGenerationSpawn(id, runId),
   }).then((result) => {
     const { text, status, mode } = result;
     if (status !== 'finished') throw new Error(`Kimi generation ended with status ${status}`);
@@ -365,6 +430,14 @@ function runKimi(id, prompt, {
       job.currentMessage = '正在检查新增课节、活动挂载和评分规格…';
       job.updatedAt = new Date().toISOString();
       writeJob(id, job);
+      persistOperation(id, {
+        operationId: runId,
+        kind: operationKind,
+        state: 'running',
+        phase: 'validating',
+        progressEvidence: { lessons: lessonsOf(id).length },
+        currentMessageKey: `${operationKind}.validating`,
+      }, { now: new Date(job.updatedAt) });
       emitGenerationEvent(id, {
         runId,
         kind: 'phase',
@@ -397,6 +470,17 @@ function runKimi(id, prompt, {
       updatedAt: finishedAt,
       finishedAt,
     });
+    persistOperation(id, {
+      operationId: runId,
+      kind: operationKind,
+      state: 'ready',
+      phase: 'complete',
+      progressEvidence: { lessons: lessonsOf(id).length },
+      publishedArtifact: lessonsOf(id).length || null,
+      currentMessageKey: `${operationKind}.ready`,
+      retryable: false,
+      finishedAt,
+    }, { now: new Date(finishedAt) });
     emitGenerationEvent(id, {
       runId,
       kind: 'run-complete',
@@ -409,29 +493,45 @@ function runKimi(id, prompt, {
     return { text, mode, sessionId: result.sessionId || sessionId || null, newLesson };
   }).catch((error) => {
     locks.delete(id);
+    const cancelled = cancelledGenerationRuns.delete(runId);
     const cleanup = isNextLesson ? cleanupNextLessonDelta(dirOf(id), baseline) : {
       removed: [],
       changedExisting: [],
     };
     if (isNextLesson) clearNextLessonTransaction(dirOf(id));
     const failedAt = new Date().toISOString();
+    const terminalMessage = cancelled
+      ? (isNextLesson ? '下一课生成已取消' : '课程生成已取消')
+      : (isNextLesson ? '下一课生成没有完成，请重试' : '课程生成没有完成，请重试');
     writeJob(id, {
       ...job,
       stage: 'failed',
+      cancelled,
       cleanupRemoved: cleanup.removed,
       repairRequired: cleanup.changedExisting.length > 0,
       changedExisting: cleanup.changedExisting,
-      currentMessage: isNextLesson ? '下一课生成没有完成，请重试' : '课程生成没有完成，请重试',
+      currentMessage: terminalMessage,
       updatedAt: failedAt,
       failedAt,
-      error: String(error.message || error).slice(-500),
+      error: cancelled ? 'generation cancelled' : String(error.message || error).slice(-500),
     });
+    persistOperation(id, {
+      operationId: runId,
+      kind: operationKind,
+      state: cancelled ? 'cancelled' : 'failed',
+      phase: job.phase || 'extracting',
+      progressEvidence: { lessons: lessonsOf(id).length },
+      publishedArtifact: lessonsOf(id).length || null,
+      currentMessageKey: `${operationKind}.${cancelled ? 'cancelled' : 'failed'}`,
+      retryable: true,
+      finishedAt: failedAt,
+    }, { now: new Date(failedAt) });
     emitGenerationEvent(id, {
       runId,
-      kind: 'run-failed',
+      kind: cancelled ? 'run-cancelled' : 'run-failed',
       key: `run:${runId}`,
       state: 'error',
-      message: isNextLesson ? '下一课生成没有完成，请重试' : '课程生成没有完成，请重试',
+      message: terminalMessage,
     });
     throw error;
   });
@@ -483,6 +583,17 @@ function reconcileStaleGeneration(id, now = Date.now()) {
       failedAt,
     };
   writeJob(id, failed);
+  persistOperation(id, {
+    operationId: failed.runId || `interrupted-${id}`,
+    kind: failed.kind === 'next-lesson' ? 'next-lesson' : 'first-course',
+    state: 'interrupted',
+    phase: failed.phase || 'extracting',
+    progressEvidence: { lessons: lessonsOf(id).length },
+    publishedArtifact: lessonsOf(id).length || null,
+    currentMessageKey: `${failed.kind === 'next-lesson' ? 'next-lesson' : 'first-course'}.interrupted`,
+    retryable: true,
+    finishedAt: failedAt,
+  }, { now: new Date(failedAt) });
   emitGenerationEvent(id, {
     runId: failed.runId || 'interrupted-run',
     kind: 'run-failed',
@@ -672,11 +783,13 @@ app.get('/api/courses', (req, res) => {
         try { onboarding = readOnboarding(dirOf(id), { optional: true }); } catch {}
       }
       const job = readJob(id);
+      const operation = operationStateOn ? operationProjection(id) : null;
       return {
         id, title, cover, archived,
         ext: (path.extname(book).slice(1) || 'TXT').toUpperCase(),
         lessons: lessonsOf(id).length,
-        stage: onboardingGenerationStage(onboarding, job.stage),
+        operation,
+        stage: operation?.stage || onboardingGenerationStage(onboarding, job.stage),
         onboardingState: onboarding && onboarding.state || null,
         onboardingErrorCode: onboarding
           ? onboarding.inspection.errorCode || onboarding.generation.errorCode || null
@@ -811,6 +924,60 @@ app.get('/api/courses/:id/status', (req, res) => {
     assessments,
     busy,
   });
+});
+
+app.get('/api/courses/:id/operation', (req, res) => {
+  const id = req.params.id;
+  if (!operationStateOn) return res.status(404).json({ error: 'operation state disabled' });
+  if (!validId(id) || !fs.existsSync(dirOf(id))) return res.status(404).end();
+  reconcileStaleGeneration(id);
+  const projection = operationProjection(id);
+  if (!projection) return res.status(404).json({ error: 'operation not found' });
+  return res.json(projection);
+});
+
+app.post('/api/courses/:id/operation/cancel', (req, res) => {
+  const id = req.params.id;
+  if (!operationStateOn) return res.status(404).json({ error: 'operation state disabled' });
+  if (!validId(id) || !fs.existsSync(dirOf(id))) return res.status(404).end();
+  const job = readJob(id);
+  const snapshot = readOperation(dirOf(id));
+  if (!snapshot || !['queued', 'running', 'interrupted'].includes(snapshot.state)) {
+    return res.status(409).json({ error: 'operation is not cancellable' });
+  }
+  const runId = job.runId || snapshot.operationId;
+  cancelledGenerationRuns.add(runId);
+  const active = activeGenerationProcesses.get(id);
+  if (active && active.runId === runId && !active.child.killed) active.child.kill('SIGTERM');
+  const cancelledAt = new Date().toISOString();
+  writeJob(id, {
+    ...job,
+    stage: 'failed',
+    cancelled: true,
+    currentMessage: snapshot.kind === 'next-lesson' ? '下一课生成已取消' : '课程生成已取消',
+    error: 'generation cancelled',
+    updatedAt: cancelledAt,
+    failedAt: cancelledAt,
+  });
+  persistOperation(id, {
+    operationId: snapshot.operationId,
+    kind: snapshot.kind,
+    state: 'cancelled',
+    phase: snapshot.phase,
+    progressEvidence: { lessons: lessonsOf(id).length },
+    publishedArtifact: lessonsOf(id).length || null,
+    currentMessageKey: `${snapshot.kind}.cancelled`,
+    retryable: true,
+    finishedAt: cancelledAt,
+  }, { now: new Date(cancelledAt) });
+  emitGenerationEvent(id, {
+    runId,
+    kind: 'run-cancelled',
+    key: `run:${runId}`,
+    state: 'error',
+    message: snapshot.kind === 'next-lesson' ? '下一课生成已取消' : '课程生成已取消',
+  });
+  return res.json(operationProjection(id));
 });
 
 // Kimi Wire 真实生成事件：SSE 实时推送；status 轮询继续负责百分比、ready/failed 和重启恢复。

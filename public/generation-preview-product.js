@@ -77,13 +77,7 @@
   }
 
   function phaseFromStatus(status = {}) {
-    if (PHASE_ORDER.includes(status.phase)) return status.phase;
-    const history = Array.isArray(status.history) ? status.history : [];
-    const active = history.find((item) => item?.state === 'active' || item?.state === 'error');
-    const completed = [...history].reverse().find((item) => item?.state === 'complete');
-    const historyPhase = STATUS_PHASES[active?.id] || STATUS_PHASES[completed?.id];
-    if (historyPhase) return historyPhase;
-    return VARIANT_TO_PHASE[status.canvasVariant] || null;
+    return PHASE_ORDER.includes(status.phase) ? status.phase : null;
   }
 
   function line(width, className = '') {

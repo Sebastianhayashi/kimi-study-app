@@ -90,8 +90,8 @@ test('首课生成从轮询和真实事件进入 ready，并且只重新加载�
   const preview = page.locator('.ks-generation-preview');
   const progress = preview.locator('.ks-generation-progress');
   await expect(preview).toBeVisible();
-  await expect(progress).toHaveAttribute('aria-valuenow', '0');
-  await expect(progress).toHaveClass(/is-indeterminate/);
+  await expect(progress).toHaveAttribute('aria-valuenow', '15');
+  await expect(progress).not.toHaveClass(/is-indeterminate/);
 
   await emitGenerationEvent(page, {
     id: 1,
@@ -103,8 +103,8 @@ test('首课生成从轮询和真实事件进入 ready，并且只重新加载�
     message: '已确定 4 个学习目标',
   });
   status.set(activeStatus({ progress: 53, currentMessage: '正在设计练习路线…', canvasVariant: 'practice' }));
-  await expect(progress).toHaveAttribute('aria-valuenow', '0');
-  await expect(progress).toHaveClass(/is-indeterminate/);
+  await expect(progress).toHaveAttribute('aria-valuenow', '53');
+  await expect(progress).not.toHaveClass(/is-indeterminate/);
 
   await emitGenerationEvent(page, {
     id: 2,
@@ -254,7 +254,7 @@ test('SSE 重连和事件重放不会重复生成过程记录', async ({ page })
 
 test('status 临时断线不会清空已经收到的真实生成事件', async ({ page, browserGuard }) => {
   await prepareGenerationPage(page);
-  browserGuard.allow(/requestfailed: GET .*\/api\/courses\/readycourse\/status/);
+  browserGuard.allow(/requestfailed: GET .*\/api\/courses\/readycourse\/operation/);
   browserGuard.allow(/console\.error: Failed to load resource/);
   const status = await createStatusController(page, 'readycourse', activeStatus({ progress: 40 }));
   status.enqueue({ abort: 'failed' });
@@ -274,8 +274,8 @@ test('status 临时断线不会清空已经收到的真实生成事件', async (
   });
   await preview.locator('.ks-generation-summary').click();
   await expect(preview.locator('.ks-generation-history')).toContainText('已确定 3 个学习目标');
-  await expect(preview.locator('.ks-generation-progress')).toHaveAttribute('aria-valuenow', '0');
-  await expect(preview.locator('.ks-generation-progress')).toHaveClass(/is-indeterminate/);
+  await expect(preview.locator('.ks-generation-progress')).toHaveAttribute('aria-valuenow', '40');
+  await expect(preview.locator('.ks-generation-progress')).not.toHaveClass(/is-indeterminate/);
   await expect.poll(() => status.calls()).toBeGreaterThanOrEqual(2);
 });
 
@@ -302,7 +302,9 @@ test('生成下一课完成后进入 Lesson 2，并恢复进度和下一课按�
     state: 'active',
     message: '正在生成下一课',
   });
-  await expect(page.locator('.ks-generation-preview')).toBeVisible();
+  await expect(page.locator('.ks-generation-preview')).toBeHidden();
+  await expect(page.locator('[role="progressbar"]:visible')).toHaveCount(1);
+  await expect(page.frameLocator('#lessonFrame').getByRole('heading', { name: '稳定化测试课节' })).toBeVisible();
   await expect(page.locator('#nextLessonButton')).toBeDisabled();
 
   writeSecondLesson('readycourse');
