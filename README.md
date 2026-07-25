@@ -27,7 +27,7 @@ Lucubro is not a document summarizer. It reorganizes source material into a **st
 - **Source access**: return to the original PDF, EPUB, Markdown, text, HTML, or image resources.
 - **Continuous learning**: lessons, notes, chat, activities, and next-lesson generation stay attached to one course workspace.
 
-![Lucubro demo](docs/images/kimi-study-demo.gif)
+![Lucubro demo](docs/images/lucubro-demo.gif)
 
 ## The 30-second workflow
 

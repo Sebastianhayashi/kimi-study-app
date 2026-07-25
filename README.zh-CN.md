@@ -27,7 +27,7 @@ Lucubro 不是“把书总结一下”。它试图把一份材料重新组织成
 - **来源可回看**：课程中可以返回 PDF、EPUB、Markdown、文本或 HTML 原始材料。
 - **学习可延续**：课节、笔记、聊天、活动与下一课生成都绑定到同一课程工作区。
 
-![Lucubro 演示](docs/images/kimi-study-demo.gif)
+![Lucubro 演示](docs/images/lucubro-demo.gif)
 
 ## 30 秒看产品
 
