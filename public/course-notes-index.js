@@ -37,7 +37,7 @@
   let refreshTimer = 0;
 
   const kindLabel = (kind) => ({
-    assistant: 'Tutor',
+    assistant: 'Lucubro',
     vocabulary: '词卡',
     curiosity: 'Curiosity',
     scratch: '草稿',
@@ -74,7 +74,7 @@
     if (!visible.length) {
       const empty = document.createElement('div');
       empty.className = 'ks-notes-empty';
-      empty.textContent = notes.length ? '没有符合当前搜索的笔记。' : '还没有笔记。划选课文后即可记笔记，Tutor 回答也可以保存到这里。';
+      empty.textContent = notes.length ? '没有符合当前搜索的笔记。' : '还没有笔记。划选课文后可以记笔记，Lucubro 的回答也可以保存到这里。';
       list.appendChild(empty);
       return;
     }
@@ -134,7 +134,7 @@
       list.textContent = '';
       const empty = document.createElement('div');
       empty.className = 'ks-notes-empty';
-      empty.textContent = '笔记暂时没有加载成功。课程和 Tutor 不受影响。';
+      empty.textContent = '笔记暂时没有加载成功。课程和 Lucubro 助手不受影响。';
       list.appendChild(empty);
     }
   }

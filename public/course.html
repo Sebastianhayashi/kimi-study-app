@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="description" content="Lucubro 课程学习工作区 v2" />
-<title>Play Anything · Lucubro</title>
+<title>课程 · Lucubro</title>
 <script src="/brand-compat.js"></script>
 <style>
 :root {
@@ -1611,7 +1611,7 @@ svg { display: block; }
         <button class="icon-button" id="backButton" aria-label="返回我的学习">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="m14.5 6-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <span class="brand-mark">L</span>
+        <img class="brand-mark" src="/assets/brand/lucubro-mark.svg" width="36" height="36" alt="">
         <div class="identity">
           <div class="course-name">Play Anything</div>
           <div class="course-meta">Ian Bogost · 7 节课 · 1 份材料</div>
@@ -1861,7 +1861,7 @@ svg { display: block; }
             <span class="next-lesson-label">下一课</span>
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>
           </button>
-          <button class="course-control restore-control restore-right" id="restoreAssistantButton" aria-label="恢复 Kimi 助手" title="恢复 Kimi 助手">
+          <button class="course-control restore-control restore-right" id="restoreAssistantButton" aria-label="恢复 Lucubro 助手" title="恢复 Lucubro 助手">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
               <path d="M5 5h14v14H5V5Z" stroke="currentColor" stroke-width="1.6"/>
               <path d="M15 5v14M11 9l3 3-3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1878,7 +1878,7 @@ svg { display: block; }
       class="resize-handle resize-handle-right"
       id="resizeRight"
       role="separator"
-      aria-label="调整 Kimi 助手宽度"
+      aria-label="调整 Lucubro 助手宽度"
       aria-orientation="vertical"
       tabindex="0"
     ></div>
@@ -1886,11 +1886,11 @@ svg { display: block; }
     <aside class="assistant-panel" id="assistantPanel">
       <div class="panel-header">
         <div>
-          <span class="panel-title">Kimi 助手</span>
+          <span class="panel-title">Lucubro 助手</span>
           <span class="assistant-status"><span class="status-dot"></span>基于当前课程</span>
         </div>
         <div class="panel-header-actions">
-          <button class="panel-control desktop-panel-control" id="collapseAssistantButton" aria-label="最小化 Kimi 助手" title="最小化 Kimi 助手">
+          <button class="panel-control desktop-panel-control" id="collapseAssistantButton" aria-label="最小化 Lucubro 助手" title="最小化 Lucubro 助手">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
               <path d="M5 5h14v14H5V5Z" stroke="currentColor" stroke-width="1.6"/>
               <path d="M15 5v14M10 9l3 3-3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1924,7 +1924,7 @@ svg { display: block; }
 
       <div class="composer">
         <div class="composer-shell">
-          <textarea id="assistantInput" placeholder="就当前课节向 Kimi 提问…"></textarea>
+          <textarea id="assistantInput" placeholder="就当前课节向 Lucubro 提问…"></textarea>
           <div class="composer-actions">
             <span class="grounding">优先引用当前课程和原材料</span>
             <button class="send-button" id="sendButton" aria-label="发送" disabled>
@@ -2022,7 +2022,7 @@ function syncMobileDrawerState() {
   document.body.classList.toggle('mobile-drawer-open', anyOpen);
   document.getElementById('coursePanel')?.toggleAttribute('inert', anyOpen);
   setMobileDrawerSemantics(leftPanel, leftOpen, '学习上下文');
-  setMobileDrawerSemantics(assistantPanel, assistantOpen, 'Kimi 助手');
+  setMobileDrawerSemantics(assistantPanel, assistantOpen, 'Lucubro 助手');
   ['mobileContextButton', 'courseContextButton'].forEach(id => {
     document.getElementById(id)?.setAttribute('aria-expanded', String(leftOpen));
   });

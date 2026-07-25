@@ -44,7 +44,7 @@ async function selectFirstText(page) {
 test('selection actions stay contextual, center scratch opens, and Tutor remains intact', async ({ page }) => {
   await page.goto('/course/readycourse');
   await expect(page.locator('#assistantPanel')).toBeVisible();
-  await expect(page.locator('#assistantPanel .panel-title')).toContainText('Kimi');
+  await expect(page.locator('#assistantPanel .panel-title')).toContainText('Lucubro');
 
   await selectFirstText(page);
 
@@ -129,7 +129,7 @@ test('cross-lesson notes index is in the left rail, never in the Tutor panel', a
   await expect(notesTab).toBeVisible();
   await notesTab.click();
   await expect(page.locator('#left-notes')).toBeVisible();
-  await expect(page.locator('#assistantPanel .panel-title')).toContainText('Kimi');
+  await expect(page.locator('#assistantPanel .panel-title')).toContainText('Lucubro');
   await expect(page.locator('#assistantPanel #chatThread')).toBeVisible();
 });
 
@@ -194,14 +194,14 @@ test('debounced scratch saves remain bound to the lesson where they were created
     await page.goto('/course/readycourse');
     await waitForLessonFrame(page);
     const lessonA = await currentLessonFile(page);
-    const lessonB = await switchToLesson(page, 'contextual-save-race');
+    const lessonB = await switchToLesson(page, 1);
 
     await addSelectionToScratch(page);
     await expect.poll(() => stored.get(lessonB)?.cards?.length || 0).toBe(1);
 
     await switchToLesson(page, 0);
     await addSelectionToScratch(page);
-    await switchToLesson(page, 'contextual-save-race');
+    await switchToLesson(page, 1);
 
     await expect.poll(() => stored.get(lessonA)?.cards?.length || 0).toBe(1);
     await page.waitForTimeout(400);

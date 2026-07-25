@@ -317,6 +317,63 @@ body {
   border-radius: var(--ds-radius-card);
 }
 
+.overlay {
+  display: flex !important;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--ds-motion-out) var(--ds-ease-in),
+    visibility 0s linear var(--ds-motion-out);
+}
+
+.overlay.open {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transition:
+    opacity var(--ds-motion-in) var(--ds-ease-out),
+    visibility 0s;
+}
+
+.overlay .dialog {
+  opacity: 0;
+  transform: translateY(8px) scale(.985);
+  transition:
+    opacity var(--ds-motion-out) var(--ds-ease-in),
+    transform var(--ds-motion-out) var(--ds-ease-in);
+}
+
+.overlay.open .dialog {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--ds-motion-in) var(--ds-ease-out),
+    transform var(--ds-motion-in) var(--ds-ease-out);
+}
+
+.toast {
+  display: block !important;
+  visibility: hidden;
+  opacity: 0;
+  transform: translate(-50%, 8px);
+  pointer-events: none;
+  transition:
+    opacity var(--ds-motion-out) var(--ds-ease-in),
+    transform var(--ds-motion-out) var(--ds-ease-in),
+    visibility 0s linear var(--ds-motion-out);
+}
+
+.toast.show {
+  visibility: visible;
+  opacity: 1;
+  transform: translate(-50%, 0);
+  transition:
+    opacity var(--ds-motion-in) var(--ds-ease-out),
+    transform var(--ds-motion-in) var(--ds-ease-out),
+    visibility 0s;
+}
+
 .dialog-primary,
 .choose-button {
   border-radius: var(--ds-radius-pill);

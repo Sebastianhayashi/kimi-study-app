@@ -5,6 +5,7 @@ const { test, expect } = require('../support/test-fixtures');
 test('课程外壳与课节 iframe 一起加载', async ({ page }) => {
   await page.goto('/course/readycourse');
   await expect(page.locator('.course-name')).toHaveText('Ready Course Fixture');
+  await expect(page.locator('body')).not.toContainText(/Kimi|Teach|Tutor/);
   await expect(page.locator('.current-lesson')).toContainText('Lesson 1');
 
   const frame = page.frameLocator('#lessonFrame');
@@ -124,4 +125,3 @@ test('完整助教问答、划词、新对话及笔记栏交互', async ({ page 
   const notesToggle = slot.locator('.kn-notes-toggle');
   await expect(notesToggle).toBeVisible();
 });
-

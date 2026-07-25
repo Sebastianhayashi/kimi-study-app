@@ -65,7 +65,7 @@
     }, '*'));
     const ask = document.createElement('button');
     ask.type = 'button';
-    ask.textContent = '问 Tutor';
+    ask.textContent = '问 Lucubro';
     ask.addEventListener('click', () => parent.postMessage({
       type: 'ask-selection',
       selectedText: card.hook,

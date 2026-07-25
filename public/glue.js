@@ -36,7 +36,7 @@
     }, true);
 
 
-    // 设置页尚未实现：明确告知可用边界，不让原型 toast 冒充已完成能力。
+    // 设置页尚未实现；入口暂不展示，保留事件以兼容已有 DOM 契约。
     document.addEventListener('click', (event) => {
       if (!event.target.closest('#settingsButton')) return;
       event.preventDefault();
@@ -527,7 +527,10 @@
     const overviewProgressValue = overviewProgressSection?.querySelector('.progress-value');
     const overviewRecordList = document.querySelector('#left-overview .record-list');
     const contextBar = document.querySelector('.context-bar');
-    const titleOf = (f) => f.replace(/^\d+-?/, '').replace(/\.html$/, '');
+    const titleOf = (f) => f
+      .replace(/^\d+-?/, '')
+      .replace(/\.html$/, '')
+      .replace(/-+/g, ' ');
     const isBackgroundNextLesson = (status = {}) => status.kind === 'next-lesson' && Number(status.lessons || lessons.length) > 0;
 
     const generationEvidence = (status, complete = false) => {
@@ -715,6 +718,22 @@
       renderList();
       updateInfo();
     }
+
+    function syncCurrentLessonTitle() {
+      try {
+        const heading = lessonFrame.contentDocument?.querySelector('h1');
+        const title = String(heading?.textContent || '').replace(/\s+/g, ' ').trim();
+        if (!title || title.length > 120) return;
+        const label = `Lesson ${current + 1} · ${title}`;
+        if (currentLessonLabel) currentLessonLabel.textContent = label;
+        if (contextBar) contextBar.textContent = `当前上下文：${label}`;
+        const item = document.querySelectorAll('.lesson-item')[current];
+        const itemTitle = item?.querySelector('span:last-child');
+        if (itemTitle) itemTitle.textContent = title;
+      } catch {}
+    }
+
+    lessonFrame.addEventListener('load', syncCurrentLessonTitle);
 
     let loaded = false;
     function loadLessons() {
@@ -941,7 +960,7 @@
         document.querySelector('.course-name').textContent = info.title;
         document.title = `${info.title} · Lucubro`;
         document.querySelector('.mission-title').textContent = `掌握《${info.title}》的核心内容与方法`;
-        document.querySelector('.mission-copy').textContent = '本课程由 Kimi 根据你上传的材料生成，跟随课程目录逐课学习即可。';
+        document.querySelector('.mission-copy').textContent = '课程已按你上传的材料和学习目标排好。可以从当前课节继续。';
         const chips = document.querySelectorAll('.mission-status .context-chip');
         if (chips[1]) chips[1].hidden = true; // “约 90 分钟”是演示数据
         updateInfo();
@@ -999,11 +1018,11 @@
       };
       setGenerationChrome(startingStatus);
       generationPreview.hide({ immediate: true });
-      showToast('Kimi 正在准备下一课，通常需要几分钟…');
+      showToast('Lucubro 正在准备下一课，通常需要几分钟…');
       fetch(`/api/courses/${courseId}/lessons/next`, { method: 'POST' }).then(async (r) => {
         if (r.status === 409) {
           restoreBtn();
-          showToast('Kimi 正在忙，请等当前回答完成后再试');
+          showToast('Lucubro 正在处理上一项任务，请稍后再试');
           return;
         }
         if (!r.ok) {
@@ -1372,7 +1391,7 @@
 
       const thinking = document.createElement('div');
       thinking.className = 'message assistant';
-      thinking.innerHTML = '<p>Kimi 正在思考<span class="thinking-dots"><i></i><i></i><i></i></span><span class="thinking-elapsed"></span></p>';
+      thinking.innerHTML = '<p>Lucubro 正在查找当前课节<span class="thinking-dots"><i></i><i></i><i></i></span><span class="thinking-elapsed"></span></p>';
       chatThread.appendChild(thinking);
       chatThread.scrollTop = chatThread.scrollHeight;
       setQuickPromptsEnabled(false);

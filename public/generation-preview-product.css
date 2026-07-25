@@ -18,11 +18,12 @@
   color: var(--text, #1f1f1f);
   background: #fbfaf7;
   opacity: 0;
-  transition: opacity 240ms ease;
+  transition: opacity var(--ds-motion-out, 180ms) var(--ds-ease-in, ease-in);
 }
 
 .ks-generation-preview.is-visible {
   opacity: 1;
+  transition: opacity var(--ds-motion-in, 260ms) var(--ds-ease-out, ease-out);
 }
 .ks-generation-fidelity {
   background: #fbfaf7;
@@ -586,7 +587,9 @@
   border-radius: 12px;
   background: #fff;
   box-shadow: 0 3px 12px rgba(60, 64, 67, .04);
-  transition: opacity .3s ease, transform .3s ease;
+  transition:
+    opacity var(--ds-motion-in, 260ms) var(--ds-ease-out, ease-out),
+    transform var(--ds-motion-in, 260ms) var(--ds-ease-out, ease-out);
 }
 
 .ks-generation-fidelity .ks-fidelity-exercise-head {
@@ -1158,23 +1161,27 @@
 }
 
 .ks-generation-product.is-success-enter .ks-generation-course-paper {
-  animation: ksProductSuccessSettle 760ms cubic-bezier(.16, .78, .22, 1) both;
+  animation: ksProductSuccessSettle var(--ds-motion-emphasis, 420ms) var(--ds-ease-out, ease-out) both;
 }
 
 .ks-generation-product.is-success-enter .ks-fidelity-success-mark {
-  animation: ksProductSuccessMark 640ms cubic-bezier(.16, .78, .22, 1) both;
+  animation: ksProductSuccessMark var(--ds-motion-emphasis, 420ms) var(--ds-ease-out, ease-out) both;
 }
 
 .ks-generation-product.is-success-exit .ks-generation-meta {
   opacity: 0;
   transform: translateY(-8px);
-  transition: opacity 360ms ease, transform 520ms cubic-bezier(.4, 0, .2, 1);
+  transition:
+    opacity var(--ds-motion-out, 180ms) var(--ds-ease-in, ease-in),
+    transform var(--ds-motion-out, 180ms) var(--ds-ease-in, ease-in);
 }
 
 .ks-generation-product.is-success-exit .ks-generation-canvas-wrap {
   opacity: 0;
   transform: translateY(-10px) scale(.985);
-  transition: opacity 430ms ease, transform 620ms cubic-bezier(.4, 0, .2, 1);
+  transition:
+    opacity var(--ds-motion-out, 180ms) var(--ds-ease-in, ease-in),
+    transform var(--ds-motion-out, 180ms) var(--ds-ease-in, ease-in);
 }
 
 .ks-generation-product.is-error .ks-generation-scan {

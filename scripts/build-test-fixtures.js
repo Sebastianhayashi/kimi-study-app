@@ -235,7 +235,7 @@ function createCourse(id, options = {}) {
     writeJson(path.join(target, 'learning-progress', '0001-stabilization-fixture.json'), { schemaVersion: 1, attempts: [] });
   }
   writeJson(path.join(target, 'map.json'), {
-    mission: { title: '验证现有产品旅途', copy: '只用于自动化测试。', criteria: ['完成核心旅途'], constraints: ['不调用真实 Kimi'] },
+    mission: { title: '验证现有产品旅途', copy: '只用于自动化测试。', criteria: ['完成核心旅途'], constraints: ['不调用外部生成服务'] },
     promise: '固定、可复现的课程工作区。',
     material: '使用无版权、最小化测试材料。',
     methods: [{ name: '状态验证', when: '检查交互时', boundary: '不评价真实教学质量' }],

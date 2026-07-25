@@ -222,7 +222,7 @@ test('等待动画可以循环，但阶段和文案只能由真实后端事件�
   });
   await expect(canvas).toHaveAttribute('data-variant', 'structure');
   await expect(preview.locator('.ks-generation-canvas-content')).toContainText('教材结构 · 8 个单元');
-  await expect(preview.locator('.ks-generation-history')).toContainText('不会展示或推测隐藏推理');
+  await expect(preview.locator('.ks-generation-history')).toContainText('不展示内部推理过程');
 });
 
 test('扫描只在阶段切换时运行，失败后停止且迟到事件不能恢复', async ({ page }) => {

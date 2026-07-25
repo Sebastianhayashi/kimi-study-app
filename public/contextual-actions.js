@@ -225,7 +225,7 @@
       } catch {
         if (id !== requestId) return;
         render([
-          { id: 'ask', label: '问 Tutor' },
+          { id: 'ask', label: '问 Lucubro' },
           { id: 'note', label: '记笔记' },
           { id: 'scratch', label: '放到草稿' },
         ], rect);
@@ -262,7 +262,7 @@
         // actions, but it updates the same three nodes instead of replacing
         // the DOM under the user.
         render([
-          { id: 'ask', label: '问 Tutor' },
+          { id: 'ask', label: '问 Lucubro' },
           { id: 'note', label: '记笔记' },
           { id: 'scratch', label: '放到草稿' },
         ], rect);

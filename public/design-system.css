@@ -48,10 +48,19 @@
 
   --ds-motion-fast: 150ms;
   --ds-motion-base: 240ms;
+  --ds-motion-in: 260ms;
+  --ds-motion-out: 180ms;
+  --ds-motion-emphasis: 420ms;
   --ds-ease: cubic-bezier(.2, .8, .2, 1);
+  --ds-ease-in: cubic-bezier(.4, 0, 1, 1);
+  --ds-ease-out: cubic-bezier(.16, 1, .3, 1);
   --ds-z-header: 20;
   --ds-z-drawer: 50;
   --ds-z-modal: 100;
+}
+
+[hidden] {
+  display: none !important;
 }
 
 * {
@@ -70,6 +79,26 @@ input,
 textarea,
 select {
   font-family: var(--ds-font-sans);
+}
+
+img.brand-mark {
+  display: block;
+  flex: none;
+  object-fit: contain;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+@keyframes ds-enter {
+  from { opacity: 0; transform: translateY(8px) scale(.99); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes ds-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 button,

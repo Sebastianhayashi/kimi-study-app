@@ -86,6 +86,28 @@ body,
   background: #0b57d0;
 }
 
+.toast {
+  display: block !important;
+  visibility: hidden;
+  opacity: 0;
+  transform: translate(-50%, 8px);
+  pointer-events: none;
+  transition:
+    opacity var(--ds-motion-out) var(--ds-ease-in),
+    transform var(--ds-motion-out) var(--ds-ease-in),
+    visibility 0s linear var(--ds-motion-out);
+}
+
+.toast.show {
+  visibility: visible;
+  opacity: 1;
+  transform: translate(-50%, 0);
+  transition:
+    opacity var(--ds-motion-in) var(--ds-ease-out),
+    transform var(--ds-motion-in) var(--ds-ease-out),
+    visibility 0s;
+}
+
 .workspace {
   grid-template-columns: var(--left) var(--resize-gap) minmax(430px, 1fr) var(--resize-gap) var(--right);
   padding: 0 12px 12px;
@@ -488,6 +510,23 @@ body,
 @media (max-width: 860px) {
   :root {
     --topbar: 58px;
+  }
+
+  .mobile-drawer-scrim {
+    transition:
+      opacity var(--ds-motion-out) var(--ds-ease-in),
+      visibility 0s linear var(--ds-motion-out);
+  }
+
+  .mobile-drawer-scrim.is-open {
+    transition:
+      opacity var(--ds-motion-in) var(--ds-ease-out),
+      visibility 0s;
+  }
+
+  .left-panel,
+  .assistant-panel {
+    transition: transform var(--ds-motion-in) var(--ds-ease-out);
   }
 
   .topbar {

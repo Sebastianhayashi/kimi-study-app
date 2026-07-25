@@ -605,16 +605,25 @@ button {
   color: #fff;
   background: #172033;
   box-shadow: var(--ds-shadow-float);
+  visibility: hidden;
   opacity: 0;
   pointer-events: none;
   transform: translate(-50%, 12px);
-  transition: opacity var(--ds-motion-fast), transform var(--ds-motion-fast);
+  transition:
+    opacity var(--ds-motion-out) var(--ds-ease-in),
+    transform var(--ds-motion-out) var(--ds-ease-in),
+    visibility 0s linear var(--ds-motion-out);
   font-size: 13px;
 }
 
 .toast.is-visible {
+  visibility: visible;
   opacity: 1;
   transform: translate(-50%, 0);
+  transition:
+    opacity var(--ds-motion-in) var(--ds-ease-out),
+    transform var(--ds-motion-in) var(--ds-ease-out),
+    visibility 0s;
 }
 
 @media (max-width: 980px) {

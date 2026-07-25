@@ -12,10 +12,19 @@
   color: #202124;
   background: #f7f9fc;
   opacity: 0;
-  transition: opacity 180ms ease;
+  transform: translateY(6px);
+  transition:
+    opacity var(--ds-motion-out, 180ms) var(--ds-ease-in, ease-in),
+    transform var(--ds-motion-out, 180ms) var(--ds-ease-in, ease-in);
 }
 .ks-source-viewer.is-ready,
-.is-source-viewer-active .ks-source-viewer { opacity: 1; }
+.is-source-viewer-active .ks-source-viewer {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--ds-motion-in, 260ms) var(--ds-ease-out, ease-out),
+    transform var(--ds-motion-in, 260ms) var(--ds-ease-out, ease-out);
+}
 .is-source-viewer-active .lesson-frame { visibility: hidden; }
 .ks-source-toolbar {
   min-height: 54px;

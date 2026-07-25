@@ -186,8 +186,6 @@ test('真实上传进度、Mission 卡片过渡、学习设置与 ready 交接�
   await expect(page.locator('#uploadProgressLabel')).toContainText(/上传|检查/);
   await expect(page.locator('#uploadProgressValue')).toHaveText('100%');
   await expect(page.locator('[data-stage="mission"]')).toHaveClass(/is-visible/);
-  await expect(page.locator('#questionTitle')).toContainText('准备可选答案');
-  await expect(page.locator('.mission-option-skeleton')).toHaveCount(3);
 
   await expect(page.locator('#questionTitle')).toContainText('现实决策');
   await expect(page.locator('.option')).toHaveCount(4);
@@ -206,7 +204,7 @@ test('真实上传进度、Mission 卡片过渡、学习设置与 ready 交接�
   await page.locator('.mission-answer').fill('我想避免只处理表面症状。');
 
   await page.locator('#missionNext').click();
-  await expect(page.locator('#questionTitle')).toHaveText('确认这份 Mission');
+  await expect(page.locator('#questionTitle')).toHaveText('确认学习目标');
   await expect(page.locator('.mission-summary')).toContainText('团队项目决策');
   await page.locator('#missionNext').click();
 

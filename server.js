@@ -146,6 +146,7 @@ app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 // ---- 冻结前端：原样输出，仅在响应中注入运行时资源 ----
 const COMMON_FRONTEND_HEAD =
+  '<link rel="icon" href="/assets/brand/lucubro-mark.svg" type="image/svg+xml">' +
   '<link rel="stylesheet" href="/vendor/geist/wght.css">' +
   '<link rel="stylesheet" href="/vendor/phosphor/regular/style.css">' +
   '<link rel="stylesheet" href="/design-system.css">';
@@ -261,7 +262,7 @@ function runPrintKimi(id, prompt, { cont = false, sessionId = null } = {}) {
 // 生成任务优先使用真实工具/文件事件；下一课额外记录本轮基线和独立 generator session。
 function launchStandardMissionTurn(id, { answer = null, retry = false } = {}) {
   const courseDir = dirOf(id);
-  if (locks.has(id)) throw new OnboardingError('MISSION_BUSY', 'Teach 正在处理上一轮回答', 409);
+  if (locks.has(id)) throw new OnboardingError('MISSION_BUSY', 'Lucubro 正在处理上一轮回答', 409);
   const record = markMissionPlanning(courseDir, { retry });
   const state = readMissionSessionState(courseDir);
   if (answer != null && (!state.initialized || !state.sessionId)) {
@@ -290,7 +291,7 @@ function launchStandardMissionTurn(id, { answer = null, retry = false } = {}) {
 
   const persistMissionSession = (result, previousState) => {
     const sessionId = result.sessionId || previousState.sessionId;
-    if (!sessionId) throw new OnboardingError('MISSION_SESSION_MISSING', 'Teach 没有返回可恢复的 Session', 502);
+    if (!sessionId) throw new OnboardingError('MISSION_SESSION_MISSING', '学习目标会话无法恢复', 502);
     return writeMissionSessionState(courseDir, {
       ...previousState,
       sessionId,
@@ -314,7 +315,7 @@ function launchStandardMissionTurn(id, { answer = null, retry = false } = {}) {
       if (isRepairableMissionError(error)) {
         throw new OnboardingError(
           'MISSION_REPAIR_FAILED',
-          'Teach 没有完成学习目标整理。你之前的回答和材料已保留，请重试。',
+          '学习目标没有整理完成。材料和已经填写的内容都已保留，可以重试。',
           502,
         );
       }
@@ -1129,7 +1130,7 @@ app.post('/api/courses/:id/learning-actions', async (req, res) => {
     return res.json(result);
   } catch {
     return res.json({ source: 'safe-fallback', selectionType: 'passage', actions: [
-      { id: 'ask', label: '问 Tutor', kind: 'tutor' },
+      { id: 'ask', label: '问 Lucubro', kind: 'tutor' },
       { id: 'note', label: '记笔记', kind: 'note' },
       { id: 'scratch', label: '放到草稿', kind: 'scratch' },
     ] });

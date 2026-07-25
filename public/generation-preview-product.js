@@ -275,7 +275,7 @@
           <div class="ks-generation-progress" role="progressbar" aria-label="课程生成进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
           <section class="ks-generation-history ks-generation-process-popover" id="ksGenerationProcess" hidden>
             <div class="ks-generation-process-head"><span class="ks-generation-process-title">可验证的生成过程</span><button class="ks-generation-process-close" type="button" aria-label="关闭生成过程">×</button></div>
-            <p class="ks-generation-proof">这里只展示 Kimi 主动上报的阶段、实际工具调用和文件产物；不会展示或推测隐藏推理。</p>
+            <p class="ks-generation-proof">这里记录已完成的处理阶段和课程文件，不展示内部推理过程。</p>
             <div class="ks-generation-process-list" aria-label="生成阶段"></div>
             <div class="ks-generation-event-section">
               <div class="ks-generation-event-heading">实时执行记录</div>
@@ -428,7 +428,7 @@
     }
 
     function originFor(event) {
-      if (event.kind === 'phase') return 'Kimi 阶段上报';
+      if (event.kind === 'phase') return '阶段更新';
       if (event.kind === 'artifact') return '文件产物';
       if (event.kind === 'tool') return '实际工具调用';
       if (event.kind === 'retry') return '自动重试';
@@ -439,7 +439,7 @@
 
     function renderEventLog() {
       if (!liveEvents.length) {
-        eventLog.innerHTML = '<div class="ks-generation-event-empty">等待 Kimi 上报实际执行事件…</div>';
+        eventLog.innerHTML = '<div class="ks-generation-event-empty">等待新的处理记录…</div>';
         return;
       }
       eventLog.innerHTML = liveEvents.slice(-12).reverse().map((event) => `
@@ -458,14 +458,14 @@
       const outgoing = canvasContent.animate([
         { opacity: 1, transform: 'translateY(0) scale(1)' },
         { opacity: 0, transform: 'translateY(-7px) scale(.994)' },
-      ], { duration: 280, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' });
+      ], { duration: 180, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
       return outgoing.finished.catch(() => {}).then(() => {
         canvasContent.innerHTML = html;
         canvasContent.classList.remove('is-leaving');
         return canvasContent.animate([
           { opacity: 0, transform: 'translateY(9px) scale(.994)' },
           { opacity: 1, transform: 'translateY(0) scale(1)' },
-        ], { duration: 520, easing: 'cubic-bezier(.16,.78,.22,1)', fill: 'both' }).finished.catch(() => {});
+        ], { duration: 260, easing: 'cubic-bezier(.16,1,.3,1)', fill: 'both' }).finished.catch(() => {});
       });
     }
 
@@ -594,7 +594,7 @@
           completionResolve = null;
         }, 80);
       } else {
-        exitTimer = window.setTimeout(() => root.classList.add('is-success-exit'), 820);
+        exitTimer = window.setTimeout(() => root.classList.add('is-success-exit'), 480);
         finishTimer = window.setTimeout(() => {
           hide({ immediate: true });
           completionResolve?.();
@@ -671,5 +671,5 @@
     return api;
   }
 
-  window.KimiGenerationPreview = { mount, current: null, successExitMs: 1520 };
+  window.KimiGenerationPreview = { mount, current: null, successExitMs: 740 };
 })();

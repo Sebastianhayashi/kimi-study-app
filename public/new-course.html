@@ -730,13 +730,13 @@
 <body>
   <div class="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-mark">L</div><span>Lucubro</span></div>
+      <div class="brand"><img class="brand-mark" src="/assets/brand/lucubro-mark.svg" width="34" height="34" alt=""><span>Lucubro</span></div>
       <div class="top-progress" aria-label="建课步骤">
         <span id="topStep1" class="active">1</span><span id="topStep2">2</span><span id="topStep3">3</span>
       </div>
       <div class="top-actions">
         <button class="circle-button" id="backToLibrary" type="button" aria-label="返回课程列表" title="返回课程列表"><i class="ph ph-arrow-left" aria-hidden="true"></i></button>
-        <div class="avatar" aria-label="用户头像">K</div>
+        <div class="avatar" aria-label="用户头像"><i class="ph ph-user" aria-hidden="true"></i></div>
       </div>
     </header>
 
@@ -744,8 +744,8 @@
       <section class="stage is-active is-visible" data-stage="upload">
         <div class="panel">
           <p class="eyebrow">新建课程</p>
-          <h1>把你想学的材料放进来</h1>
-          <p class="lead">不需要先设置课程。上传一本书、教材或文档，我们会先理解内容，再只问几个真正必要的问题。</p>
+          <h1>上传学习材料</h1>
+          <p class="lead">支持 EPUB、PDF、Markdown 和 TXT。文件检查完成后，再设置这门课的学习重点。</p>
 
           <label class="upload-zone" id="uploadZone" for="fileInput">
             <input id="fileInput" type="file" hidden accept=".epub,.pdf,.txt,.md,.markdown" />
@@ -754,7 +754,7 @@
                 <i class="ph ph-upload-simple"></i>
               </div>
               <div class="upload-title">选择文件或拖到这里</div>
-              <div class="upload-note">上传后会自动进入下一步</div>
+              <div class="upload-note">选择后可以检查文件</div>
               <div class="upload-formats">EPUB、PDF、Markdown 或纯文本</div>
             </div>
           </label>
@@ -797,9 +797,9 @@
 
       <section class="stage" data-stage="mission">
         <div class="panel">
-          <p class="eyebrow" id="missionMeta">学习材料 · 一般模式 · Teach Mission</p>
-          <h1 style="font-size:clamp(30px,3.4vw,42px)">先确认你为什么学</h1>
-          <p class="lead">问题由原版 Teach Skill 根据材料和你的回答逐轮提出，不是固定问卷。</p>
+          <p class="eyebrow" id="missionMeta">学习材料 · 学习目标</p>
+          <h1 style="font-size:clamp(30px,3.4vw,42px)">设定学习目标</h1>
+          <p class="lead">选择最接近的使用场景。Lucubro 会据此安排案例和练习。</p>
 
           <div class="mission-question" id="missionQuestion">
             <div class="mission-heading" id="questionTitle"></div>
@@ -828,8 +828,8 @@
             </div>
             <div>
               <p class="eyebrow">正在创建课程</p>
-              <div class="loading-title">正在准备你的学习区域</div>
-              <p class="loading-description">材料已安全保留。我们会按真实处理阶段准备课程，完成后自动打开第一课。</p>
+              <div class="loading-title">正在创建第一课</div>
+              <p class="loading-description">材料已保留。第一课通过检查后会自动打开。</p>
             </div>
           </div>
 
@@ -865,7 +865,7 @@
           <div class="workspace-grid">
             <aside class="workspace-side"><div class="side-heading">学习上下文</div><div class="side-block"></div><div class="side-block"></div><div class="side-block"></div></aside>
             <article class="workspace-main"><div class="skeleton-title"></div><div class="skeleton-line"></div><div class="skeleton-line short"></div><div class="skeleton-card"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></article>
-            <aside class="workspace-side"><div class="side-heading">Kimi 助手</div><div class="side-block" style="height:110px"></div><div class="side-block" style="height:150px"></div></aside>
+            <aside class="workspace-side"><div class="side-heading">Lucubro 助手</div><div class="side-block" style="height:110px"></div><div class="side-block" style="height:150px"></div></aside>
           </div>
           <div class="ready-overlay" id="readyOverlay"><div class="ready-message"><div class="ready-check">✓</div><strong>学习区域已准备好</strong><span>正在打开第一课</span></div></div>
         </div>
