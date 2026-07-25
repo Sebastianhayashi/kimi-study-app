@@ -11,6 +11,7 @@ const {
   OnboardingError,
   compileMissionMarkdown,
   createCourseDraft,
+  markMissionFailed,
   markMissionPlanning,
   markMissionQuestion,
   markGenerationRunning,
@@ -178,6 +179,20 @@ test('compiles MISSION.md only from enumerated answers and saves it idempotently
     ...mission(),
     outcome: '<script>alert(1)</script>',
   }), (error) => error.code === 'INVALID_MISSION');
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('turns a missing Kimi CLI process error into a learner-facing recovery message', () => {
+  const root = tempRoot();
+  const { courseDir } = createTextDraft(root);
+  const error = new Error('spawn kimi ENOENT');
+  error.code = 'ENOENT';
+  const record = markMissionFailed(courseDir, error);
+  assert.equal(record.mission.errorCode, 'KIMI_CLI_UNAVAILABLE');
+  assert.match(record.mission.errorMessage, /未检测到 Kimi CLI/);
+  assert.match(record.mission.errorMessage, /安装并登录/);
+  assert.match(record.mission.errorMessage, /材料已保留/);
+  assert.doesNotMatch(record.mission.errorMessage, /spawn|ENOENT/);
   fs.rmSync(root, { recursive: true, force: true });
 });
 
