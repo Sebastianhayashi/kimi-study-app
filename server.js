@@ -63,6 +63,7 @@ const {
   OnboardingError,
   confirmMission,
   createCourseDraft,
+  validateEpubArchive,
   markGenerationFailed,
   markGenerationReady,
   markGenerationRunning,
@@ -597,8 +598,21 @@ app.post('/api/courses', upload.single('file'), (req, res) => {
   res.json({ id });
 });
 
+
+// Multer hands filenames through latin1; recover the original UTF-8 name when
+// the re-decoded form is valid, otherwise keep what we got.
+function decodeUploadFilename(name) {
+  const raw = String(name || '');
+  try {
+    const decoded = Buffer.from(raw, 'latin1').toString('utf8');
+    return decoded.includes('\uFFFD') ? raw : decoded;
+  } catch {
+    return raw;
+  }
+}
+
 app.post('/api/course-onboarding', (req, res) => {
-  onboardingUpload.single('file')(req, res, (uploadError) => {
+  onboardingUpload.single('file')(req, res, async (uploadError) => {
     if (uploadError) {
       if (uploadError.code === 'LIMIT_FILE_SIZE') {
         return sendOnboardingError(res, new OnboardingError(
@@ -615,10 +629,14 @@ app.post('/api/course-onboarding', (req, res) => {
     }
 
     try {
+      // Deep EPUB validation (mimetype entry) before accepting the draft.
+      if (/\.epub$/i.test(req.file.originalname || '')) {
+        await validateEpubArchive(req.file.path);
+      }
       const created = createCourseDraft({
         dataRoot: DATA,
         tempFile: req.file.path,
-        originalFilename: req.file.originalname,
+        originalFilename: decodeUploadFilename(req.file.originalname),
         mimeType: req.file.mimetype,
         sizeBytes: req.file.size,
         title: req.body && req.body.title,

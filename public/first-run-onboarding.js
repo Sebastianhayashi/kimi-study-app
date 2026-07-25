@@ -91,7 +91,17 @@
     });
   }
 
+  let pendingStageTransition = null;
+
   function showStage(name, stepIndex, { immediate = false } = {}) {
+    // A fast follow-up transition must cancel a pending one; otherwise the
+    // queued activate() would fire afterwards and override the newer stage
+    // (e.g. upload -> reading -> back-to-upload-on-error got stuck on reading).
+    if (pendingStageTransition) {
+      clearTimeout(pendingStageTransition);
+      pendingStageTransition = null;
+      for (const stage of stages) stage.classList.remove('is-leaving');
+    }
     const previous = stages.find((stage) => stage.dataset.stage === currentStage);
     const next = stages.find((stage) => stage.dataset.stage === name);
     if (!next) return;
@@ -108,7 +118,10 @@
     };
     if (immediate || reducedMotion || !previous) return activate();
     previous.classList.add('is-leaving');
-    setTimeout(activate, TRANSITION_MS);
+    pendingStageTransition = setTimeout(() => {
+      pendingStageTransition = null;
+      activate();
+    }, TRANSITION_MS);
   }
 
   function humanFileSize(bytes) {
