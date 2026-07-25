@@ -27,4 +27,5 @@ test('uses indeterminate progress before any backend stage is known', () => {
 
 test('formats elapsed time without pretending to know remaining time', () => {
   assert.equal(formatElapsed('2026-07-22T00:00:00.000Z', Date.parse('2026-07-22T00:03:07.000Z')), '已用时 03:07');
+  assert.equal(formatElapsed('2026-07-20T00:00:00.000Z', Date.parse('2026-07-22T03:04:05.000Z')), '已用时 2 天 03:04:05');
 });

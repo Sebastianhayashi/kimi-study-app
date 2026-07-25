@@ -5,12 +5,14 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
   background: var(--ds-bg);
 }
 
 body {
   min-width: 320px;
   margin: 0;
+  overflow-x: clip;
   color: var(--ds-text);
   background:
     radial-gradient(circle at 83% 8%, rgb(11 87 208 / 10%), transparent 30rem),

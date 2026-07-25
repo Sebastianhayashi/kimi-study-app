@@ -48,9 +48,14 @@
     const start = parseStartedAt(startedAt);
     if (start === null) return '已用时 00:00';
     const totalSeconds = Math.max(0, Math.floor((now - start) / 1000));
+    const days = Math.floor(totalSeconds / 86400);
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
+    if (days) {
+      const remainingHours = hours % 24;
+      return `已用时 ${days} 天 ${String(remainingHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
     if (hours) return `已用时 ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     return `已用时 ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
