@@ -145,9 +145,13 @@ app.use((req, res, next) => { console.log(`[http] ${req.method} ${req.url}`); ne
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 // ---- 冻结前端：原样输出，仅在响应中注入运行时资源 ----
+const COMMON_FRONTEND_HEAD =
+  '<link rel="stylesheet" href="/vendor/geist/wght.css">' +
+  '<link rel="stylesheet" href="/vendor/phosphor/regular/style.css">' +
+  '<link rel="stylesheet" href="/design-system.css">';
 const page = (file, { head = '', body = '' } = {}) => (req, res) => {
   const html = fs.readFileSync(path.join(ROOT, 'public', file), 'utf8')
-    .replace('</head>', `${head}</head>`)
+    .replace('</head>', `${COMMON_FRONTEND_HEAD}${head}</head>`)
     .replace('</body>', `${body}<script src="/glue.js"></script></body>`);
   res.type('html').send(html);
 };
@@ -164,6 +168,8 @@ app.use('/vendor/lenis', express.static(path.join(ROOT, 'node_modules', 'lenis',
 app.use('/vendor/pdfjs', express.static(path.join(ROOT, 'node_modules', 'pdfjs-dist')));
 app.use('/vendor/epubjs', express.static(path.join(ROOT, 'node_modules', 'epubjs', 'dist')));
 app.use('/vendor/jszip', express.static(path.join(ROOT, 'node_modules', 'jszip', 'dist')));
+app.use('/vendor/geist', express.static(path.join(ROOT, 'node_modules', '@fontsource-variable', 'geist')));
+app.use('/vendor/phosphor', express.static(path.join(ROOT, 'node_modules', '@phosphor-icons', 'web', 'src')));
 app.use(express.static(path.join(ROOT, 'public'))); // 前端外壳资源
 
 // ---- 课程工作区 ----
