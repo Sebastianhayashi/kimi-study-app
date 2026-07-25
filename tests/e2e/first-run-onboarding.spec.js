@@ -30,6 +30,12 @@ function onboardingRecord(state, overrides = {}) {
       mode: 'standard',
       status: 'question',
       question: '你希望用这份材料改变哪一个现实问题？',
+      options: [
+        { id: 'daily', label: '让日常工作更有趣', description: '先从个人实践开始。' },
+        { id: 'team-decisions', label: '改善团队项目决策', description: '用于复盘、取舍和协作。' },
+        { id: 'design', label: '把方法用于设计或教育' },
+        { id: 'explore', label: '还不确定，先探索' },
+      ],
       summary: null,
       materialSummary: '材料讨论系统结构、反馈与延迟。',
       turns: 1,
@@ -70,6 +76,7 @@ test('真实上传进度、Mission 卡片过渡、学习设置与 ready 交接�
   let state = 'awaiting_mission';
   let missionStatus = 'question';
   let missionAnswer = null;
+  let onboardingCalls = 0;
   let lessons = 0;
 
   await page.route('**/api/course-onboarding', async (route) => {
@@ -87,6 +94,8 @@ test('真实上传进度、Mission 卡片过渡、学习设置与 ready 交接�
   });
 
   await page.route('**/api/courses/firstrunfixture/onboarding', async (route) => {
+    onboardingCalls += 1;
+    if (onboardingCalls === 1) await new Promise((resolve) => setTimeout(resolve, 500));
     const record = onboardingRecord(state, {
       mission: {
         ...onboardingRecord('awaiting_mission').mission,
@@ -108,7 +117,7 @@ test('真实上传进度、Mission 卡片过渡、学习设置与 ready 交接�
   });
 
   await page.route('**/api/courses/firstrunfixture/mission/answer', async (route) => {
-    missionAnswer = route.request().postDataJSON().answer;
+    missionAnswer = route.request().postDataJSON();
     missionStatus = 'ready';
     state = 'mission_ready';
     await route.fulfill({ status: 202, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
@@ -177,15 +186,32 @@ test('真实上传进度、Mission 卡片过渡、学习设置与 ready 交接�
   await expect(page.locator('#uploadProgressLabel')).toContainText(/上传|检查/);
   await expect(page.locator('#uploadProgressValue')).toHaveText('100%');
   await expect(page.locator('[data-stage="mission"]')).toHaveClass(/is-visible/);
+  await expect(page.locator('#questionTitle')).toContainText('准备可选答案');
+  await expect(page.locator('.mission-option-skeleton')).toHaveCount(3);
+
   await expect(page.locator('#questionTitle')).toContainText('现实决策');
-  await expect(page.locator('.mission-material-summary')).toContainText('反馈');
-  await page.locator('.mission-answer').fill('我想改善团队的项目决策，避免只处理表面症状。');
+  await expect(page.locator('.option')).toHaveCount(4);
+  await expect(page.locator('.mission-answer-label')).toHaveText('补充说明（可选）');
+  await expect(page.locator('#missionNext')).toBeDisabled();
+  await page.getByRole('radio', { name: /改善团队项目决策/ }).click();
+  await expect(page.locator('#missionNext')).toBeEnabled();
+  await page.locator('.mission-answer').fill('我想避免只处理表面症状。');
+
+  await page.reload();
+  await expect(page.getByRole('radio', { name: /改善团队项目决策/ })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('.mission-answer')).toHaveValue('我想避免只处理表面症状。');
+  await expect(page.locator('#missionNext')).toBeEnabled();
+  await page.locator('.mission-answer').fill('');
+  await expect(page.locator('#missionNext')).toBeEnabled();
+  await page.locator('.mission-answer').fill('我想避免只处理表面症状。');
+
   await page.locator('#missionNext').click();
   await expect(page.locator('#questionTitle')).toHaveText('确认这份 Mission');
   await expect(page.locator('.mission-summary')).toContainText('团队项目决策');
   await page.locator('#missionNext').click();
 
-  await expect.poll(() => missionAnswer).toContain('团队的项目决策');
+  await expect.poll(() => missionAnswer?.selectionId).toBe('team-decisions');
+  expect(missionAnswer.detail).toContain('表面症状');
   await expect(page.locator('[data-stage="loading"]')).toHaveClass(/is-visible/);
   await expect(page.locator('#progressValue')).toHaveText('40%');
   await expect(page.locator('#statusLine')).toContainText('学习目标');
@@ -294,7 +320,22 @@ test('Teach Mission 使用自由文本回答并支持键盘输入', async ({ pag
     contentType: 'application/json',
     body: JSON.stringify({
       id: 'firstrunfixture',
-      onboarding: onboardingRecord('awaiting_mission'),
+      onboarding: onboardingRecord('awaiting_mission', {
+        mission: {
+          version: 1,
+          mode: 'standard',
+          status: 'question',
+          question: '你希望用这份材料改变哪一个现实问题？',
+          summary: null,
+          materialSummary: '材料讨论系统结构、反馈与延迟。',
+          turns: 1,
+          outcome: null,
+          learningStyle: null,
+          sessionLength: null,
+          completedAt: null,
+          confirmedAt: null,
+        },
+      }),
       generation: { stage: 'idle', runId: null, busy: false, lessons: 0 },
     }),
   }));

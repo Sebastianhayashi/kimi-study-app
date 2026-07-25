@@ -11,11 +11,14 @@ const {
   OnboardingError,
   compileMissionMarkdown,
   createCourseDraft,
+  markMissionPlanning,
+  markMissionQuestion,
   markGenerationRunning,
   markGenerationStarting,
   onboardingGenerationStage,
   readOnboarding,
   reconcileOnboarding,
+  resolveMissionAnswer,
   saveMission,
   validateSourceDescriptor,
 } = require('../lib/onboarding');
@@ -97,6 +100,37 @@ test('creates an isolated inspected draft and never trusts path components in th
   });
   assert.equal(fs.existsSync(path.join(root, 'unsafe.txt')), false);
 
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('persists Teach-provided Mission options and resolves selected answers with optional detail', () => {
+  const root = tempRoot();
+  const { courseDir } = createTextDraft(root);
+  markMissionPlanning(courseDir);
+  const record = markMissionQuestion(courseDir, {
+    question: '你最想改变什么？',
+    options: [
+      { id: 'daily', label: '让日常工作更有趣', description: '从生活与工作实践开始。' },
+      { id: 'design', label: '把约束用于设计与教育' },
+      { id: 'explore', label: '还不确定，先探索' },
+    ],
+    materialSummary: '材料讨论约束、游戏与创造。',
+  });
+
+  assert.equal(record.mission.options.length, 3);
+  assert.equal(resolveMissionAnswer(record, {
+    selectionId: 'design',
+    detail: '我主要关心课程设计。',
+  }), '用户选择：把约束用于设计与教育\n补充说明：我主要关心课程设计。');
+  assert.equal(resolveMissionAnswer(record, { selectionId: 'daily' }), '用户选择：让日常工作更有趣');
+  assert.throws(
+    () => resolveMissionAnswer(record, { selectionId: 'stale', detail: '伪造选项' }),
+    (error) => error.code === 'MISSION_SELECTION_REQUIRED',
+  );
+  assert.throws(
+    () => resolveMissionAnswer(record, { detail: '只写说明但不选择' }),
+    (error) => error.code === 'MISSION_SELECTION_REQUIRED',
+  );
   fs.rmSync(root, { recursive: true, force: true });
 });
 

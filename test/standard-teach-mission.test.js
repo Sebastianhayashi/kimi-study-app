@@ -29,18 +29,34 @@ const missionSpec = {
   outOfScope: ['本轮不学习复杂的个人品牌投放'],
 };
 
-test('standard mode invokes original teach, excludes deep gates, and requests a structured ready envelope', () => {
+test('standard mode invokes original teach, returns choices first, and excludes deep gates', () => {
   const prompt = initialMissionPrompt('.epub');
   assert.match(prompt, /^\/skill:teach/);
-  assert.match(prompt, /快速通读/);
+  assert.match(prompt, /目录或章节标题/);
+  assert.match(prompt, /不要在提出第一个问题前遍历或深度读取整份材料/);
   assert.match(prompt, /不要执行.*RIA-TV\+\+/s);
+  assert.match(prompt, /3 到 5 个可直接选择的答案/);
+  assert.match(prompt, /"options"/);
   assert.match(prompt, /successLooksLike/);
   assert.doesNotMatch(prompt, /理解主要观点|应用到真实场景/);
-  assert.match(answerMissionPrompt('我想改善团队决策'), /继续原版 teach Skill/);
+  const answerPrompt = answerMissionPrompt('用户选择：改善团队决策');
+  assert.match(answerPrompt, /继续原版 teach Skill/);
+  assert.match(answerPrompt, /补充说明只能是可选的/);
 });
 
 test('parses bounded Mission turn envelopes including structured ready content', () => {
-  assert.equal(parseMissionTurn('{"status":"question","question":"现实目标是什么？","materialSummary":"系统思考"}').status, 'question');
+  const question = parseMissionTurn(JSON.stringify({
+    status: 'question',
+    question: '现实目标是什么？',
+    options: [
+      { id: 'team', label: '改善团队决策', description: '用于项目复盘与选择。' },
+      { id: 'creative', label: '改善创作方法' },
+      { id: 'explore', label: '还不确定，先探索' },
+    ],
+    materialSummary: '系统思考',
+  }));
+  assert.equal(question.status, 'question');
+  assert.equal(question.options[0].id, 'team');
   const ready = parseMissionTurn(JSON.stringify({
     status: 'ready',
     summary: '形成可执行目标',
@@ -49,6 +65,7 @@ test('parses bounded Mission turn envelopes including structured ready content',
   }));
   assert.equal(ready.status, 'ready');
   assert.equal(ready.mission.topic, missionSpec.topic);
+  assert.throws(() => parseMissionTurn('{"status":"question","question":"现实目标是什么？"}'), /可选答案/);
   assert.throws(() => parseMissionTurn('{"status":"question"}'), /Mission 问题/);
   assert.throws(() => parseMissionTurn('not json'), /Mission 状态/);
   assert.throws(() => parseMissionTurn('{"status":"ready","summary":"ok","mission":{"topic":"x"}}'), /成功标准|现实目标/);
@@ -81,6 +98,8 @@ test('repair prompt preserves the current Session and excludes course generation
   assert.match(prompt, /已有的用户回答/);
   assert.match(prompt, /successLooksLike/);
   assert.match(prompt, /不要生成 RESOURCES\.md/);
+  assert.match(prompt, /同一个问题/);
+  assert.match(prompt, /"options"/);
   assert.equal(isRepairableMissionError({ code: 'INVALID_MISSION_DOCUMENT' }), true);
   assert.equal(isRepairableMissionError({ code: 'MISSION_SESSION_MISSING' }), false);
 });

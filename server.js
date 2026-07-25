@@ -73,6 +73,7 @@ const {
   onboardingGenerationStage,
   publicOnboarding,
   readOnboarding,
+  resolveMissionAnswer,
   reconcileOnboarding,
 } = require('./lib/onboarding');
 
@@ -706,7 +707,9 @@ app.post('/api/courses/:id/mission/answer', (req, res) => {
     return sendOnboardingError(res, new OnboardingError('COURSE_NOT_FOUND', '课程不存在', 404));
   }
   try {
-    const record = launchStandardMissionTurn(id, { answer: req.body && req.body.answer });
+    const current = readOnboarding(dirOf(id));
+    const answer = resolveMissionAnswer(current, req.body);
+    const record = launchStandardMissionTurn(id, { answer });
     return res.status(202).json(onboardingSnapshot(id, record));
   } catch (error) {
     return sendOnboardingError(res, error);

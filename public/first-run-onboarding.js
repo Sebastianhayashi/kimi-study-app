@@ -8,6 +8,7 @@
   const SUPPORTED_EXTENSIONS = new Set(['pdf', 'epub', 'md', 'markdown', 'txt']);
   const TRANSITION_MS = 220;
   const POLL_MS = 1200;
+  const MISSION_POLL_MS = 400;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const byId = (id) => document.getElementById(id);
@@ -243,11 +244,57 @@
     fileRow.classList.add('is-visible');
   }
 
+  function missionDraftKey(mission = missionRecord?.mission) {
+    if (!courseId || !mission) return '';
+    const turn = Number(mission.turns || 0);
+    const question = String(mission.question || '').slice(0, 120);
+    return `kimi-study:mission-answer:${courseId}:${turn}:${question}`;
+  }
+
+  function readMissionDraft(mission) {
+    const key = missionDraftKey(mission);
+    if (!key) return { selectionId: '', detail: '' };
+    try {
+      const value = JSON.parse(sessionStorage.getItem(key) || '{}');
+      return {
+        selectionId: String(value.selectionId || ''),
+        detail: String(value.detail || '').slice(0, 2000),
+      };
+    } catch {
+      return { selectionId: '', detail: '' };
+    }
+  }
+
+  function writeMissionDraft(mission, value) {
+    const key = missionDraftKey(mission);
+    if (!key) return;
+    try { sessionStorage.setItem(key, JSON.stringify(value)); } catch {}
+  }
+
+  function clearMissionDraft(mission) {
+    const key = missionDraftKey(mission);
+    if (!key) return;
+    try { sessionStorage.removeItem(key); } catch {}
+  }
+
   function showMissionPreparation() {
-    setReadingMode('mission', 'Teach 正在快速通读材料', '默认一般模式会先理解材料结构，再开始 Mission 访谈。');
-    // Commit the reading-stage state immediately so a fast Mission response cannot
-    // be overwritten by the previous delayed transition.
-    showStage('reading', 1, { immediate: true });
+    missionMeta.textContent = `${fileName.textContent || '学习材料'} · 一般模式 · Teach Mission`;
+    questionTitle.textContent = 'Teach 正在准备可选答案';
+    options.replaceChildren();
+    const copy = document.createElement('p');
+    copy.className = 'mission-preparing-copy';
+    copy.textContent = '已完成上传。Teach 正在根据目录和少量代表性内容生成第一组选择，不会先做整本深读。';
+    options.appendChild(copy);
+    for (let index = 0; index < 3; index += 1) {
+      const skeleton = document.createElement('div');
+      skeleton.className = 'mission-option-skeleton';
+      skeleton.setAttribute('aria-hidden', 'true');
+      options.appendChild(skeleton);
+    }
+    missionNext.textContent = '回答 Teach';
+    missionNext.disabled = true;
+    missionBack.disabled = false;
+    showStage('mission', 1, { immediate: true });
   }
 
   function renderMission(record) {
@@ -257,13 +304,8 @@
     missionError.textContent = '';
     missionMeta.textContent = `${fileName.textContent || '学习材料'} · 一般模式 · Teach Mission`;
     missionBack.textContent = '返回课程库';
+    missionBack.disabled = false;
     options.replaceChildren();
-    if (mission.materialSummary) {
-      const summary = document.createElement('p');
-      summary.className = 'mission-material-summary';
-      summary.textContent = `Teach 对材料的快速理解：${mission.materialSummary}`;
-      options.appendChild(summary);
-    }
     if (mission.status === 'ready') {
       questionTitle.textContent = '确认这份 Mission';
       const summary = document.createElement('div');
@@ -284,16 +326,99 @@
       missionNext.disabled = false;
     } else {
       questionTitle.textContent = mission.question || 'Teach 正在准备下一个问题';
+      const choices = Array.isArray(mission.options) ? mission.options : [];
+      const draft = readMissionDraft(mission);
+      let selectedId = choices.some((choice) => choice?.id === draft.selectionId) ? draft.selectionId : '';
+
+      if (choices.length) {
+        const choiceLabel = document.createElement('div');
+        choiceLabel.className = 'mission-choice-label';
+        choiceLabel.textContent = '选择最接近的一项';
+        options.appendChild(choiceLabel);
+
+        const choiceList = document.createElement('div');
+        choiceList.className = 'mission-choice-list';
+        choiceList.setAttribute('role', 'radiogroup');
+        choiceList.setAttribute('aria-label', mission.question || 'Mission 可选答案');
+        for (const choice of choices) {
+          if (!choice || !choice.id || !choice.label) continue;
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'option';
+          button.dataset.optionId = choice.id;
+          button.setAttribute('role', 'radio');
+          button.setAttribute('aria-checked', String(choice.id === selectedId));
+          button.classList.toggle('is-selected', choice.id === selectedId);
+          const marker = document.createElement('span');
+          marker.className = 'option-marker';
+          marker.setAttribute('aria-hidden', 'true');
+          const content = document.createElement('span');
+          const title = document.createElement('span');
+          title.className = 'option-title';
+          title.textContent = choice.label;
+          content.appendChild(title);
+          if (choice.description) {
+            const description = document.createElement('span');
+            description.className = 'option-description';
+            description.textContent = choice.description;
+            content.appendChild(description);
+          }
+          button.append(marker, content);
+          button.addEventListener('click', () => {
+            selectedId = choice.id;
+            choiceList.querySelectorAll('.option').forEach((item) => {
+              const selected = item.dataset.optionId === selectedId;
+              item.classList.toggle('is-selected', selected);
+              item.setAttribute('aria-checked', String(selected));
+            });
+            const detail = options.querySelector('.mission-answer')?.value || '';
+            writeMissionDraft(mission, { selectionId: selectedId, detail });
+            missionNext.disabled = false;
+          });
+          choiceList.appendChild(button);
+        }
+        options.appendChild(choiceList);
+      }
+
+      const answerWrap = document.createElement('label');
+      answerWrap.className = 'mission-answer-wrap';
+      const answerLabel = document.createElement('span');
+      answerLabel.className = 'mission-answer-label';
+      answerLabel.textContent = choices.length ? '补充说明（可选）' : '你的回答';
       const textarea = document.createElement('textarea');
       textarea.className = 'mission-answer';
-      textarea.rows = 5;
-      textarea.maxLength = 4000;
-      textarea.placeholder = '用你自己的话回答。Teach 会根据回答决定是否继续追问。';
-      textarea.addEventListener('input', () => { missionNext.disabled = !textarea.value.trim(); });
-      options.appendChild(textarea);
+      textarea.rows = 3;
+      textarea.maxLength = choices.length ? 2000 : 4000;
+      textarea.placeholder = choices.length
+        ? '可以补充你的具体场景、目标或限制；不填也可以继续。'
+        : '用你自己的话回答。Teach 会根据回答决定是否继续追问。';
+      textarea.value = draft.detail;
+      textarea.addEventListener('input', () => {
+        writeMissionDraft(mission, { selectionId: selectedId, detail: textarea.value });
+        missionNext.disabled = choices.length ? !selectedId : !textarea.value.trim();
+      });
+      answerWrap.append(answerLabel, textarea);
+      options.appendChild(answerWrap);
+
+      if (mission.materialSummary) {
+        const details = document.createElement('details');
+        details.className = 'mission-material-details';
+        const detailsSummary = document.createElement('summary');
+        detailsSummary.textContent = '查看 Teach 对材料的快速理解';
+        const summary = document.createElement('p');
+        summary.className = 'mission-material-summary';
+        summary.textContent = mission.materialSummary;
+        details.append(detailsSummary, summary);
+        options.appendChild(details);
+      }
+
       missionNext.textContent = '回答 Teach';
-      missionNext.disabled = true;
-      setTimeout(() => textarea.focus(), 0);
+      missionNext.disabled = choices.length ? !selectedId : !textarea.value.trim();
+      setTimeout(() => {
+        const selected = options.querySelector('.option.is-selected');
+        const first = options.querySelector('.option');
+        (selected || first || textarea).focus();
+      }, 0);
     }
     showStage('mission', 1);
   }
@@ -311,13 +436,13 @@
       hydrateSource(record?.source);
       if (record?.state === 'planning_mission' || record?.mission?.status === 'planning') {
         showMissionPreparation();
-        missionPollTimer = setTimeout(pollMission, POLL_MS);
+        missionPollTimer = setTimeout(pollMission, MISSION_POLL_MS);
         return;
       }
       stopMissionPolling();
       renderMission(record);
     } catch {
-      missionPollTimer = setTimeout(pollMission, POLL_MS);
+      missionPollTimer = setTimeout(pollMission, MISSION_POLL_MS);
     }
   }
 
@@ -355,12 +480,20 @@
         return;
       }
       if (mission.status !== 'ready') {
-        const answer = options.querySelector('textarea')?.value.trim();
+        const selected = options.querySelector('.option.is-selected');
+        const detail = options.querySelector('.mission-answer')?.value.trim() || '';
+        const hasChoices = Array.isArray(mission.options) && mission.options.length > 0;
+        if (hasChoices && !selected) throw new Error('请先选择一个最接近的答案');
+        if (!hasChoices && !detail) throw new Error('请先回答这个问题');
+        const payload = hasChoices
+          ? { selectionId: selected.dataset.optionId, detail }
+          : { answer: detail };
         showMissionPreparation();
         await requestJson(`/api/courses/${encodeURIComponent(courseId)}/mission/answer`, {
           method: 'POST',
-          body: JSON.stringify({ answer }),
+          body: JSON.stringify(payload),
         });
+        clearMissionDraft(mission);
         startMissionPolling();
         return;
       }
@@ -371,6 +504,7 @@
     } catch (error) {
       missionNext.disabled = false;
       missionBack.disabled = false;
+      if (missionRecord?.mission?.status === 'question') renderMission(missionRecord);
       missionError.textContent = error.message || 'Teach 这次没有完成整理。你之前的回答和材料已保留，请重试。';
       missionError.hidden = false;
       showStage('mission', 1);

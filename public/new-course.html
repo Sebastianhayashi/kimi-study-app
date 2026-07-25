@@ -33,9 +33,9 @@
       overflow-x: hidden;
     }
 
-    button, input { font: inherit; }
+    button, input, textarea { font: inherit; }
     button { color: inherit; }
-    button:focus-visible, input:focus-visible {
+    button:focus-visible, input:focus-visible, textarea:focus-visible {
       outline: 3px solid rgba(23, 105, 224, .22);
       outline-offset: 3px;
     }
@@ -337,8 +337,33 @@
       place-items: center;
     }
     .option.is-selected .option-marker { border: 6px solid var(--primary); }
-    .option-title { font-size: 15px; font-weight: 650; }
-    .option-description { margin-top: 3px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .option-title { display: block; font-size: 15px; font-weight: 650; }
+    .option-description { display: block; margin-top: 3px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+    .mission-choice-label,
+    .mission-answer-label {
+      color: #4f5e74;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .mission-choice-list { display: grid; gap: 10px; }
+    .mission-answer-wrap { display: grid; gap: 8px; margin-top: 8px; }
+    .mission-material-details { margin-top: 4px; color: var(--muted); font-size: 13px; }
+    .mission-material-details summary { cursor: pointer; font-weight: 650; }
+    .mission-material-details .mission-material-summary { margin-top: 10px; }
+    .mission-preparing-copy { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+    .mission-option-skeleton {
+      height: 58px;
+      border: 1px solid #e4e9f1;
+      border-radius: 13px;
+      background: linear-gradient(90deg, #f5f7fb 24%, #fbfcfe 42%, #f5f7fb 60%);
+      background-size: 240% 100%;
+      animation: missionOptionPulse 1.25s ease-in-out infinite;
+    }
+    @keyframes missionOptionPulse {
+      from { background-position: 100% 0; }
+      to { background-position: -100% 0; }
+    }
 
     .mission-question {
       opacity: 1;
@@ -694,7 +719,7 @@
     .mission-card-loader .card-stack { transform: scale(.82); }
     .upload-zone.is-disabled { pointer-events: none; opacity: .62; }
     .option[aria-checked="true"] { border-color: #8fb4ef; background: #f4f8ff; }
-    .mission-answer { width:100%; min-height:132px; resize:vertical; border:1px solid #d7e0ec; border-radius:14px; padding:15px 16px; color:var(--ink); background:#fff; font:inherit; line-height:1.65; }
+    .mission-answer { width:100%; min-height:96px; resize:vertical; border:1px solid #d7e0ec; border-radius:14px; padding:13px 15px; color:var(--ink); background:#fff; font:inherit; line-height:1.65; }
     .mission-answer:focus { outline:3px solid rgba(23,105,224,.14); border-color:#8fb4ef; }
     .mission-material-summary, .mission-summary { margin:0; border:1px solid #dce5f2; border-radius:14px; padding:15px 16px; color:#536177; background:#f8faff; line-height:1.65; }
     .mission-summary { color:var(--ink); white-space:pre-wrap; }
