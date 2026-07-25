@@ -57,6 +57,7 @@ const {
   validateMissionDocument,
   writeMissionSessionState,
 } = require('./lib/standard-teach-mission');
+const { buildSourceDigest } = require('./lib/source-digest');
 const {
   MAX_SOURCE_BYTES,
   OnboardingError,
@@ -216,9 +217,16 @@ function launchStandardMissionTurn(id, { answer = null, retry = false } = {}) {
     markMissionFailed(courseDir, new OnboardingError('MISSION_SESSION_MISSING', 'Mission 会话不可恢复', 409));
     throw new OnboardingError('MISSION_SESSION_MISSING', 'Mission 会话不可恢复', 409);
   }
-  const prompt = retry && state.initialized && state.sessionId
-    ? repairMissionPrompt()
-    : answer == null ? initialMissionPrompt(record.source.extension) : answerMissionPrompt(answer);
+  const promptPromise = retry && state.initialized && state.sessionId
+    ? Promise.resolve(repairMissionPrompt())
+    : answer == null
+      ? buildSourceDigest(courseDir, record.source)
+          .then((digestResult) => initialMissionPrompt(record.source.extension, digestResult && digestResult.text))
+          .catch((error) => {
+            console.log(`[mission ${id}] source digest unavailable, falling back to model-side skim: ${error.message}`);
+            return initialMissionPrompt(record.source.extension);
+          })
+      : Promise.resolve(answerMissionPrompt(answer));
 
   const runMissionPrompt = (missionPrompt, sessionState) => runTrackedKimi({
     cwd: courseDir,
@@ -264,7 +272,8 @@ function launchStandardMissionTurn(id, { answer = null, retry = false } = {}) {
   };
 
   locks.add(id);
-  Promise.resolve(runMissionPrompt(prompt, state))
+  promptPromise
+    .then((prompt) => runMissionPrompt(prompt, state))
     .then((result) => acceptMissionResult(result, state, true))
     .catch((error) => {
       try { markMissionFailed(courseDir, error); }
