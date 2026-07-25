@@ -12,7 +12,7 @@
 | STAB-006 | P2 | OBSERVED | J03 | 课节头部按钮数量与层级开始造成困惑 | 先记录点击路径，不立即重设计 |
 | STAB-007 | P2 | CODE-RISK | J02 | SSE 只在 active job 时重放历史，完成后刷新可能缺少全过程 | 待断线/重连 fixture |
 | STAB-008 | P2 | CODE-RISK | J06/J08 | notes/chat 使用直接写文件，进程中断时存在部分写入风险 | 后续原子写入测试 |
-| STAB-009 | P1 | CONFIRMED | 测试基础 | 数据目录固定，自动测试可能污染真实课程 | 本批次加入 `KIMI_STUDY_DATA_DIR` |
+| STAB-009 | P1 | CONFIRMED | 测试基础 | 数据目录固定，自动测试可能污染真实课程 | 本批次加入 `LUCUBRO_DATA_DIR` |
 | STAB-010 | P2 | UNVERIFIED | J04 | PDF.js、EPUB.js 动态加载、worker 和资源路径未做真实浏览器矩阵 | Phase 5 |
 | STAB-011 | P2 | CONFIRMED | 全部 | 目前没有统一收集 console error、requestfailed、4xx/5xx | Phase 3 |
 | STAB-012 | P2 | UNVERIFIED | J03/J06/J07 | Lenis 是否干扰笔记、输入和排序拖动尚未端到端验证 | Phase 6 |

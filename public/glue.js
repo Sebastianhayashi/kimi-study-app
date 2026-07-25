@@ -1,4 +1,4 @@
-// Kimi Study 接线层：不改任何原型 DOM/样式，只把原型已有的交互接到真后端。
+// Lucubro 接线层：不改任何原型 DOM/样式，只把原型已有的交互接到真后端。
 // 三个页面的 HTML 文件字节级冻结，本脚本在服务端输出时注入。
 (() => {
   const path = location.pathname;
@@ -285,7 +285,7 @@
         const coverTitle = cover.querySelector('.cover-title');
         if (coverTitle) coverTitle.textContent = course.title;
         const coverKind = cover.querySelector('.cover-kind');
-        if (coverKind) coverKind.textContent = 'KIMI STUDY';
+        if (coverKind) coverKind.textContent = 'LUCUBRO';
         const coverAuthor = cover.querySelector('.cover-author');
         if (coverAuthor) coverAuthor.textContent = `${course.ext} 材料`;
       }
@@ -802,7 +802,7 @@
       .then((r) => r.json())
       .then((info) => {
         document.querySelector('.course-name').textContent = info.title;
-        document.title = `${info.title} · Kimi Study`;
+        document.title = `${info.title} · Lucubro`;
         document.querySelector('.mission-title').textContent = `掌握《${info.title}》的核心内容与方法`;
         document.querySelector('.mission-copy').textContent = '本课程由 Kimi 根据你上传的材料生成，跟随课程目录逐课学习即可。';
         const chips = document.querySelectorAll('.mission-status .context-chip');

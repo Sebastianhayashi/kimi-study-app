@@ -2,7 +2,7 @@
 
 ## 总览
 
-Kimi Study 使用一个 Node.js 服务连接静态产品界面、本地文件工作区、Kimi CLI 子进程和浏览器运行时。
+Lucubro 使用一个 Node.js 服务连接静态产品界面、本地文件工作区、Kimi CLI 子进程和浏览器运行时。
 
 ```mermaid
 flowchart TB
@@ -72,7 +72,7 @@ flowchart TB
 
 每门课程拥有独立目录。服务端只公开明确允许的学习资源，私有状态、评估答案和事务基线不会通过通用文件路由暴露。
 
-测试使用 `KIMI_STUDY_DATA_DIR` 指向临时目录，并拒绝生产端口与生产课程目录组合。
+测试使用 `LUCUBRO_DATA_DIR` 指向临时目录，并拒绝生产端口与生产课程目录组合。
 
 ## Kimi 与 Skills
 

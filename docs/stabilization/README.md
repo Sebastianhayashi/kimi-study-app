@@ -1,4 +1,4 @@
-# Kimi Study 稳定化工作区
+# Lucubro 稳定化工作区
 
 本目录定义当前产品的行为边界、核心用户旅途、交互契约、状态机、问题台账和发布门禁。
 
@@ -24,7 +24,7 @@
 
 ```bash
 npm run fixtures:build
-KIMI_STUDY_DATA_DIR=/tmp/kimi-study-e2e npm run fixtures:seed -- --clean
+LUCUBRO_DATA_DIR=/tmp/lucubro-e2e npm run fixtures:seed -- --clean
 npm run stabilization:baseline
 ```
 

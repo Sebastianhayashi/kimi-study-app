@@ -4,6 +4,13 @@ All notable changes to Kimi Study will be documented here.
 
 The project follows semantic versioning after the first tagged public release.
 
+## Unreleased — Lucubro 品牌更名
+
+### Changed
+
+- 对外产品名由 Kimi Study 更名为 Lucubro，并保留 Kimi provider 归属。
+- 增加旧 localStorage key 与 `KIMI_STUDY_*` 环境变量的兼容迁移。
+
 ## Unreleased
 
 ### Added

@@ -119,7 +119,7 @@ test('captures immutable baselines and creates a stream-json-first generator ses
 
   const legacyAlias = normalizeGeneratorSessionState({
     schemaVersion: 1,
-    sessionId: 'kimi-study-course1-generator-fixed',
+    sessionId: 'lucubro-course1-generator-fixed',
     initialized: false,
     preferredMode: 'stream-json',
   });

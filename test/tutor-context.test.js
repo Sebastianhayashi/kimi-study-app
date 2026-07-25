@@ -99,7 +99,7 @@ test('bootstraps tutor without inventing a Kimi session id', () => {
 
 test('discards legacy fabricated tutor sessions and keeps real Kimi sessions', () => {
   assert.equal(normalizeTutorSessionState({
-    sessionId: 'kimi-study-course123-tutor-fixed-nonce',
+    sessionId: 'lucubro-course123-tutor-fixed-nonce',
     initialized: true,
   }).initialized, false);
   assert.deepEqual(normalizeTutorSessionState({

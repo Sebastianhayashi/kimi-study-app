@@ -3,7 +3,7 @@
 You are publishing an effect-first repository update for:
 
 ```text
-Sebastianhayashi/kimi-study-app
+Sebastianhayashi/lucubro
 ```
 
 The package containing this file is a complete source snapshot. **Do not replace Git history and do not force-push.** Use the current GitHub repository as the source of truth, overlay this package onto a fresh clone, run the release gate, and create a pull request unless the human explicitly requests a direct main update.
@@ -12,7 +12,7 @@ The package containing this file is a complete source snapshot. **Do not replace
 
 Make the repository immediately show:
 
-1. what Kimi Study produces;
+1. what Lucubro produces;
 2. the complete material-to-course workflow;
 3. real desktop and mobile product evidence;
 4. the engineering quality bar and known limitations;
@@ -45,15 +45,15 @@ The script clones the current repository, overlays this package, validates the r
 
 ```bash
 gh auth status
-gh repo view Sebastianhayashi/kimi-study-app
+gh repo view Sebastianhayashi/lucubro
 ```
 
 ### 2. Clone current main
 
 ```bash
 workdir="$(mktemp -d)"
-git clone https://github.com/Sebastianhayashi/kimi-study-app.git "$workdir/kimi-study-app"
-cd "$workdir/kimi-study-app"
+git clone https://github.com/Sebastianhayashi/lucubro.git "$workdir/lucubro"
+cd "$workdir/lucubro"
 git checkout -b repo/effect-first-product-showcase
 ```
 
@@ -62,7 +62,7 @@ git checkout -b repo/effect-first-product-showcase
 Run from the package root, replacing the destination path:
 
 ```bash
-rsync -a ./ "$workdir/kimi-study-app/" \
+rsync -a ./ "$workdir/lucubro/" \
   --exclude '.git/' \
   --exclude 'node_modules/' \
   --exclude 'data/courses/' \
@@ -79,7 +79,7 @@ Do not use `rsync --delete`.
 ### 4. Review the diff before installing dependencies
 
 ```bash
-cd "$workdir/kimi-study-app"
+cd "$workdir/lucubro"
 git status --short
 git diff --stat
 git diff -- README.md package.json public/glue.js public/generation-preview-product.js tests/e2e/generation-state-coherence.spec.js
@@ -94,7 +94,7 @@ npm ci
 npm run check
 npm test
 npm run fixtures:build
-KIMI_STUDY_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
+LUCUBRO_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
 npx playwright install --with-deps chromium
 npm run test:e2e:ci
 ```
@@ -113,7 +113,7 @@ If network restrictions prevent dependency installation, stop and report the blo
 
 ```bash
 git add -A
-git commit -m "docs: present Kimi Study with effect-first evidence"
+git commit -m "docs: present Lucubro with effect-first evidence"
 git push -u origin repo/effect-first-product-showcase
 ```
 
@@ -121,10 +121,10 @@ Create the pull request:
 
 ```bash
 gh pr create \
-  --repo Sebastianhayashi/kimi-study-app \
+  --repo Sebastianhayashi/lucubro \
   --base main \
   --head repo/effect-first-product-showcase \
-  --title "Present Kimi Study with effect-first product evidence" \
+  --title "Present Lucubro with effect-first product evidence" \
   --body-file PUBLISH_PR_BODY.md
 ```
 
@@ -133,9 +133,9 @@ gh pr create \
 After the PR is merged:
 
 ```bash
-gh repo edit Sebastianhayashi/kimi-study-app \
+gh repo edit Sebastianhayashi/lucubro \
   --description "Turn books and learning materials into personalized interactive courses powered by Kimi Code." \
-  --homepage "https://github.com/Sebastianhayashi/kimi-study-app" \
+  --homepage "https://github.com/Sebastianhayashi/lucubro" \
   --add-topic ai-learning \
   --add-topic education \
   --add-topic kimi \

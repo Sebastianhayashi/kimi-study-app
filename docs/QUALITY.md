@@ -41,7 +41,7 @@ npm test
 
 ```bash
 npm run fixtures:build
-KIMI_STUDY_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
+LUCUBRO_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
 npm run test:e2e:ci
 ```
 

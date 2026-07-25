@@ -2,8 +2,9 @@
 
 const path = require('path');
 const { defineConfig, devices } = require('@playwright/test');
+const { resolveE2EPort } = require('./lib/runtime-config');
 
-const port = Number(process.env.KIMI_STUDY_E2E_PORT || 3107);
+const port = resolveE2EPort();
 if (!Number.isInteger(port) || port <= 0 || port > 65535 || port === 3000) {
   throw new Error(`Unsafe Playwright port: ${port}. E2E must use an isolated non-production port.`);
 }
@@ -42,7 +43,7 @@ module.exports = defineConfig({
       ...process.env,
       NODE_ENV: 'test',
       PORT: String(port),
-      KIMI_STUDY_E2E_PORT: String(port),
+      LUCUBRO_E2E_PORT: String(port),
     },
   },
   projects: [

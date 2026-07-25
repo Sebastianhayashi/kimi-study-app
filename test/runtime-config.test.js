@@ -6,7 +6,7 @@ const path = require('path');
 const { resolveDataDir, resolveFixtureDir } = require('../lib/runtime-config');
 
 test('resolveDataDir uses the production data path by default', () => {
-  const root = path.join(path.sep, 'tmp', 'kimi-study-root');
+  const root = path.join(path.sep, 'tmp', 'lucubro-root');
   assert.equal(resolveDataDir({ root, env: {} }), path.join(root, 'data', 'courses'));
 });
 

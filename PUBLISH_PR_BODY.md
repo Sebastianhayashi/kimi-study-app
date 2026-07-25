@@ -1,6 +1,6 @@
 ## Why
 
-The repository previously explained how to start Kimi Study but did not let a visitor quickly understand the learning outcome, full workflow, product surfaces, or engineering evidence.
+The repository previously explained how to start Lucubro but did not let a visitor quickly understand the learning outcome, full workflow, product surfaces, or engineering evidence.
 
 ## What this changes
 
@@ -19,7 +19,7 @@ All commands below were run locally on this exact branch (overlay of the package
 - `npm run check`: PASS (all `node --check` targets compile)
 - `npm test`: PASS — 116/116 node:test tests, 0 failures
 - `npm run fixtures:build`: PASS — deterministic fixtures built at `tests/.generated/fixtures`
-- isolated fixture seed: PASS — `KIMI_STUDY_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean` seeded only the isolated directory
+- isolated fixture seed: PASS — `LUCUBRO_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean` seeded only the isolated directory
 - `npx playwright install --with-deps chromium`: PASS
 - `npm run test:e2e:ci`: PASS — 45/45 Chromium tests, 0 failures (53.4s), including the new failure-terminal-state regression
 - production `data/courses` remained unchanged: PASS — no tracked modifications and no new files written by any gate step (verified via `git status --porcelain -- data/courses` and mtime comparison against the pre-gate marker)

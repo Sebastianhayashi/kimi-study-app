@@ -15,7 +15,7 @@ tests/.generated/fixtures
 使用隔离数据目录启动服务：
 
 ```bash
-export KIMI_STUDY_DATA_DIR=/tmp/kimi-study-e2e
+export LUCUBRO_DATA_DIR=/tmp/lucubro-e2e
 npm run fixtures:seed -- --clean
 node server.js
 ```
@@ -23,5 +23,5 @@ node server.js
 安全限制：
 
 - `fixtures:seed` 默认拒绝写入仓库的 `data/courses`。
-- `--clean` 默认只清理带 `.kimi-study-e2e-data` 标记的目录。
+- `--clean` 默认只清理带 `.lucubro-e2e-data` 标记的目录。
 - 必须显式使用 `--force` 才能覆盖这些保护。

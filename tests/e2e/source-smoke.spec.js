@@ -24,7 +24,7 @@ test('原文阅读器打开文本资源并无损返回课节', async ({ page }) 
   await expect(viewer).toHaveClass(/is-ready/);
 
   await viewer.locator('.ks-source-select').selectOption('sources/sample.txt');
-  await expect(viewer.locator('.ks-source-document')).toContainText('Kimi Study text fixture');
+  await expect(viewer.locator('.ks-source-document')).toContainText('Lucubro text fixture');
   await expect(viewer.locator('.ks-source-status')).toContainText('sample.txt');
 
   await viewer.locator('.ks-source-close').click();

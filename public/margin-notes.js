@@ -505,7 +505,7 @@
       document.documentElement.style.setProperty('--kn-rail-reserve', `${CARD_WIDTH + CARD_GAP + 16}px`);
 
       // 笔记栏收起/展开状态，按课程+课节持久化（开关在父页顶部栏，经 postMessage 驱动）
-      this.storageKey = `kimi-study-notes-panel:${controller.courseId}:${location.pathname}`;
+      this.storageKey = `lucubro-notes-panel:${controller.courseId}:${location.pathname}`;
       let stored = {};
       try { stored = JSON.parse(localStorage.getItem(this.storageKey) || '{}'); } catch {}
       this.collapsed = stored.userCollapsed === true;

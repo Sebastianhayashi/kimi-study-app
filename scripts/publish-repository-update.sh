@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="Sebastianhayashi/kimi-study-app"
+REPO="Sebastianhayashi/lucubro"
 BRANCH="repo/effect-first-product-showcase"
 DRY_RUN=0
 KEEP_WORKDIR=0
@@ -14,7 +14,7 @@ Safely overlays this package onto a fresh clone, runs the full release gate,
 pushes a branch, and creates a pull request.
 
 Options:
-  --repo OWNER/NAME    Target repository (default: Sebastianhayashi/kimi-study-app)
+  --repo OWNER/NAME    Target repository (default: Sebastianhayashi/lucubro)
   --branch NAME        Branch name (default: repo/effect-first-product-showcase)
   --dry-run            Validate and show the diff without pushing or opening a PR
   --keep-workdir       Preserve the temporary clone after success
@@ -60,8 +60,8 @@ for cmd in gh git rsync npm npx node; do
 done
 
 PACKAGE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/kimi-study-publish.XXXXXX")"
-CLONE_DIR="$WORKDIR/kimi-study-app"
+WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/lucubro-publish.XXXXXX")"
+CLONE_DIR="$WORKDIR/lucubro"
 LOG_DIR="$WORKDIR/validation-logs"
 mkdir -p "$LOG_DIR"
 
@@ -139,7 +139,7 @@ run_logged npm-ci npm ci
 run_logged static-check npm run check
 run_logged node-tests npm test
 run_logged fixture-build npm run fixtures:build
-run_logged fixture-seed env KIMI_STUDY_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
+run_logged fixture-seed env LUCUBRO_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
 run_logged playwright-install npx playwright install --with-deps chromium
 run_logged browser-e2e npm run test:e2e:ci
 
@@ -165,7 +165,7 @@ fi
 cat > "$WORKDIR/pr-body.md" <<EOF_BODY
 ## Why
 
-The repository previously explained how to start Kimi Study but did not let a visitor quickly understand the learning outcome, complete workflow, product surfaces, or engineering evidence.
+The repository previously explained how to start Lucubro but did not let a visitor quickly understand the learning outcome, complete workflow, product surfaces, or engineering evidence.
 
 ## What this changes
 
@@ -202,14 +202,14 @@ if git diff --cached --quiet; then
   exit 0
 fi
 
-git commit -m "docs: present Kimi Study with effect-first evidence"
+git commit -m "docs: present Lucubro with effect-first evidence"
 git push -u origin "$BRANCH"
 
 pr_url="$(gh pr create \
   --repo "$REPO" \
   --base "$default_branch" \
   --head "$BRANCH" \
-  --title "Present Kimi Study with effect-first product evidence" \
+  --title "Present Lucubro with effect-first product evidence" \
   --body-file "$WORKDIR/pr-body.md")"
 
 gh repo edit "$REPO" \

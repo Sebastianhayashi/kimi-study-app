@@ -15,7 +15,7 @@ Include:
 
 ## Security boundaries
 
-Kimi Study is a local-first experimental application. It starts a web server, accepts uploaded learning materials, writes course workspaces, and launches a locally authenticated `kimi` CLI subprocess. Treat uploaded files and generated HTML as untrusted input.
+Lucubro is a local-first experimental application. It starts a web server, accepts uploaded learning materials, writes course workspaces, and launches a locally authenticated `kimi` CLI subprocess. Treat uploaded files and generated HTML as untrusted input.
 
 Contributors must not:
 

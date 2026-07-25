@@ -1,6 +1,6 @@
 # Repository update package manifest
 
-Target repository: `Sebastianhayashi/kimi-study-app`
+Target repository: `Sebastianhayashi/lucubro`
 
 Package purpose: effect-first public repository presentation, open-source project infrastructure, focused generation-state repair, and local Agent CLI publication workflow.
 

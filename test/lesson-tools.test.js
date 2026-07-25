@@ -61,7 +61,7 @@ function reservePort() {
 }
 
 function createIsolatedCourseData(t) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'kimi-study-lesson-tools-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'lucubro-lesson-tools-'));
   const dataDir = path.join(root, 'courses');
   const courseDir = path.join(dataDir, COURSE_ID);
 

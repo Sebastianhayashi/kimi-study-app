@@ -10,7 +10,7 @@ const JSZip = require('jszip');
 const { validateEpubArchive } = require('../lib/onboarding');
 
 function tempFile(name, content) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kimi-study-epub-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lucubro-epub-'));
   const file = path.join(dir, name);
   fs.writeFileSync(file, content);
   return file;

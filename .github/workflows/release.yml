@@ -51,14 +51,14 @@ jobs:
           npm run check
           npm test
           npm run fixtures:build
-          KIMI_STUDY_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
+          LUCUBRO_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
           npm run test:e2e:ci
 
       - name: Build clean source archive
         shell: bash
         run: |
           set -euo pipefail
-          staging="release/kimi-study-app-${RELEASE_TAG}"
+          staging="release/lucubro-${RELEASE_TAG}"
           mkdir -p "$staging"
           rsync -a ./ "$staging/" \
             --exclude '.git/' \
@@ -70,8 +70,8 @@ jobs:
             --exclude 'test-results/' \
             --exclude 'blob-report/' \
             --exclude 'release/'
-          (cd release && zip -qr "kimi-study-app-${RELEASE_TAG}.zip" "kimi-study-app-${RELEASE_TAG}")
-          sha256sum "release/kimi-study-app-${RELEASE_TAG}.zip" > "release/SHA256SUMS.txt"
+          (cd release && zip -qr "lucubro-${RELEASE_TAG}.zip" "lucubro-${RELEASE_TAG}")
+          sha256sum "release/lucubro-${RELEASE_TAG}.zip" > "release/SHA256SUMS.txt"
 
       - name: Create or update GitHub Release
         shell: bash
@@ -79,14 +79,14 @@ jobs:
           set -euo pipefail
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release upload "$RELEASE_TAG" \
-              "release/kimi-study-app-${RELEASE_TAG}.zip" \
+              "release/lucubro-${RELEASE_TAG}.zip" \
               "release/SHA256SUMS.txt" \
               --clobber
           else
             gh release create "$RELEASE_TAG" \
-              "release/kimi-study-app-${RELEASE_TAG}.zip" \
+              "release/lucubro-${RELEASE_TAG}.zip" \
               "release/SHA256SUMS.txt" \
               --verify-tag \
               --generate-notes \
-              --title "Kimi Study ${RELEASE_TAG}"
+              --title "Lucubro ${RELEASE_TAG}"
           fi

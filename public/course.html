@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="description" content="Kimi Study 课程学习工作区 v2" />
-<title>Play Anything · Kimi Study</title>
+<meta name="description" content="Lucubro 课程学习工作区 v2" />
+<title>Play Anything · Lucubro</title>
+<script src="/brand-compat.js"></script>
 <style>
 :root {
   --bg: #f7f9fc;
@@ -1610,7 +1611,7 @@ svg { display: block; }
         <button class="icon-button" id="backButton" aria-label="返回我的学习">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="m14.5 6-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <span class="brand-mark">K</span>
+        <span class="brand-mark">L</span>
         <div class="identity">
           <div class="course-name">Play Anything</div>
           <div class="course-meta">Ian Bogost · 7 节课 · 1 份材料</div>
@@ -2198,8 +2199,8 @@ const resizeLeft = document.getElementById('resizeLeft');
 const resizeRight = document.getElementById('resizeRight');
 
 const moduleSizes = {
-  left: Number(localStorage.getItem('kimi-study-left-width')) || 268,
-  right: Number(localStorage.getItem('kimi-study-right-width')) || 370
+  left: Number(localStorage.getItem('lucubro-left-width')) || 268,
+  right: Number(localStorage.getItem('lucubro-right-width')) || 370
 };
 
 function clamp(value, minimum, maximum) {
@@ -2224,8 +2225,8 @@ function availableLimits() {
 }
 
 function persistModuleSizes() {
-  localStorage.setItem('kimi-study-left-width', String(Math.round(moduleSizes.left)));
-  localStorage.setItem('kimi-study-right-width', String(Math.round(moduleSizes.right)));
+  localStorage.setItem('lucubro-left-width', String(Math.round(moduleSizes.left)));
+  localStorage.setItem('lucubro-right-width', String(Math.round(moduleSizes.right)));
 }
 
 function startResize(side, event) {
@@ -2332,8 +2333,8 @@ const focusModeButton = document.getElementById('focusModeButton');
 const fullscreenButton = document.getElementById('fullscreenButton');
 
 const panelState = {
-  leftCollapsed: localStorage.getItem('kimi-study-left-collapsed') === 'true',
-  rightCollapsed: localStorage.getItem('kimi-study-right-collapsed') === 'true',
+  leftCollapsed: localStorage.getItem('lucubro-left-collapsed') === 'true',
+  rightCollapsed: localStorage.getItem('lucubro-right-collapsed') === 'true',
   focusMode: false
 };
 
@@ -2348,8 +2349,8 @@ function applyPanelState() {
   focusModeButton.title = panelState.focusMode ? '退出专注模式' : '进入专注模式';
 
   if (!panelState.focusMode) {
-    localStorage.setItem('kimi-study-left-collapsed', String(panelState.leftCollapsed));
-    localStorage.setItem('kimi-study-right-collapsed', String(panelState.rightCollapsed));
+    localStorage.setItem('lucubro-left-collapsed', String(panelState.leftCollapsed));
+    localStorage.setItem('lucubro-right-collapsed', String(panelState.rightCollapsed));
   }
 }
 

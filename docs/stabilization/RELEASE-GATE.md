@@ -8,7 +8,7 @@ Phase 0–2 合并前必须满足：
 npm run check
 npm test
 npm run fixtures:build
-使用临时 KIMI_STUDY_DATA_DIR 完成 fixtures:seed
+使用临时 LUCUBRO_DATA_DIR 完成 fixtures:seed
 生产默认 data/courses 未被改写
 ```
 

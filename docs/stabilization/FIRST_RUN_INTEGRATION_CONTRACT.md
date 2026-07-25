@@ -10,11 +10,11 @@ The design source for First-run is not `public/app.html` and not the frozen in-c
 
 | Field | Value |
 |---|---|
-| File | `kimi-study-first-run-quiet-carousel-demo(1).html` |
+| File | `lucubro-first-run-quiet-carousel-demo(1).html` |
 | SHA-256 | `48cf40459ed6aa13a0af13a06a0d28190d66aa773cedd91f1d48fd4eee92e742` |
 | Size | `39,441 bytes` |
 | Lines | `1,103` |
-| HTML title | `Kimi Study · 安静建课过渡演示` |
+| HTML title | `Lucubro · 安静建课过渡演示` |
 
 The implementation agent must obtain a local copy whose SHA-256 matches this value before Patch B. A similarly named file is not an acceptable substitute.
 

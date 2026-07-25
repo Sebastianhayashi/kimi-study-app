@@ -51,8 +51,8 @@ const report = {
     osRelease: os.release(),
   },
   configuration: {
-    dataDirConfigured: Boolean(process.env.KIMI_STUDY_DATA_DIR),
-    fixtureDirConfigured: Boolean(process.env.KIMI_STUDY_FIXTURE_DIR),
+    dataDirConfigured: Boolean(process.env.LUCUBRO_DATA_DIR || process.env.KIMI_STUDY_DATA_DIR),
+    fixtureDirConfigured: Boolean(process.env.LUCUBRO_FIXTURE_DIR || process.env.KIMI_STUDY_FIXTURE_DIR),
     port: process.env.PORT || '3000',
   },
   verification: [],

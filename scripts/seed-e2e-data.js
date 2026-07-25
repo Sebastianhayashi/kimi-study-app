@@ -16,14 +16,15 @@ const fixtureDir = path.resolve(arg('--fixtures') || resolveFixtureDir({ root: R
 const source = path.join(fixtureDir, 'courses');
 const target = path.resolve(arg('--target') || resolveDataDir({ root: ROOT }));
 assertSafeSeedTarget({ root: ROOT, target });
-const marker = path.join(target, '.kimi-study-e2e-data');
+const marker = path.join(target, '.lucubro-e2e-data');
+const legacyMarker = path.join(target, '.kimi-study-e2e-data');
 
 if (!fs.existsSync(path.join(fixtureDir, 'manifest.json'))) {
   throw new Error(`Fixture manifest not found at ${fixtureDir}. Run npm run fixtures:build first.`);
 }
 if (!fs.existsSync(source)) throw new Error(`Fixture courses not found at ${source}`);
 const targetIsEmpty = !fs.existsSync(target) || fs.readdirSync(target).length === 0;
-if (clean && fs.existsSync(target) && !targetIsEmpty && !fs.existsSync(marker) && !force) {
+if (clean && fs.existsSync(target) && !targetIsEmpty && !fs.existsSync(marker) && !fs.existsSync(legacyMarker) && !force) {
   throw new Error(`Refusing to clean unmarked non-empty directory ${target}. Use an isolated empty directory.`);
 }
 
@@ -46,4 +47,4 @@ if (fs.existsSync(interruptedJob)) {
   fs.utimesSync(interruptedJob, old, old);
 }
 
-console.log(`Seeded isolated Kimi Study test data at ${target}`);
+console.log(`Seeded isolated Lucubro test data at ${target}`);

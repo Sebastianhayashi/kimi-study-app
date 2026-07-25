@@ -35,4 +35,4 @@
 
 ## 命名
 
-Kimi Study 是独立开源实验项目，不是 Moonshot AI 的官方产品。
+Lucubro 是独立开源实验项目，不是 Moonshot AI 的官方产品。

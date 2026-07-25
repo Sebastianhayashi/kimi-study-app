@@ -57,7 +57,7 @@ function createPdf({ pages, landscape = false, outline = false, imageOnly = fals
     const text = pages[index] || `Page ${index + 1}`;
     const stream = imageOnly
       ? 'q\n0.93 0.95 0.98 rg\n72 144 468 504 re f\n0.35 0.40 0.48 RG\n72 144 468 504 re S\nQ\n'
-      : `BT\n/F1 18 Tf\n72 ${pageHeight - 96} Td\n(${pdfEscape(text)}) Tj\n0 -34 Td\n/F1 11 Tf\n(Kimi Study deterministic PDF fixture - page ${index + 1}) Tj\nET\n`;
+      : `BT\n/F1 18 Tf\n72 ${pageHeight - 96} Td\n(${pdfEscape(text)}) Tj\n0 -34 Td\n/F1 11 Tf\n(Lucubro deterministic PDF fixture - page ${index + 1}) Tj\nET\n`;
     objects.set(pageId, `<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${contentId} 0 R >>`);
     objects.set(contentId, `<< /Length ${Buffer.byteLength(stream)} >>\nstream\n${stream}endstream`);
   }
@@ -157,8 +157,8 @@ function createStoredZip(entries) {
 
 function createEpub({ version = 3, title, language = 'zh-CN', missingResource = false }) {
   const container = `<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>`;
-  const chapter1 = `<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" lang="${language}"><head><title>第一章</title></head><body><h1>第一章</h1><p>Kimi Study EPUB fixture chapter one.</p><p>用于验证搜索、目录和字体调整。</p></body></html>`;
-  const chapter2 = `<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" lang="${language}"><head><title>第二章</title></head><body><h1>第二章</h1><p>Kimi Study EPUB fixture chapter two.</p><p>这是跨章节搜索目标：稳定化。</p></body></html>`;
+  const chapter1 = `<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" lang="${language}"><head><title>第一章</title></head><body><h1>第一章</h1><p>Lucubro EPUB fixture chapter one.</p><p>用于验证搜索、目录和字体调整。</p></body></html>`;
+  const chapter2 = `<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" lang="${language}"><head><title>第二章</title></head><body><h1>第二章</h1><p>Lucubro EPUB fixture chapter two.</p><p>这是跨章节搜索目标：稳定化。</p></body></html>`;
   const identifier = version === 2 ? 'urn:kimi:fixture:epub2' : 'urn:kimi:fixture:epub3';
   const entries = [
     { name: 'mimetype', data: 'application/epub+zip' },
@@ -248,7 +248,7 @@ function createCourse(id, options = {}) {
 
 function buildSources() {
   ensureDir(SOURCE_DIR);
-  write(path.join(SOURCE_DIR, 'text-pdf.pdf'), createPdf({ pages: ['Kimi Study PDF search target', 'Second PDF page'] }));
+  write(path.join(SOURCE_DIR, 'text-pdf.pdf'), createPdf({ pages: ['Lucubro PDF search target', 'Second PDF page'] }));
   write(path.join(SOURCE_DIR, 'outline-pdf.pdf'), createPdf({ pages: ['Outline PDF page one', 'Outline PDF page two'], outline: true }));
   write(path.join(SOURCE_DIR, 'landscape-pdf.pdf'), createPdf({ pages: ['Landscape PDF fixture'], landscape: true }));
   write(path.join(SOURCE_DIR, 'scanned-pdf.pdf'), createPdf({ pages: [''], imageOnly: true }));
@@ -258,7 +258,7 @@ function buildSources() {
   write(path.join(SOURCE_DIR, 'chinese.epub'), createEpub({ version: 3, title: '中文 EPUB 测试', language: 'zh-CN' }));
   write(path.join(SOURCE_DIR, 'missing-resource.epub'), createEpub({ version: 3, title: 'Missing Resource Fixture', missingResource: true }));
   write(path.join(SOURCE_DIR, 'broken.epub'), Buffer.from('not an epub fixture'));
-  write(path.join(SOURCE_DIR, 'sample.txt'), 'Kimi Study text fixture\n搜索目标：稳定化\n');
+  write(path.join(SOURCE_DIR, 'sample.txt'), 'Lucubro text fixture\n搜索目标：稳定化\n');
   write(path.join(SOURCE_DIR, 'sample.md'), '# Markdown Fixture\n\n- 目录\n- 搜索\n- 字体调整\n');
   write(path.join(SOURCE_DIR, 'sample.html'), '<!doctype html><html><body><h1>HTML Fixture</h1><p>稳定化搜索目标</p><script>window.__fixtureScriptRan=true</script></body></html>');
   write(path.join(SOURCE_DIR, 'sample.png'), Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl9nOQAAAAASUVORK5CYII=', 'base64'));

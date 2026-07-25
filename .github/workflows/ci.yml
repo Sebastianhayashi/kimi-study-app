@@ -24,7 +24,7 @@ jobs:
 
     env:
       CI: "true"
-      KIMI_STUDY_E2E_PORT: "3107"
+      LUCUBRO_E2E_PORT: "3107"
 
     steps:
       - name: Check out repository

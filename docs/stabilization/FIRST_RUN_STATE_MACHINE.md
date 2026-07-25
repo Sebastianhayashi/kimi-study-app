@@ -2,7 +2,7 @@
 
 Status: **target contract; not implemented**
 Repository baseline: `main@e337f94523b891121225fffebd3b06e81ca68591`
-Reference animation: `kimi-study-first-run-quiet-carousel-demo(1).html`
+Reference animation: `lucubro-first-run-quiet-carousel-demo(1).html`
 Reference SHA-256: `48cf40459ed6aa13a0af13a06a0d28190d66aa773cedd91f1d48fd4eee92e742`
 
 This document defines the proposed first-run lifecycle. It deliberately separates current behavior from target behavior. Nothing in this document should be read as proof that onboarding already exists.

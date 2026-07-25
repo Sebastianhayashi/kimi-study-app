@@ -1,6 +1,6 @@
 <div align="center">
 
-# Kimi Study
+# Lucubro
 
 **Turn books and learning materials into personalized courses you can actually study.**
 
@@ -8,18 +8,18 @@ Upload a PDF, EPUB, Markdown file, or plain text. Kimi Code inspects the materia
 
 [简体中文](README.zh-CN.md) · [See the product](#see-the-product-first) · [Quick start](#quick-start) · [Product model](docs/PRODUCT.md) · [Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md)
 
-[![CI](https://github.com/Sebastianhayashi/kimi-study-app/actions/workflows/ci.yml/badge.svg)](https://github.com/Sebastianhayashi/kimi-study-app/actions/workflows/ci.yml)
+[![CI](https://github.com/Sebastianhayashi/lucubro/actions/workflows/ci.yml/badge.svg)](https://github.com/Sebastianhayashi/lucubro/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933?logo=nodedotjs&logoColor=white)](package.json)
 [![Playwright](https://img.shields.io/badge/E2E-Playwright-2EAD33?logo=playwright&logoColor=white)](tests/e2e)
 [![License](https://img.shields.io/badge/license-ISC-blue)](LICENSE)
 
 </div>
 
-![Kimi Study product showcase](docs/images/hero-showcase.jpg)
+![Lucubro product showcase](docs/images/hero-showcase.jpg)
 
 ## See the product first
 
-Kimi Study is not a document summarizer. It reorganizes source material into a **studyable path** with goals, lessons, practice, notes, evidence, and a tutor that stays grounded in the current course.
+Lucubro is not a document summarizer. It reorganizes source material into a **studyable path** with goals, lessons, practice, notes, evidence, and a tutor that stays grounded in the current course.
 
 - **Material to course**: create a Mission, course map, lessons, and assessments from the source and learning goal.
 - **Interactive lessons**: read, answer, request hints, retry, and record mastery in the same learning surface.
@@ -27,7 +27,7 @@ Kimi Study is not a document summarizer. It reorganizes source material into a *
 - **Source access**: return to the original PDF, EPUB, Markdown, text, HTML, or image resources.
 - **Continuous learning**: lessons, notes, chat, activities, and next-lesson generation stay attached to one course workspace.
 
-![Kimi Study demo](docs/images/kimi-study-demo.gif)
+![Lucubro demo](docs/images/kimi-study-demo.gif)
 
 ## The 30-second workflow
 
@@ -47,13 +47,13 @@ Choose or upload material
 The desktop course view uses three coordinated regions: goals, maps, lessons, and records on the left; the active lesson in the center; and the course-grounded Kimi tutor on the right.
 
 <p align="center">
-  <img src="docs/images/course.jpg" width="72%" alt="Kimi Study course workspace" />
-  <img src="docs/images/mobile.png" width="24%" alt="Kimi Study mobile lesson" />
+  <img src="docs/images/course.jpg" width="72%" alt="Lucubro course workspace" />
+  <img src="docs/images/mobile.png" width="24%" alt="Lucubro mobile lesson" />
 </p>
 
 ## The problem it addresses
 
-| Common study experience | Kimi Study approach |
+| Common study experience | Lucubro approach |
 |---|---|
 | A summary with no next action | Goals, sequence, lessons, practice, and next-lesson generation |
 | A generic chatbot detached from the source | Tutor context includes the Mission, lesson, source, notes, and mastery |
@@ -108,8 +108,8 @@ kimi login
 ### Run with real course generation
 
 ```bash
-git clone https://github.com/Sebastianhayashi/kimi-study-app.git
-cd kimi-study-app
+git clone https://github.com/Sebastianhayashi/lucubro.git
+cd lucubro
 npm ci
 npm start
 ```
@@ -121,7 +121,7 @@ Open `http://localhost:3000`.
 ```bash
 npm ci
 npm run demo:seed
-KIMI_STUDY_DATA_DIR=tests/.runtime/courses PORT=3107 npm start
+LUCUBRO_DATA_DIR=tests/.runtime/courses PORT=3107 npm start
 ```
 
 Open `http://localhost:3107/app`. Fixture data is isolated from production `data/courses` and includes ready, generating, failed, notes, and invalid-assessment scenarios.
@@ -147,7 +147,7 @@ The repository treats UX as explicit state machines, not merely a set of clickab
 npm run check
 npm test
 npm run fixtures:build
-KIMI_STUDY_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
+LUCUBRO_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
 npm run test:e2e:ci
 ```
 
@@ -155,7 +155,7 @@ See [Quality and testing](docs/QUALITY.md), [`docs/stabilization`](docs/stabiliz
 
 ## Project status
 
-Kimi Study is an **experimental open-source prototype** for local exploration and product research, not a finished production SaaS.
+Lucubro is an **experimental open-source prototype** for local exploration and product research, not a finished production SaaS.
 
 - Model calls require the user's authenticated Kimi CLI.
 - Course artifacts are stored locally, while model requests are performed through the Kimi CLI and its configured service.
@@ -190,4 +190,4 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md). Report security issues through [SECURIT
 
 Code is available under the [ISC License](LICENSE). Adapted third-party work is listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-Kimi Study is an independent open-source experiment and is not an official Moonshot AI product. Kimi-related trademarks belong to their respective owners.
+Lucubro is an independent open-source experiment and is not an official Moonshot AI product. Kimi-related trademarks belong to their respective owners.

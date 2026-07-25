@@ -7,7 +7,7 @@ Fixture 演示不调用真实 Kimi 模型，适合查看产品状态和浏览器
 ```bash
 npm ci
 npm run demo:seed
-KIMI_STUDY_DATA_DIR=tests/.runtime/courses PORT=3107 npm start
+LUCUBRO_DATA_DIR=tests/.runtime/courses PORT=3107 npm start
 ```
 
 打开：

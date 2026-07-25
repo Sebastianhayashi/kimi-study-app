@@ -1,6 +1,6 @@
 <div align="center">
 
-# Kimi Study
+# Lucubro
 
 **把教材、书籍和自己的材料，变成真正学得会的个人课程。**
 
@@ -8,18 +8,18 @@
 
 [English](README.md) · [30 秒看产品](#30-秒看产品) · [快速启动](#快速启动) · [产品原理](docs/PRODUCT.md) · [架构](docs/ARCHITECTURE.md) · [路线图](docs/ROADMAP.md)
 
-[![CI](https://github.com/Sebastianhayashi/kimi-study-app/actions/workflows/ci.yml/badge.svg)](https://github.com/Sebastianhayashi/kimi-study-app/actions/workflows/ci.yml)
+[![CI](https://github.com/Sebastianhayashi/lucubro/actions/workflows/ci.yml/badge.svg)](https://github.com/Sebastianhayashi/lucubro/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933?logo=nodedotjs&logoColor=white)](package.json)
 [![Playwright](https://img.shields.io/badge/E2E-Playwright-2EAD33?logo=playwright&logoColor=white)](tests/e2e)
 [![License](https://img.shields.io/badge/license-ISC-blue)](LICENSE)
 
 </div>
 
-![Kimi Study 产品界面](docs/images/hero-showcase.jpg)
+![Lucubro 产品界面](docs/images/hero-showcase.jpg)
 
 ## 先看它能做出什么
 
-Kimi Study 不是“把书总结一下”。它试图把一份材料重新组织成一条**可以学习、练习、追问和继续推进**的个人课程路径：
+Lucubro 不是“把书总结一下”。它试图把一份材料重新组织成一条**可以学习、练习、追问和继续推进**的个人课程路径：
 
 - **材料变课程**：从原书和学习目标生成 Mission、课程地图、课节和练习。
 - **互动课节**：正文、引导问题、检查理解、提示、重试和掌握记录在同一学习面中完成。
@@ -27,7 +27,7 @@ Kimi Study 不是“把书总结一下”。它试图把一份材料重新组织
 - **来源可回看**：课程中可以返回 PDF、EPUB、Markdown、文本或 HTML 原始材料。
 - **学习可延续**：课节、笔记、聊天、活动与下一课生成都绑定到同一课程工作区。
 
-![Kimi Study 演示](docs/images/kimi-study-demo.gif)
+![Lucubro 演示](docs/images/kimi-study-demo.gif)
 
 ## 30 秒看产品
 
@@ -47,13 +47,13 @@ Kimi Study 不是“把书总结一下”。它试图把一份材料重新组织
 课程页使用三栏结构：左侧是目标、地图、目录和学习记录，中间是当前课节，右侧是绑定当前课程的 Kimi 助教。
 
 <p align="center">
-  <img src="docs/images/course.jpg" width="72%" alt="Kimi Study course workspace" />
-  <img src="docs/images/mobile.png" width="24%" alt="Kimi Study mobile lesson" />
+  <img src="docs/images/course.jpg" width="72%" alt="Lucubro course workspace" />
+  <img src="docs/images/mobile.png" width="24%" alt="Lucubro mobile lesson" />
 </p>
 
 ## 它解决什么问题
 
-| 常见学习工具 | Kimi Study 的处理方式 |
+| 常见学习工具 | Lucubro 的处理方式 |
 |---|---|
 | 只生成摘要，读完后不知道下一步做什么 | 生成目标、顺序、课节、练习和下一课 |
 | 聊天助手脱离当前材料，容易给出泛化回答 | Tutor 上下文绑定 Mission、当前课节、原始材料、笔记和掌握情况 |
@@ -112,8 +112,8 @@ kimi login
 ### 启动真实课程生成
 
 ```bash
-git clone https://github.com/Sebastianhayashi/kimi-study-app.git
-cd kimi-study-app
+git clone https://github.com/Sebastianhayashi/lucubro.git
+cd lucubro
 npm ci
 npm start
 ```
@@ -125,7 +125,7 @@ npm start
 ```bash
 npm ci
 npm run demo:seed
-KIMI_STUDY_DATA_DIR=tests/.runtime/courses PORT=3107 npm start
+LUCUBRO_DATA_DIR=tests/.runtime/courses PORT=3107 npm start
 ```
 
 打开 `http://localhost:3107/app`。Fixture 数据与生产 `data/courses` 隔离，适合查看 ready、generating、failed、notes 和 invalid-assessment 等状态。
@@ -169,7 +169,7 @@ KIMI_STUDY_DATA_DIR=tests/.runtime/courses PORT=3107 npm start
 npm run check
 npm test
 npm run fixtures:build
-KIMI_STUDY_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
+LUCUBRO_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
 npm run test:e2e:ci
 ```
 
@@ -177,7 +177,7 @@ npm run test:e2e:ci
 
 ## 当前状态
 
-Kimi Study 目前是一个**研究型开源原型**，适合本地实验、产品探索和贡献开发，不应直接当作已完成的生产 SaaS：
+Lucubro 目前是一个**研究型开源原型**，适合本地实验、产品探索和贡献开发，不应直接当作已完成的生产 SaaS：
 
 - 模型调用依赖用户自己的 Kimi CLI 登录状态。
 - 课程数据保存在本地文件系统，但模型请求会通过 Kimi CLI 调用对应服务。
@@ -218,4 +218,4 @@ docs/                      产品、架构、质量和状态机文档
 
 代码使用 [ISC License](LICENSE)。第三方改编与许可见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
-Kimi Study 是独立的开源实验项目，不是 Moonshot AI 的官方产品；“Kimi”相关商标归其权利人所有。
+Lucubro 是独立的开源实验项目，不是 Moonshot AI 的官方产品；“Kimi”相关商标归其权利人所有。

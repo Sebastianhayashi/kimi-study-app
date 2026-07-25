@@ -270,7 +270,7 @@
     if (!courseId || !mission) return '';
     const turn = Number(mission.turns || 0);
     const question = String(mission.question || '').slice(0, 120);
-    return `kimi-study:mission-answer:${courseId}:${turn}:${question}`;
+    return `lucubro:mission-answer:${courseId}:${turn}:${question}`;
   }
 
   function readMissionDraft(mission) {
@@ -686,7 +686,7 @@
   }
 
   async function showReady(lessonCount) {
-    const readyKey = `kimi-study-first-run-ready:${courseId}`;
+    const readyKey = `lucubro-first-run-ready:${courseId}`;
     if (sessionStorage.getItem(readyKey) === 'shown') {
       location.replace(`/course/${encodeURIComponent(courseId)}`);
       return;

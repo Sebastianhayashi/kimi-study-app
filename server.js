@@ -1,4 +1,4 @@
-// Kimi Study 后端：静态页（注入 glue.js）+ 课程 API + kimi 子进程
+// Lucubro 后端：静态页（注入 glue.js）+ 课程 API + kimi 子进程
 const express = require('express');
 const multer = require('multer');
 const { spawn } = require('child_process');
@@ -1269,5 +1269,5 @@ app.use((req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Kimi Study → http://localhost:${PORT} [${RUNTIME.mode}] data=${RUNTIME.dataDir}`);
+  console.log(`Lucubro → http://localhost:${PORT} [${RUNTIME.mode}] data=${RUNTIME.dataDir}`);
 });

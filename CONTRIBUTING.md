@@ -1,6 +1,6 @@
-# Contributing to Kimi Study
+# Contributing to Lucubro
 
-Thank you for helping improve Kimi Study. The project is an experimental local-first learning application, so contributions should preserve observable user journeys, explicit state ownership, and reproducible evidence.
+Thank you for helping improve Lucubro. The project is an experimental local-first learning application, so contributions should preserve observable user journeys, explicit state ownership, and reproducible evidence.
 
 ## Before opening a change
 
@@ -14,7 +14,7 @@ Thank you for helping improve Kimi Study. The project is an experimental local-f
 ```bash
 npm ci
 npm run fixtures:build
-KIMI_STUDY_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
+LUCUBRO_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
 npm run check
 npm test
 npx playwright install chromium
@@ -24,7 +24,7 @@ npm run test:e2e:ci
 The fixture server can be inspected with:
 
 ```bash
-KIMI_STUDY_DATA_DIR=tests/.runtime/courses PORT=3107 npm start
+LUCUBRO_DATA_DIR=tests/.runtime/courses PORT=3107 npm start
 ```
 
 Then open `http://localhost:3107/app`.

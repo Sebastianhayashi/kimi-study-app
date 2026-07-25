@@ -11,7 +11,7 @@ const { buildSourceDigest, DIGEST_FILE } = require('../lib/source-digest');
 const { initialMissionPrompt } = require('../lib/standard-teach-mission');
 
 function tempRoot() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'kimi-study-digest-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'lucubro-digest-'));
 }
 
 async function writeTinyEpub(file) {

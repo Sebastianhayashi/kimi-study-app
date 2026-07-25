@@ -9,7 +9,7 @@ npm ci
 npm run check
 npm test
 npm run fixtures:build
-KIMI_STUDY_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
+LUCUBRO_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
 npx playwright install chromium
 npm run test:e2e:ci
 ```
@@ -29,7 +29,7 @@ Also confirm:
 npm version <major|minor|patch> --no-git-tag-version
 git add package.json package-lock.json CHANGELOG.md
 git commit -m "chore: prepare vX.Y.Z"
-git tag -s vX.Y.Z -m "Kimi Study vX.Y.Z"
+git tag -s vX.Y.Z -m "Lucubro vX.Y.Z"
 git push origin main --follow-tags
 ```
 

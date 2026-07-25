@@ -3,14 +3,14 @@
 This package is ready to be published as an update to:
 
 ```text
-Sebastianhayashi/kimi-study-app
+Sebastianhayashi/lucubro
 ```
 
 ## Give this instruction to the local Agent CLI
 
 ```text
 Open AGENT_PUBLISH_INSTRUCTIONS.md and execute it exactly.
-Use a fresh clone of Sebastianhayashi/kimi-study-app, overlay this package without deleting newer upstream files, run the full release gate, push a branch, and create a pull request. Do not force-push or write directly to main. Return the PR URL, commit SHA, exact validation results, blocked paths, and any manual GitHub settings still required.
+Use a fresh clone of Sebastianhayashi/lucubro, overlay this package without deleting newer upstream files, run the full release gate, push a branch, and create a pull request. Do not force-push or write directly to main. Return the PR URL, commit SHA, exact validation results, blocked paths, and any manual GitHub settings still required.
 ```
 
 Or run the conservative publisher directly:

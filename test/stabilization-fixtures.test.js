@@ -39,7 +39,7 @@ test('fixture seeding writes only to an explicitly isolated data directory', () 
   run('build-test-fixtures.js', ['--output', fixtureDir]);
   run('seed-e2e-data.js', ['--fixtures', fixtureDir, '--target', dataDir, '--clean']);
 
-  assert.ok(fs.existsSync(path.join(dataDir, '.kimi-study-e2e-data')));
+  assert.ok(fs.existsSync(path.join(dataDir, '.lucubro-e2e-data')));
   assert.ok(fs.existsSync(path.join(dataDir, 'readycourse', 'meta.json')));
   assert.ok(fs.existsSync(path.join(dataDir, 'generatingcourse', 'job.json')));
   assert.ok(fs.statSync(path.join(dataDir, 'generatingcourse', 'job.json')).mtimeMs > Date.now() - 10_000);

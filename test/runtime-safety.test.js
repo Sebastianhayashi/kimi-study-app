@@ -26,8 +26,8 @@ test('test runtime refuses production port and production data', () => {
 });
 
 test('production runtime refuses marked fixture data', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kimi-study-runtime-'));
-  fs.writeFileSync(path.join(dir, '.kimi-study-e2e-data'), '{}');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lucubro-runtime-'));
+  fs.writeFileSync(path.join(dir, '.lucubro-e2e-data'), '{}');
   assert.throws(() => assertSafeRuntime({
     root: ROOT,
     dataDir: dir,
@@ -35,10 +35,20 @@ test('production runtime refuses marked fixture data', () => {
     env: { NODE_ENV: 'production' },
   }), /fixture data/);
   fs.rmSync(dir, { recursive: true, force: true });
+
+  const legacyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lucubro-runtime-'));
+  fs.writeFileSync(path.join(legacyDir, '.kimi-study-e2e-data'), '{}');
+  assert.throws(() => assertSafeRuntime({
+    root: ROOT,
+    dataDir: legacyDir,
+    port: 3000,
+    env: { NODE_ENV: 'production' },
+  }), /fixture data/);
+  fs.rmSync(legacyDir, { recursive: true, force: true });
 });
 
 test('fixture seeding never accepts repository production data, even with force', () => {
   assert.throws(() => assertSafeSeedTarget({ root: ROOT, target: path.join(ROOT, 'data', 'courses') }), /production data/);
   assert.doesNotThrow(() => assertSafeSeedTarget({ root: ROOT, target: path.join(ROOT, 'tests', '.runtime', 'courses') }));
-  assert.doesNotThrow(() => assertSafeSeedTarget({ root: ROOT, target: path.join(os.tmpdir(), 'kimi-study-e2e-safe') }));
+  assert.doesNotThrow(() => assertSafeSeedTarget({ root: ROOT, target: path.join(os.tmpdir(), 'lucubro-e2e-safe') }));
 });
