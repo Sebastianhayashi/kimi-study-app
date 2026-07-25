@@ -26,6 +26,15 @@
       location.href = '/new-course';
     }, true);
 
+
+    // 设置页尚未实现：明确告知可用边界，不让原型 toast 冒充已完成能力。
+    document.addEventListener('click', (event) => {
+      if (!event.target.closest('#settingsButton')) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      showToast('设置功能尚未开放；当前课程与笔记保存在本地工作区。');
+    }, true);
+
     let courseId = null;
     const setStep = (el, cls, mark) => {
       el.className = 'progress-item ' + cls;
@@ -174,6 +183,57 @@
     let shelfHasActive = false;
     let shelfLoaded = false;
     let shelfStopped = false;
+    let shelfFilter = 'all';
+
+    function applyShelfView() {
+      const query = searchInput.value.trim().toLocaleLowerCase('zh-CN');
+      const cards = [...courseCardsById.values()];
+      cards.sort((a, b) => {
+        if (sortSelect.value === 'title') {
+          return (a._course?.title || '').localeCompare(b._course?.title || '', 'zh-CN');
+        }
+        const direction = sortSelect.value === 'oldest' ? 1 : -1;
+        return (Number(a._course?.updated) - Number(b._course?.updated)) * direction;
+      });
+
+      let visible = 0;
+      for (const card of cards) {
+        const course = card._course || {};
+        const status = course.lessons > 0 ? 'learning' : 'mine';
+        const matchesFilter = shelfFilter === 'all'
+          || shelfFilter === 'mine'
+          || status === shelfFilter;
+        const matchesSearch = String(course.title || '').toLocaleLowerCase('zh-CN').includes(query);
+        const show = matchesFilter && matchesSearch;
+        card.hidden = !show;
+        // 原型样式为 .course-card.ks-vertical 设置了 display:flex，会覆盖浏览器的 [hidden] 默认样式。
+        card.style.display = show ? '' : 'none';
+        if (show) visible += 1;
+        grid.appendChild(card);
+      }
+
+      emptyState.classList.toggle('show', visible === 0);
+      emptyState.style.display = visible === 0 ? '' : 'none';
+      grid.style.display = visible === 0 ? 'none' : 'grid';
+    }
+
+    searchInput.addEventListener('input', (event) => {
+      event.stopImmediatePropagation();
+      applyShelfView();
+    }, true);
+    sortSelect.addEventListener('change', (event) => {
+      event.stopImmediatePropagation();
+      applyShelfView();
+    }, true);
+    document.addEventListener('click', (event) => {
+      const tab = event.target.closest('.tab[data-filter]');
+      if (!tab) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      shelfFilter = tab.dataset.filter || 'all';
+      tabs.forEach((item) => item.classList.toggle('active', item === tab));
+      applyShelfView();
+    }, true);
 
     featuredSection.style.display = 'none'; // “继续学习”需要进度跟踪，v1 隐藏
     demoCards.forEach((card) => card.remove());
@@ -202,6 +262,7 @@
       el.dataset.courseId = course.id;
       el.dataset.title = course.title;
       el.dataset.status = course.lessons ? 'learning' : 'mine';
+      el.dataset.date = String(Number(course.updated) || 0);
       el.setAttribute('aria-label', course.title);
       const cover = el.querySelector('.course-cover');
       if (course.cover) {
@@ -271,7 +332,7 @@
         card.remove();
         courseCardsById.delete(id);
       }
-      emptyState.style.display = list.length ? 'none' : '';
+      applyShelfView();
       shelfHasActive = list.some(activeOnboarding);
     }
 

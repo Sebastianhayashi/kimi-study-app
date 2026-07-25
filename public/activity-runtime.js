@@ -261,7 +261,12 @@
     try {
       const response = await fetch(`${apiBase}/activities`);
       if (response.status === 404 || response.status === 204) return;
-      if (!response.ok) throw new Error('互动练习暂时不可用');
+      if (!response.ok) {
+        const message = response.status === 422
+          ? '练习数据无效，课程内容仍可学习。请重新生成本课后再尝试练习。'
+          : '互动练习暂时不可用，请稍后重试。';
+        throw new Error(message);
+      }
       const data = await response.json();
       state.spec = data.spec;
       state.attempts = data.progress && data.progress.attempts || [];
