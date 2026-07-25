@@ -9,11 +9,39 @@ const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..');
 const COURSE_ID = 'mrrxjoe1';
-const COURSE_FIXTURE_FILES = [
-  'RESOURCES.md',
-  'lessons/0001-what-makes-ideas-stick.html',
-  'reference/succes-framework.html',
-];
+// Deterministic in-test fixtures: the routes under test must not depend on
+// private learner data under data/courses, which is not part of the repo.
+const COURSE_FIXTURE_FILES = {
+  'RESOURCES.md': '# 《让创意更有黏性》学习资源\n\n- 确定性测试夹具，用于验证 Markdown 资源路由。\n',
+  'lessons/0001-what-makes-ideas-stick.html': [
+    '<!DOCTYPE html>',
+    '<html lang="zh-CN">',
+    '<head>',
+    '  <meta charset="UTF-8">',
+    '  <title>第一课：创意黏性入门</title>',
+    '  <link rel="stylesheet" href="../assets/style.css">',
+    '</head>',
+    '<body>',
+    '<div class="container"><h1>创意黏性入门</h1><p>确定性测试课节内容。</p></div>',
+    '</body>',
+    '</html>',
+    '',
+  ].join('\n'),
+  'reference/succes-framework.html': [
+    '<!DOCTYPE html>',
+    '<html lang="zh-CN">',
+    '<head>',
+    '  <meta charset="UTF-8">',
+    '  <title>SUCCESs 框架速查表</title>',
+    '  <link rel="stylesheet" href="../assets/style.css">',
+    '</head>',
+    '<body>',
+    '<div class="container"><h1>SUCCESs 框架速查表</h1><p>确定性测试参考页。</p></div>',
+    '</body>',
+    '</html>',
+    '',
+  ].join('\n'),
+};
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -37,11 +65,10 @@ function createIsolatedCourseData(t) {
   const dataDir = path.join(root, 'courses');
   const courseDir = path.join(dataDir, COURSE_ID);
 
-  for (const relative of COURSE_FIXTURE_FILES) {
-    const source = path.join(ROOT, 'data', 'courses', COURSE_ID, relative);
+  for (const [relative, content] of Object.entries(COURSE_FIXTURE_FILES)) {
     const target = path.join(courseDir, relative);
     fs.mkdirSync(path.dirname(target), { recursive: true });
-    fs.copyFileSync(source, target);
+    fs.writeFileSync(target, content);
   }
 
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
