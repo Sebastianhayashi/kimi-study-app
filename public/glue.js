@@ -484,7 +484,15 @@
           return preview.appendEvent?.(event);
         },
         complete(status) { return preview.complete?.(decorate({ ...(status || {}), stage: 'ready' })); },
-        fail(status) { decorate({ ...(status || {}), stage: 'failed' }); return preview.fail?.(status); },
+        fail(status) {
+          const failed = { ...(status || {}), stage: 'failed' };
+          decorate(failed);
+          const message = failed.currentMessage || failed.error || '课程创建没有完成，请返回课程库后重试';
+          return preview.fail?.({
+            ...failed,
+            currentMessage: `${message}。材料和已确认的学习设置仍然保留。`,
+          });
+        },
         hide(options) { stopElapsed(); return preview.hide?.(options); },
         destroy() { stopElapsed(); return preview.destroy?.(); },
       };
@@ -638,6 +646,21 @@
           '<article class="record complete"><span class="record-icon">✓</span><div><div class="record-title">材料已经上传</div><div class="record-meta">材料已保留，可以返回课程库后重新创建</div></div></article>' +
           `<article class="record is-error"><span class="record-icon">!</span><div><div class="record-title">课程创建未完成</div><div class="record-meta">${escapeHtml(terminalMessage)}</div></div></article>`;
       }
+      const generationRoot = courseStage?.querySelector('.ks-generation-preview');
+      generationRoot?.querySelector('.ks-generation-recovery')?.remove();
+      if (generationRoot && !backgroundNextLesson) {
+        const recovery = document.createElement('div');
+        recovery.className = 'ks-generation-recovery';
+        const retryLink = document.createElement('a');
+        retryLink.href = `/new-course?course=${encodeURIComponent(courseId)}`;
+        retryLink.className = 'ks-generation-recovery-primary';
+        retryLink.textContent = '返回并重试';
+        const libraryLink = document.createElement('a');
+        libraryLink.href = '/app';
+        libraryLink.textContent = '返回课程库';
+        recovery.append(retryLink, libraryLink);
+        generationRoot.querySelector('.ks-generation-meta')?.appendChild(recovery);
+      }
       if (nextButton) {
         nextButton.hidden = !backgroundNextLesson;
         nextButton.disabled = !backgroundNextLesson;
@@ -650,6 +673,7 @@
 
     function restoreLearningChrome() {
       window.LucubroBackgroundOperation = false;
+      courseStage?.querySelector('.ks-generation-recovery')?.remove();
       if (overviewProgressTitle) overviewProgressTitle.textContent = '课程进度';
       if (overviewProgressTrack) overviewProgressTrack.hidden = false;
       if (compactProgressTrack) {

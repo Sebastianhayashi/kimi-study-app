@@ -1,0 +1,88 @@
+html {
+  color-scheme: light dark;
+}
+
+body,
+button,
+input,
+textarea,
+select {
+  font-family: "Geist Variable", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+}
+
+:where(.ks-lesson-document-root, body > main, body > article) {
+  box-sizing: border-box;
+  width: min(100% - clamp(28px, 7vw, 96px), 880px) !important;
+  container-type: inline-size;
+}
+
+:where(.ks-lesson-document-root, body > main, body > article) :where(p, li, dd, blockquote) {
+  max-width: 68ch;
+}
+
+:where(.ks-lesson-document-root, body > main, body > article) :where(blockquote, .callout, .note, [class*="quote"]) {
+  border-radius: 10px;
+}
+
+.kimi-activity {
+  border-color: #dce3ec;
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgb(24 39 75 / 4%), 0 10px 26px rgb(24 39 75 / 6%);
+}
+
+.kimi-activity__option,
+.kimi-activity__input,
+.kimi-activity__textarea,
+.kimi-activity__feedback,
+.kimi-activity__hint,
+.kimi-activity__order-item {
+  border-radius: 10px;
+}
+
+.kimi-activity__button {
+  min-height: 44px;
+  background: #0b57d0;
+  border-color: #0b57d0;
+}
+
+.kimi-activity__button--secondary {
+  color: #26364f;
+  background: #fff;
+  border-color: #c5cfdd;
+}
+
+@media (max-width: 680px) {
+  :where(.ks-lesson-document-root, body > main, body > article) {
+    width: 100% !important;
+    padding-inline: 20px !important;
+  }
+
+  :where(.ks-lesson-document-root, body > main, body > article) h1 {
+    font-size: clamp(1.75rem, 8vw, 2rem);
+    letter-spacing: -0.035em;
+    line-height: 1.14;
+    text-wrap: pretty;
+  }
+
+  .kimi-activity__option,
+  .kimi-activity__icon-button,
+  .kimi-activity__button {
+    min-height: 44px;
+  }
+}
+
+@container (max-width: 420px) {
+  :where(.ks-lesson-document-root, body > main, body > article) h1 {
+    font-size: clamp(1.75rem, 12cqi, 2rem);
+    letter-spacing: -0.035em;
+    line-height: 1.14;
+    text-wrap: pretty;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    color: #172033;
+    background: #fbfaf7;
+  }
+}
