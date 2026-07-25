@@ -7,6 +7,7 @@
   const MAX_SOURCE_BYTES = 200 * 1024 * 1024;
   const SUPPORTED_EXTENSIONS = new Set(['pdf', 'epub', 'md', 'markdown', 'txt']);
   const TRANSITION_MS = 220;
+  const MIN_READING_STAGE_MS = 1400;
   const POLL_MS = 1200;
   const MISSION_POLL_MS = 400;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -92,6 +93,7 @@
   }
 
   let pendingStageTransition = null;
+  let readingStageShownAt = 0;
 
   function showStage(name, stepIndex, { immediate = false } = {}) {
     // A fast follow-up transition must cancel a pending one; otherwise the
@@ -221,6 +223,7 @@
     xhr.upload.addEventListener('load', () => {
       updateUploadProgress(100, '上传完成，正在检查材料');
       setReadingMode('inspection', '正在检查你的材料', '正在确认文件格式、内容结构和可读取性。');
+      readingStageShownAt = Date.now();
       showStage('reading', 0);
     });
     xhr.addEventListener('load', async () => {
@@ -233,11 +236,17 @@
         setUploadError(data.message || '材料上传或检查失败，请重试。');
         return;
       }
-      courseId = data.id;
-      history.replaceState(null, '', `/new-course?course=${encodeURIComponent(courseId)}`);
-      hydrateSource(data.onboarding?.source);
-      showMissionPreparation();
-      startMissionPolling();
+      // Keep the inspection stage on screen long enough to register; fast
+      // validations would otherwise skip straight past it.
+      const elapsed = Date.now() - readingStageShownAt;
+      const wait = Math.max(0, MIN_READING_STAGE_MS - elapsed);
+      setTimeout(() => {
+        courseId = data.id;
+        history.replaceState(null, '', `/new-course?course=${encodeURIComponent(courseId)}`);
+        hydrateSource(data.onboarding?.source);
+        showMissionPreparation();
+        startMissionPolling();
+      }, wait);
     });
     xhr.addEventListener('error', () => {
       uploadRequest = null;
@@ -307,7 +316,7 @@
     missionNext.textContent = '回答 Teach';
     missionNext.disabled = true;
     missionBack.disabled = false;
-    showStage('mission', 1, { immediate: true });
+    showStage('mission', 1);
   }
 
   function renderMission(record) {
