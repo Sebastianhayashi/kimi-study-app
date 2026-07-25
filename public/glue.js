@@ -159,8 +159,13 @@
       setTimeout(() => document.addEventListener('click', closeCardMenu, { once: true }), 0);
     }
 
+    function courseState(course) {
+      return course.onboardingState || course.stage || (Number(course.lessons) > 0 ? 'ready' : 'idle');
+    }
+
     function courseDestination(course) {
-      if (course.onboardingState && course.onboardingState !== 'ready') {
+      const state = courseState(course);
+      if (state !== 'ready') {
         return `/new-course?course=${encodeURIComponent(course.id)}`;
       }
       return `/course/${encodeURIComponent(course.id)}`;
@@ -168,11 +173,12 @@
 
     function courseMeta(course) {
       const material = `${course.ext} · 1 份材料`;
-      if (course.onboardingState === 'awaiting_mission') return `等待学习设置 · ${material}`;
-      if (course.onboardingState === 'starting' || course.onboardingState === 'generating') {
+      const state = courseState(course);
+      if (state === 'awaiting_mission' || state === 'idle') return `等待学习设置 · ${material}`;
+      if (state === 'starting' || state === 'generating' || state === 'understanding') {
         return `正在创建课程 · ${material}`;
       }
-      if (course.onboardingState === 'failed' || course.onboardingState === 'interrupted') {
+      if (state === 'failed' || state === 'interrupted') {
         return `创建未完成，可重试 · ${material}`;
       }
       return `${course.lessons} 节课 · ${material}`;
@@ -247,7 +253,8 @@
     demoCards.forEach((card) => card.remove());
 
     function activeOnboarding(course) {
-      return course.onboardingState === 'starting' || course.onboardingState === 'generating';
+      const state = courseState(course);
+      return state === 'starting' || state === 'generating' || state === 'understanding';
     }
 
     function stopShelfPolling() {
@@ -297,8 +304,54 @@
         const coverAuthor = cover.querySelector('.cover-author');
         if (coverAuthor) coverAuthor.textContent = `${course.ext} 材料`;
       }
+      const state = courseState(course);
+      el.classList.toggle('is-generating', state === 'starting' || state === 'generating' || state === 'understanding');
+      el.classList.toggle('is-failed', state === 'failed' || state === 'interrupted');
+      el.classList.toggle('is-ready', state === 'ready' || Number(course.lessons) > 0);
+      el.classList.toggle('is-empty', state === 'awaiting_mission' || state === 'idle');
+      let statusBadge = cover.querySelector('.course-status');
+      if (!statusBadge) {
+        statusBadge = document.createElement('span');
+        statusBadge.className = 'course-status';
+        cover.appendChild(statusBadge);
+      }
+      if (state === 'starting' || state === 'generating' || state === 'understanding') statusBadge.textContent = '生成中';
+      else if (state === 'failed' || state === 'interrupted') statusBadge.textContent = '可重试';
+      else if (state === 'awaiting_mission' || state === 'idle') statusBadge.textContent = '待设置';
+      else statusBadge.textContent = '可学习';
       el.querySelector('.course-title').textContent = course.title;
       el.querySelector('.course-meta').textContent = courseMeta(course);
+    }
+
+    function renderFeaturedCourse(list) {
+      const course = list.find((item) => Number(item.lessons) > 0 && courseState(item) === 'ready');
+      if (!course) {
+        featuredSection.style.display = 'none';
+        return;
+      }
+      featuredSection.style.display = '';
+      const card = document.createElement('article');
+      card.className = 'featured-card ks-continue-card';
+      card.tabIndex = 0;
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-label', `继续学习 ${course.title}`);
+      card.innerHTML =
+        '<div class="ks-continue-copy">' +
+          '<span class="ks-continue-label">继续上次学习</span>' +
+          '<div class="ks-continue-title"></div>' +
+          '<p></p>' +
+        '</div>' +
+        '<span class="ks-continue-action">继续学习 <i class="ph ph-arrow-right" aria-hidden="true"></i></span>';
+      card.querySelector('.ks-continue-title').textContent = course.title;
+      card.querySelector('p').textContent = `${Number(course.lessons)} 节课 · ${course.ext} 材料`;
+      const open = () => { location.href = courseDestination(course); };
+      card.addEventListener('click', open);
+      card.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        open();
+      });
+      featuredGrid.replaceChildren(card);
     }
 
     function createCourseCard(course) {
@@ -323,6 +376,7 @@
     }
 
     function renderCourses(list) {
+      renderFeaturedCourse(list);
       const seen = new Set();
       list.forEach((course) => {
         seen.add(course.id);

@@ -44,6 +44,7 @@
   const missionError = byId('missionError');
   const progressFill = byId('progressFill');
   const progressValue = byId('progressValue');
+  const elapsedTime = byId('elapsedTime');
   const statusLine = byId('statusLine');
   const processList = byId('processList');
   const backgroundButton = byId('backgroundButton');
@@ -84,6 +85,8 @@
   let eventSource = null;
   let lastProgress = 0;
   let readyTimer = null;
+  let generationStartedAt = 0;
+  let elapsedTimer = null;
 
   function setTopStep(index) {
     topSteps.forEach((step, i) => {
@@ -572,10 +575,27 @@
     backgroundButton.hidden = false;
     loadingHint.hidden = false;
     setGenerationVisual('extracting');
+    if (!generationStartedAt) generationStartedAt = Date.now();
+    startElapsedClock();
     showStage('loading', 2);
   }
 
+  function formatElapsed(startedAt) {
+    const seconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+    return `已用 ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+  }
+
+  function startElapsedClock() {
+    clearInterval(elapsedTimer);
+    if (!generationStartedAt) generationStartedAt = Date.now();
+    const render = () => { elapsedTime.textContent = formatElapsed(generationStartedAt); };
+    render();
+    elapsedTimer = setInterval(render, 1000);
+  }
+
   function applyGenerationStatus(status) {
+    const reportedStart = Date.parse(status.startedAt || '');
+    if (Number.isFinite(reportedStart)) generationStartedAt = reportedStart;
     const value = Math.max(lastProgress, Math.max(0, Math.min(100, Number(status.progress) || 0)));
     lastProgress = value;
     progressFill.style.transform = `scaleX(${value / 100})`;
@@ -596,6 +616,8 @@
     clearPollTimer();
     eventSource?.close();
     eventSource = null;
+    clearInterval(elapsedTimer);
+    elapsedTimer = null;
   }
 
   function schedulePoll(delay = POLL_MS) {
@@ -615,7 +637,7 @@
     stopMonitoring();
     showStage('loading', 2);
     statusLine.textContent = returnToMission ? '学习设置没有保存' : '课程创建没有完成';
-    loadingError.textContent = message || '课程创建没有完成，请重试。';
+    loadingError.textContent = `${message || '课程创建没有完成，请重试。'} 材料和已确认的学习设置仍然保留。`;
     loadingError.hidden = false;
     retryButton.hidden = !retryable;
     retryButton.disabled = false;
@@ -687,6 +709,7 @@
     try {
       await requestJson(`/api/courses/${encodeURIComponent(courseId)}/retry`, { method: 'POST', body: '{}' });
       lastProgress = 0;
+      generationStartedAt = Date.now();
       startMonitoring();
     } catch (error) {
       showFailure(error.message);

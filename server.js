@@ -156,8 +156,11 @@ const page = (file, { head = '', body = '' } = {}) => (req, res) => {
   res.type('html').send(html);
 };
 app.get('/', page('index.html'));
-app.get('/app', page('app.html'));
+app.get('/app', page('app.html', {
+  head: '<link rel="stylesheet" href="/library-polish.css">',
+}));
 app.get('/new-course', page('new-course.html', {
+  head: '<link rel="stylesheet" href="/onboarding-polish.css">',
   body: '<script src="/first-run-onboarding.js"></script>',
 }));
 app.get('/course/:id', page('course.html', {

@@ -735,7 +735,7 @@
         <span id="topStep1" class="active">1</span><span id="topStep2">2</span><span id="topStep3">3</span>
       </div>
       <div class="top-actions">
-        <button class="circle-button" id="backToLibrary" type="button" aria-label="返回课程列表" title="返回课程列表">←</button>
+        <button class="circle-button" id="backToLibrary" type="button" aria-label="返回课程列表" title="返回课程列表"><i class="ph ph-arrow-left" aria-hidden="true"></i></button>
         <div class="avatar" aria-label="用户头像">K</div>
       </div>
     </header>
@@ -751,7 +751,7 @@
             <input id="fileInput" type="file" hidden accept=".epub,.pdf,.txt,.md,.markdown" />
             <div>
               <div class="upload-icon" aria-hidden="true">
-                <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>
+                <i class="ph ph-upload-simple"></i>
               </div>
               <div class="upload-title">选择文件或拖到这里</div>
               <div class="upload-note">上传后会自动进入下一步</div>
@@ -765,7 +765,7 @@
               <div class="file-name" id="fileName">让创意更有黏性.epub</div>
               <div class="file-size" id="fileSize">2.8 MB · 已准备好</div>
             </div>
-            <button class="circle-button" id="removeFile" aria-label="移除文件" title="移除文件">×</button>
+            <button class="circle-button" id="removeFile" aria-label="移除文件" title="移除文件"><i class="ph ph-x" aria-hidden="true"></i></button>
           </div>
 
           <div class="upload-transfer" id="uploadTransfer" hidden aria-live="polite">
@@ -829,14 +829,14 @@
             <div>
               <p class="eyebrow">正在创建课程</p>
               <div class="loading-title">正在准备你的学习区域</div>
-              <p class="loading-description">动画会随着课程生成阶段切换。完成后会自动打开第一课。</p>
+              <p class="loading-description">材料已安全保留。我们会按真实处理阶段准备课程，完成后自动打开第一课。</p>
             </div>
           </div>
 
           <div class="progress-block">
             <div class="progress-meta">
-              <span>初始化进度</span>
-              <span class="progress-value" id="progressValue">0%</span>
+              <span>课程生成进度</span>
+              <span class="progress-value"><span id="elapsedTime">已用 0:00</span><span aria-hidden="true"> · </span><span id="progressValue">0%</span></span>
             </div>
             <div class="progress-track" aria-label="初始化进度"><div class="progress-fill" id="progressFill"></div></div>
             <div class="status-line" id="statusLine">正在读取材料</div>
@@ -851,7 +851,7 @@
           <div class="panel-footer">
             <button class="quiet-button" id="backgroundButton" type="button">在后台继续</button>
             <button class="primary-button" id="retryButton" type="button" hidden>重试创建</button>
-            <span id="loadingHint" style="color:var(--muted);font-size:12px">可以离开此页，创建会继续进行</span>
+            <span id="loadingHint" style="color:var(--muted);font-size:12px">材料已保留，可以离开此页在后台继续</span>
           </div>
         </div>
       </section>
