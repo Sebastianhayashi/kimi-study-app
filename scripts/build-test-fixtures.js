@@ -157,8 +157,8 @@ function createStoredZip(entries) {
 
 function createEpub({ version = 3, title, language = 'zh-CN', missingResource = false }) {
   const container = `<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>`;
-  const chapter1 = `<!doctype html><html xmlns="http://www.w3.org/1999/xhtml" lang="${language}"><head><title>第一章</title></head><body><h1>第一章</h1><p>Kimi Study EPUB fixture chapter one.</p><p>用于验证搜索、目录和字体调整。</p></body></html>`;
-  const chapter2 = `<!doctype html><html xmlns="http://www.w3.org/1999/xhtml" lang="${language}"><head><title>第二章</title></head><body><h1>第二章</h1><p>Kimi Study EPUB fixture chapter two.</p><p>这是跨章节搜索目标：稳定化。</p></body></html>`;
+  const chapter1 = `<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" lang="${language}"><head><title>第一章</title></head><body><h1>第一章</h1><p>Kimi Study EPUB fixture chapter one.</p><p>用于验证搜索、目录和字体调整。</p></body></html>`;
+  const chapter2 = `<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" lang="${language}"><head><title>第二章</title></head><body><h1>第二章</h1><p>Kimi Study EPUB fixture chapter two.</p><p>这是跨章节搜索目标：稳定化。</p></body></html>`;
   const identifier = version === 2 ? 'urn:kimi:fixture:epub2' : 'urn:kimi:fixture:epub3';
   const entries = [
     { name: 'mimetype', data: 'application/epub+zip' },
@@ -172,7 +172,7 @@ function createEpub({ version = 3, title, language = 'zh-CN', missingResource = 
     if (!missingResource) entries.push({ name: 'OEBPS/chapter2.xhtml', data: chapter2 });
   } else {
     const opf = `<?xml version="1.0" encoding="UTF-8"?><package xmlns="http://www.idpf.org/2007/opf" unique-identifier="book-id" version="3.0"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${title}</dc:title><dc:identifier id="book-id">${identifier}</dc:identifier><dc:language>${language}</dc:language><meta property="dcterms:modified">2026-01-15T08:00:00Z</meta></metadata><manifest><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/><item id="c1" href="chapter1.xhtml" media-type="application/xhtml+xml"/><item id="c2" href="${missingResource ? 'missing.xhtml' : 'chapter2.xhtml'}" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="c1"/><itemref idref="c2"/></spine></package>`;
-    const nav = `<!doctype html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>目录</title></head><body><nav epub:type="toc"><h1>目录</h1><ol><li><a href="chapter1.xhtml">第一章</a></li><li><a href="${missingResource ? 'missing.xhtml' : 'chapter2.xhtml'}">第二章</a></li></ol></nav></body></html>`;
+    const nav = `<!DOCTYPE html><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>目录</title></head><body><nav epub:type="toc"><h1>目录</h1><ol><li><a href="chapter1.xhtml">第一章</a></li><li><a href="${missingResource ? 'missing.xhtml' : 'chapter2.xhtml'}">第二章</a></li></ol></nav></body></html>`;
     entries.push({ name: 'OEBPS/content.opf', data: opf }, { name: 'OEBPS/nav.xhtml', data: nav }, { name: 'OEBPS/chapter1.xhtml', data: chapter1 });
     if (!missingResource) entries.push({ name: 'OEBPS/chapter2.xhtml', data: chapter2 });
   }
