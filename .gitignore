@@ -18,6 +18,8 @@ tests/.runtime/
 playwright-report/
 test-results/
 blob-report/
+.playwright-cli/
+output/
 release/
 
 # Local agent and editor state.
