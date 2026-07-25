@@ -1,117 +1,73 @@
 <div align="center">
 
+<img src="public/assets/brand/lucubro-mark.svg" width="72" height="72" alt="Lucubro">
+
 # Lucubro
 
-**把教材、书籍和自己的材料，变成真正学得会的个人课程。**
+**把你已经拥有的材料，变成一门围绕真实目标展开的课程。**
 
-上传 PDF、EPUB、Markdown 或文本，Kimi Code 在本地工作区中理解材料、生成互动课节，并在课程页提供绑定当前内容的学习助教。
-
-[English](README.md) · [30 秒看产品](#30-秒看产品) · [快速启动](#快速启动) · [产品原理](docs/PRODUCT.md) · [架构](docs/ARCHITECTURE.md) · [路线图](docs/ROADMAP.md)
-
-[![CI](https://github.com/Sebastianhayashi/lucubro/actions/workflows/ci.yml/badge.svg)](https://github.com/Sebastianhayashi/lucubro/actions/workflows/ci.yml)
-[![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933?logo=nodedotjs&logoColor=white)](package.json)
-[![Playwright](https://img.shields.io/badge/E2E-Playwright-2EAD33?logo=playwright&logoColor=white)](tests/e2e)
-[![License](https://img.shields.io/badge/license-ISC-blue)](LICENSE)
+[English](README.md) · [日本語](README.ja.md) · [本地运行](#运行-lucubro) · [产品原理](docs/PRODUCT.md)
 
 </div>
 
-![Lucubro 产品界面](docs/images/hero-showcase.jpg)
+![Lucubro 学习工作区](public/assets/product/hero-showcase.webp)
 
-## 先看它能做出什么
+## 从你要完成的事情开始
 
-Lucubro 不是“把书总结一下”。它试图把一份材料重新组织成一条**可以学习、练习、追问和继续推进**的个人课程路径：
+Lucubro 可以把书籍、教材、文章、试卷和自己的文档变成学习工作区。你先说明想完成什么，Lucubro 再把材料组织成目标、课程路径、互动课节、练习、笔记和基于原文的辅助。
 
-- **材料变课程**：从原书和学习目标生成 Mission、课程地图、课节和练习。
-- **互动课节**：正文、引导问题、检查理解、提示、重试和掌握记录在同一学习面中完成。
-- **课程内助教**：Kimi 优先依据当前课节、原始材料、笔记与学习记录回答。
-- **来源可回看**：课程中可以返回 PDF、EPUB、Markdown、文本或 HTML 原始材料。
-- **学习可延续**：课节、笔记、聊天、活动与下一课生成都绑定到同一课程工作区。
+它面向两类学习任务：
 
-![Lucubro 演示](docs/images/lucubro-demo.gif)
+- **备考与提升。** 上传教材、试卷、练习题或作业。后续课程更关注你实际完成了什么、答得怎么样，而不只依赖“我懂了”这样的自述。
+- **解决现实问题。** 上传与你的写作、表达、工作问题或当前项目有关的书籍和文章，把阅读转化成可以使用的产出。
 
-## 30 秒看产品
-
-![从材料到个人课程](docs/images/product-flow.jpg)
+两种模式使用同一个学习循环：
 
 ```text
-选择或上传材料
-→ 检查材料并明确学习目标
-→ 生成 Mission、学习地图和第一课
-→ 在互动课节中阅读、练习、记笔记
-→ 结合当前课程向 Kimi 追问
-→ 根据学习记录继续生成下一课
+问题 → 材料 → 行动 → 证据 → 调整
 ```
 
-### 课程工作区
+## 你可以用它做什么
 
-课程页使用三栏结构：左侧是目标、地图、目录和学习记录，中间是当前课节，右侧是绑定当前课程的 Kimi 助教。
+- 上传 EPUB、PDF、Markdown 或纯文本。
+- 在生成课程前明确使用场景和预期结果。
+- 阅读互动课节，完成检查、提示、重试和迁移练习。
+- 在课程旁边打开原始材料。
+- 划选原文、写锚定笔记，或保存 Lucubro 的回答。
+- 在独立笔记本中查看所有课程的笔记，并回到准确课节位置。
+- 通过类似 GitHub 点阵图的学习记录查看每天的课节、笔记和练习。
+- 让 Lucubro 结合当前课节和原始材料解释、举例或反馈。
+- 保留课程、笔记和学习记录，继续生成下一课。
 
-<p align="center">
-  <img src="docs/images/course.jpg" width="72%" alt="Lucubro course workspace" />
-  <img src="docs/images/mobile.png" width="24%" alt="Lucubro mobile lesson" />
-</p>
+![由《让创意更有黏性》生成的真实课程](public/assets/product/course-workspace.webp)
 
-## 它解决什么问题
+## 这是学习工作区，不是另一个聊天框
 
-| 常见学习工具 | Lucubro 的处理方式 |
-|---|---|
-| 只生成摘要，读完后不知道下一步做什么 | 生成目标、顺序、课节、练习和下一课 |
-| 聊天助手脱离当前材料，容易给出泛化回答 | Tutor 上下文绑定 Mission、当前课节、原始材料、笔记和掌握情况 |
-| 页面显示“完成”，但其他区域仍显示“生成中” | 使用显式状态机、单一主进度面和终态一致性回归测试 |
-| 练习只有答案，没有学习诊断 | 支持误区、提示、重试、迁移证据和掌握记录 |
-| 上传后的生成过程不可解释 | 提供当前状态、真实事件历史和由后端产物推导的进度 |
+- **左侧课程导航**：当前课节、进度、目录、目标与路径。
+- **中间课节**：主要阅读与练习区域。
+- **右侧 Lucubro 助手**：结合当前课程解释和反馈。
+- **上下文笔记**：普通布局使用紧凑侧栏；专注或全屏产生足够留白时成为 margin notes；移动端使用底部面板。
+- **原文阅读**：可单独阅读，也可与课节并排对照。
 
-## 核心产物
+课程库会继续你上次停下的课节。独立笔记本跨课程工作，不需要为了找笔记逐门打开课程。
 
-每门课程保存在独立的文件工作区中：
+## Lucubro 会保留什么
 
-```text
-data/courses/<course-id>/
-├── 原始材料
-├── MISSION.md
-├── map.json
-├── lessons/
-│   ├── 01-*.html
-│   └── ...
-├── assessments/
-├── notes.json
-├── activity-state.json
-├── tutor-state.json
-└── generation events / status
-```
+每门课程都是本地、可继续的工作区，包括原始材料、学习目标、课程路径、课节、评估、笔记、学习活动、助手上下文和生成状态。即使课程生成失败，已上传的材料和确认过的目标仍会保留。
 
-这意味着课程不是一次性的聊天结果，而是一组可以检查、继续生成和恢复的学习产物。
+目前已经记录课节打开、笔记与练习尝试。更完整的用户 artifacts——例如改写后的段落、做完的题目、演讲稿或项目产出——属于明确的产品方向，但后端还没有全部实现。
 
-## 工作原理
+## 运行 Lucubro
 
-```mermaid
-flowchart LR
-    A[PDF / EPUB / Markdown / Text] --> B[材料检查与隔离工作区]
-    B --> C[Mission: 目标、标准、约束]
-    C --> D[Kimi Code + teach skill]
-    D --> E[课程地图与互动课节]
-    E --> F[学习记录、笔记与活动]
-    F --> G[课程内 Kimi Tutor]
-    F --> H[下一课生成]
-    H --> E
-```
-
-详细说明见 [产品原理](docs/PRODUCT.md)、[用户工作流](docs/WORKFLOW.md) 和 [技术架构](docs/ARCHITECTURE.md)。
-
-## 快速启动
-
-### 前置条件
+### 环境要求
 
 - Node.js 22+
-- 已安装并登录 [`kimi` CLI](https://github.com/MoonshotAI/kimi-cli)：
+- 已安装并登录 [`kimi` CLI](https://github.com/MoonshotAI/kimi-cli)
+
+该 CLI 目前是 Lucubro 的本地生成运行时，只是实现依赖，不作为学习界面中的另一个产品品牌。
 
 ```bash
 kimi login
-```
-
-### 启动真实课程生成
-
-```bash
 git clone https://github.com/Sebastianhayashi/lucubro.git
 cd lucubro
 npm ci
@@ -120,7 +76,7 @@ npm start
 
 打开 `http://localhost:3000`。
 
-### 不调用真实模型，先看固定演示数据
+### 不调用模型，先查看产品
 
 ```bash
 npm ci
@@ -128,42 +84,22 @@ npm run demo:seed
 LUCUBRO_DATA_DIR=tests/.runtime/courses PORT=3107 npm start
 ```
 
-打开 `http://localhost:3107/app`。Fixture 数据与生产 `data/courses` 隔离，适合查看 ready、generating、failed、notes 和 invalid-assessment 等状态。
+打开 `http://localhost:3107/app`。演示数据与 `data/courses` 完全隔离。
 
-## 支持范围
+## 语言
 
-### 材料
+界面默认使用英语，并支持简体中文和日语。课程与原始材料会保留创建课程时选择的内容语言。
 
-- PDF
-- EPUB
-- Markdown
-- TXT / UTF-8 文本
-- 课程工作区中的受控 HTML 和图片资源
+## 当前状态
 
-### 学习能力
+Lucubro 是实验性开源产品，不是已经完成的生产 SaaS。
 
-- Mission 与学习地图
-- 互动课节和质量门禁
-- 划词问助手
-- 锚定原文的课内笔记
-- 学习卡片、提示、重试和掌握记录
-- 原始材料阅读器
-- 连续 Tutor 会话
-- 下一课生成
-- 桌面三栏工作区与移动抽屉
+- 课程生成具有非确定性，发布前会经过结构验证与质量门禁。
+- 课程数据保存在本地，模型请求通过已配置的 CLI 服务完成。
+- 生产账号、多人权限、支付、云端队列和横向扩展不在当前范围内。
+- PDF 与 EPUB 已有真实文件测试，但仍需要更大的兼容性样本。
 
-## 工程质量
-
-仓库把用户体验视为一组显式状态机，而不只是一组可点击页面：
-
-- `116` 个 Node 测试覆盖生成状态、评估质量、Tutor 上下文、下一课事务、运行时安全等逻辑。
-- Playwright 覆盖 landing、课程库、上传、ready/failed/generating 课程、移动抽屉和状态一致性。
-- CI 会检查静态语法、单元测试、Chromium E2E，并防止测试写入生产课程目录。
-- 生成失败时，页头、侧栏、主工作区和 Tutor 上下文必须同时进入终态；同一工作流只保留一个主进度条。
-
-![状态一致性修复前后](docs/images/quality-before-after.jpg)
-
-测试命令：
+测试覆盖首页、课程库、建课、ready/generating/failed 状态、笔记、原文阅读、移动抽屉和状态一致性。
 
 ```bash
 npm run check
@@ -173,49 +109,16 @@ LUCUBRO_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
 npm run test:e2e:ci
 ```
 
-更多内容见 [质量与测试](docs/QUALITY.md)、[`docs/stabilization`](docs/stabilization/README.md)，以及本次公开的 [中文 UX E2E 报告](docs/reports/kimi-study-ux-e2e-report.zh-CN.pdf) / [English UX E2E report](docs/reports/kimi-study-ux-e2e-report.en-US.pdf)。历史报告用于展示证据标准；当前提交仍以当前 CI 为准。
-
-## 当前状态
-
-Lucubro 目前是一个**研究型开源原型**，适合本地实验、产品探索和贡献开发，不应直接当作已完成的生产 SaaS：
-
-- 模型调用依赖用户自己的 Kimi CLI 登录状态。
-- 课程数据保存在本地文件系统，但模型请求会通过 Kimi CLI 调用对应服务。
-- 生产级账号、多人权限、支付、云端队列和横向扩展不在当前范围内。
-- PDF/EPUB 的真实兼容性仍需要更大的文件矩阵和跨浏览器验证。
-- 模型输出具有非确定性，发布路径使用结构验证与质量门禁，而不是假设每次输出相同。
-
-查看 [已知限制](docs/LIMITATIONS.md) 和 [路线图](docs/ROADMAP.md)。
-
-## 仓库结构
-
-```text
-public/                    前端页面与浏览器运行时
-server.js                  HTTP API、课程工作区与 Kimi 子进程
-lib/                       状态、生成、评估和安全领域逻辑
-skills/teach/              课程生成 skill
-skills/humanizer-zh/       Tutor 中文表达 skill
-data/courses/              本地课程工作区（不提交真实用户数据）
-test/                      Node 单元与契约测试
-tests/e2e/                 Playwright 用户旅程
-scripts/                   Fixture 与稳定性工具
-docs/                      产品、架构、质量和状态机文档
-```
+更多内容见 [产品原理](docs/PRODUCT.md)、[工作流](docs/WORKFLOW.md)、[架构](docs/ARCHITECTURE.md)、[质量](docs/QUALITY.md) 和 [限制](docs/LIMITATIONS.md)。
 
 ## 贡献
 
-欢迎提交：
+欢迎贡献真实材料兼容性样本、无障碍与移动端改进、学习证据实验、笔记与原文阅读回归测试，以及基于真实目标的可用性研究。
 
-- 可复现的 PDF/EPUB 兼容性问题；
-- 新的课程与评估 Fixture；
-- 状态机、可访问性和移动端改进；
-- Tutor、笔记、互动活动与学习诊断的回归测试；
-- 面向真实学习目标的可用性研究。
+请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。安全问题请遵循 [SECURITY.md](SECURITY.md)。
 
-请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。安全问题请遵循 [SECURITY.md](SECURITY.md)。
+## 许可证
 
-## 许可证与说明
+代码使用 [ISC License](LICENSE)。第三方内容见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
-代码使用 [ISC License](LICENSE)。第三方改编与许可见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
-
-Lucubro 是独立的开源实验项目，不是 Moonshot AI 的官方产品；“Kimi”相关商标归其权利人所有。
+Lucubro 是独立开源项目，不是 Moonshot AI 的官方产品。
