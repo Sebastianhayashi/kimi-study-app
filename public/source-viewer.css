@@ -17,6 +17,12 @@
     opacity var(--ds-motion-out, 180ms) var(--ds-ease-in, ease-in),
     transform var(--ds-motion-out, 180ms) var(--ds-ease-in, ease-in);
 }
+.ks-source-toolbar,
+.ks-source-body,
+.ks-source-footer {
+  min-width: 0;
+  width: 100%;
+}
 .ks-source-viewer.is-ready,
 .is-source-viewer-active .ks-source-viewer {
   opacity: 1;
@@ -26,6 +32,30 @@
     transform var(--ds-motion-in, 260ms) var(--ds-ease-out, ease-out);
 }
 .is-source-viewer-active .lesson-frame { visibility: hidden; }
+.course-stage.is-source-split .lesson-frame {
+  width: 50%;
+  visibility: visible;
+}
+.course-stage.is-source-split .ks-source-viewer {
+  left: 50%;
+  border-left: 1px solid #dfe5ee;
+}
+.course-stage.is-source-split .ks-source-toolbar {
+  gap: 5px;
+  padding-inline: 8px;
+}
+.course-stage.is-source-split .ks-source-toolbar-spacer,
+.course-stage.is-source-split .ks-source-search-wrap,
+.course-stage.is-source-split .ks-source-control-group,
+.course-stage.is-source-split .ks-source-theme,
+.course-stage.is-source-split .ks-source-location {
+  display: none;
+}
+.course-stage.is-source-split .ks-source-identity {
+  min-width: 0;
+  max-width: none;
+  flex: 1;
+}
 .ks-source-toolbar {
   min-height: 54px;
   display: flex;
@@ -102,6 +132,7 @@
 .ks-source-location input:focus { outline: 1px solid #8ab4f8; }
 .ks-source-scale-label { min-width: 40px; text-align: center; font: 600 11px/1 Inter, sans-serif; color: #5f6368; }
 .ks-source-body { min-height: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); }
+.ks-source-sidebar[hidden] + .ks-source-viewport { grid-column: 1 / -1; }
 .ks-source-sidebar {
   width: 250px;
   min-height: 0;
@@ -204,6 +235,9 @@
   .ks-source-identity { max-width: 190px; }
 }
 @media (max-width: 860px) {
+  .ks-source-split { display: none; }
+  .course-stage.is-source-split .lesson-frame { width: 100%; visibility: hidden; }
+  .course-stage.is-source-split .ks-source-viewer { left: 0; border-left: 0; }
   .ks-source-toolbar { flex-wrap: wrap; }
   .ks-source-toolbar-spacer { display: none; }
   .ks-source-identity { flex: 1; max-width: none; }

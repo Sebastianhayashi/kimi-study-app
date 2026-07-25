@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Review highlights, notes, and Lucubro answers across every course.">
+  <title>Notes · Lucubro</title>
+</head>
+<body>
+  <a class="skip-link" href="#notesMain">Skip to notes</a>
+  <header class="notes-header">
+    <div class="notes-header-inner">
+      <a class="notes-brand" href="/" aria-label="Lucubro home">
+        <img src="/assets/brand/lucubro-mark.svg" width="36" height="36" alt="">
+        <span>Lucubro</span>
+      </a>
+      <nav class="notes-nav" aria-label="Primary navigation">
+        <a href="/app">My courses</a>
+        <a class="active" href="/notes" aria-current="page">Notes</a>
+      </nav>
+      <div class="notes-header-actions">
+        <a class="notes-new-course" href="/new-course"><i class="ph ph-plus" aria-hidden="true"></i><span>New course</span></a>
+      </div>
+    </div>
+  </header>
+
+  <main class="notes-main" id="notesMain">
+    <section class="notes-intro" aria-labelledby="notesTitle">
+      <div>
+        <p class="notes-kicker">Your learning record</p>
+        <h1 id="notesTitle">Notes from every course, in one place.</h1>
+        <p>Review what you highlighted, wrote, and asked Lucubro—then return to the exact lesson and source context.</p>
+      </div>
+      <div class="notes-summary" aria-live="polite">
+        <strong id="notesTotal">0</strong>
+        <span>saved notes</span>
+      </div>
+    </section>
+
+    <section class="activity-panel" aria-labelledby="activityTitle">
+      <div class="activity-heading">
+        <div>
+          <p class="notes-kicker">Study rhythm</p>
+          <h2 id="activityTitle">Your learning activity</h2>
+        </div>
+        <p id="activitySummary">Your recent lessons, notes, and practice will appear here.</p>
+      </div>
+      <div class="activity-chart-shell">
+        <div class="activity-weekdays" aria-hidden="true"><span>Mon</span><span>Wed</span><span>Fri</span></div>
+        <div class="activity-scroll" tabindex="0" aria-label="Learning activity by day">
+          <div class="activity-months" id="activityMonths" aria-hidden="true"></div>
+          <div class="activity-grid" id="activityGrid" role="grid"></div>
+        </div>
+      </div>
+      <div class="activity-footer">
+        <p id="activityDetail" aria-live="polite">Select a day to see its activity.</p>
+        <div class="activity-legend" aria-label="Activity intensity"><span>Less</span><i data-level="0"></i><i data-level="1"></i><i data-level="2"></i><i data-level="3"></i><i data-level="4"></i><span>More</span></div>
+      </div>
+    </section>
+
+    <section class="notebook" aria-labelledby="notebookTitle">
+      <aside class="notebook-sidebar">
+        <div>
+          <p class="notes-kicker">Notebook</p>
+          <h2 id="notebookTitle">Everything you kept</h2>
+        </div>
+        <label class="notes-search">
+          <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+          <span class="sr-only">Search notes</span>
+          <input id="notesSearch" type="search" placeholder="Search notes">
+        </label>
+        <label class="notes-field">
+          <span>Course</span>
+          <select id="courseFilter"><option value="">All courses</option></select>
+        </label>
+        <fieldset class="notes-kind-filter">
+          <legend>Type</legend>
+          <button class="active" type="button" data-kind="">All notes</button>
+          <button type="button" data-kind="user">My notes</button>
+          <button type="button" data-kind="assistant">Lucubro answers</button>
+          <button type="button" data-kind="scratch">Scratch notes</button>
+        </fieldset>
+      </aside>
+
+      <div class="notebook-feed">
+        <div class="notebook-feed-head">
+          <div>
+            <span id="visibleNotesCount">0 notes</span>
+            <strong id="activeFilterLabel">All courses</strong>
+          </div>
+          <button id="clearFilters" type="button">Clear filters</button>
+        </div>
+        <div class="notes-list" id="notesList" aria-live="polite"></div>
+        <div class="notes-empty" id="notesEmpty" hidden>
+          <span class="notes-empty-mark"><i class="ph ph-note-pencil" aria-hidden="true"></i></span>
+          <h3>No notes yet</h3>
+          <p>Select a passage in any lesson to save a highlight, write a note, or keep a Lucubro answer.</p>
+          <a href="/app">Open a course</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <template id="noteCardTemplate">
+    <article class="notebook-card">
+      <div class="notebook-card-rail"></div>
+      <div class="notebook-card-body">
+        <div class="notebook-card-topline">
+          <span class="notebook-kind"></span>
+          <time></time>
+        </div>
+        <blockquote class="notebook-quote" hidden></blockquote>
+        <h3 class="notebook-copy"></h3>
+        <p class="notebook-answer" hidden></p>
+        <div class="notebook-provenance">
+          <span class="notebook-course"></span>
+          <span aria-hidden="true">/</span>
+          <span class="notebook-lesson"></span>
+        </div>
+        <a class="notebook-open">Open in lesson <i class="ph ph-arrow-up-right" aria-hidden="true"></i></a>
+      </div>
+    </article>
+  </template>
+</body>
+</html>

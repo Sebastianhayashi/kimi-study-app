@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -1762,7 +1762,7 @@
     /* Incremental navigation only. Preserve the approved homepage. */
     .appbar-inner {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-columns: auto minmax(0, 1fr) auto auto;
     }
 
     .primary-nav {
@@ -1782,6 +1782,7 @@
       background: transparent;
       cursor: pointer;
       font-size: 13px;
+      text-decoration: none;
       white-space: nowrap;
     }
 
@@ -2096,7 +2097,7 @@
 
     @media (max-width: 760px) {
       .appbar-inner {
-        grid-template-columns: auto auto;
+        grid-template-columns: auto minmax(0, 1fr) auto;
       }
 
       .primary-nav {
@@ -2166,14 +2167,15 @@
   <div class="app">
     <header class="appbar">
       <div class="appbar-inner">
-        <a class="brand" href="#" aria-label="Lucubro 首页">
+        <a class="brand" href="/" aria-label="Lucubro 首页">
           <img class="brand-mark" src="/assets/brand/lucubro-mark.svg" width="36" height="36" alt="">
           <span class="brand-name">Lucubro</span>
         </a>
 
 
         <nav class="primary-nav" aria-label="主要页面">
-          <button class="primary-nav-button active" type="button" data-page="learning-home">我的课程</button>
+          <a class="primary-nav-button active" href="/app" data-page="learning-home">我的课程</a>
+          <a class="primary-nav-button" href="/notes">笔记</a>
         </nav>
 
         <div class="app-actions">
@@ -2885,7 +2887,7 @@
     }
 
     primaryNavButtons.forEach((button) => {
-      button.addEventListener('click', () => showPage(button.dataset.page));
+      if (button.dataset.page) button.addEventListener('click', () => showPage(button.dataset.page));
     });
 
     function showCreateChoices() {

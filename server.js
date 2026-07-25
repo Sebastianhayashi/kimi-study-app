@@ -128,9 +128,18 @@ const FIRST_PROMPT = (ext) =>
   `另外把书的封面图片提取保存到工作区根目录 cover.jpg（epub 解压后在 OPF manifest 里找 cover 项；` +
   `pdf 可用 sips 把第一页转成 jpg）。` + ASSESSMENT_INSTRUCTION + CURIOSITY_INSTRUCTION + MAP_INSTRUCTION;
 
-const FIRST_ONBOARDING_PROMPT = (ext) =>
+const languageInstruction = (locale = 'en') => ({
+  'zh-CN': '所有面向用户的课程内容使用简体中文。',
+  ja: 'ユーザー向けのコース内容は日本語で作成する。',
+  en: 'Write all user-facing course content in English.',
+}[locale] || 'Write all user-facing course content in English.');
+const modeInstruction = (mode = 'student') => mode === 'goal'
+  ? '这是一门目标导向课程：围绕用户当前要解决的现实问题组织材料、练习与产出物，优先要求用户做出可观察的作品或行动。'
+  : '这是一门学生课程：结合教材、试卷和练习证据诊断掌握情况，优先根据用户实际作答与练习表现调整后续内容。';
+
+const FIRST_ONBOARDING_PROMPT = (ext, profile = {}) =>
   `继续当前 teach Session。用户已经确认 MISSION.md；不要重新进行 Mission 访谈，也不要改写 Mission。` +
-  `材料是当前目录的 book${ext}。读取已确认的 MISSION.md，写 RESOURCES.md，然后生成第一课 lessons/0001-*.html。所有产出用中文。` +
+  `材料是当前目录的 book${ext}。${modeInstruction(profile.mode)}读取已确认的 MISSION.md，写 RESOURCES.md，然后生成第一课 lessons/0001-*.html。${languageInstruction(profile.locale)}` +
   `另外把书的封面图片提取保存到工作区根目录 cover.jpg（epub 解压后在 OPF manifest 里找 cover 项；` +
   `pdf 可用 sips 把第一页转成 jpg）。` + ASSESSMENT_INSTRUCTION + CURIOSITY_INSTRUCTION + MAP_INSTRUCTION;
 
@@ -149,7 +158,8 @@ const COMMON_FRONTEND_HEAD =
   '<link rel="icon" href="/assets/brand/lucubro-mark.svg" type="image/svg+xml">' +
   '<link rel="stylesheet" href="/vendor/geist/wght.css">' +
   '<link rel="stylesheet" href="/vendor/phosphor/regular/style.css">' +
-  '<link rel="stylesheet" href="/design-system.css">';
+  '<link rel="stylesheet" href="/design-system.css">' +
+  '<script src="/i18n.js" defer></script>';
 const page = (file, { head = '', body = '' } = {}) => (req, res) => {
   const html = fs.readFileSync(path.join(ROOT, 'public', file), 'utf8')
     .replace('</head>', `${COMMON_FRONTEND_HEAD}${head}</head>`)
@@ -159,6 +169,10 @@ const page = (file, { head = '', body = '' } = {}) => (req, res) => {
 app.get('/', page('index.html'));
 app.get('/app', page('app.html', {
   head: '<link rel="stylesheet" href="/library-polish.css">',
+}));
+app.get('/notes', page('notes.html', {
+  head: '<link rel="stylesheet" href="/notes.css">',
+  body: '<script src="/notes.js"></script>',
 }));
 app.get('/new-course', page('new-course.html', {
   head: '<link rel="stylesheet" href="/onboarding-polish.css">',
@@ -273,12 +287,12 @@ function launchStandardMissionTurn(id, { answer = null, retry = false } = {}) {
     ? Promise.resolve(repairMissionPrompt())
     : answer == null
       ? buildSourceDigest(courseDir, record.source)
-          .then((digestResult) => initialMissionPrompt(record.source.extension, digestResult && digestResult.text))
+          .then((digestResult) => initialMissionPrompt(record.source.extension, digestResult && digestResult.text, record.profile))
           .catch((error) => {
             console.log(`[mission ${id}] source digest unavailable, falling back to model-side skim: ${error.message}`);
-            return initialMissionPrompt(record.source.extension);
+            return initialMissionPrompt(record.source.extension, '', record.profile);
           })
-      : Promise.resolve(answerMissionPrompt(answer));
+      : Promise.resolve(answerMissionPrompt(answer, record.profile));
 
   const runMissionPrompt = (missionPrompt, sessionState) => runTrackedKimi({
     cwd: courseDir,
@@ -673,7 +687,7 @@ function launchOnboardingGeneration(id, { retry = false } = {}) {
   let run;
   try {
     const missionSession = readMissionSessionState(courseDir);
-    run = runKimi(id, FIRST_ONBOARDING_PROMPT(record.source.extension), {
+    run = runKimi(id, FIRST_ONBOARDING_PROMPT(record.source.extension, record.profile), {
       track: true,
       sessionId: missionSession.sessionId,
       preferredMode: missionSession.preferredMode,
@@ -761,6 +775,8 @@ app.post('/api/course-onboarding', (req, res) => {
         mimeType: req.file.mimetype,
         sizeBytes: req.file.size,
         title: req.body && req.body.title,
+        mode: req.body && req.body.mode,
+        locale: req.body && req.body.locale,
       });
       launchStandardMissionTurn(created.courseId);
       return res.status(202).json({
@@ -781,6 +797,7 @@ app.get('/api/courses', (req, res) => {
     .filter((d) => d.isDirectory())
     .map((d) => {
       const id = d.name;
+      const lessonFiles = lessonsOf(id);
       let title = '我的课程';
       try { title = JSON.parse(fs.readFileSync(path.join(dirOf(id), 'meta.json'), 'utf8')).title; } catch {}
       const book = fs.readdirSync(dirOf(id)).find((f) => f.startsWith('book.')) || '';
@@ -797,9 +814,12 @@ app.get('/api/courses', (req, res) => {
       return {
         id, title, cover, archived,
         ext: (path.extname(book).slice(1) || 'TXT').toUpperCase(),
-        lessons: lessonsOf(id).length,
+        lessons: lessonFiles.length,
+        lessonFiles,
         operation,
-        stage: operation?.stage || onboardingGenerationStage(onboarding, job.stage),
+        stage: operation?.stage || (onboarding
+          ? onboardingGenerationStage(onboarding, job.stage)
+          : lessonFiles.length > 0 ? 'ready' : job.stage),
         onboardingState: onboarding && onboarding.state || null,
         onboardingErrorCode: onboarding
           ? onboarding.inspection.errorCode || onboarding.generation.errorCode || null
@@ -1191,6 +1211,32 @@ const readCourseNotes = (id) => {
   const value = readJson(notesFile(id), []);
   return Array.isArray(value) ? value.filter((note) => note && typeof note === 'object') : [];
 };
+const noteTimestamp = (note) => {
+  const value = Number(note && (note.updatedAt || note.createdAt));
+  return Number.isFinite(value) && value > 0 ? value : 0;
+};
+const courseTitleOf = (id) => {
+  const meta = readJson(path.join(dirOf(id), 'meta.json'), {});
+  return String(meta && meta.title || 'Untitled course').trim() || 'Untitled course';
+};
+const lessonDisplayTitle = (id, file) => {
+  const lesson = safeLesson(id, file);
+  if (!lesson) return String(file || 'Unfiled note').replace(/\.html$/i, '');
+  try {
+    const html = fs.readFileSync(path.join(dirOf(id), 'lessons', lesson), 'utf8');
+    const match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+    if (match) {
+      const value = match[1].replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim();
+      if (value) return value.slice(0, 160);
+    }
+  } catch {}
+  return lesson.replace(/^\d+-?/, '').replace(/\.html$/i, '').replace(/[-_]+/g, ' ');
+};
+const courseActivityFile = (id) => path.join(dirOf(id), 'learning-activity.json');
+const readCourseActivity = (id) => {
+  const value = readJson(courseActivityFile(id), []);
+  return Array.isArray(value) ? value.filter((item) => item && typeof item === 'object') : [];
+};
 const requestedNoteLesson = (id, value) => {
   const requested = String(value || '').trim();
   if (!requested) return null;
@@ -1224,6 +1270,103 @@ app.put('/api/courses/:id/notes', (req, res) => {
   });
   writeJsonAtomic(notesFile(req.params.id), [...retained, ...incoming]);
   return res.json({ ok: true, lesson, notes: incoming.length });
+});
+
+app.get('/api/notes', (req, res) => {
+  const courseFilter = String(req.query.course || '').trim();
+  const courses = fs.readdirSync(DATA, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && validId(entry.name))
+    .map((entry) => entry.name)
+    .filter((id) => !courseFilter || id === courseFilter);
+  const notes = courses.flatMap((id) => {
+    const lessonFiles = lessonsOf(id);
+    const courseTitle = courseTitleOf(id);
+    return readCourseNotes(id).map((note) => {
+      const lessonFile = safeLesson(id, note.lessonFile) || '';
+      const lessonIndex = lessonFile ? lessonFiles.indexOf(lessonFile) : -1;
+      return {
+        ...note,
+        courseId: id,
+        courseTitle,
+        lessonFile,
+        lessonIndex,
+        lessonTitle: lessonDisplayTitle(id, lessonFile),
+        timestamp: noteTimestamp(note),
+      };
+    });
+  }).sort((a, b) => b.timestamp - a.timestamp);
+  return res.json({ notes });
+});
+
+app.post('/api/courses/:id/activity', (req, res) => {
+  const id = req.params.id;
+  if (!validId(id) || !fs.existsSync(dirOf(id))) return res.status(404).json({ error: 'course not found' });
+  const type = String(req.body && req.body.type || '').trim();
+  if (!['lesson-opened'].includes(type)) return res.status(400).json({ error: 'invalid activity type' });
+  const lessonFile = safeLesson(id, req.body && req.body.lessonFile);
+  if (!lessonFile) return res.status(400).json({ error: 'invalid lesson' });
+  const now = Date.now();
+  const events = readCourseActivity(id);
+  const recent = events[events.length - 1];
+  if (!recent || recent.type !== type || recent.lessonFile !== lessonFile || now - Number(recent.timestamp || 0) > 30 * 60 * 1000) {
+    events.push({ id: crypto.randomUUID(), type, lessonFile, timestamp: now });
+    writeJsonAtomic(courseActivityFile(id), events.slice(-1000));
+  }
+  return res.json({ ok: true });
+});
+
+app.get('/api/activity', (req, res) => {
+  const courses = fs.readdirSync(DATA, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && validId(entry.name))
+    .map((entry) => entry.name);
+  const events = [];
+  for (const id of courses) {
+    const courseTitle = courseTitleOf(id);
+    for (const item of readCourseActivity(id)) {
+      const timestamp = Number(item.timestamp || 0);
+      if (timestamp > 0) events.push({
+        id: item.id,
+        type: item.type,
+        courseId: id,
+        courseTitle,
+        lessonFile: safeLesson(id, item.lessonFile) || '',
+        lessonTitle: lessonDisplayTitle(id, item.lessonFile),
+        timestamp,
+      });
+    }
+    for (const note of readCourseNotes(id)) {
+      const timestamp = noteTimestamp(note);
+      if (timestamp > 0) events.push({
+        id: note.id,
+        type: 'note',
+        courseId: id,
+        courseTitle,
+        lessonFile: safeLesson(id, note.lessonFile) || '',
+        lessonTitle: lessonDisplayTitle(id, note.lessonFile),
+        timestamp,
+      });
+    }
+    const progressDir = path.join(dirOf(id), 'learning-progress');
+    if (fs.existsSync(progressDir)) {
+      for (const name of fs.readdirSync(progressDir).filter((file) => file.endsWith('.json'))) {
+        const progress = readJson(path.join(progressDir, name), {});
+        for (const attempt of Array.isArray(progress.attempts) ? progress.attempts : []) {
+          const timestamp = Date.parse(attempt.submittedAt || '');
+          if (Number.isFinite(timestamp)) events.push({
+            id: `${name}:${attempt.activityId || ''}:${attempt.attemptNumber || ''}`,
+            type: 'practice',
+            courseId: id,
+            courseTitle,
+            lessonFile: safeLesson(id, `${name.replace(/\.json$/i, '')}.html`) || '',
+            lessonTitle: lessonDisplayTitle(id, `${name.replace(/\.json$/i, '')}.html`),
+            timestamp,
+          });
+        }
+      }
+    }
+  }
+  events.sort((a, b) => b.timestamp - a.timestamp);
+  return res.json({ events: events.slice(0, 5000) });
 });
 
 // 聊天记录（须在 splat 静态路由之前注册，否则会被当成文件 404）

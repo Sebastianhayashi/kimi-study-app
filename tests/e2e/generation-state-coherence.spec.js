@@ -228,6 +228,27 @@ test('生成一致性人工截图', async ({ page }, testInfo) => {
 
 test('验证 renderLearningRecords() 防御 HTML 注入 (XSS)', async ({ page }) => {
   const xssTitle = '01-<img src=x onerror="window.__lessonTitleXss=1">.html';
+  await page.route(/\/api\/courses\/readycourse\/notes(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: '[]',
+    });
+  });
+  await page.route(/\/api\/courses\/readycourse\/study-surface(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ version: 1, cards: [], strokes: [] }),
+    });
+  });
+  await page.route('**/api/courses/readycourse/activity', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
   await page.route('**/api/courses/readycourse/lessons', async (route) => {
     await route.fulfill({
       status: 200,
@@ -282,9 +303,10 @@ test('在 1366x768 响应式断点下验证生成状态', async ({ page }, testI
   const innerWidth = await page.evaluate(() => window.innerWidth);
   expect(scrollWidth).toBeLessThanOrEqual(innerWidth);
 
-  // 2. 验证顶部生成状态可见
+  // 2. 窄课程区移除重复的顶部进度，只保留左侧课程导航中的主进度
   const compactProgress = page.locator('.compact-progress');
-  await expect(compactProgress).toBeVisible();
+  await expect(compactProgress).toBeHidden();
+  await expect(page.locator('[role="progressbar"]:visible')).toHaveCount(1);
 
   // 3. 验证 .ks-generation-paper-activity 可见
   const activityBar = page.locator('.ks-generation-paper-activity');

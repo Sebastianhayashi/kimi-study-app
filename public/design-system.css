@@ -63,6 +63,54 @@
   display: none !important;
 }
 
+.lucubro-language-switcher {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: auto;
+}
+
+.lucubro-language-switcher select {
+  min-width: 68px;
+  min-height: 38px;
+  padding: 0 28px 0 11px;
+  border: 1px solid var(--ds-border, #d8e0ec);
+  border-radius: 10px;
+  color: var(--ds-text, #172033);
+  background: var(--ds-surface, #fff);
+  font: 650 12px/1 var(--ds-font-sans);
+  cursor: pointer;
+  transition:
+    border-color var(--ds-motion-out) var(--ds-ease-out),
+    background-color var(--ds-motion-out) var(--ds-ease-out);
+}
+
+.lucubro-language-switcher select:hover {
+  border-color: var(--ds-border-strong, #b7c3d5);
+}
+
+.lucubro-language-switcher select:focus-visible {
+  outline: var(--ds-focus-ring);
+  outline-offset: 2px;
+}
+
+.site-header .lucubro-language-switcher,
+.topbar .lucubro-language-switcher,
+.course-topbar .lucubro-language-switcher {
+  margin-inline-start: auto;
+}
+
+.appbar-inner .lucubro-language-switcher {
+  margin-inline-start: 0;
+}
+
+@media (max-width: 720px) {
+  .lucubro-language-switcher select {
+    min-width: 58px;
+    min-height: 36px;
+    padding-inline: 9px 24px;
+  }
+}
+
 * {
   box-sizing: border-box;
 }

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -724,6 +724,57 @@
     .mission-answer:focus { outline:3px solid rgba(23,105,224,.14); border-color:#8fb4ef; }
     .mission-material-summary, .mission-summary { margin:0; border:1px solid #dce5f2; border-radius:14px; padding:15px 16px; color:#536177; background:#f8faff; line-height:1.65; }
     .mission-summary { color:var(--ink); white-space:pre-wrap; }
+    .course-purpose {
+      margin: 28px 0 20px;
+      padding: 0;
+      border: 0;
+    }
+    .course-purpose legend {
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .course-purpose-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .course-purpose-card {
+      position: relative;
+      min-height: 118px;
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      align-content: start;
+      gap: 4px 11px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      color: var(--ink);
+      background: #fff;
+      cursor: pointer;
+      transition: border-color var(--ds-motion-fast) var(--ds-ease-standard), background var(--ds-motion-fast) var(--ds-ease-standard), transform var(--ds-motion-fast) var(--ds-ease-standard);
+    }
+    .course-purpose-card:hover { border-color: #aac3ea; transform: translateY(-1px); }
+    .course-purpose-card:has(input:checked) { border-color: #78a5ea; background: #f3f7ff; box-shadow: 0 0 0 3px rgba(11,87,208,.08); }
+    .course-purpose-card input { position: absolute; opacity: 0; pointer-events: none; }
+    .course-purpose-icon {
+      grid-row: 1 / span 2;
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 11px;
+      color: var(--primary);
+      background: var(--primary-soft);
+      font-size: 18px;
+    }
+    .course-purpose-card strong { font-size: 14px; }
+    .course-purpose-card span:last-child { color: var(--muted); font-size: 12px; line-height: 1.5; }
+    @media (max-width: 620px) {
+      .course-purpose-options { grid-template-columns: 1fr; }
+      .course-purpose-card { min-height: 96px; }
+    }
 
   </style>
 </head>
@@ -746,6 +797,24 @@
           <p class="eyebrow">新建课程</p>
           <h1>上传学习材料</h1>
           <p class="lead">支持 EPUB、PDF、Markdown 和 TXT。文件检查完成后，再设置这门课的学习重点。</p>
+
+          <fieldset class="course-purpose" id="coursePurpose">
+            <legend>What are you working toward?</legend>
+            <div class="course-purpose-options">
+              <label class="course-purpose-card">
+                <input type="radio" name="courseMode" value="student" checked>
+                <span class="course-purpose-icon"><i class="ph ph-student" aria-hidden="true"></i></span>
+                <strong>Prepare and improve</strong>
+                <span>Use textbooks, past papers, and exercises. Your work helps shape what comes next.</span>
+              </label>
+              <label class="course-purpose-card">
+                <input type="radio" name="courseMode" value="goal">
+                <span class="course-purpose-icon"><i class="ph ph-target" aria-hidden="true"></i></span>
+                <strong>Solve a real problem</strong>
+                <span>Use books and articles to improve writing, communication, work, or a current project.</span>
+              </label>
+            </div>
+          </fieldset>
 
           <label class="upload-zone" id="uploadZone" for="fileInput">
             <input id="fileInput" type="file" hidden accept=".epub,.pdf,.txt,.md,.markdown" />

@@ -6,13 +6,18 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('right Tutor is preserved and notes live in the left rail', () => {
+test('right Tutor is preserved while notes use the lesson panel and global notebook', () => {
   const notes = read('public/course-notes-index.js');
+  const marginNotes = read('public/margin-notes.js');
+  const server = read('server.js');
   const scratch = read('public/study-surface.js');
-  assert.match(notes, /tabs\.appendChild\(tab\)/);
-  assert.match(notes, /tab\.textContent = '笔记'/);
+  assert.match(notes, /type: 'focus-note'/);
+  assert.match(marginNotes, /className = 'kn-notes-panel'/);
+  assert.match(marginNotes, /this\.layout\.addCard\(card\.el\)/);
+  assert.match(server, /app\.get\('\/notes'/);
+  assert.doesNotMatch(notes, /tabs\.appendChild\(tab\)/);
   assert.match(scratch, /course-stage/);
-  assert.doesNotMatch(notes + scratch, /replaceChildren\([^)]*assistantPanel/);
+  assert.doesNotMatch(notes + marginNotes + scratch, /replaceChildren\([^)]*assistantPanel/);
 });
 
 test('contextual menu is selection-driven, capped, and keeps stable action nodes', () => {

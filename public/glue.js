@@ -324,34 +324,57 @@
     }
 
     function renderFeaturedCourse(list) {
-      const course = list.find((item) => Number(item.lessons) > 0 && courseState(item) === 'ready');
+      const readyCourses = list.filter((item) => Number(item.lessons) > 0 && courseState(item) === 'ready');
+      const lastOpened = (item) => {
+        try { return Number(localStorage.getItem(`lucubro-course:${item.id}:last-opened`)) || 0; } catch { return 0; }
+      };
+      const course = readyCourses.sort((a, b) => lastOpened(b) - lastOpened(a))[0];
       if (!course) {
         featuredSection.style.display = 'none';
-        return;
+        return null;
       }
       featuredSection.style.display = '';
+      const destination = courseDestination(course);
+      const lessonFiles = Array.isArray(course.lessonFiles) ? course.lessonFiles : [];
+      let lessonIndex = 0;
+      try {
+        lessonIndex = Math.max(0, Math.min(
+          lessonFiles.length - 1,
+          Number(localStorage.getItem(`lucubro-course:${course.id}:lesson-index`)) || 0,
+        ));
+      } catch {}
+      const lessonFile = lessonFiles[lessonIndex] || lessonFiles[0] || '';
+      const lessonName = lessonFile
+        ? lessonFile.replace(/^\d+-?/, '').replace(/\.html$/i, '').replace(/[-_]+/g, ' ')
+        : '第一课';
       const card = document.createElement('article');
       card.className = 'featured-card ks-continue-card';
-      card.tabIndex = 0;
-      card.setAttribute('role', 'button');
-      card.setAttribute('aria-label', `继续学习 ${course.title}`);
+      const cover = course.cover
+        ? `<img src="/api/courses/${encodeURIComponent(course.id)}/${encodeURIComponent(course.cover)}" alt="">`
+        : '<span class="ks-continue-cover-mark"><img src="/assets/brand/lucubro-mark.svg" alt=""></span>';
       card.innerHTML =
+        `<div class="ks-continue-cover">${cover}</div>` +
         '<div class="ks-continue-copy">' +
           '<span class="ks-continue-label">继续上次学习</span>' +
-          '<div class="ks-continue-title"></div>' +
-          '<p></p>' +
+          '<h3 class="ks-continue-title"></h3>' +
+          '<div class="ks-continue-lesson">' +
+            '<span class="ks-continue-lesson-kicker">当前课节</span>' +
+            '<strong></strong>' +
+          '</div>' +
+          '<p class="ks-continue-meta"></p>' +
         '</div>' +
-        '<span class="ks-continue-action">继续学习 <i class="ph ph-arrow-right" aria-hidden="true"></i></span>';
+        '<div class="ks-continue-actions">' +
+          `<a class="ks-continue-action" href="${destination}">继续学习 <i class="ph ph-arrow-right" aria-hidden="true"></i></a>` +
+          `<a class="ks-continue-secondary" href="/notes?course=${encodeURIComponent(course.id)}"><i class="ph ph-note-pencil" aria-hidden="true"></i><span>查看笔记</span></a>` +
+          `<a class="ks-continue-secondary" href="${destination}?view=source"><i class="ph ph-book-open-text" aria-hidden="true"></i><span>打开原文</span></a>` +
+        '</div>' +
+        '<span class="ks-continue-available"></span>';
       card.querySelector('.ks-continue-title').textContent = course.title;
-      card.querySelector('p').textContent = `${Number(course.lessons)} 节课 · ${course.ext} 材料`;
-      const open = () => { location.href = courseDestination(course); };
-      card.addEventListener('click', open);
-      card.addEventListener('keydown', (event) => {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-        event.preventDefault();
-        open();
-      });
+      card.querySelector('.ks-continue-lesson strong').textContent = `Lesson ${lessonIndex + 1} · ${lessonName}`;
+      card.querySelector('.ks-continue-meta').textContent = `${course.ext} 材料 · ${lessonIndex + 1} / ${Number(course.lessons)}`;
+      card.querySelector('.ks-continue-available').textContent = `${Number(course.lessons)} 节课可学习`;
       featuredGrid.replaceChildren(card);
+      return course.id;
     }
 
     function createCourseCard(course) {
@@ -376,9 +399,10 @@
     }
 
     function renderCourses(list) {
-      renderFeaturedCourse(list);
+      const featuredCourseId = renderFeaturedCourse(list);
       const seen = new Set();
       list.forEach((course) => {
+        if (course.id === featuredCourseId) return;
         seen.add(course.id);
         let card = courseCardsById.get(course.id);
         if (!card) {
@@ -407,7 +431,8 @@
         const list = await response.json();
         renderCourses(Array.isArray(list) ? list : []);
         shelfLoaded = true;
-      } catch {
+      } catch (error) {
+        console.error('[course-library]', error);
         // Keep the last coherent shelf and retry only while the initial load or an active course needs updates.
       } finally {
         shelfRequestInFlight = false;
@@ -704,6 +729,15 @@
 
     function showLesson(i) {
       current = i;
+      try {
+        localStorage.setItem(`lucubro-course:${courseId}:lesson-index`, String(i));
+        localStorage.setItem(`lucubro-course:${courseId}:last-opened`, String(Date.now()));
+      } catch {}
+      fetch(`/api/courses/${encodeURIComponent(courseId)}/activity`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ type: 'lesson-opened', lessonFile: lessons[i] }),
+      }).catch(() => {});
       resourceTools.reset();
       courseStage?.classList.add('is-loading-lesson');
       currentLessonUrl = `/api/courses/${courseId}/lessons/${encodeURIComponent(lessons[i])}`;
@@ -1222,15 +1256,19 @@
       `;
       document.head.appendChild(toggleStyle);
       let notesButton = null;
+      let materialsMenu = null;
+      let materialsList = null;
       window.addEventListener('message', (event) => {
         if (event.data?.type === 'notes-panel-state' && notesButton) {
-          notesButton.setAttribute('aria-pressed', String(!!event.data.collapsed));
+          notesButton.setAttribute('aria-pressed', String(!event.data.collapsed));
+          notesButton.title = event.data.collapsed ? 'Open notes' : 'Close notes';
         }
       });
 
       const setActive = (button) => {
         slot.querySelectorAll('button:not(.kn-notes-toggle)').forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
         activeButton = button;
+        materialsMenu?.querySelector('.ks-materials-trigger')?.setAttribute('aria-pressed', String(!!button));
       };
 
       const restoreLesson = () => {
@@ -1269,6 +1307,38 @@
       const sync = () => {
         if (showingResource) return;
         slot.replaceChildren();
+        materialsMenu = document.createElement('div');
+        materialsMenu.className = 'ks-materials-menu';
+        const materialsTrigger = document.createElement('button');
+        materialsTrigger.type = 'button';
+        materialsTrigger.className = 'pill lesson-resource-tool ks-materials-trigger';
+        materialsTrigger.setAttribute('aria-haspopup', 'menu');
+        materialsTrigger.setAttribute('aria-expanded', 'false');
+        materialsTrigger.innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 5h6l2 2h8v12H4z"/><path d="m9 12 3 3 3-3"/></svg><span class="lesson-resource-tool-label">Learning materials</span>';
+        materialsList = document.createElement('div');
+        materialsList.className = 'ks-materials-menu-list';
+        materialsList.hidden = true;
+        materialsList.setAttribute('role', 'menu');
+        const closeMaterials = () => {
+          materialsList.hidden = true;
+          materialsTrigger.setAttribute('aria-expanded', 'false');
+        };
+        materialsTrigger.addEventListener('click', () => {
+          const next = !materialsList.hidden;
+          materialsList.hidden = next;
+          materialsTrigger.setAttribute('aria-expanded', String(!next));
+        });
+        materialsMenu.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            closeMaterials();
+            materialsTrigger.focus();
+          }
+        });
+        document.addEventListener('click', (event) => {
+          if (!materialsMenu?.contains(event.target)) closeMaterials();
+        });
+        materialsMenu.append(materialsTrigger, materialsList);
+        slot.appendChild(materialsMenu);
         let doc;
         try { doc = lessonFrame.contentDocument; } catch { return; }
         if (!doc) return;
@@ -1282,8 +1352,12 @@
           button.setAttribute('aria-pressed', 'false');
           button.title = tool.label;
           button.innerHTML = `${tool.icon}<span class="lesson-resource-tool-label">${tool.label}</span>`;
-          button.addEventListener('click', () => openResource({ href: link.href }, button));
-          slot.appendChild(button);
+          button.setAttribute('role', 'menuitem');
+          button.addEventListener('click', () => {
+            closeMaterials();
+            openResource({ href: link.href }, button);
+          });
+          materialsList.appendChild(button);
           // 课节内的原始链接接进同一流程，避免 iframe 跳去显示裸 markdown
           links.forEach((item) => {
             if (!tool.pattern.test(item.href || item.getAttribute('href') || '')) return;
@@ -1293,8 +1367,6 @@
             });
           });
         });
-        slot.hidden = slot.childElementCount === 0;
-
         // 笔记栏开关（始终存在，不依赖链接发现）
         notesButton = document.createElement('button');
         notesButton.type = 'button';
@@ -1306,6 +1378,7 @@
           lessonFrame.contentWindow?.postMessage({ type: 'toggle-notes-panel' }, '*');
         });
         slot.appendChild(notesButton);
+        slot.hidden = false;
         lessonFrame.contentWindow?.postMessage({ type: 'notes-panel-query' }, '*');
       };
 
@@ -1322,6 +1395,115 @@
     }
 
     resourceTools = mountResourceTools();
+
+    function mountCourseMoreMenu() {
+      const actions = document.querySelector('.course-actions');
+      const focus = document.getElementById('focusModeButton');
+      const fullscreen = document.getElementById('fullscreenButton');
+      const next = document.getElementById('nextLessonButton');
+      if (!actions || !focus || !fullscreen || !next) return;
+      focus.classList.add('ks-secondary-action');
+      fullscreen.classList.add('ks-secondary-action');
+      const wrapper = document.createElement('div');
+      wrapper.className = 'ks-course-more';
+      const trigger = document.createElement('button');
+      trigger.type = 'button';
+      trigger.className = 'course-control ks-course-more-trigger';
+      trigger.setAttribute('aria-label', 'More study options');
+      trigger.setAttribute('aria-haspopup', 'menu');
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.innerHTML = '<i class="ph ph-dots-three" aria-hidden="true"></i>';
+      const menu = document.createElement('div');
+      menu.className = 'ks-course-more-menu';
+      menu.hidden = true;
+      menu.setAttribute('role', 'menu');
+      const item = (label, icon, action) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('role', 'menuitem');
+        button.innerHTML = `<i class="ph ${icon}" aria-hidden="true"></i><span>${label}</span>`;
+        button.addEventListener('click', () => {
+          menu.hidden = true;
+          trigger.setAttribute('aria-expanded', 'false');
+          action();
+        });
+        return button;
+      };
+      menu.append(
+        item('Focus reading', 'ph-corners-out', () => focus.click()),
+        item('Full screen course', 'ph-arrows-out', () => fullscreen.click()),
+      );
+      trigger.addEventListener('click', () => {
+        menu.hidden = !menu.hidden;
+        trigger.setAttribute('aria-expanded', String(!menu.hidden));
+      });
+      wrapper.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          menu.hidden = true;
+          trigger.setAttribute('aria-expanded', 'false');
+          trigger.focus();
+        }
+      });
+      document.addEventListener('click', (event) => {
+        if (!wrapper.contains(event.target)) {
+          menu.hidden = true;
+          trigger.setAttribute('aria-expanded', 'false');
+        }
+      });
+      wrapper.append(trigger, menu);
+      actions.insertBefore(wrapper, next);
+    }
+    mountCourseMoreMenu();
+
+    function simplifyLearningContext() {
+      const panel = document.getElementById('leftPanel');
+      const tabs = panel?.querySelector('.left-tabs');
+      const overview = panel?.querySelector('[data-left-tab="overview"]');
+      const map = panel?.querySelector('[data-left-tab="map"]');
+      const lessonsTab = panel?.querySelector('[data-left-tab="lessons"]');
+      const lessonsView = panel?.querySelector('#left-lessons');
+      const lessonList = lessonsView?.querySelector('.lesson-list');
+      if (!panel || !tabs || !overview || !map || !lessonsTab || !lessonsView || !lessonList) return;
+
+      panel.classList.add('ks-learning-context');
+      panel.querySelector('.panel-title').textContent = 'Course';
+      lessonsTab.textContent = 'Lessons';
+      overview.textContent = 'Goal';
+      map.textContent = 'Plan';
+      tabs.prepend(lessonsTab);
+
+      const summary = document.createElement('section');
+      summary.className = 'ks-course-nav-summary';
+      summary.innerHTML = `
+        <span class="ks-course-nav-kicker">Current lesson</span>
+        <strong class="ks-course-nav-current"></strong>
+        <div class="ks-course-nav-progress">
+          <span class="ks-course-nav-track" role="progressbar" aria-label="Course progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></span>
+          <span class="ks-course-nav-value"></span>
+        </div>`;
+      lessonsView.prepend(summary);
+
+      const update = () => {
+        const current = document.querySelector('.current-lesson')?.textContent?.trim() || '';
+        const progress = document.querySelector('.compact-progress span:last-child')?.textContent?.trim() || '';
+        const width = document.querySelector('.compact-progress .progress-track span')?.style?.width || '0%';
+        summary.querySelector('.ks-course-nav-current').textContent = current;
+        summary.querySelector('.ks-course-nav-value').textContent = progress;
+        const track = summary.querySelector('.ks-course-nav-track');
+        track.querySelector('i').style.width = width;
+        track.setAttribute('aria-valuenow', String(Math.round(Number.parseFloat(width) || 0)));
+      };
+      update();
+      new MutationObserver(update).observe(document.querySelector('.course-header'), {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        attributes: true,
+        attributeFilter: ['style'],
+      });
+      lessonsTab.click();
+    }
+    simplifyLearningContext();
 
     // 助教消息渲染（带 markdown），替代原型 addAssistantMessage 的纯文本 <p>
     function renderAssistant(body) {

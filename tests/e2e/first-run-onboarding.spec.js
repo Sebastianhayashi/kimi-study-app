@@ -246,7 +246,8 @@ test('书架课程卡根据 onboarding 状态恢复首次建课或进入现有�
   await expect(page).toHaveURL(/\/new-course\?course=missioncourse$/);
 
   await page.goto('/app');
-  await page.getByRole('heading', { name: '现有课程' }).click();
+  await expect(page.locator('.ks-continue-title')).toHaveText('现有课程');
+  await page.locator('.ks-continue-action').click();
   await expect(page).toHaveURL(/\/course\/readycourse$/);
 });
 
@@ -304,10 +305,12 @@ test('后台生成课程在书架无需刷新即可变为 ready，并支持 Ente
   const card = page.locator('.course-card').filter({ hasText: '后台课程' });
   await expect(card.locator('.course-meta')).toContainText('正在创建课程');
   await expect.poll(() => listCalls, { timeout: 6000 }).toBeGreaterThanOrEqual(2);
-  await expect(card.locator('.course-meta')).toContainText('1 节课');
+  await expect(card).toHaveCount(0);
 
-  await card.focus();
-  await expect(card).toBeFocused();
+  const continueAction = page.locator('.ks-continue-action');
+  await expect(page.locator('.ks-continue-title')).toHaveText('后台课程');
+  await continueAction.focus();
+  await expect(continueAction).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/course\/backgroundcourse$/);
 });

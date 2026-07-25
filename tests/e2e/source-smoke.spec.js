@@ -16,6 +16,9 @@ test('原文阅读器打开文本资源并无损返回课节', async ({ page }) 
   const frame = page.frameLocator('#lessonFrame');
   await expect(frame.getByRole('heading', { name: '稳定化测试课节' })).toBeVisible();
 
+  const materials = page.locator('.ks-materials-trigger');
+  await expect(materials).toBeVisible();
+  await materials.click();
   const launch = page.locator('.ks-source-launch');
   await expect(launch).toBeVisible();
   await launch.click();

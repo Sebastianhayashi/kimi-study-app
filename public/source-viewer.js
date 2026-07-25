@@ -3,6 +3,7 @@
 
   const courseId = location.pathname.split('/').filter(Boolean).pop();
   const stage = document.querySelector('.course-stage');
+  const workspace = document.querySelector('.workspace');
   const lessonFrame = document.getElementById('lessonFrame');
   const resourceSlot = document.getElementById('lessonResourceSlot');
   if (!stage || !lessonFrame) return;
@@ -27,6 +28,7 @@
     search: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
     external: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v7M10 14 21 3M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>',
     source: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h8M9 17h6"/></svg>',
+    split: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/></svg>',
   };
 
   stage.classList.add('ks-source-host');
@@ -42,6 +44,7 @@
         <span class="ks-source-format"></span>
       </div>
       <div class="ks-source-toolbar-spacer"></div>
+      <button class="ks-source-control ks-source-split" type="button" aria-label="Read lesson and source side by side" aria-pressed="false">${icons.split}<span>Split view</span></button>
       <button class="ks-source-control ks-source-toc" type="button" aria-label="显示目录">${icons.toc}<span>目录</span></button>
       <div class="ks-source-search-wrap">
         <input class="ks-source-search" type="search" placeholder="搜索内容" aria-label="搜索资源内容">
@@ -99,6 +102,7 @@
     select: root.querySelector('.ks-source-select'),
     format: root.querySelector('.ks-source-format'),
     toc: root.querySelector('.ks-source-toc'),
+    split: root.querySelector('.ks-source-split'),
     search: root.querySelector('.ks-source-search'),
     searchButton: root.querySelector('.ks-source-search-button'),
     prev: root.querySelector('.ks-source-prev'),
@@ -144,6 +148,8 @@
   let pdfState = null;
   let epubState = null;
   let documentState = null;
+  let split = localStorage.getItem('lucubro-source-layout') === 'split';
+  let workspaceWasRightCollapsed = false;
   let scale = Number(localStorage.getItem('kimi-source-scale') || 100);
   let theme = localStorage.getItem('kimi-source-theme') || 'light';
 
@@ -277,6 +283,31 @@
     ui.location.value = '1';
     ui.location.readOnly = kind !== 'pdf';
     ui.locationTotal.textContent = '/ 1';
+    ui.split.setAttribute('aria-pressed', String(split));
+  }
+
+  function applySplitLayout() {
+    if (window.matchMedia('(max-width: 860px)').matches) split = false;
+    stage.classList.toggle('is-source-split', split);
+    ui.split.setAttribute('aria-pressed', String(split));
+    if (visible && split && workspace) {
+      workspaceWasRightCollapsed = workspace.classList.contains('right-collapsed');
+      workspace.classList.add('right-collapsed');
+      lessonFrame.contentWindow?.postMessage({ type: 'toggle-notes-panel', collapsed: true }, '*');
+    }
+    lessonFrame.toggleAttribute('aria-hidden', visible && !split);
+  }
+
+  function toggleSplitLayout() {
+    split = !split;
+    try { localStorage.setItem('lucubro-source-layout', split ? 'split' : 'full'); } catch {}
+    applySplitLayout();
+    if (epubState?.rendition) {
+      window.setTimeout(() => {
+        epubState.rendition.spread('none');
+        epubState.rendition.resize();
+      }, 40);
+    }
   }
 
   async function openSource(source) {
@@ -291,7 +322,7 @@
     root.hidden = false;
     root.classList.remove('is-ready');
     stage.classList.add('is-source-viewer-active');
-    lessonFrame.setAttribute('aria-hidden', 'true');
+    applySplitLayout();
     ui.select.value = source.id;
     updateControls(source.kind);
     clearPanels();
@@ -320,7 +351,9 @@
     cleanupCurrent = () => {};
     root.classList.remove('is-ready');
     stage.classList.remove('is-source-viewer-active');
+    stage.classList.remove('is-source-split');
     lessonFrame.removeAttribute('aria-hidden');
+    if (workspace && !workspaceWasRightCollapsed) workspace.classList.remove('right-collapsed');
     const finish = () => {
       root.hidden = true;
       clearPanels();
@@ -480,17 +513,28 @@
     return output;
   }
 
+  function flattenEpubLeafToc(items, output = []) {
+    for (const item of Array.isArray(items) ? items : []) {
+      const children = item && (item.subitems || item.children);
+      if (Array.isArray(children) && children.length) flattenEpubLeafToc(children, output);
+      else if (item && typeof item.href === 'string' && item.href) output.push(item.href);
+    }
+    return output;
+  }
+
   function isEpubFrontMatterHref(href) {
     return /(?:^|[\/_-])(cover|title(?:page)?|toc|nav)(?:[.\/_-]|$)/i.test(String(href || ''));
   }
 
   function firstReadableEpubTarget(navigation, book) {
     const tocHrefs = flattenEpubToc(navigation && navigation.toc);
+    const leafHrefs = flattenEpubLeafToc(navigation && navigation.toc);
     const spineHrefs = (book && book.spine && Array.isArray(book.spine.spineItems) ? book.spine.spineItems : [])
       .filter((item) => item && item.linear !== 'no')
       .map((item) => item.href)
       .filter(Boolean);
-    return tocHrefs.find((href) => !isEpubFrontMatterHref(href))
+    return leafHrefs.find((href) => !isEpubFrontMatterHref(href))
+      || tocHrefs.find((href) => !isEpubFrontMatterHref(href))
       || spineHrefs.find((href) => !isEpubFrontMatterHref(href))
       || tocHrefs[0]
       || spineHrefs[0]
@@ -510,8 +554,8 @@
     const rendition = book.renderTo(ui.epub, {
       width: '100%',
       height: '100%',
-      flow: 'paginated',
-      spread: 'auto',
+      flow: 'scrolled-doc',
+      spread: 'none',
       allowScriptedContent: false,
     });
     epubState = { book, rendition, searchToken: 0 };
@@ -523,16 +567,25 @@
     };
     ui.epub.hidden = false;
 
+    const reflow = {
+      html: { width: '100% !important', margin: '0 !important', 'writing-mode': 'horizontal-tb !important', 'text-orientation': 'mixed !important' },
+      body: { width: '100% !important', 'max-width': '46rem !important', margin: '0 auto !important', padding: '2rem clamp(1.25rem, 6vw, 3rem) 4rem !important', 'writing-mode': 'horizontal-tb !important', 'text-orientation': 'mixed !important' },
+      'h1,h2,h3,h4,h5,h6,p,li,blockquote,div,section,article': { width: 'auto !important', 'max-width': '100% !important', height: 'auto !important', 'writing-mode': 'horizontal-tb !important', 'text-orientation': 'mixed !important', 'word-break': 'normal !important', 'overflow-wrap': 'break-word !important' },
+      img: { 'max-width': '100% !important', height: 'auto !important' },
+    };
     rendition.themes.register('kimi-light', {
-      body: { color: '#202124', background: '#ffffff', 'line-height': '1.75', padding: '0 4%' },
+      ...reflow,
+      body: { ...reflow.body, color: '#202124', background: '#ffffff', 'line-height': '1.75' },
       a: { color: '#0b57d0' },
     });
     rendition.themes.register('kimi-sepia', {
-      body: { color: '#3f3528', background: '#f7f0df', 'line-height': '1.78', padding: '0 4%' },
+      ...reflow,
+      body: { ...reflow.body, color: '#3f3528', background: '#f7f0df', 'line-height': '1.78' },
       a: { color: '#7a4b14' },
     });
     rendition.themes.register('kimi-dark', {
-      body: { color: '#e8eaed', background: '#202124', 'line-height': '1.78', padding: '0 4%' },
+      ...reflow,
+      body: { ...reflow.body, color: '#e8eaed', background: '#202124', 'line-height': '1.78' },
       a: { color: '#8ab4f8' },
     });
     applyReadingTheme();
@@ -829,10 +882,19 @@
     launchButton = document.createElement('button');
     launchButton.type = 'button';
     launchButton.className = 'pill lesson-resource-tool ks-source-launch';
-    launchButton.title = '查看上传的原始材料';
-    launchButton.innerHTML = `${icons.source}<span class="lesson-resource-tool-label">原文</span>`;
+    launchButton.title = 'Original material';
+    launchButton.innerHTML = `${icons.source}<span class="lesson-resource-tool-label">Original</span>`;
     launchButton.addEventListener('click', () => openSource(sources[0]));
-    resourceSlot.appendChild(launchButton);
+    const materialsList = resourceSlot.querySelector('.ks-materials-menu-list');
+    if (materialsList) {
+      launchButton.setAttribute('role', 'menuitem');
+      launchButton.querySelector('.lesson-resource-tool-label').textContent = 'Original material';
+      launchButton.addEventListener('click', () => {
+        materialsList.hidden = true;
+        resourceSlot.querySelector('.ks-materials-trigger')?.setAttribute('aria-expanded', 'false');
+      });
+      materialsList.appendChild(launchButton);
+    } else resourceSlot.appendChild(launchButton);
     resourceSlot.hidden = false;
   }
 
@@ -860,6 +922,12 @@
   ui.search.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') runSearch();
     if (event.key === 'Escape') { ui.search.value = ''; ui.viewport.focus(); }
+  });
+  ui.split.addEventListener('click', toggleSplitLayout);
+  lessonFrame.addEventListener('load', () => {
+    if (visible && split) {
+      window.setTimeout(() => lessonFrame.contentWindow?.postMessage({ type: 'toggle-notes-panel', collapsed: true }, '*'), 80);
+    }
   });
   ui.prev.addEventListener('click', goPrevious);
   ui.next.addEventListener('click', goNext);
@@ -921,7 +989,12 @@
 
   fetch(`/api/courses/${encodeURIComponent(courseId)}/sources`)
     .then((response) => response.ok ? response.json() : Promise.reject(new Error(`HTTP ${response.status}`)))
-    .then((data) => populateSources(data.sources))
+    .then((data) => {
+      populateSources(data.sources);
+      if (new URLSearchParams(location.search).get('view') === 'source' && sources[0]) {
+        window.setTimeout(() => openSource(sources[0]), 0);
+      }
+    })
     .catch((error) => console.warn('[source-viewer] source manifest unavailable', error));
 
   window.KimiSourceViewer = { open: openSource, close: closeViewer };

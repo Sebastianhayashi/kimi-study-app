@@ -7,6 +7,99 @@
   const CARD_GAP = 10;
   const CARD_WIDTH = 272;
   const TEXT_CONTEXT = 48;
+  const COPY = {
+    en: {
+      note: 'Note',
+      lucubroNote: 'Lucubro note',
+      myNote: 'My note',
+      currentLesson: 'Current lesson',
+      close: 'Close',
+      question: 'Question',
+      emptyBody: 'This note has no content yet.',
+      backToText: 'Show in lesson',
+      edit: 'Edit',
+      remove: 'Delete',
+      cancel: 'Cancel',
+      save: 'Save',
+      lessonNotes: 'Lesson notes',
+      noteCount: (count) => `${count} ${count === 1 ? 'note' : 'notes'}`,
+      collapse: 'Close notes',
+      expand: 'Open notes',
+      orphan: 'The lesson changed, so this note is no longer linked to an exact passage.',
+      writeBy: (section) => section ? `Note on “${section}”` : 'Add a note',
+      placeholder: 'Write what you understood, questioned, or want to use…',
+      ask: 'Ask Lucubro',
+      add: 'Add note',
+      deleteConfirm: 'Delete this note?',
+      open: 'Open note',
+      sourceQuote: 'From the lesson',
+      empty: 'Select a passage in the lesson to add your first note.',
+    },
+    'zh-CN': {
+      note: '笔记',
+      lucubroNote: 'Lucubro 笔记',
+      myNote: '我的笔记',
+      currentLesson: '当前课节',
+      close: '关闭',
+      question: '问题',
+      emptyBody: '这条笔记还没有内容。',
+      backToText: '回到原文',
+      edit: '编辑',
+      remove: '删除',
+      cancel: '取消',
+      save: '保存',
+      lessonNotes: '本课笔记',
+      noteCount: (count) => `${count} 条笔记`,
+      collapse: '关闭笔记',
+      expand: '打开笔记',
+      orphan: '课节内容发生了变化，这条笔记暂时无法定位到原文。',
+      writeBy: (section) => section ? `为「${section}」添加笔记` : '添加笔记',
+      placeholder: '写下你的理解、疑问，或准备实际使用的内容…',
+      ask: '问 Lucubro',
+      add: '添加笔记',
+      deleteConfirm: '删除这条笔记？',
+      open: '查看笔记',
+      sourceQuote: '原文摘录',
+      empty: '选择课节中的一段文字，开始记录第一条笔记。',
+    },
+    ja: {
+      note: 'ノート',
+      lucubroNote: 'Lucubroノート',
+      myNote: 'マイノート',
+      currentLesson: '現在のレッスン',
+      close: '閉じる',
+      question: '質問',
+      emptyBody: 'このノートにはまだ内容がありません。',
+      backToText: '本文で表示',
+      edit: '編集',
+      remove: '削除',
+      cancel: 'キャンセル',
+      save: '保存',
+      lessonNotes: 'レッスンノート',
+      noteCount: (count) => `${count}件のノート`,
+      collapse: 'ノートを閉じる',
+      expand: 'ノートを開く',
+      orphan: 'レッスンが更新されたため、元の箇所に正確に移動できません。',
+      writeBy: (section) => section ? `「${section}」のノート` : 'ノートを追加',
+      placeholder: '理解したこと、疑問、実際に使いたいことを書きます…',
+      ask: 'Lucubroに質問',
+      add: 'ノートを追加',
+      deleteConfirm: 'このノートを削除しますか？',
+      open: 'ノートを開く',
+      sourceQuote: 'レッスンから',
+      empty: 'レッスンの文章を選択して、最初のノートを追加しましょう。',
+    },
+  };
+
+  function currentLocale() {
+    const saved = localStorage.getItem('lucubro-locale');
+    return saved === 'zh-CN' || saved === 'ja' ? saved : 'en';
+  }
+
+  function t(key, ...args) {
+    const value = COPY[currentLocale()]?.[key] ?? COPY.en[key] ?? key;
+    return typeof value === 'function' ? value(...args) : value;
+  }
 
   class TextIndex {
     constructor(root) {
@@ -241,18 +334,23 @@
       this.el = document.createElement('div');
       this.el.className = 'kn-ui kn-detail-backdrop';
       this.el.innerHTML = `
-        <section class="kn-detail" role="dialog" aria-modal="true" aria-labelledby="kn-detail-title">
+        <section class="kn-detail" role="dialog" aria-modal="false" aria-labelledby="kn-detail-title">
           <header class="kn-detail-head">
-            <h2 class="kn-detail-title" id="kn-detail-title">笔记</h2>
-            <button class="kn-detail-close" type="button" aria-label="关闭">✕</button>
+            <div>
+              <span class="kn-detail-eyebrow"></span>
+              <h2 class="kn-detail-title" id="kn-detail-title"></h2>
+            </div>
+            <button class="kn-detail-close" type="button">×</button>
           </header>
           <div class="kn-detail-content"></div>
           <footer class="kn-detail-actions"></footer>
         </section>`;
-      document.body.appendChild(this.el);
+      controller.layout.panel.appendChild(this.el);
       this.content = this.el.querySelector('.kn-detail-content');
       this.actions = this.el.querySelector('.kn-detail-actions');
-      this.el.querySelector('.kn-detail-close').addEventListener('click', () => this.close());
+      const closeButton = this.el.querySelector('.kn-detail-close');
+      closeButton.setAttribute('aria-label', t('close'));
+      closeButton.addEventListener('click', () => this.close());
       this.el.addEventListener('mousedown', (event) => {
         if (event.target === this.el) this.close();
       });
@@ -273,22 +371,40 @@
       if (!note) return;
       this.content.replaceChildren();
       this.actions.replaceChildren();
-      this.el.querySelector('.kn-detail-title').textContent = note.kind === 'assistant' ? 'AI 笔记' : '我的笔记';
+      this.el.querySelector('.kn-detail-eyebrow').textContent = note.section || t('currentLesson');
+      this.el.querySelector('.kn-detail-title').textContent = note.kind === 'assistant' ? t('lucubroNote') : t('myNote');
+
+      const exact = note.anchor?.textQuote?.exact;
+      if (exact) {
+        const quote = document.createElement('figure');
+        quote.className = 'kn-detail-quote';
+        const label = document.createElement('figcaption');
+        label.textContent = t('sourceQuote');
+        const body = document.createElement('blockquote');
+        body.textContent = exact;
+        quote.append(label, body);
+        this.content.appendChild(quote);
+      }
 
       if (note.question) {
-        const question = document.createElement('p');
+        const question = document.createElement('div');
         question.className = 'kn-detail-question';
-        question.textContent = `问 · ${note.question}`;
-        this.content.appendChild(question);
+        const label = document.createElement('span');
+        label.textContent = t('question');
+        const body = document.createElement('p');
+        body.textContent = note.question;
+        question.append(label, body);
+        this.content.append(question);
       }
 
       const currentText = note.custom || note.answer || '';
       if (edit) {
         const textarea = document.createElement('textarea');
         textarea.value = currentText;
+        textarea.setAttribute('aria-label', t('note'));
         this.content.appendChild(textarea);
-        const cancel = this.button('取消', 'kn-secondary-button', () => this.render(false));
-        const save = this.button('保存', 'kn-primary-button', () => {
+        const cancel = this.button(t('cancel'), 'kn-secondary-button', () => this.render(false));
+        const save = this.button(t('save'), 'kn-primary-button', () => {
           this.controller.updateNote(note.id, { custom: textarea.value.trim() });
           this.render(false);
         });
@@ -297,11 +413,14 @@
       } else {
         const body = document.createElement('div');
         body.className = 'kn-detail-body';
-        body.textContent = currentText || '这条笔记还没有内容。';
+        body.textContent = currentText || t('emptyBody');
         this.content.appendChild(body);
-        const jump = this.button('回到原文', 'kn-secondary-button', () => this.controller.jumpTo(note.id));
-        const editButton = this.button('编辑', 'kn-secondary-button', () => this.render(true));
-        const remove = this.button('删除', 'kn-secondary-button', () => this.controller.deleteNote(note.id));
+        const jump = this.button(t('backToText'), 'kn-secondary-button', () => {
+          this.close();
+          this.controller.jumpTo(note.id);
+        });
+        const editButton = this.button(t('edit'), 'kn-secondary-button', () => this.render(true));
+        const remove = this.button(t('remove'), 'kn-danger-button', () => this.controller.deleteNote(note.id));
         this.actions.append(jump, editButton, remove);
       }
     }
@@ -330,16 +449,21 @@
     constructor(note, controller) {
       this.note = note;
       this.controller = controller;
-      this.editing = false;
-      this.overflowing = false;
       this.el = document.createElement('article');
       this.el.className = 'kn-ui kn-card';
       this.el.dataset.noteId = note.id;
-      this.resizeObserver = new ResizeObserver(() => this.measure());
       this.el.addEventListener('mouseenter', () => this.controller.setActive(note.id, true));
       this.el.addEventListener('mouseleave', () => this.controller.setActive(note.id, false));
+      this.el.addEventListener('click', (event) => {
+        if (!event.target.closest('button')) this.controller.openDetail(note.id);
+      });
+      this.el.addEventListener('keydown', (event) => {
+        if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('button')) {
+          event.preventDefault();
+          this.controller.openDetail(note.id);
+        }
+      });
       this.render();
-      this.resizeObserver.observe(this.el);
     }
 
     update(note) {
@@ -352,13 +476,15 @@
     }
 
     setSideAvailable(available) {
-      const button = this.el.querySelector('[data-action="side"]');
-      if (button) button.hidden = !available;
+      this.el.dataset.marginAvailable = String(available);
     }
 
     render() {
       const note = this.note;
       this.el.replaceChildren();
+      this.el.tabIndex = 0;
+      this.el.setAttribute('role', 'button');
+      this.el.setAttribute('aria-label', t('open'));
 
       const head = document.createElement('header');
       head.className = 'kn-card-head';
@@ -366,17 +492,17 @@
       meta.className = 'kn-card-meta';
       const kind = document.createElement('span');
       kind.className = 'kn-card-kind';
-      kind.textContent = note.kind === 'assistant' ? 'AI 笔记' : '我的笔记';
+      kind.textContent = note.kind === 'assistant' ? t('lucubroNote') : t('myNote');
       const section = document.createElement('span');
       section.className = 'kn-card-section';
-      section.textContent = note.section || '当前课节';
+      section.textContent = note.section || t('currentLesson');
       meta.append(kind, section);
       const anchor = document.createElement('button');
       anchor.type = 'button';
       anchor.className = 'kn-card-anchor';
-      anchor.title = '回到原文';
-      anchor.setAttribute('aria-label', '回到原文');
-      anchor.textContent = '⌖';
+      anchor.title = t('backToText');
+      anchor.setAttribute('aria-label', t('backToText'));
+      anchor.innerHTML = '<span aria-hidden="true">↗</span>';
       anchor.addEventListener('click', (event) => {
         event.stopPropagation();
         this.controller.jumpTo(note.id);
@@ -387,12 +513,19 @@
       if (!this.controller.rangeFor(note.id)) {
         const orphan = document.createElement('div');
         orphan.className = 'kn-card-orphan';
-        orphan.textContent = '原文位置发生变化，当前按孤立笔记显示。';
+        orphan.textContent = t('orphan');
         this.el.appendChild(orphan);
       }
 
       const clip = document.createElement('div');
       clip.className = 'kn-card-clip';
+      const exact = note.anchor?.textQuote?.exact;
+      if (exact) {
+        const quote = document.createElement('div');
+        quote.className = 'kn-card-quote';
+        quote.textContent = exact;
+        clip.appendChild(quote);
+      }
       if (note.question) {
         const question = document.createElement('p');
         question.className = 'kn-card-question';
@@ -400,15 +533,12 @@
         clip.appendChild(question);
       }
 
-      if (this.editing) this.renderEditor(clip);
-      else {
-        const body = document.createElement('div');
-        body.className = 'kn-card-body';
-        const text = note.custom || note.answer || '';
-        body.textContent = text || '点击“编辑”写下笔记…';
-        body.classList.toggle('is-empty', !text);
-        clip.appendChild(body);
-      }
+      const body = document.createElement('div');
+      body.className = 'kn-card-body';
+      const text = note.custom || note.answer || '';
+      body.textContent = text || t('emptyBody');
+      body.classList.toggle('is-empty', !text);
+      clip.appendChild(body);
       this.el.appendChild(clip);
 
       const foot = document.createElement('footer');
@@ -416,74 +546,23 @@
       const more = document.createElement('button');
       more.type = 'button';
       more.className = 'kn-text-button';
-      more.dataset.action = 'more';
-      more.textContent = '展开全文';
-      more.hidden = !this.overflowing || this.editing;
-      more.addEventListener('click', () => this.controller.openDetail(note.id));
-
-      const actions = document.createElement('div');
-      actions.className = 'kn-card-actions';
-      const edit = this.iconButton('编辑', '✎', () => {
-        this.editing = true;
-        this.render();
-        this.controller.requestLayout();
+      more.textContent = t('open');
+      more.addEventListener('click', (event) => {
+        event.stopPropagation();
+        this.controller.openDetail(note.id);
       });
-      const side = this.iconButton('切换侧边', '⇄', () => this.controller.toggleSide(note.id));
-      side.dataset.action = 'side';
-      const remove = this.iconButton('删除', '⌫', () => this.controller.deleteNote(note.id));
-      actions.append(edit, side, remove);
-      foot.append(more, actions);
+      const date = document.createElement('time');
+      date.className = 'kn-card-date';
+      date.dateTime = new Date(note.updatedAt || note.createdAt || Date.now()).toISOString();
+      date.textContent = new Intl.DateTimeFormat(currentLocale(), {
+        month: 'short',
+        day: 'numeric',
+      }).format(new Date(note.updatedAt || note.createdAt || Date.now()));
+      foot.append(more, date);
       this.el.appendChild(foot);
-      this.measure();
-    }
-
-    renderEditor(parent) {
-      const textarea = document.createElement('textarea');
-      textarea.className = 'kn-card-editor';
-      textarea.value = this.note.custom || this.note.answer || '';
-      const actions = document.createElement('div');
-      actions.className = 'kn-edit-actions';
-      const cancel = this.controller.button('取消', 'kn-secondary-button', () => {
-        this.editing = false;
-        this.render();
-        this.controller.requestLayout();
-      });
-      const save = this.controller.button('保存', 'kn-primary-button', () => {
-        this.controller.updateNote(this.note.id, { custom: textarea.value.trim() });
-        this.editing = false;
-        this.render();
-        this.controller.requestLayout();
-      });
-      actions.append(cancel, save);
-      parent.append(textarea, actions);
-      window.setTimeout(() => textarea.focus(), 0);
-    }
-
-    iconButton(label, text, handler) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'kn-icon-button';
-      button.title = label;
-      button.setAttribute('aria-label', label);
-      button.textContent = text;
-      button.addEventListener('click', handler);
-      return button;
-    }
-
-    measure() {
-      const clip = this.el.querySelector('.kn-card-clip');
-      if (!clip || this.editing) return;
-      const overflowing = clip.scrollHeight > 220;
-      if (overflowing === this.overflowing) return;
-      this.overflowing = overflowing;
-      this.el.classList.toggle('is-clamped', overflowing);
-      const more = this.el.querySelector('[data-action="more"]');
-      if (more) more.hidden = !overflowing;
-      this.controller.requestLayout();
     }
 
     destroy() {
-      this.resizeObserver.disconnect();
       this.el.remove();
     }
   }
@@ -497,33 +576,44 @@
       this.layer = document.createElement('div');
       this.layer.className = 'kn-ui kn-margin-layer';
       document.body.appendChild(this.layer);
-      const computed = getComputedStyle(document.body);
-      document.documentElement.style.setProperty('--kn-base-padding-left', computed.paddingLeft);
-      document.documentElement.style.setProperty('--kn-base-padding-right', computed.paddingRight);
-      document.documentElement.style.setProperty('--kn-card-width', `${CARD_WIDTH}px`);
-      document.documentElement.style.setProperty('--kn-card-gap', `${CARD_GAP}px`);
-      document.documentElement.style.setProperty('--kn-rail-reserve', `${CARD_WIDTH + CARD_GAP + 16}px`);
 
-      // 笔记栏收起/展开状态，按课程+课节持久化（开关在父页顶部栏，经 postMessage 驱动）
       this.storageKey = `lucubro-notes-panel:${controller.courseId}:${location.pathname}`;
       let stored = {};
       try { stored = JSON.parse(localStorage.getItem(this.storageKey) || '{}'); } catch {}
-      this.collapsed = stored.userCollapsed === true;
+      this.autoMode = typeof stored.userCollapsed !== 'boolean';
+      this.collapsed = this.autoMode ? true : stored.userCollapsed;
       if (this.collapsed) this.layer.classList.add('kn-panel-collapsed');
+
+      this.panel = document.createElement('aside');
+      this.panel.className = 'kn-notes-panel';
+      this.panel.setAttribute('aria-label', t('lessonNotes'));
+      this.panel.innerHTML = `
+        <header class="kn-panel-head">
+          <div>
+            <span class="kn-panel-eyebrow">${t('currentLesson')}</span>
+            <h2>${t('lessonNotes')}</h2>
+          </div>
+          <button class="kn-panel-close" type="button" aria-label="${t('collapse')}">×</button>
+        </header>
+        <div class="kn-panel-summary" aria-live="polite"></div>
+        <div class="kn-notes-list"></div>
+        <p class="kn-notes-empty">${t('empty')}</p>`;
+      this.list = this.panel.querySelector('.kn-notes-list');
+      this.summary = this.panel.querySelector('.kn-panel-summary');
+      this.empty = this.panel.querySelector('.kn-notes-empty');
+      this.panel.querySelector('.kn-panel-close').addEventListener('click', () => this.setCollapsed(true));
+      this.layer.appendChild(this.panel);
+
       this.toggle = document.createElement('button');
       this.toggle.type = 'button';
       this.toggle.className = 'kn-ui kn-panel-toggle';
       this.toggle.addEventListener('click', () => this.setCollapsed(!this.collapsed));
       this.layer.appendChild(this.toggle);
+      if (window.parent !== window) this.toggle.hidden = true;
       this.syncToggle();
+      this.updateSummary();
 
-      this.onScroll = () => this.request();
-      this.onResize = () => {
-        this.clearReserve();
-        this.mode = '';
-        this.request();
-      };
-      window.addEventListener('scroll', this.onScroll, { passive: true });
+      this.onResize = () => this.request();
       window.addEventListener('resize', this.onResize, { passive: true });
       this.resizeObserver = new ResizeObserver(() => this.request());
       this.resizeObserver.observe(document.documentElement);
@@ -533,45 +623,37 @@
     syncToggle() {
       this.toggle.dataset.collapsed = String(this.collapsed);
       this.toggle.setAttribute('aria-expanded', String(!this.collapsed));
-      this.toggle.setAttribute('aria-label', this.collapsed ? '展开笔记栏' : '收起笔记栏');
-      this.toggle.textContent = this.collapsed ? '展开笔记' : '收起笔记';
+      this.toggle.setAttribute('aria-label', this.collapsed ? t('expand') : t('collapse'));
+      this.toggle.textContent = this.collapsed ? t('expand') : t('collapse');
+      this.panel.setAttribute('aria-hidden', String(this.collapsed));
     }
 
-    setCollapsed(collapsed) {
+    setCollapsed(collapsed, options = {}) {
       this.collapsed = collapsed;
-      try { localStorage.setItem(this.storageKey, JSON.stringify({ userCollapsed: collapsed })); } catch {}
+      if (!options.automatic) {
+        this.autoMode = false;
+        try { localStorage.setItem(this.storageKey, JSON.stringify({ userCollapsed: collapsed })); } catch {}
+      }
       this.layer.classList.toggle('kn-panel-collapsed', collapsed);
       this.syncToggle();
-      if (collapsed) {
-        this.clearReserve();
-      } else {
-        this.mode = '';
-      }
       this.request();
       parent.postMessage({ type: 'notes-panel-state', collapsed }, '*');
     }
 
-    clearReserve() {
-      document.documentElement.classList.remove('kn-reserve-left', 'kn-reserve-right', 'kn-reserve-both');
+    addCard(card) {
+      this.list.prepend(card);
+      this.updateSummary();
     }
 
-    calculateMode(rect) {
-      return Core.chooseRailMode({
-        viewportWidth: document.documentElement.clientWidth,
-        contentLeft: rect.left,
-        contentRight: rect.right,
-        cardWidth: CARD_WIDTH,
-        gap: CARD_GAP,
-      });
+    addDraft(draft) {
+      this.list.prepend(draft);
+      this.updateSummary();
     }
 
-    applyMode(mode) {
-      this.clearReserve();
-      if (mode === 'reserve-right') document.documentElement.classList.add('kn-reserve-right');
-      else if (mode === 'reserve-left') document.documentElement.classList.add('kn-reserve-left');
-      else if (mode === 'reserve-both') document.documentElement.classList.add('kn-reserve-both');
-      this.layer.classList.toggle('kn-mode-drawer', mode === 'drawer');
-      this.mode = mode;
+    updateSummary() {
+      const count = this.controller.store.notes.length;
+      this.summary.textContent = t('noteCount', count);
+      this.empty.hidden = count > 0 || !!this.controller.draft;
     }
 
     request() {
@@ -583,81 +665,41 @@
     }
 
     position() {
-      if (this.collapsed) {
-        this.clearReserve();
-        return;
-      }
-      let rect = this.content.getBoundingClientRect();
-      // A reserved rail creates the space that it needs. Do not immediately
-      // reinterpret that self-created gutter as a natural rail and oscillate.
-      const nextMode = this.mode.startsWith('reserve-') ? this.mode : this.calculateMode(rect);
-      if (nextMode !== this.mode) {
-        this.applyMode(nextMode);
-        rect = this.content.getBoundingClientRect();
-      }
-
+      const rect = this.content.getBoundingClientRect();
       const viewport = document.documentElement.clientWidth;
-      const leftX = Math.max(8, rect.left - CARD_WIDTH - CARD_GAP + window.scrollX);
-      let rightX = rect.right + CARD_GAP + window.scrollX;
-      if (this.mode === 'reserve-right' || this.mode === 'drawer') {
-        rightX = viewport - CARD_WIDTH - 8 + window.scrollX;
-      }
-      rightX = Math.max(8, Math.min(rightX, viewport - CARD_WIDTH - 8 + window.scrollX));
+      const rightSpace = Math.max(0, viewport - rect.right);
+      const leftSpace = Math.max(0, rect.left);
+      const marginSide = rightSpace >= 324 ? 'right' : leftSpace >= 324 ? 'left' : '';
+      const nextMode = marginSide ? `margin-${marginSide}` : 'drawer';
 
-      const grouped = { left: [], right: [] };
-      for (const note of this.controller.store.notes) {
-        const card = this.controller.cards.get(note.id);
-        const range = this.controller.rangeFor(note.id);
-        if (!card || !range) continue;
-        let side = note.side || (note.kind === 'assistant' ? 'right' : 'left');
-        if (this.mode !== 'both') side = this.mode === 'left' ? 'left' : 'right';
-        grouped[side].push({
-          id: note.id,
-          top: range.getBoundingClientRect().top + window.scrollY,
-          height: card.el.offsetHeight,
-          card,
-        });
-        card.setSideAvailable(this.mode === 'both');
+      if (this.autoMode) {
+        const shouldCollapse = !marginSide;
+        if (shouldCollapse !== this.collapsed) this.setCollapsed(shouldCollapse, { automatic: true });
       }
 
-      if (this.controller.draft) {
-        let side = this.mode === 'both' ? 'left' : this.mode === 'left' ? 'left' : 'right';
-        grouped[side].push({
-          id: '__draft__',
-          top: this.controller.draft.range.getBoundingClientRect().top + window.scrollY,
-          height: this.controller.draft.el.offsetHeight,
-          card: { el: this.controller.draft.el },
-        });
+      this.mode = nextMode;
+      this.layer.dataset.mode = nextMode;
+      this.panel.style.removeProperty('left');
+      this.panel.style.removeProperty('right');
+      this.panel.style.removeProperty('width');
+      if (marginSide === 'right') {
+        const width = Math.min(336, rightSpace - 24);
+        this.panel.style.left = `${Math.round(rect.right + 12)}px`;
+        this.panel.style.width = `${Math.max(280, width)}px`;
+      } else if (marginSide === 'left') {
+        const width = Math.min(336, leftSpace - 24);
+        this.panel.style.right = `${Math.round(viewport - rect.left + 12)}px`;
+        this.panel.style.width = `${Math.max(280, width)}px`;
       }
-
-      for (const side of ['left', 'right']) {
-        const placed = Core.stackPlacements(grouped[side], CARD_GAP);
-        const x = side === 'left' ? leftX : rightX;
-        for (const item of placed) {
-          item.card.el.style.left = `${x}px`;
-          item.card.el.style.top = `${item.y}px`;
-        }
-      }
-
-      let orphanTop = window.scrollY + 12;
-      for (const note of this.controller.store.notes) {
-        if (this.controller.rangeFor(note.id)) continue;
-        const card = this.controller.cards.get(note.id);
-        if (!card) continue;
-        card.setOrphan(true);
-        card.setSideAvailable(false);
-        card.el.style.left = `${rightX}px`;
-        card.el.style.top = `${orphanTop}px`;
-        orphanTop += card.el.offsetHeight + CARD_GAP;
+      for (const card of this.controller.cards.values()) {
+        card.setSideAvailable(Boolean(marginSide));
       }
     }
 
     destroy() {
       if (this.raf) cancelAnimationFrame(this.raf);
-      window.removeEventListener('scroll', this.onScroll);
       window.removeEventListener('resize', this.onResize);
       this.resizeObserver.disconnect();
-      this.clearReserve();
       this.layer.remove();
     }
   }
@@ -704,7 +746,7 @@
     createToolbar() {
       const toolbar = document.createElement('div');
       toolbar.className = 'kn-ui kn-toolbar';
-      toolbar.innerHTML = '<button type="button" data-action="ask">问助手</button><button type="button" data-action="note">贴笔记</button>';
+      toolbar.innerHTML = `<button type="button" data-action="ask">${t('ask')}</button><button type="button" data-action="note">${t('add')}</button>`;
       document.body.appendChild(toolbar);
       toolbar.addEventListener('mousedown', (event) => event.preventDefault());
       toolbar.addEventListener('click', (event) => {
@@ -779,19 +821,20 @@
 
     openDraft(range, anchor, section) {
       this.closeDraft();
+      this.layout.setCollapsed(false);
       const el = document.createElement('div');
       el.className = 'kn-ui kn-draft';
       const title = document.createElement('div');
       title.className = 'kn-draft-title';
-      title.textContent = section ? `在「${section}」旁写笔记` : '写一条课边笔记';
+      title.textContent = t('writeBy', section);
       const textarea = document.createElement('textarea');
       textarea.rows = 4;
-      textarea.placeholder = '写下你的理解、疑问或提醒…';
+      textarea.placeholder = t('placeholder');
       const actions = document.createElement('div');
       actions.className = 'kn-draft-actions';
       actions.append(
-        this.button('取消', 'kn-secondary-button', () => this.closeDraft()),
-        this.button('保存', 'kn-primary-button', () => {
+        this.button(t('cancel'), 'kn-secondary-button', () => this.closeDraft()),
+        this.button(t('save'), 'kn-primary-button', () => {
           const text = textarea.value.trim();
           if (!text) return textarea.focus();
           const note = Core.normalizeNote({
@@ -811,7 +854,7 @@
         }),
       );
       el.append(title, textarea, actions);
-      this.layout.layer.appendChild(el);
+      this.layout.addDraft(el);
       this.draft = { el, range, anchor, section };
       this.requestLayout();
       window.setTimeout(() => textarea.focus(), 0);
@@ -820,6 +863,7 @@
     closeDraft() {
       this.draft?.el.remove();
       this.draft = null;
+      this.layout.updateSummary();
       this.requestLayout();
     }
 
@@ -832,6 +876,14 @@
       }
       if (data.type === 'notes-panel-query') {
         parent.postMessage({ type: 'notes-panel-state', collapsed: this.layout.collapsed }, '*');
+        return;
+      }
+      if (data.type === 'focus-note') {
+        const noteId = String(data.noteId || data.id || '');
+        if (!noteId) return;
+        this.layout.setCollapsed(false);
+        this.openDetail(noteId);
+        this.jumpTo(noteId);
         return;
       }
       if (data.type !== 'create-note') return;
@@ -848,6 +900,8 @@
       }, this.store.notes.length);
       this.store.add(note);
       this.renderNote(note);
+      this.layout.setCollapsed(false);
+      this.openDetail(note.id);
       this.requestLayout();
     }
 
@@ -857,7 +911,7 @@
       const card = new NoteCard(note, this);
       card.setOrphan(!range);
       this.cards.set(note.id, card);
-      this.layout.layer.appendChild(card.el);
+      this.layout.addCard(card.el);
     }
 
     rangeFor(id) {
@@ -890,12 +944,13 @@
 
     deleteNote(id) {
       const note = this.store.notes.find((item) => item.id === id);
-      if (!note || !window.confirm('删除这条笔记？')) return;
+      if (!note || !window.confirm(t('deleteConfirm'))) return;
       this.store.remove(id);
       this.highlights.delete(id);
       this.cards.get(id)?.destroy();
       this.cards.delete(id);
       this.drawer.close();
+      this.layout.updateSummary();
       this.requestLayout();
     }
 

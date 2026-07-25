@@ -128,63 +128,169 @@ body {
   overflow: visible;
 }
 
+/* Legacy prototype cards remain in the frozen markup for compatibility, but
+   are never allowed to surface while the real resume card is loading. */
+.featured-grid > .featured-card:not(.ks-continue-card) {
+  display: none !important;
+}
+
 .featured-card.ks-continue-card {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 28px;
+  position: relative;
+  display: grid;
+  grid-template-columns: 126px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(22px, 3vw, 40px);
   width: 100%;
-  min-height: 230px;
-  padding: clamp(28px, 5vw, 56px);
-  border: 0;
+  min-height: 210px;
+  padding: 24px clamp(24px, 3.5vw, 44px) 24px 24px;
+  overflow: hidden;
+  border: 1px solid var(--ds-border);
   border-radius: var(--ds-radius-module);
-  color: #fff;
+  color: var(--ds-text);
   background:
-    linear-gradient(116deg, rgb(5 45 111 / 94%), rgb(11 87 208 / 92%)),
-    #0b57d0;
-  box-shadow: none;
+    radial-gradient(circle at 92% 14%, rgb(11 87 208 / 10%), transparent 28%),
+    var(--ds-surface);
+  box-shadow: 0 12px 34px rgb(24 39 75 / 7%);
 }
 
 .featured-card.ks-continue-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 18px 44px rgb(11 87 208 / 18%);
+  transform: none;
+  border-color: color-mix(in srgb, var(--ds-brand) 32%, var(--ds-border));
+  box-shadow: 0 16px 40px rgb(24 39 75 / 10%);
+}
+
+.ks-continue-cover {
+  width: 126px;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border: 1px solid var(--ds-border);
+  border-radius: 12px;
+  background: var(--ds-brand);
+  box-shadow: 0 10px 24px rgb(24 39 75 / 16%);
+}
+
+.ks-continue-cover > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ks-continue-cover-mark {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  background:
+    linear-gradient(145deg, rgb(255 255 255 / 8%), transparent 42%),
+    var(--ds-brand);
+}
+
+.ks-continue-cover-mark img {
+  width: 42px;
+  height: 42px;
+  filter: grayscale(1) brightness(0) invert(1);
 }
 
 .ks-continue-label {
   display: block;
-  color: rgb(255 255 255 / 70%);
+  color: var(--ds-brand);
   font-size: 12px;
-  font-weight: 680;
-  letter-spacing: .06em;
+  font-weight: 720;
+  letter-spacing: .035em;
+  text-transform: uppercase;
 }
 
 .ks-continue-title {
-  max-width: 24ch;
-  margin: 20px 0 0;
-  font-size: clamp(28px, 4vw, 48px);
-  font-weight: 640;
-  line-height: 1.1;
-  letter-spacing: -.05em;
+  max-width: 28ch;
+  margin: 10px 0 0;
+  font-size: clamp(25px, 3vw, 38px);
+  font-weight: 660;
+  line-height: 1.16;
+  letter-spacing: -.04em;
+}
+
+.ks-continue-lesson {
+  display: grid;
+  gap: 3px;
+  margin-top: 18px;
+}
+
+.ks-continue-lesson-kicker {
+  color: var(--ds-text-muted);
+  font-size: 11px;
+  font-weight: 680;
+}
+
+.ks-continue-lesson strong {
+  overflow: hidden;
+  color: var(--ds-text-secondary);
+  font-size: 14px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ks-continue-copy p {
-  margin: 14px 0 0;
-  color: rgb(255 255 255 / 68%);
+  margin: 9px 0 0;
+  color: var(--ds-text-muted);
   font-size: 13px;
 }
 
+.ks-continue-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: min(280px, 25vw);
+}
+
 .ks-continue-action {
+  grid-column: 1 / -1;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   min-height: 44px;
   padding: 0 18px;
   border-radius: var(--ds-radius-pill);
-  color: #0b57d0;
-  background: #fff;
+  color: #fff;
+  background: var(--ds-brand);
   font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
+  text-decoration: none;
+}
+
+.ks-continue-action:hover {
+  background: var(--ds-brand-hover);
+}
+
+.ks-continue-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-control);
+  color: var(--ds-text-secondary);
+  background: var(--ds-surface);
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.ks-continue-secondary:hover {
+  border-color: var(--ds-border-strong);
+  background: var(--ds-surface-muted);
+}
+
+.ks-continue-available {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  color: var(--ds-text-muted);
+  font-size: 11px;
 }
 
 .course-grid {
@@ -434,13 +540,37 @@ body {
   }
 
   .featured-card.ks-continue-card {
-    align-items: stretch;
-    flex-direction: column;
-    min-height: 260px;
+    grid-template-columns: 82px minmax(0, 1fr);
+    align-items: start;
+    gap: 18px;
+    min-height: 0;
+    padding: 18px;
+  }
+
+  .ks-continue-cover {
+    width: 82px;
+  }
+
+  .ks-continue-title {
+    margin-top: 7px;
+    font-size: 23px;
+  }
+
+  .ks-continue-lesson {
+    margin-top: 12px;
+  }
+
+  .ks-continue-actions {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .ks-continue-available {
+    display: none;
   }
 
   .ks-continue-action {
-    align-self: flex-start;
+    width: 100%;
   }
 
   .course-grid {

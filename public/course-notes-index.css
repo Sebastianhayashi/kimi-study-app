@@ -1,12 +1,55 @@
 .left-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 #left-notes { min-height: 100%; }
+.ks-notes-index-head {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ks-notes-index-head > div { display: flex; align-items: center; gap: 7px; }
+.ks-notes-index-head span { color: var(--text); font-size: 12px; font-weight: 750; }
+.ks-notes-index-head strong {
+  min-width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  font-size: 10px;
+}
+.ks-notes-index-head a { color: var(--primary); font-size: 10px; font-weight: 680; text-decoration: none; }
+.ks-notes-scope {
+  margin-bottom: 10px;
+  padding: 3px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+.ks-notes-scope button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 10px;
+  cursor: pointer;
+}
+.ks-notes-scope button.active { color: var(--text); background: var(--surface); box-shadow: var(--shadow-1); font-weight: 700; }
 .ks-notes-index-tools {
   display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-bottom: 12px;
 }
+.ks-notes-search { grid-column: 1 / -1; }
 .ks-notes-search,
-.ks-notes-lesson-filter {
+.ks-notes-lesson-filter,
+.ks-notes-kind-filter {
   width: 100%;
   min-height: 40px;
   padding: 0 11px;
@@ -19,7 +62,8 @@
   outline: none;
 }
 .ks-notes-search:focus,
-.ks-notes-lesson-filter:focus {
+.ks-notes-lesson-filter:focus,
+.ks-notes-kind-filter:focus {
   border-color: #9bb8e8;
   box-shadow: 0 0 0 3px rgba(11,87,208,.10);
 }
@@ -36,15 +80,15 @@
 }
 .ks-note-index-card {
   width: 100%;
-  padding: 10px 11px;
-  border: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
   border-radius: 11px;
   color: var(--text-2);
-  background: var(--surface-2);
+  background: var(--surface);
   text-align: left;
   cursor: pointer;
 }
-.ks-note-index-card:hover { background: #e8edf6; }
+.ks-note-index-card:hover { border-color: color-mix(in srgb, var(--primary) 28%, var(--line)); background: var(--surface-2); }
 .ks-note-index-card:focus-visible {
   outline: 3px solid rgba(11,87,208,.22);
   outline-offset: 2px;
@@ -54,7 +98,18 @@
   align-items: center;
   gap: 6px;
   color: var(--muted);
+  justify-content: space-between;
   font-size: 9px;
+}
+.ks-note-index-meta span { color: var(--primary); font-weight: 720; }
+.ks-note-index-quote {
+  margin: 8px 0 0;
+  padding-left: 8px;
+  border-left: 2px solid var(--line-2);
+  color: var(--muted);
+  font-family: ui-serif, Georgia, serif;
+  font-size: 10px;
+  line-height: 1.5;
 }
 .ks-note-index-copy {
   margin-top: 5px;
@@ -64,6 +119,14 @@
   -webkit-box-orient: vertical;
   font-size: 11px;
   line-height: 1.5;
+}
+.ks-note-index-location {
+  margin-top: 8px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .ks-notes-empty {
   padding: 22px 14px;
@@ -76,7 +139,8 @@
 }
 @media (max-width: 620px) {
   .ks-notes-search,
-  .ks-notes-lesson-filter { min-height: 44px; font-size: 14px; }
+  .ks-notes-lesson-filter,
+  .ks-notes-kind-filter { min-height: 44px; font-size: 14px; }
   .ks-note-index-card { min-height: 52px; }
   .ks-note-index-copy { font-size: 13px; }
   .ks-note-index-meta,

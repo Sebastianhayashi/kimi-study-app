@@ -645,6 +645,194 @@ body,
   }
 }
 
+/* Progressive disclosure: keep the lesson bar focused on materials, notes, and moving on. */
+.ks-materials-menu,
+.ks-course-more {
+  position: relative;
+  flex: none;
+}
+
+.course-header {
+  position: relative;
+  z-index: 50;
+  overflow: visible;
+}
+
+#lessonResourceSlot.ks-lesson-tools {
+  overflow: visible;
+}
+
+.ks-materials-menu-list,
+.ks-course-more-menu {
+  position: absolute;
+  z-index: 80;
+  top: calc(100% + 8px);
+  right: 0;
+  width: max-content;
+  min-width: 206px;
+  padding: 6px;
+  border: 1px solid var(--line, #dce3ed);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  box-shadow: 0 16px 42px rgba(20, 31, 49, .16);
+}
+
+.ks-materials-menu-list[hidden],
+.ks-course-more-menu[hidden],
+.ks-secondary-action {
+  display: none !important;
+}
+
+.ks-materials-menu-list .lesson-resource-tool,
+.ks-course-more-menu > button {
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--text, #172033);
+  background: transparent;
+  box-shadow: none;
+  font: inherit;
+  font-weight: 630;
+  cursor: pointer;
+}
+
+.ks-materials-menu-list .lesson-resource-tool:hover,
+.ks-materials-menu-list .lesson-resource-tool:focus-visible,
+.ks-course-more-menu > button:hover,
+.ks-course-more-menu > button:focus-visible {
+  color: var(--brand, #0b57d0);
+  background: var(--brand-soft, #edf4ff);
+  outline: none;
+}
+
+.ks-materials-menu-list .lesson-resource-tool svg,
+.ks-course-more-menu i {
+  width: 17px;
+  height: 17px;
+  flex: none;
+}
+
+.ks-course-more-trigger {
+  width: 38px;
+  min-width: 38px;
+}
+
+@container course-panel (max-width: 820px) {
+  .compact-progress {
+    display: none;
+  }
+}
+
+@media (min-width: 861px) {
+  .topbar .top-actions {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .ks-materials-menu-list,
+  .ks-course-more-menu {
+    position: fixed;
+    top: auto;
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    left: 8px;
+    width: auto;
+    padding: 8px;
+    border-radius: 14px;
+  }
+
+  .ks-materials-menu-list .lesson-resource-tool,
+  .ks-course-more-menu > button {
+    min-height: 48px;
+  }
+}
+
+/* The left rail is navigation first; detailed goals and planning stay one click away. */
+.ks-learning-context .left-tabs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ks-learning-context .left-content {
+  padding-top: 8px;
+}
+
+.ks-course-nav-summary {
+  margin: 0 4px 12px;
+  padding: 13px 13px 12px;
+  border: 1px solid color-mix(in srgb, var(--ds-brand) 22%, var(--ds-border));
+  border-radius: 13px;
+  background: var(--ds-brand-soft);
+}
+
+.ks-course-nav-kicker {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ds-brand);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.ks-course-nav-current {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--ds-text);
+  font-size: 13px;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.ks-course-nav-progress {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  margin-top: 11px;
+  color: var(--ds-text-muted);
+  font-size: 10px;
+}
+
+.ks-course-nav-track {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ds-brand) 13%, var(--ds-surface));
+}
+
+.ks-course-nav-track i {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ds-brand);
+}
+
+body:has(.ks-generation-preview:not([hidden])) .ks-course-nav-progress {
+  display: none;
+}
+
+.ks-learning-context #left-overview > .side-section {
+  display: none;
+}
+
+.ks-learning-context .lesson-list {
+  gap: 4px;
+}
+
+.ks-learning-context .lesson-item {
+  min-height: 44px;
+  border-radius: 10px;
+}
+
 @media (prefers-color-scheme: dark) {
   .course-panel {
     box-shadow: 0 12px 34px rgb(0 0 0 / 20%);

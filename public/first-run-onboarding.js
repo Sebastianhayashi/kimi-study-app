@@ -215,6 +215,8 @@
     const form = new FormData();
     form.append('file', selectedFile);
     form.append('title', selectedFile.name.replace(/\.[^.]+$/, ''));
+    form.append('mode', document.querySelector('input[name="courseMode"]:checked')?.value || 'student');
+    form.append('locale', window.LucubroI18n?.locale || 'en');
 
     const xhr = new XMLHttpRequest();
     uploadRequest = xhr;

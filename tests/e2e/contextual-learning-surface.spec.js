@@ -123,14 +123,19 @@ test('the fallback action remains usable when the backend responds during pointe
   await expect(page.locator('.ks-study-card')).toHaveCount(1);
 });
 
-test('cross-lesson notes index is in the left rail, never in the Tutor panel', async ({ page }) => {
+test('lesson notes open in their own panel and the global notebook stays outside the course', async ({ page }) => {
   await page.goto('/course/readycourse');
-  const notesTab = page.locator('.left-tab', { hasText: '笔记' });
-  await expect(notesTab).toBeVisible();
-  await notesTab.click();
-  await expect(page.locator('#left-notes')).toBeVisible();
+  await expect(page.locator('[data-left-tab="notes"]')).toHaveCount(0);
+  const notesToggle = page.locator('#lessonResourceSlot .kn-notes-toggle');
+  await expect(notesToggle).toBeVisible();
+  await notesToggle.click();
+  await expect(page.frameLocator('#lessonFrame').locator('.kn-notes-panel')).toBeVisible();
   await expect(page.locator('#assistantPanel .panel-title')).toContainText('Lucubro');
   await expect(page.locator('#assistantPanel #chatThread')).toBeVisible();
+
+  await page.goto('/notes?course=readycourse');
+  await expect(page.getByRole('heading', { name: /Notes from every course, in one place\.|所有课程的笔记，都在这里。/ })).toBeVisible();
+  await expect(page.locator('.activity-grid')).toBeVisible();
 });
 
 async function currentLessonFile(page) {
