@@ -172,7 +172,8 @@
     }
 
     function courseMeta(course) {
-      const material = `${course.ext} · 1 份材料`;
+      // 设计规范：每行最多 1 个 · 分隔符，材料数改用逗号并入第二段。
+      const material = `${course.ext}，1 份材料`;
       const state = courseState(course);
       if (state === 'awaiting_mission' || state === 'idle') return `等待学习设置 · ${material}`;
       if (state === 'starting' || state === 'generating' || state === 'understanding') {
@@ -198,6 +199,28 @@
     let shelfLoaded = false;
     let shelfStopped = false;
     let shelfFilter = 'all';
+    let shelfCourseCount = 0;
+
+    function createShelfGuide(kind) {
+      const guide = document.createElement('a');
+      guide.className = `ks-shelf-guide is-${kind}`;
+      guide.href = '/new-course';
+      guide.innerHTML =
+        '<span class="ks-shelf-guide-mark" aria-hidden="true"><i class="ph ph-plus"></i></span>' +
+        '<span class="ks-shelf-guide-title"></span>' +
+        '<span class="ks-shelf-guide-copy"></span>' +
+        '<span class="ks-shelf-guide-action"></span>';
+      if (kind === 'empty') {
+        guide.querySelector('.ks-shelf-guide-title').textContent = 'No courses yet';
+        guide.querySelector('.ks-shelf-guide-copy').textContent = 'Upload material to create your first course.';
+        guide.querySelector('.ks-shelf-guide-action').textContent = 'Upload material';
+      } else {
+        guide.querySelector('.ks-shelf-guide-title').textContent = 'Create another course';
+        guide.querySelector('.ks-shelf-guide-copy').textContent = 'Upload material to create your next course.';
+        guide.querySelector('.ks-shelf-guide-action').textContent = 'Upload material';
+      }
+      return guide;
+    }
 
     function applyShelfView() {
       const query = searchInput.value.trim().toLocaleLowerCase('zh-CN');
@@ -210,6 +233,7 @@
         return (Number(a._course?.updated) - Number(b._course?.updated)) * direction;
       });
 
+      grid.querySelectorAll('.ks-shelf-guide').forEach((guide) => guide.remove());
       let visible = 0;
       for (const card of cards) {
         const course = card._course || {};
@@ -226,9 +250,20 @@
         grid.appendChild(card);
       }
 
-      emptyState.classList.toggle('show', visible === 0);
-      emptyState.style.display = visible === 0 ? '' : 'none';
-      grid.style.display = visible === 0 ? 'none' : 'grid';
+      const neutralShelf = query === '' && shelfFilter === 'all';
+      let hasGuide = false;
+      if (neutralShelf && shelfCourseCount === 0) {
+        grid.appendChild(createShelfGuide('empty'));
+        hasGuide = true;
+      } else if (neutralShelf && shelfCourseCount <= 2) {
+        grid.appendChild(createShelfGuide('next'));
+        hasGuide = true;
+      }
+
+      const showFilteredEmpty = visible === 0 && !hasGuide;
+      emptyState.classList.toggle('show', showFilteredEmpty);
+      emptyState.style.display = showFilteredEmpty ? '' : 'none';
+      grid.style.display = visible > 0 || hasGuide ? 'grid' : 'none';
     }
 
     searchInput.addEventListener('input', (event) => {
@@ -274,6 +309,8 @@
 
     function updateCourseCard(el, course) {
       el._course = course;
+      const state = courseState(course);
+      const generating = state === 'starting' || state === 'generating' || state === 'understanding';
       el.dataset.courseId = course.id;
       el.dataset.title = course.title;
       el.dataset.status = course.lessons ? 'learning' : 'mine';
@@ -300,11 +337,10 @@
         const coverTitle = cover.querySelector('.cover-title');
         if (coverTitle) coverTitle.textContent = course.title;
         const coverKind = cover.querySelector('.cover-kind');
-        if (coverKind) coverKind.textContent = 'LUCUBRO';
+        if (coverKind) coverKind.textContent = generating ? 'Creating course' : 'Learning material';
         const coverAuthor = cover.querySelector('.cover-author');
-        if (coverAuthor) coverAuthor.textContent = `${course.ext} 材料`;
+        if (coverAuthor) coverAuthor.textContent = generating ? 'Preparing the first lesson' : `${course.ext} 材料`;
       }
-      const state = courseState(course);
       el.classList.toggle('is-generating', state === 'starting' || state === 'generating' || state === 'understanding');
       el.classList.toggle('is-failed', state === 'failed' || state === 'interrupted');
       el.classList.toggle('is-ready', state === 'ready' || Number(course.lessons) > 0);
@@ -344,9 +380,6 @@
         ));
       } catch {}
       const lessonFile = lessonFiles[lessonIndex] || lessonFiles[0] || '';
-      const lessonName = lessonFile
-        ? lessonFile.replace(/^\d+-?/, '').replace(/\.html$/i, '').replace(/[-_]+/g, ' ')
-        : '第一课';
       const card = document.createElement('article');
       card.className = 'featured-card ks-continue-card';
       const cover = course.cover
@@ -370,7 +403,23 @@
         '</div>' +
         '<span class="ks-continue-available"></span>';
       card.querySelector('.ks-continue-title').textContent = course.title;
-      card.querySelector('.ks-continue-lesson strong').textContent = `Lesson ${lessonIndex + 1} · ${lessonName}`;
+      const lessonLabel = card.querySelector('.ks-continue-lesson strong');
+      // 先只显示课节序号，真实标题异步从课节 HTML 的 <h1> 读取；文件名 slug 永不展示。
+      lessonLabel.textContent = `Lesson ${lessonIndex + 1}`;
+      if (lessonFile) {
+        fetch(`/api/courses/${encodeURIComponent(course.id)}/lessons/${encodeURIComponent(lessonFile)}`)
+          .then((response) => (response.ok ? response.text() : ''))
+          .then((html) => {
+            const match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+            const title = match
+              ? match[1].replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim()
+              : '';
+            if (title && title.length <= 120 && lessonLabel.isConnected) {
+              lessonLabel.textContent = `Lesson ${lessonIndex + 1} · ${title}`;
+            }
+          })
+          .catch(() => {});
+      }
       card.querySelector('.ks-continue-meta').textContent = `${course.ext} 材料 · ${lessonIndex + 1} / ${Number(course.lessons)}`;
       card.querySelector('.ks-continue-available').textContent = `${Number(course.lessons)} 节课可学习`;
       featuredGrid.replaceChildren(card);
@@ -399,6 +448,7 @@
     }
 
     function renderCourses(list) {
+      shelfCourseCount = list.length;
       const featuredCourseId = renderFeaturedCourse(list);
       const seen = new Set();
       list.forEach((course) => {
@@ -537,6 +587,8 @@
     let resourceTools = { reset() {} };
     let lessons = [];
     let current = 0;
+    // 课节真实标题（iframe <h1>）按 index 缓存，避免在任何界面露出文件名 slug。
+    const lessonTitles = new Map();
     const nextButton = document.getElementById('nextLessonButton');
     const nextButtonHtml = nextButton?.innerHTML || '下一课';
     const currentLessonLabel = document.querySelector('.current-lesson');
@@ -758,16 +810,40 @@
         const heading = lessonFrame.contentDocument?.querySelector('h1');
         const title = String(heading?.textContent || '').replace(/\s+/g, ' ').trim();
         if (!title || title.length > 120) return;
+        lessonTitles.set(current, title);
         const label = `Lesson ${current + 1} · ${title}`;
         if (currentLessonLabel) currentLessonLabel.textContent = label;
         if (contextBar) contextBar.textContent = `当前上下文：${label}`;
         const item = document.querySelectorAll('.lesson-item')[current];
         const itemTitle = item?.querySelector('span:last-child');
         if (itemTitle) itemTitle.textContent = title;
+        renderLearningRecords();
       } catch {}
     }
 
     lessonFrame.addEventListener('load', syncCurrentLessonTitle);
+
+    // 课节 iframe 里没有加载 i18n.js（生成内容直接来自 /api），这里复用顶层
+    // LucubroI18n 对 iframe 文档做同样的文本替换：Mission pill、练习按钮、
+    // 边注 UI 等中文/英文硬编码串会跟随当前 locale，动态渲染部分由 observer 兜底。
+    let lessonFrameObserver = null;
+    function localizeLessonFrame() {
+      try {
+        const doc = lessonFrame.contentDocument;
+        if (!doc?.body || !window.LucubroI18n) return;
+        window.LucubroI18n.apply(doc);
+        lessonFrameObserver?.disconnect();
+        lessonFrameObserver = new MutationObserver((mutations) => {
+          for (const mutation of mutations) {
+            if (mutation.type === 'characterData') window.LucubroI18n.apply(mutation.target);
+            mutation.addedNodes.forEach((node) => window.LucubroI18n.apply(node));
+          }
+        });
+        lessonFrameObserver.observe(doc.body, { childList: true, subtree: true, characterData: true });
+      } catch {}
+    }
+    lessonFrame.addEventListener('load', localizeLessonFrame);
+    window.addEventListener('lucubro:localechange', localizeLessonFrame);
 
     let loaded = false;
     function loadLessons() {
@@ -945,7 +1021,7 @@
         </article>
       `;
 
-      const currentTitle = lessons[current] ? escapeHtml(titleOf(lessons[current])) : '';
+      const currentTitle = lessons[current] ? escapeHtml(lessonTitles.get(current) || titleOf(lessons[current])) : '';
       const record2Html = `
         <article class="record">
           <span class="record-icon">${current + 1}</span>
@@ -1261,7 +1337,8 @@
       window.addEventListener('message', (event) => {
         if (event.data?.type === 'notes-panel-state' && notesButton) {
           notesButton.setAttribute('aria-pressed', String(!event.data.collapsed));
-          notesButton.title = event.data.collapsed ? 'Open notes' : 'Close notes';
+          notesButton.title = window.LucubroI18n?.t(event.data.collapsed ? 'Open notes' : 'Close notes')
+            || (event.data.collapsed ? 'Open notes' : 'Close notes');
         }
       });
 

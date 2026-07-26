@@ -103,6 +103,30 @@
   margin-inline-start: 0;
 }
 
+.appbar-avatar {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--ds-brand) 24%, var(--ds-border));
+  border-radius: 50%;
+  color: var(--ds-brand-ink);
+  background: var(--ds-brand-soft);
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.appbar-avatar:hover {
+  border-color: color-mix(in srgb, var(--ds-brand) 46%, var(--ds-border));
+  background: color-mix(in srgb, var(--ds-brand-soft) 82%, var(--ds-surface));
+}
+
+.appbar-avatar i {
+  font-size: 18px;
+}
+
 @media (max-width: 720px) {
   .lucubro-language-switcher select {
     min-width: 58px;

@@ -33,5 +33,5 @@ test('原文阅读器打开文本资源并无损返回课节', async ({ page }) 
   await viewer.locator('.ks-source-close').click();
   await expect(viewer).toBeHidden();
   await expect(frame.getByRole('heading', { name: '稳定化测试课节' })).toBeVisible();
-  await expect(page.locator('.current-lesson')).toContainText('Lesson 1');
+  await expect(page.locator('.current-lesson')).toContainText('第 1 课');
 });

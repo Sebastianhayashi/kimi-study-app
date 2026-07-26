@@ -15,8 +15,20 @@ const goodCard = {
 };
 
 test('high-quality curiosity card passes', () => {
-  const result = validateCuriosityDocument({ schemaVersion: 1, lessonId: '0001-example', cards: [goodCard] });
+  const objectCard = {
+    ...goodCard,
+    prediction: {
+      ...goodCard.prediction,
+      options: [{ id: 'a', label: '承认之前的判断可能有误' }, { id: 'b', text: '为原结论寻找新解释' }],
+    },
+    source: undefined,
+    sourceRefs: [{ label: '《侦察兵思维》第1章', section: '皮卡尔重审德雷福斯间谍案' }],
+  };
+  const result = validateCuriosityDocument({ schemaVersion: 1, lessonId: '0001-example', cards: [objectCard] });
   assert.equal(result.ok, true, result.errors.join('\n'));
+  assert.deepEqual(result.document.cards[0].prediction.options, ['承认之前的判断可能有误', '为原结论寻找新解释']);
+  assert.deepEqual(result.document.cards[0].source.refs, ['《侦察兵思维》第1章']);
+  assert.doesNotMatch(JSON.stringify(result.document), /\[object Object\]/);
 });
 
 test('irrelevant or low-confidence trivia is blocked', () => {

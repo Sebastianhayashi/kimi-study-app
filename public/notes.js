@@ -13,6 +13,7 @@
   const clearFilters = document.getElementById('clearFilters');
   const activityGrid = document.getElementById('activityGrid');
   const activityMonths = document.getElementById('activityMonths');
+  const activityWeekdays = document.querySelector('.activity-weekdays');
   const activitySummary = document.getElementById('activitySummary');
   const activityDetail = document.getElementById('activityDetail');
 
@@ -112,6 +113,14 @@
       if (!byDay.has(key)) byDay.set(key, []);
       byDay.get(key).push(event);
     });
+    if (activityWeekdays) {
+      // 2024-01-01 is a Monday; Mon/Wed/Fri labels localized via Intl, same as month labels.
+      activityWeekdays.replaceChildren(...[1, 3, 5].map((day) => {
+        const label = document.createElement('span');
+        label.textContent = new Intl.DateTimeFormat(i18n()?.locale || 'en', { weekday: 'short' }).format(new Date(2024, 0, day));
+        return label;
+      }));
+    }
     const end = new Date();
     end.setHours(12, 0, 0, 0);
     const start = new Date(end);

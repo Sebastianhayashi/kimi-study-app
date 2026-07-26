@@ -40,21 +40,21 @@ body {
   box-shadow: none;
 }
 
-.top-progress span,
+.top-step-number,
 .circle-button,
 .avatar {
   border-color: var(--ds-border);
   background: var(--ds-surface);
 }
 
-.top-progress span.active {
+.top-step.active .top-step-number {
   border-color: #0b57d0;
   background: #0b57d0;
 }
 
-.top-progress span.done {
-  color: var(--ds-brand-ink);
-  background: var(--ds-brand-soft);
+.top-step.done .top-step-number {
+  color: var(--ds-success);
+  background: var(--ds-success-soft);
 }
 
 .circle-button {
@@ -64,14 +64,17 @@ body {
   font-size: 18px;
 }
 
-.avatar {
-  color: #fff;
-  background: #355f9f;
+.avatar.appbar-avatar {
+  color: var(--ds-text-secondary);
+  background: var(--ds-surface);
 }
 
 .shell {
   width: min(100%, 1120px);
-  padding: clamp(34px, 6vw, 72px) 24px;
+  /* Top-align the stage so the card sits directly under the topbar stepper
+     instead of floating in the vertical center of the viewport. */
+  place-items: start center;
+  padding: clamp(26px, 4.5vw, 44px) 24px clamp(34px, 6vw, 72px);
 }
 
 .panel {
@@ -159,6 +162,22 @@ details {
   border-radius: 8px;
   color: var(--ds-brand-ink);
   background: var(--ds-brand-soft);
+}
+
+
+.course-purpose-card {
+  color: var(--ds-text);
+  background: var(--ds-surface);
+}
+
+.course-purpose-card:hover {
+  border-color: color-mix(in srgb, var(--ds-brand) 42%, var(--ds-border));
+}
+
+.course-purpose-card:has(input:checked) {
+  border-color: color-mix(in srgb, var(--ds-brand) 58%, var(--ds-border));
+  background: var(--ds-brand-soft);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ds-brand) 10%, transparent);
 }
 
 .primary-button {
@@ -324,29 +343,43 @@ details {
 
 @media (max-width: 720px) {
   .topbar {
-    grid-template-columns: 1fr auto;
+    height: auto;
+    min-height: 108px;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-rows: 52px 40px;
+    gap: 0 9px;
+    padding-block: 4px 8px;
   }
 
-  .top-progress {
-    display: flex;
-    position: absolute;
-    top: 68px;
-    right: 20px;
-    left: 20px;
-    justify-content: center;
-    height: 40px;
+  .topbar-start {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .topbar > .lucubro-language-switcher {
+    grid-column: 2;
+    grid-row: 1;
   }
 
   .top-actions {
-    grid-column: 2;
+    grid-column: 3;
+    grid-row: 1;
   }
 
-  .avatar {
-    display: none;
+  .top-progress {
+    position: static;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: center;
+    height: 40px;
+  }
+
+  .avatar.appbar-avatar {
+    display: grid;
   }
 
   .shell {
-    padding-top: 66px;
+    padding-top: 28px;
   }
 
   .panel {

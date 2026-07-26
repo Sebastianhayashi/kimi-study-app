@@ -90,8 +90,14 @@
 
   function setTopStep(index) {
     topSteps.forEach((step, i) => {
-      step.classList.toggle('active', i === index);
-      step.classList.toggle('done', i < index);
+      const state = i < index ? 'done' : i === index ? 'active' : 'pending';
+      step.classList.toggle('active', state === 'active');
+      step.classList.toggle('done', state === 'done');
+      step.classList.toggle('pending', state === 'pending');
+      if (state === 'active') step.setAttribute('aria-current', 'step');
+      else step.removeAttribute('aria-current');
+      const stateLabel = step.querySelector('.top-step-state');
+      if (stateLabel) stateLabel.textContent = state === 'done' ? 'Completed step' : state === 'active' ? 'Current step' : 'Upcoming step';
     });
   }
 

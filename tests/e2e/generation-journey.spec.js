@@ -320,7 +320,7 @@ test('生成下一课完成后进入 Lesson 2，并恢复进度和下一课按�
   });
 
   await expect(page.frameLocator('#lessonFrame').getByRole('heading', { name: '生成旅途第二课' })).toBeVisible();
-  await expect(page.locator('.current-lesson')).toContainText('Lesson 2');
+  await expect(page.locator('.current-lesson')).toContainText('第 2 课');
   await expect(page.locator('.compact-progress > span')).toHaveText('2 / 2');
   await expect(page.locator('#nextLessonButton')).toBeEnabled();
   await expect(page.locator('.ks-generation-preview')).toBeHidden();

@@ -29,6 +29,10 @@ body {
 .ks-lesson-document-root :where(img, svg, video, canvas) { max-width: 100%; }
 .ks-lesson-document-root :where(table, pre) { max-width: 100%; overflow-x: auto; }
 
+/* Generated lessons sometimes mark inline emphasis with alarm red
+   (e.g. .soldier), which clashes with the site-wide blue link color. */
+body .soldier { color: #0b57d0; }
+
 html.ks-lesson-enter body { opacity: 0; transform: translateY(8px); }
 html.ks-lesson-ready body {
   opacity: 1;

@@ -157,7 +157,7 @@ test('正常 ready 课程不显示生成覆盖层，并恢复学习态控件', a
   await expect(page.locator('.compact-progress > span')).toHaveText('1 / 1');
   await expect(page.locator('#nextLessonButton')).toBeVisible();
   await expect(page.locator('#nextLessonButton')).toBeEnabled();
-  await expect(page.locator('.current-lesson')).toContainText('Lesson 1');
+  await expect(page.locator('.current-lesson')).toContainText('第 1 课');
 });
 
 test('生成一致性人工截图', async ({ page }, testInfo) => {

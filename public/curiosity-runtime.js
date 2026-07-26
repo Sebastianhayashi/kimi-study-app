@@ -3,6 +3,17 @@
   if (window.__kimiCuriosityMounted || !window.__courseId || !window.__lessonFile) return;
   window.__kimiCuriosityMounted = true;
 
+  function displayText(value) {
+    if (value && typeof value === 'object') {
+      return String(value.label ?? value.text ?? value.title ?? value.name ?? value.ref ?? value.href ?? value.id ?? '').trim();
+    }
+    return String(value ?? '').trim();
+  }
+
+  function translated(key) {
+    try { return parent.LucubroI18n?.t(key) || window.LucubroI18n?.t(key) || key; } catch { return key; }
+  }
+
   function findPlacement(card) {
     const headings = [...document.querySelectorAll('h1,h2,h3,h4')];
     if (card.section) {
@@ -27,7 +38,7 @@
     toggle.className = 'ks-curiosity-toggle';
     toggle.setAttribute('aria-expanded', 'false');
     const hook = document.createElement('span');
-    hook.textContent = card.hook;
+    hook.textContent = displayText(card.hook);
     const chevron = document.createElement('span');
     chevron.textContent = '⌄';
     toggle.append(hook, chevron);
@@ -36,7 +47,7 @@
     body.hidden = true;
     const prompt = document.createElement('p');
     prompt.className = 'ks-curiosity-prompt';
-    prompt.textContent = card.prediction?.prompt || '先猜一下，再看解释。';
+    prompt.textContent = displayText(card.prediction?.prompt) || translated('Make a prediction before viewing the explanation.');
     body.appendChild(prompt);
     const options = document.createElement('div');
     options.className = 'ks-curiosity-options';
@@ -44,34 +55,37 @@
     reveal.className = 'ks-curiosity-reveal';
     reveal.hidden = true;
     const revealCopy = document.createElement('div');
-    revealCopy.textContent = card.reveal;
+    revealCopy.textContent = displayText(card.reveal);
     const bridge = document.createElement('div');
     bridge.className = 'ks-curiosity-bridge';
-    bridge.textContent = `为什么和本课有关：${card.bridge}`;
+    bridge.textContent = `Why it relates to this lesson: ${displayText(card.bridge)}`;
     const source = document.createElement('div');
     source.className = 'ks-curiosity-source';
-    source.textContent = card.source?.label ? `依据：${card.source.label}` : `依据：${(card.source?.refs || []).join('、')}`;
+    const sourceLabel = displayText(card.source?.label)
+      || (Array.isArray(card.source?.refs) ? card.source.refs.map(displayText).filter(Boolean).join(', ') : '');
+    source.textContent = sourceLabel ? `Source: ${sourceLabel}` : '';
+    source.hidden = !sourceLabel;
     const actions = document.createElement('div');
     actions.className = 'ks-curiosity-actions';
     const scratch = document.createElement('button');
     scratch.type = 'button';
-    scratch.textContent = '放到草稿';
+    scratch.textContent = translated('Add to draft');
     scratch.addEventListener('click', () => parent.postMessage({
       type: 'study-surface-add',
       kind: 'curiosity',
-      quote: card.hook,
-      section: card.section,
-      body: `${card.reveal}\n\n${card.bridge}`,
+      quote: displayText(card.hook),
+      section: displayText(card.section) || translated('Curiosity'),
+      body: `${displayText(card.reveal)}\n\n${displayText(card.bridge)}`,
     }, '*'));
     const ask = document.createElement('button');
     ask.type = 'button';
-    ask.textContent = '问 Lucubro';
+    ask.textContent = translated('Ask Lucubro');
     ask.addEventListener('click', () => parent.postMessage({
       type: 'ask-selection',
-      selectedText: card.hook,
-      surrounding: `${card.reveal}\n${card.bridge}`,
-      section: card.section || 'Curiosity',
-      suggestedPrompt: `请结合当前课节，进一步解释这个问题：${card.hook}`,
+      selectedText: displayText(card.hook),
+      surrounding: `${displayText(card.reveal)}\n${displayText(card.bridge)}`,
+      section: displayText(card.section) || translated('Curiosity'),
+      suggestedPrompt: `${translated('Explain this question using the current lesson:')} ${displayText(card.hook)}`,
     }, '*'));
     actions.append(scratch, ask);
     reveal.append(revealCopy, bridge, source, actions);
@@ -83,7 +97,7 @@
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'ks-curiosity-option';
-        button.textContent = value;
+        button.textContent = displayText(value);
         button.setAttribute('aria-pressed', 'false');
         button.addEventListener('click', () => {
           options.querySelectorAll('button').forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
@@ -96,7 +110,7 @@
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'ks-curiosity-option';
-      button.textContent = '看看为什么';
+      button.textContent = translated('See why');
       button.addEventListener('click', showReveal);
       body.appendChild(button);
     }
