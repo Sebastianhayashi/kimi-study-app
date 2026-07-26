@@ -2162,6 +2162,30 @@
     }
   </style>
 
+
+  <style id="round5-sample-journey">
+    .sample-journey {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+      margin: 20px 0 4px;
+      padding: 18px 20px;
+      border: 1px solid var(--ds-border);
+      border-radius: var(--ds-radius-card);
+      background: color-mix(in srgb, var(--ds-brand-soft) 58%, var(--ds-surface));
+    }
+    .sample-journey[hidden] { display: none; }
+    .sample-journey-kicker { margin: 0 0 5px; color: var(--ds-brand-ink); font-size: 12px; font-weight: 720; letter-spacing: .04em; text-transform: uppercase; }
+    .sample-journey h1 { margin: 0; color: var(--ds-text); font-size: clamp(20px, 2.2vw, 30px); line-height: 1.18; }
+    .sample-journey p { max-width: 720px; margin: 7px 0 0; color: var(--ds-text-secondary); line-height: 1.6; }
+    .sample-journey-action { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 18px; border-radius: var(--ds-radius-pill); color: #fff; background: #0b57d0; font-weight: 680; text-decoration: none; white-space: nowrap; }
+    @media (max-width: 680px) {
+      .sample-journey { grid-template-columns: 1fr; margin-top: 14px; padding: 16px; }
+      .sample-journey-action { width: 100%; }
+    }
+  </style>
+
 </head>
 <body>
   <div class="app">
@@ -2199,6 +2223,16 @@
     </header>
 
     <main class="page page-view active" id="page-learning-home">
+
+      <section class="sample-journey" id="sampleJourney" data-sample-journey role="status" aria-live="polite" hidden>
+        <div>
+          <p class="sample-journey-kicker">Sample journey</p>
+          <h1>See one finished learning workspace</h1>
+          <p>Open an existing sample course to inspect the lesson, practice, source, notes, and assistant before creating your own.</p>
+        </div>
+        <a class="sample-journey-action" id="sampleJourneyAction" href="/app">Open sample lesson <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
+      </section>
+
       <section class="toolbar" aria-label="课程导航和工具">
         <nav class="tabs" aria-label="课程筛选">
           <button class="tab active" type="button" data-filter="all">All</button>

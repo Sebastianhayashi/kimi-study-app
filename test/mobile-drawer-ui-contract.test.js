@@ -10,7 +10,8 @@ const course = fs.readFileSync(path.join(root, 'public', 'course.html'), 'utf8')
 const glue = fs.readFileSync(path.join(root, 'public', 'glue.js'), 'utf8');
 
 test('next lesson action cannot collapse into vertical Chinese text', () => {
-  assert.match(course, /class="pill primary next-lesson-action"/);
+  assert.match(course, /class="pill next-lesson-action"/);
+  assert.doesNotMatch(course, /class="pill primary next-lesson-action"/);
   assert.match(course, /white-space:\s*nowrap/);
   assert.match(course, /word-break:\s*keep-all/);
   assert.match(course, /writing-mode:\s*horizontal-tb/);

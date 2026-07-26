@@ -480,6 +480,12 @@
       canvas.dataset.phase = nextPhase;
       paperStageLabel.textContent = PHASE_LABELS[nextPhase] || '正在创建课程';
       if (changed || force) {
+        root.classList.remove('is-artifact-reveal');
+        if (!reduceMotion.matches) {
+          void root.offsetWidth;
+          root.classList.add('is-artifact-reveal');
+          window.setTimeout(() => root.classList.remove('is-artifact-reveal'), 280);
+        }
         animateCanvas(stageTemplates[normalized](context));
         runScan();
       }

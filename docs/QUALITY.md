@@ -27,7 +27,7 @@ npm run check
 npm test
 ```
 
-当前包含 116 个测试，覆盖：
+Round 5 基线包含 151 个 Node 测试，覆盖：
 
 - 生成状态和公共事件；
 - 评估结构与质量；
@@ -36,6 +36,7 @@ npm test
 - 下一课事务、清理与中断恢复；
 - 笔记、学习卡片、选区和滚动策略；
 - Fixture 构建与测试数据隔离。
+- 动效语义、README 媒体治理、只读 plan preview 与性能特征契约。
 
 ### Playwright E2E
 
@@ -54,6 +55,7 @@ npm run test:e2e:ci
 - 移动端抽屉；
 - 生成状态一致性；
 - Console、Network 和生产数据目录守卫。
+- 五路由键盘焦点、reduced-motion、landing 示例旅程与课程页学习证据投影。
 
 ## 状态一致性回归
 
@@ -103,3 +105,25 @@ npm run test:e2e:ci
 - [English report](reports/kimi-study-ux-e2e-report.en-US.pdf)
 
 报告中的环境替代和阻塞项只代表那一次隔离执行，不等同于所有环境的能力。
+
+## 关键路由可访问性契约
+
+自动化覆盖 `/`、`/app`、`/notes`、`/new-course` 和 `/course/:id` 的关键任务，不把通用 focus ring 当作完整可访问性证明。
+
+每条关键路由至少检查：
+
+- 可见交互控件具有 accessible name；
+- 主任务可通过键盘聚焦和触发，focus 指示可见；
+- 关键触控目标至少为 44px；
+- 成功、错误、生成阶段和学习证据通过 `role=status` 或 live region 感知；
+- `prefers-reduced-motion: reduce` 下不依赖位移或动画完成任务；
+- light、dark、桌面和 390px 不出现遮挡或横向溢出。
+
+自动化不会声明完整 WCAG conformance。发布前仍需人工检查 200% zoom、高对比模式、screen reader narration、真实触控板和 Safari 键盘行为。问题应修复根因，不能通过删除或 skip 既有测试绕过。
+
+## README 与性能治理
+
+- 三语 README 的结构、命令、链接和媒体由 `npm run verify:readme` 校验。
+- 媒体 fixture、route、locale、viewport、theme、稳定条件和 byte budget 记录在 `docs/media/readme/manifest.json`。
+- `docs/BASELINE.md` 是只读性能与服务器特征基线。同步 I/O 数量本身不是缺陷，后续补丁必须指出具体 route、可复现指标和回滚条件。
+- 发布证据清单见 [`docs/RELEASE.md`](RELEASE.md)。

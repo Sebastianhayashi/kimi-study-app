@@ -28,6 +28,14 @@ button {
   color: inherit;
 }
 
+.motion-ready [data-reveal]:not(.is-visible) {
+  will-change: opacity, transform;
+}
+
+.motion-ready [data-reveal].is-visible {
+  will-change: auto;
+}
+
 .site-header,
 .hero,
 .story,

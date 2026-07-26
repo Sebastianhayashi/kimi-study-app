@@ -47,8 +47,25 @@
   function feedbackNode(data) {
     const box = element('div', 'kimi-activity__feedback', data.feedback || (data.passed ? '已完成。' : '请再试一次。'));
     box.dataset.state = data.passed ? 'passed' : 'retry';
+    box.dataset.motionState = 'reveal';
     box.setAttribute('role', 'status');
     return box;
+  }
+
+  function announceLearningEvidence(activity, data, root) {
+    const outcome = data.passed ? 'passed' : 'retry';
+    delete root.dataset.motionState;
+    void root.offsetWidth;
+    root.dataset.motionState = outcome;
+    window.parent?.postMessage({
+      type: 'lucubro:learning-evidence',
+      courseId,
+      lessonFile,
+      activityId: activity.id,
+      activityTitle: activity.title || activity.prompt || '',
+      outcome,
+      feedback: data.feedback || '',
+    }, window.location.origin);
   }
 
   function renderProgress(root, activity) {
@@ -104,6 +121,7 @@
       try {
         const result = await postAttempt(activity, multiple ? checked : checked[0]);
         feedbackArea.replaceChildren(feedbackNode(result));
+        announceLearningEvidence(activity, result, root);
         renderProgress(root, activity);
       } catch (error) {
         feedbackArea.replaceChildren(element('div', 'kimi-activity-error', error.message));
@@ -132,6 +150,7 @@
       try {
         const result = await postAttempt(activity, input.value);
         feedbackArea.replaceChildren(feedbackNode(result));
+        announceLearningEvidence(activity, result, root);
         renderProgress(root, activity);
       } catch (error) {
         feedbackArea.replaceChildren(element('div', 'kimi-activity-error', error.message));
@@ -175,6 +194,7 @@
       try {
         const result = await postAttempt(activity, order.map((item) => item.id));
         feedbackArea.replaceChildren(feedbackNode(result));
+        announceLearningEvidence(activity, result, root);
         renderProgress(root, activity);
       } catch (error) { feedbackArea.replaceChildren(element('div', 'kimi-activity-error', error.message)); }
       finally { submit.disabled = false; }
@@ -224,6 +244,7 @@
       try {
         const result = await postAttempt(activity, { recorded: true, reviewed: true });
         feedbackArea.replaceChildren(feedbackNode(result));
+        announceLearningEvidence(activity, result, root);
         renderProgress(root, activity);
       } catch (error) { feedbackArea.replaceChildren(element('div', 'kimi-activity-error', error.message)); }
     });

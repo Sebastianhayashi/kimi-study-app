@@ -36,3 +36,33 @@
 @media (max-width: 680px) {
   .kimi-activity { margin: 20px 0; padding: 17px; }
 }
+
+
+@keyframes kimiActivityControlFeedback {
+  0% { transform: scale(var(--ds-motion-scale-soft)); }
+  100% { transform: scale(1); }
+}
+
+@keyframes kimiActivityReveal {
+  from { opacity: 0; transform: translateY(var(--ds-motion-distance-sm)); }
+  to { opacity: 1; transform: none; }
+}
+
+.kimi-activity[data-motion-state="passed"] .kimi-activity__option:has(input:checked),
+.kimi-activity[data-motion-state="retry"] .kimi-activity__option:has(input:checked) {
+  animation: kimiActivityControlFeedback var(--ds-motion-control) var(--ds-ease-out) both;
+}
+
+.kimi-activity__feedback[data-motion-state="reveal"],
+.kimi-activity__hint {
+  animation: kimiActivityReveal var(--ds-motion-reveal) var(--ds-ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kimi-activity[data-motion-state] .kimi-activity__option,
+  .kimi-activity__feedback[data-motion-state="reveal"],
+  .kimi-activity__hint {
+    animation: none !important;
+    transform: none !important;
+  }
+}

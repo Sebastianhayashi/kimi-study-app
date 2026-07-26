@@ -107,9 +107,9 @@ body,
   transform: translate(-50%, 8px);
   pointer-events: none;
   transition:
-    opacity var(--ds-motion-out) var(--ds-ease-in),
+    opacity var(--ds-motion-dismiss) var(--ds-ease-in),
     transform var(--ds-motion-out) var(--ds-ease-in),
-    visibility 0s linear var(--ds-motion-out);
+    visibility 0s linear var(--ds-motion-dismiss);
 }
 
 .toast.show {
@@ -117,7 +117,7 @@ body,
   opacity: 1;
   transform: translate(-50%, 0);
   transition:
-    opacity var(--ds-motion-in) var(--ds-ease-out),
+    opacity var(--ds-motion-panel) var(--ds-ease-out),
     transform var(--ds-motion-in) var(--ds-ease-out),
     visibility 0s;
 }
@@ -140,6 +140,121 @@ body,
 .course-panel {
   border-color: var(--ds-border-strong);
   box-shadow: 0 10px 32px rgb(24 39 75 / 7%);
+}
+
+
+.current-learning-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(240px, .9fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--ds-border);
+  background: color-mix(in srgb, var(--ds-brand-soft) 34%, var(--ds-surface));
+}
+
+.current-learning-label,
+.current-learning-facts dt {
+  margin: 0 0 4px;
+  color: var(--ds-text-muted);
+  font-size: 11px;
+  font-weight: 720;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.current-learning-objective { min-width: 0; }
+
+.current-learning-objective h2 {
+  margin: 0;
+  color: var(--ds-text);
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.current-learning-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0;
+}
+
+.current-learning-facts div { min-width: 0; }
+.current-learning-facts dd {
+  margin: 0;
+  overflow: hidden;
+  color: var(--ds-text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: opacity var(--ds-motion-reveal) var(--ds-ease-out);
+}
+
+.current-learning-action {
+  min-height: 44px;
+  padding: 0 17px;
+  border: 1px solid #0b57d0;
+  border-radius: var(--ds-radius-pill);
+  color: #fff;
+  background: #0b57d0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 680;
+  cursor: pointer;
+}
+
+.current-learning-action:disabled { cursor: not-allowed; opacity: .52; }
+.current-learning-strip.is-milestone {
+  animation: currentLearningMilestone var(--ds-motion-milestone) var(--ds-ease-out) both;
+}
+
+@keyframes currentLearningMilestone {
+  0% { background: color-mix(in srgb, var(--ds-success-soft) 88%, var(--ds-surface)); transform: translateY(var(--ds-motion-distance-sm)); }
+  100% { background: color-mix(in srgb, var(--ds-brand-soft) 34%, var(--ds-surface)); transform: none; }
+}
+
+@container course-panel (max-width: 760px) {
+  .current-learning-strip {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px 16px;
+    align-items: start;
+  }
+
+  .current-learning-facts {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+@container course-panel (max-width: 560px) {
+  .current-learning-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .current-learning-facts {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .current-learning-action {
+    width: 100%;
+  }
+}
+
+@media (max-width: 980px) {
+  .current-learning-strip { grid-template-columns: minmax(0, 1fr) auto; }
+  .current-learning-facts { grid-column: 1 / -1; grid-row: 2; }
+}
+
+@media (max-width: 620px) {
+  .current-learning-strip { grid-template-columns: 1fr; gap: 12px; padding: 13px; }
+  .current-learning-facts { grid-column: auto; grid-row: auto; }
+  .current-learning-action { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .current-learning-strip.is-milestone { animation: none !important; transform: none !important; }
 }
 
 .panel-header,
@@ -528,19 +643,19 @@ body,
 
   .mobile-drawer-scrim {
     transition:
-      opacity var(--ds-motion-out) var(--ds-ease-in),
-      visibility 0s linear var(--ds-motion-out);
+      opacity var(--ds-motion-dismiss) var(--ds-ease-in),
+      visibility 0s linear var(--ds-motion-dismiss);
   }
 
   .mobile-drawer-scrim.is-open {
     transition:
-      opacity var(--ds-motion-in) var(--ds-ease-out),
+      opacity var(--ds-motion-panel) var(--ds-ease-out),
       visibility 0s;
   }
 
   .left-panel,
   .assistant-panel {
-    transition: transform var(--ds-motion-in) var(--ds-ease-out);
+    transition: transform var(--ds-motion-panel) var(--ds-ease-out);
   }
 
   .topbar {

@@ -1,46 +1,31 @@
-# Release process
+# Release evidence checklist
 
-## Release gate
+A release is evidence-backed only when a reviewer can locate the tested scope and confirm that the repository promise still matches the product.
 
-A release candidate should satisfy:
+## Repository presentation
 
-```bash
-npm ci
-npm run check
-npm test
-npm run fixtures:build
-LUCUBRO_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
-npx playwright install chromium
-npm run test:e2e:ci
-```
+- [ ] GitHub About description states the same user outcome as the first README promise.
+- [ ] Topics describe local-first learning, course generation, source-grounded study, and accessibility without claiming unsupported SaaS capabilities.
+- [ ] Homepage points to the maintained product or documentation location.
+- [ ] The social preview uses `docs/media/readme/en/social-preview.png` or an explicitly reviewed replacement.
+- [ ] README hero, sample command, current limits, and product screenshots match the released behavior.
 
-Also confirm:
+## Product and media evidence
 
-- the README hero and demo assets render on GitHub;
-- no production `data/courses` content, private books, credentials, or test reports are tracked;
-- the deterministic fixture demo starts successfully;
-- the changelog describes user-visible changes;
-- known blocked paths are disclosed;
-- the version in `package.json` matches the planned tag.
+- [ ] `node scripts/verify-readme-media.js` passes for en, zh-CN, and ja.
+- [ ] `node scripts/verify-readme-parity.js` passes.
+- [ ] Visual changes include sanitized before/after evidence at desktop and 390px, light and dark where applicable.
+- [ ] The release notes identify the fixture, locale, theme, viewport, browser engine, and capture command.
 
-## Tag and publish
+## Quality evidence
 
-```bash
-npm version <major|minor|patch> --no-git-tag-version
-git add package.json package-lock.json CHANGELOG.md
-git commit -m "chore: prepare vX.Y.Z"
-git tag -s vX.Y.Z -m "Lucubro vX.Y.Z"
-git push origin main --follow-tags
-```
+- [ ] `npm run check` passes.
+- [ ] `npm test` passes with the reported total.
+- [ ] `npx playwright test` passes with the reported total, or an infrastructure blocker is stated without deleting or skipping tests.
+- [ ] The release notes link the CI run and Playwright artifact or trace.
+- [ ] Tested browser scope is explicit. Chromium automation does not imply Safari, Firefox, screen-reader, zoom, or real-touch coverage.
+- [ ] Production `data/` is unchanged and no private material is included.
 
-The release workflow validates the project, creates a source archive, writes checksums, and creates or updates the GitHub Release.
+## Stop conditions
 
-## Release notes
-
-Lead with:
-
-1. the learner-visible outcome;
-2. screenshots or a short demonstration;
-3. important fixes and migration notes;
-4. verification evidence;
-5. known limitations.
+Stop the release when a P0 or P1 defect is open, a critical route cannot complete by keyboard, a terminal state is inconsistent, README media is stale, or a data/API change lacks explicit approval and rollback evidence.

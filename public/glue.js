@@ -51,6 +51,20 @@
 
   // ---------- 书架页：真实上传 + 轮询进度 + 进入课程 ----------
   if (path === '/app') {
+    const sampleRequested = new URLSearchParams(location.search).get('sample') === '1';
+    const sampleJourney = document.getElementById('sampleJourney');
+    const sampleJourneyAction = document.getElementById('sampleJourneyAction');
+
+    function syncSampleJourney(course) {
+      if (!sampleRequested || !sampleJourney) return;
+      sampleJourney.hidden = false;
+      if (course && sampleJourneyAction) {
+        sampleJourneyAction.href = courseDestination(course);
+        sampleJourneyAction.dataset.courseId = course.id;
+      }
+      window.LucubroI18n?.apply(sampleJourney);
+    }
+
     // First-run 建课使用独立页面。捕获阶段阻止旧上传弹窗继续接管主入口。
     document.addEventListener('click', (event) => {
       const trigger = event.target.closest('.create-button');
@@ -487,9 +501,15 @@
       };
       const course = readyCourses.sort((a, b) => lastOpened(b) - lastOpened(a))[0];
       shelfFeaturedCourse = course || null;
+      syncSampleJourney(course || null);
       if (!course) {
         featuredSection.hidden = true;
         featuredSection.style.display = 'none';
+        if (sampleJourneyAction) {
+          sampleJourneyAction.href = '/new-course';
+          sampleJourneyAction.textContent = 'Create a course from your material';
+          window.LucubroI18n?.apply(sampleJourneyAction);
+        }
         return null;
       }
       const destination = courseDestination(course);
@@ -726,11 +746,103 @@
     const overviewProgressValue = overviewProgressSection?.querySelector('.progress-value');
     const overviewRecordList = document.querySelector('#left-overview .record-list');
     const contextBar = document.querySelector('.context-bar');
+    const currentLearningStrip = document.getElementById('currentLearningStrip');
+    const currentLearningHeading = document.getElementById('currentLearningHeading');
+    const currentLearningEvidence = document.getElementById('currentLearningEvidence');
+    const currentLearningResume = document.getElementById('currentLearningResume');
+    const currentLearningAction = document.getElementById('currentLearningAction');
+    let latestLearningEvidence = null;
+    let learningEvidenceRequest = 0;
     const titleOf = (f) => f
       .replace(/^\d+-?/, '')
       .replace(/\.html$/, '')
       .replace(/-+/g, ' ');
     const isBackgroundNextLesson = (status = {}) => status.kind === 'next-lesson' && Number(status.lessons || lessons.length) > 0;
+
+    function latestEvidenceText() {
+      if (latestLearningEvidence?.type === 'practice') return 'Practice completed in this lesson';
+      if (latestLearningEvidence?.type === 'note') return 'Note saved in this lesson';
+      if (latestLearningEvidence?.type === 'retry') return 'Practice needs another attempt';
+      return 'No practice or notes yet';
+    }
+
+    function updateCurrentLearningStrip({ announce = false } = {}) {
+      if (!currentLearningStrip) return;
+      const missionTitle = String(document.querySelector('.mission-title')?.textContent || '').trim();
+      const lessonTitle = lessons.length ? titleOf(lessons[current]) : '';
+      const resume = lessons.length ? formatLessonLabel(current, lessonTitles.get(current) || lessonTitle) : 'Waiting for the first lesson';
+      if (currentLearningHeading) currentLearningHeading.textContent = missionTitle || 'Continue from the current lesson';
+      if (currentLearningEvidence) currentLearningEvidence.textContent = latestEvidenceText();
+      if (currentLearningResume) currentLearningResume.textContent = resume;
+      if (currentLearningAction) {
+        currentLearningAction.disabled = !lessons.length;
+        currentLearningAction.textContent = lessons.length ? 'Continue current lesson' : 'Waiting for the first lesson';
+      }
+      window.LucubroI18n?.apply(currentLearningStrip);
+      if (announce && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        currentLearningStrip.classList.remove('is-milestone');
+        void currentLearningStrip.offsetWidth;
+        currentLearningStrip.classList.add('is-milestone');
+        window.setTimeout(() => currentLearningStrip.classList.remove('is-milestone'), 440);
+      }
+    }
+
+    async function refreshLatestLearningEvidence() {
+      const requestId = ++learningEvidenceRequest;
+      const activeLesson = lessons[current] || '';
+      if (!activeLesson) {
+        latestLearningEvidence = null;
+        updateCurrentLearningStrip();
+        return;
+      }
+      try {
+        const response = await fetch('/api/activity');
+        if (!response.ok) return;
+        const payload = await response.json();
+        const latest = (Array.isArray(payload.events) ? payload.events : [])
+          .find((event) => event.courseId === courseId && event.lessonFile === activeLesson && (event.type === 'practice' || event.type === 'note')) || null;
+        if (requestId !== learningEvidenceRequest || activeLesson !== lessons[current]) return;
+        if (!latest || latest.type === 'note') {
+          latestLearningEvidence = latest;
+          updateCurrentLearningStrip();
+          return;
+        }
+        const progressResponse = await fetch(`/api/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(activeLesson)}/progress`);
+        if (!progressResponse.ok) return;
+        const progress = await progressResponse.json();
+        const attempts = Array.isArray(progress.attempts) ? progress.attempts : [];
+        const latestAttempt = attempts.reduce((currentLatest, attempt) => {
+          if (!currentLatest) return attempt;
+          return Date.parse(attempt.submittedAt || '') >= Date.parse(currentLatest.submittedAt || '') ? attempt : currentLatest;
+        }, null);
+        if (requestId !== learningEvidenceRequest || activeLesson !== lessons[current]) return;
+        latestLearningEvidence = latestAttempt ? { type: latestAttempt.passed ? 'practice' : 'retry' } : null;
+        updateCurrentLearningStrip();
+      } catch {}
+    }
+
+    currentLearningAction?.addEventListener('click', () => {
+      if (!lessons.length) return;
+      lessonFrame.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      lessonFrame.focus({ preventScroll: true });
+    });
+
+    window.addEventListener('message', (event) => {
+      if (event.source !== lessonFrame.contentWindow) return;
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type === 'notes-changed') {
+        void refreshLatestLearningEvidence();
+        return;
+      }
+      if (event.data?.type !== 'lucubro:learning-evidence') return;
+      latestLearningEvidence = { type: event.data.outcome === 'passed' ? 'practice' : 'retry' };
+      updateCurrentLearningStrip({ announce: event.data.outcome === 'passed' });
+      void refreshLatestLearningEvidence();
+    });
+
+    const missionTitleNode = document.querySelector('.mission-title');
+    if (missionTitleNode) new MutationObserver(() => updateCurrentLearningStrip()).observe(missionTitleNode, { childList: true, characterData: true, subtree: true });
+    window.addEventListener('lucubro:localechange', () => updateCurrentLearningStrip());
 
     const generationEvidence = (status, complete = false) => {
       if (complete) return { determinate: true, value: 100, label: '已完成' };
@@ -925,6 +1037,8 @@
       if (progress) progress.textContent = `${i + 1} / ${lessons.length}`;
       renderList();
       updateInfo();
+      updateCurrentLearningStrip();
+      void refreshLatestLearningEvidence();
     }
 
     function syncCurrentLessonTitle() {
@@ -941,6 +1055,7 @@
         const itemTitle = item?.querySelector('span:last-child');
         if (itemTitle) itemTitle.textContent = cleanedTitle;
         renderLearningRecords();
+        updateCurrentLearningStrip();
       } catch {}
     }
 
@@ -975,9 +1090,12 @@
         .then((list) => {
           lessons = list;
           renderList();
+          updateCurrentLearningStrip();
           if (lessons.length && !loaded) {
             loaded = true;
             showLesson(0);
+          } else {
+            void refreshLatestLearningEvidence();
           }
         });
     }
@@ -1058,6 +1176,9 @@
         });
     }
 
+    updateCurrentLearningStrip();
+    refreshLatestLearningEvidence();
+
     // 学习地图：teach 工作区汇总（map.json）驱动；无则隐藏该 tab
     fetch(`/api/courses/${courseId}/map.json`)
       .then((r) => (r.ok ? r.json() : null))
@@ -1070,6 +1191,7 @@
         if (map.mission) {
           document.querySelector('.mission-title').textContent = map.mission.title;
           document.querySelector('.mission-copy').textContent = map.mission.copy;
+          updateCurrentLearningStrip();
           const lists = document.querySelectorAll('.mission-detail-list');
           const fill = (ul, items) => { if (ul && items && items.length) ul.innerHTML = items.map((i) => `<li>${escapeHtml(i)}</li>`).join(''); };
           fill(lists[0], map.mission.criteria);
@@ -1194,6 +1316,7 @@
         document.title = `${info.title} · Lucubro`;
         document.querySelector('.mission-title').textContent = `掌握《${info.title}》的核心内容与方法`;
         document.querySelector('.mission-copy').textContent = '课程已按你上传的材料和学习目标排好。可以从当前课节继续。';
+        updateCurrentLearningStrip();
         const chips = document.querySelectorAll('.mission-status .context-chip');
         if (chips[1]) chips[1].hidden = true; // “约 90 分钟”是演示数据
         updateInfo();

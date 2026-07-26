@@ -54,6 +54,18 @@
   --ds-motion-in: 260ms;
   --ds-motion-out: 180ms;
   --ds-motion-emphasis: 420ms;
+
+  /* Semantic motion aliases. Components name the user event, while these aliases
+     keep existing timings and reduced-motion behavior in one place. */
+  --ds-motion-control: var(--ds-motion-fast);
+  --ds-motion-dismiss: var(--ds-motion-out);
+  --ds-motion-reveal: var(--ds-motion-base);
+  --ds-motion-panel: var(--ds-motion-in);
+  --ds-motion-milestone: var(--ds-motion-emphasis);
+  --ds-motion-distance-sm: 4px;
+  --ds-motion-distance-md: 8px;
+  --ds-motion-scale-soft: .98;
+
   --ds-ease: cubic-bezier(.2, .8, .2, 1);
   --ds-ease-in: cubic-bezier(.4, 0, 1, 1);
   --ds-ease-out: cubic-bezier(.16, 1, .3, 1);
@@ -64,6 +76,24 @@
 
 [hidden] {
   display: none !important;
+}
+
+/* Static-first reveal: content is visible until JavaScript explicitly declares
+   the observer ready. This prevents hidden content when scripts fail. */
+[data-reveal] {
+  opacity: 1;
+  transform: none;
+}
+
+.motion-ready [data-reveal]:not(.is-visible) {
+  opacity: 0;
+  transform: translateY(var(--ds-motion-distance-md));
+}
+
+.motion-ready [data-reveal].is-visible {
+  transition:
+    opacity var(--ds-motion-reveal) var(--ds-ease-out),
+    transform var(--ds-motion-reveal) var(--ds-ease-out);
 }
 
 .lucubro-language-switcher {
@@ -107,9 +137,9 @@
 }
 
 .appbar-avatar {
-  width: 40px;
-  min-width: 40px;
-  height: 40px;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
   display: inline-grid;
   place-items: center;
   padding: 0;
@@ -251,6 +281,14 @@ select {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .motion-ready [data-reveal],
+  .motion-ready [data-reveal]:not(.is-visible),
+  .motion-ready [data-reveal].is-visible {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
   *,
   *::before,
   *::after {

@@ -119,3 +119,17 @@
   .ks-study-add { min-width: 54px; }
 }
 @media (prefers-reduced-motion: reduce) { .ks-study-surface { transition: none; } }
+
+
+@keyframes ksStudyPanelEnter {
+  from { opacity: 0; transform: translateY(var(--ds-motion-distance-md)) scale(var(--ds-motion-scale-soft)); }
+  to { opacity: 1; transform: none; }
+}
+
+.ks-study-surface {
+  animation: ksStudyPanelEnter var(--ds-motion-panel) var(--ds-ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ks-study-surface { animation: none !important; transform: none !important; }
+}

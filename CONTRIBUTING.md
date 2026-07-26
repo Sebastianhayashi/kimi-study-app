@@ -81,3 +81,30 @@ A PR should explain:
 - the changed files;
 - verification commands and results;
 - remaining limitations or blocked paths.
+
+## Ownership and evidence
+
+### README media owner
+
+The maintainer changing a visible product surface owns the matching files under `docs/media/readme/`. A visual change must declare its media impact in the pull request and either recapture all three locales or explain why the existing evidence remains accurate.
+
+Use the fixed fixture and manifest workflow:
+
+```bash
+node scripts/capture-readme-media.js
+node scripts/verify-readme-media.js
+node scripts/verify-readme-parity.js
+```
+
+Review en, zh-CN, and ja together. Do not add hand-painted product copy, private course data, or temporary capture files. Keep the route, fixture, viewport, theme, stable condition, dimensions, and byte budget in `docs/media/readme/manifest.json`.
+
+### Surface owners
+
+- UI and interaction: the maintainer changing the route or component also owns its Playwright journey and accessibility contract.
+- Generation state: changes require one canonical state owner, terminal-state recovery evidence, and generation journey tests.
+- Course data schema: changes require explicit maintainer approval, compatibility and rollback documentation, and fixture migration coverage.
+- README media: the UI change owner produces the synchronized three-locale evidence.
+
+### Dependency rhythm
+
+Dependency updates are reviewed deliberately, grouped by purpose, and validated through the full quality gates. The repository does not enable an update bot by default. A maintainer may add automation only through a separately approved governance change.

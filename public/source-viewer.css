@@ -14,8 +14,8 @@
   opacity: 0;
   transform: translateY(6px);
   transition:
-    opacity var(--ds-motion-out, 180ms) var(--ds-ease-in, ease-in),
-    transform var(--ds-motion-out, 180ms) var(--ds-ease-in, ease-in);
+    opacity var(--ds-motion-dismiss, 180ms) var(--ds-ease-in, ease-in),
+    transform var(--ds-motion-dismiss, 180ms) var(--ds-ease-in, ease-in);
 }
 .ks-source-toolbar,
 .ks-source-body,
@@ -28,8 +28,8 @@
   opacity: 1;
   transform: none;
   transition:
-    opacity var(--ds-motion-in, 260ms) var(--ds-ease-out, ease-out),
-    transform var(--ds-motion-in, 260ms) var(--ds-ease-out, ease-out);
+    opacity var(--ds-motion-panel, 260ms) var(--ds-ease-out, ease-out),
+    transform var(--ds-motion-panel, 260ms) var(--ds-ease-out, ease-out);
 }
 .is-source-viewer-active .lesson-frame { visibility: hidden; }
 .course-stage.is-source-split .lesson-frame {

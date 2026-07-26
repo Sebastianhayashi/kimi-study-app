@@ -1223,3 +1223,20 @@
     animation: none !important;
   }
 }
+
+
+@keyframes ksProductArtifactReveal {
+  from { opacity: .55; transform: translateY(var(--ds-motion-distance-sm)); }
+  to { opacity: 1; transform: none; }
+}
+
+.ks-generation-product.is-artifact-reveal .ks-generation-paper-stage-label {
+  animation: ksProductArtifactReveal var(--ds-motion-reveal) var(--ds-ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ks-generation-product.is-artifact-reveal .ks-generation-paper-stage-label {
+    animation: none !important;
+    transform: none !important;
+  }
+}

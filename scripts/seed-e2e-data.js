@@ -39,6 +39,17 @@ for (const entry of fs.readdirSync(source, { withFileTypes: true })) {
   fs.cpSync(path.join(source, entry.name), destination, { recursive: true, preserveTimestamps: true });
 }
 
+// Directory mtimes define the server's stable course order. Copy operations can
+// collapse them to the same timestamp on some filesystems, so fixtures pin an
+// explicit order instead of depending on host timing.
+const fixtureOrder = ['readycourse', 'notescourse', 'invalidassessment', 'generatingcourse', 'interruptedcourse', 'failedcourse', 'emptycourse'];
+fixtureOrder.forEach((id, index) => {
+  const directory = path.join(target, id);
+  if (!fs.existsSync(directory)) return;
+  const timestamp = new Date(Date.UTC(2026, 6, 21, 12, 0, fixtureOrder.length - index));
+  fs.utimesSync(directory, timestamp, timestamp);
+});
+
 const activeJob = path.join(target, 'generatingcourse', 'job.json');
 if (fs.existsSync(activeJob)) fs.utimesSync(activeJob, new Date(), new Date());
 const interruptedJob = path.join(target, 'interruptedcourse', 'job.json');

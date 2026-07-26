@@ -48,3 +48,17 @@
   .ks-curiosity-toggle,.ks-curiosity-body { font-size: 14px; }
   .ks-curiosity-option,.ks-curiosity-actions button { min-height: 44px; font-size: 13px; }
 }
+
+
+@keyframes ksCuriosityReveal {
+  from { opacity: 0; transform: translateY(var(--ds-motion-distance-sm)); }
+  to { opacity: 1; transform: none; }
+}
+
+.ks-curiosity-reveal:not([hidden]) {
+  animation: ksCuriosityReveal var(--ds-motion-reveal) var(--ds-ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ks-curiosity-reveal:not([hidden]) { animation: none !important; transform: none !important; }
+}

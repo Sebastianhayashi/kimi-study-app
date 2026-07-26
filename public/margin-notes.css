@@ -73,7 +73,7 @@
 .kn-content-reserved {
   box-sizing: border-box !important;
   padding-inline-end: calc(var(--kn-content-padding-end, 0px) + var(--kn-panel-reserve, 360px)) !important;
-  transition: padding-inline-end .24s var(--kn-ease);
+  transition: padding-inline-end var(--ds-motion-panel, 260ms) var(--kn-ease);
 }
 
 .kn-margin-layer {
@@ -99,7 +99,7 @@
   overflow: hidden;
   transform: translateX(0);
   opacity: 1;
-  transition: transform .24s var(--kn-ease), opacity .18s ease;
+  transition: transform var(--ds-motion-panel, 260ms) var(--kn-ease), opacity var(--ds-motion-dismiss, 180ms) ease;
 }
 
 .kn-margin-layer[data-mode^="margin-"] .kn-notes-panel,
@@ -439,7 +439,7 @@
   background: #fff;
   box-shadow: none;
   overflow: hidden;
-  animation: kn-panel-in .22s var(--kn-ease) both;
+  animation: kn-panel-in var(--ds-motion-reveal, 240ms) var(--kn-ease) both;
 }
 
 .kn-detail-head {

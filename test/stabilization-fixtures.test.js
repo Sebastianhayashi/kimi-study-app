@@ -44,4 +44,12 @@ test('fixture seeding writes only to an explicitly isolated data directory', () 
   assert.ok(fs.existsSync(path.join(dataDir, 'generatingcourse', 'job.json')));
   assert.ok(fs.statSync(path.join(dataDir, 'generatingcourse', 'job.json')).mtimeMs > Date.now() - 10_000);
   assert.ok(fs.statSync(path.join(dataDir, 'interruptedcourse', 'job.json')).mtimeMs < Date.now() - 60_000);
+  const courseDirectories = fs.readdirSync(dataDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => ({ id: entry.name, mtimeMs: fs.statSync(path.join(dataDir, entry.name)).mtimeMs }));
+  const readyCourse = courseDirectories.find((course) => course.id === 'readycourse');
+  const newestOtherCourse = Math.max(...courseDirectories
+    .filter((course) => course.id !== 'readycourse')
+    .map((course) => course.mtimeMs));
+  assert.ok(readyCourse.mtimeMs > newestOtherCourse, 'readycourse should deterministically own the continue-learning slot');
 });

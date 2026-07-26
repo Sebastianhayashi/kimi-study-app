@@ -34,3 +34,17 @@
   .ks-context-actions { min-height: 48px; max-width: calc(100vw - 16px); overflow-x: auto; }
   .ks-context-actions button { min-height: 40px; font-size: 14px; }
 }
+
+
+@keyframes ksContextActionsEnter {
+  from { opacity: 0; transform: translateY(var(--ds-motion-distance-sm)); }
+  to { opacity: 1; transform: none; }
+}
+
+.ks-context-actions:not([hidden]) {
+  animation: ksContextActionsEnter var(--ds-motion-control) var(--ds-ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ks-context-actions:not([hidden]) { animation: none !important; transform: none !important; }
+}

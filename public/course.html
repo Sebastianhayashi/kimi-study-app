@@ -1858,7 +1858,7 @@ svg { display: block; }
               <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
-          <button class="pill primary next-lesson-action" id="nextLessonButton" aria-label="生成下一课" title="生成下一课">
+          <button class="pill next-lesson-action" id="nextLessonButton" aria-label="生成下一课" title="生成下一课">
             <span class="next-lesson-label">下一课</span>
             <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>
           </button>
@@ -1870,8 +1870,25 @@ svg { display: block; }
           </button>
         </div>
       </div>
+      <section class="current-learning-strip" id="currentLearningStrip" role="status" aria-live="polite" aria-labelledby="currentLearningHeading">
+        <div class="current-learning-objective">
+          <p class="current-learning-label">Current objective</p>
+          <h2 id="currentLearningHeading">Continue from the current lesson</h2>
+        </div>
+        <dl class="current-learning-facts">
+          <div>
+            <dt>Latest evidence</dt>
+            <dd id="currentLearningEvidence">No practice or notes yet</dd>
+          </div>
+          <div>
+            <dt>Resume point</dt>
+            <dd id="currentLearningResume">Waiting for the first lesson</dd>
+          </div>
+        </dl>
+        <button class="current-learning-action" id="currentLearningAction" type="button" disabled>Continue current lesson</button>
+      </section>
       <div class="course-stage">
-        <iframe id="lessonFrame" class="lesson-frame" title="课程内容"></iframe>
+        <iframe id="lessonFrame" class="lesson-frame" title="课程内容" tabindex="0"></iframe>
       </div>
     </section>
 

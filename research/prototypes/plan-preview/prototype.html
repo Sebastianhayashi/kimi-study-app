@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Course plan preview</title>
+  <link rel="stylesheet" href="../../../public/design-system.css">
+  <style>
+    body { margin: 0; color: var(--ds-text); background: var(--ds-bg); }
+    .topbar { min-height: 64px; display: flex; align-items: center; gap: 16px; padding: 0 clamp(18px, 5vw, 72px); border-bottom: 1px solid var(--ds-border); background: var(--ds-surface); }
+    .topbar strong { font-size: 18px; }
+    main { width: min(1080px, calc(100% - 36px)); margin: 48px auto 80px; }
+    .intro { display: grid; grid-template-columns: 1fr minmax(250px, .42fr); gap: 24px; align-items: start; }
+    h1 { margin: 0; font-size: clamp(38px, 5vw, 64px); letter-spacing: -.055em; line-height: 1.02; }
+    .lede { max-width: 700px; color: var(--ds-text-secondary); font-size: 18px; line-height: 1.65; }
+    .boundary { padding: 18px; border: 1px solid var(--ds-border); border-radius: var(--ds-radius-card); background: var(--ds-surface); color: var(--ds-text-secondary); line-height: 1.55; }
+    .context-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 32px; }
+    .context-card, .lesson-card { padding: 20px; border: 1px solid var(--ds-border); border-radius: var(--ds-radius-card); background: var(--ds-surface); }
+    .context-card h2, .lesson-card h2 { margin: 0 0 8px; font-size: 17px; }
+    .context-card p { margin: 0; color: var(--ds-text-secondary); line-height: 1.6; }
+    .plan-head { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin: 42px 0 16px; }
+    .plan-head h2 { margin: 0; font-size: 28px; }
+    .lesson-list { display: grid; gap: 14px; }
+    .lesson-card { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 16px; }
+    .lesson-index { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; color: var(--ds-brand-ink); background: var(--ds-brand-soft); font-weight: 760; }
+    .lesson-card dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 16px 0 0; }
+    .lesson-card dt { color: var(--ds-text-muted); font-size: 11px; font-weight: 720; text-transform: uppercase; }
+    .lesson-card dd { margin: 5px 0 0; color: var(--ds-text-secondary); line-height: 1.5; }
+    @media (max-width: 760px) { .intro, .context-grid { grid-template-columns: 1fr; } .lesson-card dl { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <strong>Lucubro</strong>
+    <span>Read-only experiment</span>
+  </header>
+  <main>
+    <div class="intro">
+      <div>
+        <p>Course plan preview</p>
+        <h1>Check the learning path before full generation</h1>
+        <p class="lede">This preview uses an existing source digest and confirmed Teach Mission to expose lesson structure, source coverage, and planned practice.</p>
+      </div>
+      <aside class="boundary" role="note">This preview does not start generation or save changes.</aside>
+    </div>
+    <section class="context-grid" aria-label="Plan inputs">
+      <article class="context-card"><h2>Source understanding</h2><p id="sourceDigest"></p></article>
+      <article class="context-card"><h2>Teach Mission</h2><p id="teachMission"></p></article>
+    </section>
+    <div class="plan-head"><div><p>Planned lessons</p><h2>What the course will ask you to do</h2></div></div>
+    <section class="lesson-list" id="lessonList" aria-live="polite"></section>
+  </main>
+  <script src="../../../public/i18n.js"></script>
+  <script src="plan-preview-data.js"></script>
+  <script src="plan-preview.js"></script>
+</body>
+</html>

@@ -4,6 +4,37 @@
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const root = document.documentElement;
   let lenis = null;
+  let revealObserver = null;
+
+  function revealEverything() {
+    document.querySelectorAll('[data-reveal]').forEach((node) => node.classList.add('is-visible'));
+  }
+
+  function destroyRevealObserver() {
+    revealObserver?.disconnect();
+    revealObserver = null;
+    root.classList.remove('motion-ready');
+  }
+
+  function configureReveal() {
+    destroyRevealObserver();
+    if (reducedMotion.matches || typeof window.IntersectionObserver !== 'function') {
+      revealEverything();
+      return;
+    }
+
+    const targets = [...document.querySelectorAll('[data-reveal]')];
+    if (!targets.length) return;
+    root.classList.add('motion-ready');
+    revealObserver = new IntersectionObserver((entries, observer) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    targets.forEach((target) => revealObserver.observe(target));
+  }
 
   function destroyLenis() {
     if (!lenis) return;
@@ -36,11 +67,19 @@
     window.__lucubroLandingLenis = lenis;
   }
 
-  configureScroll();
-  window.addEventListener('pagehide', destroyLenis, { once: true });
+  function configureMotion() {
+    configureScroll();
+    configureReveal();
+  }
+
+  configureMotion();
+  window.addEventListener('pagehide', () => {
+    destroyLenis();
+    destroyRevealObserver();
+  }, { once: true });
   if (typeof reducedMotion.addEventListener === 'function') {
-    reducedMotion.addEventListener('change', configureScroll);
+    reducedMotion.addEventListener('change', configureMotion);
   } else {
-    reducedMotion.addListener(configureScroll);
+    reducedMotion.addListener(configureMotion);
   }
 })();

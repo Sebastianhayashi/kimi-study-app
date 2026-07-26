@@ -161,3 +161,7 @@ Return:
 - repository metadata changes;
 - whether the social preview still requires a manual UI action;
 - a short list of follow-up work, without silently implementing unrelated product changes.
+
+## README media and release evidence
+
+Before publishing a visual release, run the governed capture and verification commands in `docs/media/readme/README.md`. The pull request and release notes must state the tested browser scope and link the CI run plus Playwright artifact. Check GitHub About, topics, homepage, social preview, and the README outcome promise against `docs/RELEASE.md`.

@@ -1,124 +1,113 @@
 <div align="center">
-
-<img src="public/assets/brand/lucubro-mark.svg" width="72" height="72" alt="Lucubro">
+  <img src="public/assets/brand/lucubro-mark.svg" width="68" height="68" alt="Lucubro">
 
 # Lucubro
 
-**手元の教材を、今やるべきことに沿ったコースへ。**
+**手元の教材を、達成したいことに沿ったコースへ変えます。**
 
-[English](README.md) · [简体中文](README.zh-CN.md) · [ローカルで実行](#lucubro-を実行) · [プロダクトモデル](docs/PRODUCT.md)
+[English](README.md) · [简体中文](README.zh-CN.md)<br>
+[サンプルを試す](#サンプルを試す)
 
+[![CI](https://github.com/Sebastianhayashi/lucubro/actions/workflows/ci.yml/badge.svg)](https://github.com/Sebastianhayashi/lucubro/actions/workflows/ci.yml)
+[![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933?logo=nodedotjs&logoColor=white)](package.json)
+[![License](https://img.shields.io/badge/license-ISC-blue)](LICENSE)
 </div>
 
-![Lucubro 学習ワークスペース](public/assets/product/hero-showcase.webp)
+<!-- section:hero -->
 
-## 実際に達成したいことから始める
+![Lucubro 学習ワークスペース](docs/media/readme/ja/hero-workspace.webp)
 
-Lucubro は、本、教科書、記事、過去問、自分の文書を学習ワークスペースに変えます。最初に達成したいことを決めると、教材を目標、学習経路、インタラクティブなレッスン、練習、ノート、原文に基づくサポートへ整理します。
+Lucubro は書籍、教科書、記事、過去問、自分の文書をローカルな学習ワークスペースに変えます。先に達成したい成果を決めると、教材を Teach Mission、コース経路、対話的なレッスン、練習、ノート、原文に基づく支援、継続できる学習記録へ整理します。
 
-二つの学習モードを想定しています。
+<!-- section:journey -->
 
-- **学習と試験対策。** 教科書、問題用紙、練習問題、課題を追加します。「理解した」という自己申告だけでなく、実際の回答や練習結果を重視します。
-- **現実の課題を解決。** 文章、プレゼン、仕事上の課題、進行中のプロジェクトに関係する本や記事を追加し、読むことを使える成果へつなげます。
+## 90 秒で分かる学習の流れ
 
-どちらも同じループで進みます。
+![教材から学習ワークスペースまで](docs/media/readme/ja/journey-storyboard.webp)
+
+1. EPUB、PDF、Markdown、テキストをアップロードします。
+2. 教材を使って何を達成したいか確認します。
+3. 最初のレッスンを開き、実際の練習に取り組みます。
+4. ノート、原文、フィードバック、正確な再開位置を一つの場所に残します。
+
+基本のループは次の通りです。
 
 ```text
 課題 → 教材 → 行動 → 証拠 → 調整
 ```
 
-## できること
+<!-- section:difference -->
 
-- EPUB、PDF、Markdown、テキストをアップロード。
-- コース作成前に利用場面と成果を決める。
-- レッスンを読み、理解確認、ヒント、再試行、応用練習に取り組む。
-- レッスンの横で原文を開く。
-- 文章を選択し、位置に結びついたノートを書く、または Lucubro の回答を保存する。
-- 全コースのノートを一つのノートブックで確認し、元のレッスンへ戻る。
-- GitHub のコントリビューショングラフのような表示で、日々のレッスン、ノート、練習を確認する。
-- 現在のレッスンと原文を添えて Lucubro に質問する。
-- コース、ノート、学習履歴を保ったまま次のレッスンへ進む。
+## Lucubro の違い
 
-![『アイデアのちから』から作成した実際のコース](public/assets/product/course-workspace.webp)
+Lucubro は空のチャット画面ではなく、学習ワークスペースです。左に目標と目次、中央に現在のレッスンと練習、右に教材に基づく支援を置きます。現在の学習ストリップは、目標、一つの次の行動、最新の証拠、正確な再開位置だけを示し、二つ目の進捗モデルを作りません。
 
-## チャットではなく、学習のためのワークスペース
+<!-- section:sample -->
 
-- **左のコースナビゲーション**：現在のレッスン、進捗、目次、目標、計画。
-- **中央のレッスン**：読むことと練習の中心。
-- **右の Lucubro アシスタント**：現在のコースに基づく説明とフィードバック。
-- **文脈付きノート**：通常はコンパクトなサイドパネル、集中・全画面で余白が十分なときは margin notes、モバイルではボトムシート。
-- **原文リーダー**：単独表示と、レッスンとの並列表示。
-
-コースライブラリは前回の続きから再開します。ノートブックはコース横断で使えるため、ノートを見るために各コースを開く必要はありません。
-
-## 保存されるもの
-
-各コースは、原文、学習目標、学習計画、レッスン、評価、ノート、活動、アシスタントの文脈、生成状態を含むローカルワークスペースです。生成に失敗しても、アップロードした教材と確認済みの目標は保持されます。
-
-現在はレッスンの閲覧、ノート、練習の試行を記録します。修正した文章、解いた問題、プレゼン草稿、プロジェクト成果など、より豊かなユーザー artifacts は今後の方向性であり、まだ完全には実装されていません。
-
-## Lucubro を実行
-
-### 必要な環境
-
-- Node.js 22+
-- インストールおよび認証済みの [`kimi` CLI](https://github.com/MoonshotAI/kimi-cli)
-
-この CLI は現在のローカル生成ランタイムです。学習体験内の別ブランドではなく、実装上の依存関係です。
+## サンプルを試す
 
 ```bash
-kimi login
 git clone https://github.com/Sebastianhayashi/lucubro.git
 cd lucubro
-npm ci
-npm start
-```
-
-`http://localhost:3000` を開きます。
-
-### モデルを呼び出さずに試す
-
-```bash
 npm ci
 npm run demo:seed
 LUCUBRO_DATA_DIR=tests/.runtime/courses PORT=3107 npm start
 ```
 
-`http://localhost:3107/app` を開きます。デモデータは `data/courses` から分離されています。
+`http://localhost:3107/app?sample=1` を開きます。サンプルワークスペースは `data/courses` から分離され、モデル呼び出しは不要です。
 
-## 言語
+<!-- section:how -->
 
-インターフェースの既定言語は英語です。簡体字中国語と日本語も選択できます。コースと原文は、コース作成時に選んだ言語を保持します。
+## 仕組み
 
-## 現在の状態
+![Lucubro プロダクトフロー](docs/media/readme/ja/architecture.svg)
 
-Lucubro は実験的なオープンソース製品であり、本番 SaaS ではありません。
+Lucubro は教材構造を抽出し、Teach Mission を確認してから、検証済みのレッスンを一つずつ生成します。ノートと練習の試行は学習証拠として記録されます。生成に失敗しても、アップロード済み教材と確認済み目標は回復に使えます。
 
-- コース生成は非決定的で、公開前に構造検証と品質ゲートを通ります。
-- コースデータはローカルに保存され、モデルへのリクエストは設定済み CLI サービスを使用します。
-- 本番アカウント、複数ユーザー権限、決済、クラウドキュー、水平スケーリングは現在の対象外です。
-- PDF と EPUB は実ファイルで検証していますが、より広い互換性テストが必要です。
+詳しくは[プロダクト](docs/PRODUCT.md)、[ワークフロー](docs/WORKFLOW.md)、[アーキテクチャ](docs/ARCHITECTURE.md)を参照してください。
 
-テストは、ランディング、ライブラリ、コース作成、ready/generating/failed 状態、ノート、原文表示、モバイルドロワー、状態整合性を対象にしています。
+<!-- section:surfaces -->
+
+## プロダクト画面
+
+| 画面 | 確認できること |
+| --- | --- |
+| ![コースライブラリ](docs/media/readme/ja/library.webp) | 前回のコースとレッスンから正確に再開できます。 |
+| ![目標とコース文脈](docs/media/readme/ja/mission.webp) | コースが見える目標と教材に結び付いています。 |
+| ![レッスンと練習](docs/media/readme/ja/lesson-practice.webp) | 学習には行動と明確なフィードバックがあります。 |
+| ![ノートと原文](docs/media/readme/ja/notes-source.webp) | ノートと原資料を文脈の中で確認できます。 |
+
+<!-- section:limits -->
+
+## ローカルデータと現在の制約
+
+Lucubro は実験的なオープンソース製品で、ホスト型 SaaS ではありません。
+
+- コースデータは設定したデータディレクトリに保存されます。
+- 実際の生成には、インストールと認証を済ませた `kimi` CLI が必要です。
+- 本番アカウント、複数ユーザー権限、課金、クラウドキュー、水平スケーリングは現在の範囲外です。
+- 生成は非決定的で、構造検証、品質ゲート、ブラウザ旅程によって保護されています。
+- PDF と EPUB は、より広い実ファイル互換性マトリクスが必要です。
+
+導入評価の前に[制約](docs/LIMITATIONS.md)を確認してください。
+
+<!-- section:quality -->
+
+## アーキテクチャと品質
 
 ```bash
 npm run check
 npm test
-npm run fixtures:build
-LUCUBRO_DATA_DIR=tests/.runtime/courses npm run fixtures:seed -- --clean
-npm run test:e2e:ci
+npx playwright test
+npm run verify:readme
 ```
 
-詳細は [Product](docs/PRODUCT.md)、[Workflow](docs/WORKFLOW.md)、[Architecture](docs/ARCHITECTURE.md)、[Quality](docs/QUALITY.md)、[Limitations](docs/LIMITATIONS.md) を参照してください。
+Node 契約テストと Playwright 旅程は、ランディング、ライブラリ、コース作成、生成状態、学習ワークスペース、ノート、原文表示、モバイルドロワー、状態整合性、reduced motion、重要ルートのアクセシビリティを対象にします。[品質](docs/QUALITY.md)と[ベースライン](docs/BASELINE.md)も参照してください。
 
-## コントリビューション
+<!-- section:governance -->
 
-実際のファイル形式のフィクスチャ、アクセシビリティとモバイルの改善、学習証拠の実験、ノートと原文リーダーの回帰テスト、現実の目標に基づくユーザビリティ調査を歓迎します。
+## コントリビューション、セキュリティ、ライセンス
 
-[CONTRIBUTING.md](CONTRIBUTING.md) をお読みください。セキュリティ上の問題は [SECURITY.md](SECURITY.md) に従って報告してください。
+実際の教材 fixture、アクセシビリティとモバイル改善、学習証拠の実験、ノートと原文表示の回帰テスト、実際の成果に基づくユーザビリティ調査を歓迎します。
 
-## ライセンス
-
-コードは [ISC License](LICENSE) で提供されます。サードパーティ作品は [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) に記載しています。
-
-Lucubro は独立したオープンソースプロジェクトであり、Moonshot AI の公式製品ではありません。
+[コントリビューションガイド](CONTRIBUTING.md)と[セキュリティ](SECURITY.md)を確認してください。コードは [ISC License](LICENSE) です。第三者の成果物は [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) に記載しています。
