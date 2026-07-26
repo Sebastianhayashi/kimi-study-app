@@ -729,6 +729,7 @@
     let resourceTools = { reset() {} };
     let lessons = [];
     let current = 0;
+    let hasSpecificMission = false;
     // 课节真实标题（iframe <h1>）按 index 缓存，避免在任何界面露出文件名 slug。
     const lessonTitles = new Map();
     const nextButton = document.getElementById('nextLessonButton');
@@ -1189,13 +1190,25 @@
           return;
         }
         if (map.mission) {
+          hasSpecificMission = true;
           document.querySelector('.mission-title').textContent = map.mission.title;
           document.querySelector('.mission-copy').textContent = map.mission.copy;
           updateCurrentLearningStrip();
           const lists = document.querySelectorAll('.mission-detail-list');
           const fill = (ul, items) => { if (ul && items && items.length) ul.innerHTML = items.map((i) => `<li>${escapeHtml(i)}</li>`).join(''); };
-          fill(lists[0], map.mission.criteria);
+          const criteria = Array.isArray(map.mission.criteria) ? map.mission.criteria.filter(Boolean) : [];
+          const firstGroup = lists[0]?.closest('.mission-detail-group');
+          const firstLabel = firstGroup?.querySelector('.mission-detail-label');
+          if (firstLabel) firstLabel.textContent = 'Expected output';
+          if (lists[0] && criteria.length) {
+            const expected = `<li class="mission-expected-output">${escapeHtml(criteria[0])}</li>`;
+            const evidence = criteria.slice(1);
+            lists[0].innerHTML = expected + (evidence.length
+              ? `<li class="mission-evidence-heading" aria-hidden="true">Success evidence</li>${evidence.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}`
+              : '');
+          }
           fill(lists[1], map.mission.constraints);
+          window.LucubroI18n?.apply(firstGroup || document);
         }
         const stack = document.querySelector('#left-map .map-stack');
         const cards = stack.querySelectorAll(':scope > .teach-card');
@@ -1314,13 +1327,130 @@
       .then((info) => {
         document.querySelector('.course-name').textContent = info.title;
         document.title = `${info.title} · Lucubro`;
-        document.querySelector('.mission-title').textContent = `掌握《${info.title}》的核心内容与方法`;
-        document.querySelector('.mission-copy').textContent = '课程已按你上传的材料和学习目标排好。可以从当前课节继续。';
+        if (!hasSpecificMission) {
+          document.querySelector('.mission-title').textContent = `掌握《${info.title}》的核心内容与方法`;
+          document.querySelector('.mission-copy').textContent = '课程已按你上传的材料和学习目标排好。可以从当前课节继续。';
+        }
         updateCurrentLearningStrip();
         const chips = document.querySelectorAll('.mission-status .context-chip');
         if (chips[1]) chips[1].hidden = true; // “约 90 分钟”是演示数据
         updateInfo();
       });
+
+    let feedbackSheet = null;
+    let feedbackSheetResolve = null;
+    let feedbackFlowActive = false;
+    let feedbackInertState = [];
+    const feedbackText = (key) => window.LucubroI18n?.t(key) || key;
+
+    function restoreFeedbackInertState() {
+      feedbackInertState.forEach(({ node, inert }) => node.toggleAttribute('inert', inert));
+      feedbackInertState = [];
+    }
+
+    function closeLessonFeedbackSheet(result = null) {
+      if (!feedbackSheet) return;
+      const resolve = feedbackSheetResolve;
+      feedbackSheet.remove();
+      feedbackSheet = null;
+      feedbackSheetResolve = null;
+      document.body.classList.remove('lesson-feedback-open');
+      restoreFeedbackInertState();
+      requestAnimationFrame(() => nextButton?.focus({ preventScroll: true }));
+      resolve?.(result);
+    }
+
+    function openLessonFeedbackSheet() {
+      if (feedbackSheet) return Promise.resolve(null);
+      if (typeof closeMobileDrawers === 'function') closeMobileDrawers({ restoreFocus: false });
+      const coursePanel = document.getElementById('coursePanel');
+      if (!coursePanel) return Promise.resolve(null);
+
+      feedbackSheet = document.createElement('div');
+      feedbackSheet.className = 'lesson-feedback-layer';
+      feedbackSheet.innerHTML = `
+        <button class="lesson-feedback-scrim" type="button" aria-label="${feedbackText('Skip feedback and continue')}"></button>
+        <section class="lesson-feedback-sheet" role="dialog" aria-modal="true" aria-labelledby="lessonFeedbackTitle" aria-describedby="lessonFeedbackDescription">
+          <div class="lesson-feedback-copy">
+            <h2 id="lessonFeedbackTitle">${feedbackText('How should the next lesson adjust?')}</h2>
+            <p id="lessonFeedbackDescription">${feedbackText('Choose one signal. Feedback is optional and never blocks progress.')}</p>
+          </div>
+          <div class="lesson-feedback-options">
+            <button type="button" data-feedback-signal="aligned">${feedbackText('Fits my problem')}</button>
+            <button type="button" data-feedback-signal="skip_irrelevant">${feedbackText('Skip this direction')}</button>
+            <button type="button" data-feedback-signal="faster">${feedbackText('Move faster')}</button>
+            <button type="button" data-feedback-signal="deeper">${feedbackText('Go deeper')}</button>
+          </div>
+          <label class="lesson-feedback-detail">
+            <span>${feedbackText('Optional detail')}</span>
+            <textarea maxlength="500" rows="3" placeholder="${feedbackText('What should Lucubro keep or change?')}"></textarea>
+          </label>
+          <button class="lesson-feedback-skip" type="button">${feedbackText('Skip feedback and continue')}</button>
+        </section>`;
+
+      feedbackInertState = [...coursePanel.children]
+        .filter((node) => node !== feedbackSheet)
+        .map((node) => ({ node, inert: node.hasAttribute('inert') }));
+      feedbackInertState.forEach(({ node }) => node.setAttribute('inert', ''));
+      coursePanel.appendChild(feedbackSheet);
+      document.body.classList.add('lesson-feedback-open');
+      window.LucubroI18n?.apply(feedbackSheet);
+
+      feedbackSheet.querySelector('.lesson-feedback-scrim')?.addEventListener('click', () => closeLessonFeedbackSheet(null));
+      feedbackSheet.querySelector('.lesson-feedback-skip')?.addEventListener('click', () => closeLessonFeedbackSheet(null));
+      feedbackSheet.querySelectorAll('[data-feedback-signal]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const detail = feedbackSheet?.querySelector('textarea')?.value || '';
+          closeLessonFeedbackSheet({ signal: button.dataset.feedbackSignal, detail });
+        });
+      });
+      feedbackSheet.querySelector('.lesson-feedback-sheet')?.addEventListener('keydown', (event) => {
+        if (event.key !== 'Tab') return;
+        const focusable = [...feedbackSheet.querySelectorAll('button, textarea')].filter((node) => !node.disabled);
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      });
+      requestAnimationFrame(() => feedbackSheet?.querySelector('[data-feedback-signal]')?.focus());
+      return new Promise((resolve) => { feedbackSheetResolve = resolve; });
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || !feedbackSheet) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      closeLessonFeedbackSheet(null);
+    }, true);
+
+    async function collectLessonFeedbackBeforeNext() {
+      const lessonFile = lessons[current];
+      if (!lessonFile) return { saveFailed: false };
+      const feedback = await openLessonFeedbackSheet();
+      if (!feedback?.signal) return { saveFailed: false };
+      try {
+        const response = await fetch(`/api/courses/${encodeURIComponent(courseId)}/activity`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            type: 'lesson-feedback',
+            lessonFile,
+            signal: feedback.signal,
+            detail: String(feedback.detail || '').trim().slice(0, 500),
+          }),
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return { saveFailed: false };
+      } catch {
+        return { saveFailed: true };
+      }
+    }
 
     // 课节点击 / 下一课 / 返回：捕获阶段拦截原型的 toast
     document.addEventListener('click', (e) => {
@@ -1332,8 +1462,16 @@
         return;
       }
       if (e.target.closest('#nextLessonButton')) {
-        e.stopPropagation();
-        nextLesson();
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (feedbackFlowActive || nextButton?.disabled) return;
+        feedbackFlowActive = true;
+        collectLessonFeedbackBeforeNext()
+          .catch(() => ({ saveFailed: true }))
+          .then((result) => nextLesson({ feedbackSaveFailed: Boolean(result?.saveFailed) }))
+          .finally(() => {
+            feedbackFlowActive = false;
+          });
         return;
       }
       if (e.target.closest('#sendButton')) {
@@ -1348,7 +1486,7 @@
       }
     }, true);
 
-    function nextLesson() {
+    function nextLesson({ feedbackSaveFailed = false } = {}) {
       if (!nextButton || nextButton.disabled) return;
       const before = lessons.length;
       const restoreBtn = () => {
@@ -1374,7 +1512,9 @@
       };
       setGenerationChrome(startingStatus);
       generationPreview.hide({ immediate: true });
-      showToast('Lucubro 正在准备下一课，通常需要几分钟…');
+      showToast(feedbackSaveFailed
+        ? feedbackText('Feedback could not be saved. Continuing to the next lesson.')
+        : 'Lucubro 正在准备下一课，通常需要几分钟…');
       fetch(`/api/courses/${courseId}/lessons/next`, { method: 'POST' }).then(async (r) => {
         if (r.status === 409) {
           restoreBtn();

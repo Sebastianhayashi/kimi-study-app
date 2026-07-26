@@ -6,11 +6,13 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 const {
+  auditMissionSemantics,
   answerMissionPrompt,
   compileMissionDocument,
   initialMissionPrompt,
   isRepairableMissionError,
   materializeMissionDocument,
+  missionPresentationFromMarkdown,
   normalizeMissionSessionState,
   parseMissionTurn,
   promoteMissionSession,
@@ -38,6 +40,9 @@ test('standard mode invokes original teach, returns choices first, and excludes 
   assert.match(prompt, /3 到 5 个可直接选择的答案/);
   assert.match(prompt, /"options"/);
   assert.match(prompt, /successLooksLike/);
+  assert.match(prompt, /successLooksLike\[0\].*期望产出/);
+  assert.match(prompt, /successLooksLike\[1\.\.\].*成功证据/);
+  assert.match(prompt, /读完多少章|覆盖多少材料/);
   assert.doesNotMatch(prompt, /理解主要观点|应用到真实场景/);
   const answerPrompt = answerMissionPrompt('用户选择：改善团队决策');
   assert.match(answerPrompt, /继续原版 teach Skill/);
@@ -81,6 +86,11 @@ test('application code publishes the canonical upstream Mission format from stru
   assert.match(markdown, /^## Out of scope$/m);
   materializeMissionDocument(course, { status: 'ready', mission: missionSpec });
   assert.equal(fs.readFileSync(path.join(course, 'MISSION.md'), 'utf8'), markdown);
+  assert.deepEqual(missionPresentationFromMarkdown(markdown), {
+    problemStatement: missionSpec.why,
+    expectedOutput: missionSpec.successLooksLike[0],
+    successEvidence: missionSpec.successLooksLike.slice(1),
+  });
   validateMissionDocument(course);
   fs.rmSync(course, { recursive: true, force: true });
 });
@@ -101,7 +111,25 @@ test('repair prompt preserves the current Session and excludes course generation
   assert.match(prompt, /同一个问题/);
   assert.match(prompt, /"options"/);
   assert.equal(isRepairableMissionError({ code: 'INVALID_MISSION_DOCUMENT' }), true);
+  assert.equal(isRepairableMissionError({ code: 'MISSION_SEMANTIC_REPAIR_NEEDED' }), true);
   assert.equal(isRepairableMissionError({ code: 'MISSION_SESSION_MISSING' }), false);
+});
+
+test('Mission output contract requires one expected output plus success evidence', () => {
+  assert.throws(() => compileMissionDocument({
+    ...missionSpec,
+    successLooksLike: ['一项孤立目标'],
+  }), /期望产出.*成功证据/);
+
+  assert.deepEqual(auditMissionSemantics(missionSpec), []);
+  assert.match(auditMissionSemantics({
+    ...missionSpec,
+    successLooksLike: ['掌握核心内容', '感觉更有信心'],
+  }).join('\n'), /abstract|self-reported/);
+  assert.match(auditMissionSemantics({
+    ...missionSpec,
+    successLooksLike: ['读完全部章节', '写出一份可审阅的提纲'],
+  }).join('\n'), /coverage/);
 });
 
 test('validates upstream Mission format and promotes canonical Session', () => {

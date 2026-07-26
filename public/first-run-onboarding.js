@@ -11,6 +11,7 @@
   const POLL_MS = 1200;
   const MISSION_POLL_MS = 400;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const tr = (text) => window.LucubroI18n?.t?.(text) || text;
 
   const byId = (id) => document.getElementById(id);
   const stages = [...document.querySelectorAll('.stage')];
@@ -345,6 +346,38 @@
       summary.className = 'mission-summary';
       summary.textContent = mission.summary || '学习目标已经整理完成。';
       options.appendChild(summary);
+      const presentation = mission.presentation;
+      if (presentation?.expectedOutput && Array.isArray(presentation.successEvidence)) {
+        const presentationWrap = document.createElement('div');
+        presentationWrap.className = 'mission-presentation';
+        const appendSection = (labelText, content, className) => {
+          const section = document.createElement('section');
+          section.className = `mission-presentation-section ${className}`;
+          const label = document.createElement('div');
+          label.className = 'mission-presentation-label';
+          label.textContent = tr(labelText);
+          section.appendChild(label);
+          if (Array.isArray(content)) {
+            const list = document.createElement('ul');
+            for (const item of content) {
+              const row = document.createElement('li');
+              row.textContent = item;
+              list.appendChild(row);
+            }
+            section.appendChild(list);
+          } else {
+            const copy = document.createElement('p');
+            copy.textContent = content;
+            section.appendChild(copy);
+          }
+          presentationWrap.appendChild(section);
+        };
+        appendSection('Expected output', presentation.expectedOutput, 'is-output');
+        appendSection('Success evidence', presentation.successEvidence, 'is-evidence');
+        appendSection('Problem statement', presentation.problemStatement, 'is-problem');
+        options.appendChild(presentationWrap);
+        window.LucubroI18n?.apply?.(presentationWrap);
+      }
       missionNext.textContent = '确认并创建课程';
       missionNext.disabled = false;
     } else if (mission.status === 'failed') {

@@ -31,6 +31,7 @@ function validSpec(base = '0002-two') {
     claims: [{
       id: 'claim-2',
       label: '能应用第二课原则',
+      description: '帮助用户修订真实方案中的关键判断，并形成可提交的说明。',
       sourceRefs: ['source:book#2'],
       mastery: { requiredPassed: 2, requiredStages: ['independent', 'transfer'] },
     }],
@@ -60,7 +61,7 @@ function validSpec(base = '0002-two') {
       type: 'short-answer',
       claimId: 'claim-2',
       stage: 'transfer',
-      prompt: '把第二课原则应用到一个正文没有直接出现的新场景，并解释理由。',
+      prompt: '修订你的真实方案片段，形成下一步可用的结构，并解释理由。',
       scoring: { mode: 'completion', minimumLength: 40 },
       feedback: { correct: '已记录', incorrect: '请补充具体场景、应用方式和理由。' },
       hints: [{ content: '说明限制、动作空间和预期结果之间的关系。' }],
@@ -81,6 +82,51 @@ test('accepts one matched lesson and assessment with exact activity mounts', () 
   const result = validateNextLessonDelta(dir, baseline);
   assert.equal(result.ok, true, result.errors.join('\n'));
   assert.equal(result.newLesson, '0002-two.html');
+  assert.equal(result.published.axes.sourceGrounding.status, 'pass');
+  assert.equal(result.published.axes.missionOutputAlignment.status, 'pass');
+});
+
+test('reports source grounding and Mission alignment as separate axes', () => {
+  const dir = root();
+  const html = '<html><body><div data-kimi-activity="hinge-2"></div><div data-kimi-activity="transfer-2"></div></body></html>';
+  const missionWeak = validSpec();
+  missionWeak.claims[0].description = missionWeak.claims[0].label;
+  missionWeak.activities[1].prompt = '把概念用到一个新情境，并写满要求字数。';
+  writePair(dir, html, missionWeak);
+  const result = validatePublishedLesson(dir, '0002-two.html');
+  assert.equal(result.ok, true, result.errors.join('\n'));
+  assert.equal(result.axes.sourceGrounding.status, 'pass');
+  assert.equal(result.axes.missionOutputAlignment.status, 'warning');
+  assert.match(result.axes.missionOutputAlignment.warnings.join('\n'), /axis-b/);
+
+  const sourceWeak = validSpec();
+  sourceWeak.claims[0].sourceRefs = [];
+  sourceWeak.activities.forEach((activity) => { activity.sourceRefs = []; });
+  writePair(dir, html, sourceWeak);
+  const sourceResult = validatePublishedLesson(dir, '0002-two.html');
+  assert.equal(sourceResult.ok, false);
+  assert.match(sourceResult.errors.join('\n'), /sourceRefs is required/);
+  assert.equal(sourceResult.axes.sourceGrounding.status, 'warning');
+  assert.equal(sourceResult.axes.missionOutputAlignment.status, 'pass');
+});
+
+test('skip feedback repetition is observable but does not block publication', () => {
+  const dir = root();
+  fs.writeFileSync(path.join(dir, 'assessments', '0001-one.json'), JSON.stringify({
+    claims: [{ id: 'claim-old', label: '能应用第二课原则', sourceRefs: ['source:book#2'] }],
+    activities: [],
+  }));
+  fs.writeFileSync(path.join(dir, 'learning-activity.json'), JSON.stringify([{
+    id: 'feedback-1',
+    type: 'lesson-feedback',
+    lessonFile: '0001-one.html',
+    signal: 'skip_irrelevant',
+    timestamp: 100,
+  }]));
+  writePair(dir, '<html><body><div data-kimi-activity="hinge-2"></div><div data-kimi-activity="transfer-2"></div></body></html>');
+  const result = validatePublishedLesson(dir, '0002-two.html');
+  assert.equal(result.ok, true, result.errors.join('\n'));
+  assert.match(result.warnings.join('\n'), /skip_irrelevant.*same claim or source neighborhood/);
 });
 
 test('rejects missing and orphan activity mounts', () => {

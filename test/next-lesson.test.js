@@ -24,11 +24,11 @@ function fixtureCourse() {
   fs.mkdirSync(path.join(root, 'lessons'));
   fs.mkdirSync(path.join(root, 'assessments'));
   fs.mkdirSync(path.join(root, 'learning-progress'));
-  fs.writeFileSync(path.join(root, 'MISSION.md'), '# Mission\n应用到真实场景');
+  fs.writeFileSync(path.join(root, 'MISSION.md'), '# Mission: 完成一份增长实验复盘\n\n## Why\n当前复盘缺少可验证的因果判断。\n\n## Success looks like\n- 写出一份可提交的增长实验复盘\n- 关键结论能区分相关与因果\n\n## Constraints\n- 每课 20 分钟\n\n## Out of scope\n- 不重写全部历史数据\n');
   fs.writeFileSync(path.join(root, 'map.json'), '{"path":["第一课"]}');
   fs.writeFileSync(path.join(root, 'lessons', '0001-intro.html'), '<html>one</html>');
   fs.writeFileSync(path.join(root, 'assessments', '0001-intro.json'), JSON.stringify({
-    claims: [{ id: 'claim-1', label: '已掌握目标' }],
+    claims: [{ id: 'claim-1', label: '已掌握目标', sourceRefs: ['source:book#intro'] }],
     activities: [],
   }));
   fs.writeFileSync(path.join(root, 'learning-progress', '0001-intro.json'), JSON.stringify({
@@ -39,6 +39,14 @@ function fixtureCourse() {
     section: '案例',
     custom: '后续例子优先结合我的增长实验',
     updatedAt: 2,
+  }]));
+  fs.writeFileSync(path.join(root, 'learning-activity.json'), JSON.stringify([{
+    id: 'feedback-1',
+    type: 'lesson-feedback',
+    lessonFile: '0001-intro.html',
+    signal: 'skip_irrelevant',
+    detail: '这个方向不能帮助我完成增长实验复盘',
+    timestamp: 100,
   }]));
   return root;
 }
@@ -68,6 +76,21 @@ test('builds a strict incremental prompt with learner context and no course-leve
   assert.match(prompt, /不得更新 map\.json/);
   assert.match(prompt, /增长实验/);
   assert.match(prompt, /避免重复已掌握内容/);
+  assert.match(prompt, /skip_irrelevant/);
+  assert.match(prompt, /不代表已掌握/);
+  assert.match(prompt, /faster 不得删除 transfer/);
+  assert.match(prompt, /deeper 不得堆叠多个 claim/);
+  const priorities = [
+    '1. 对 MISSION.md 中期望产出与成功证据的边际贡献',
+    '2. 最近一条显性 lesson-feedback 的相关性或节奏约束',
+    '3. weak/mastered/misconception/notes 等学习证据',
+    '4. sourceRefs 对当前 claim 的真实材料支持',
+    '5. 已有课节覆盖只用于避免重复',
+  ].map((text) => prompt.indexOf(text));
+  assert.equal(priorities.every((index) => index >= 0), true, prompt);
+  assert.deepEqual(priorities, priorities.slice().sort((a, b) => a - b));
+  assert.match(prompt, /claim\.description 必须说明/);
+  assert.match(prompt, /minimumLength.*不是质量或成功证据/);
   assert.match(prompt, /generator session 的首次任务/);
   assert.match(prompt, /不要顺序扫描整本材料/);
   assert.match(prompt, /正文目标 900—1400 个中文字符/);

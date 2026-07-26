@@ -7,6 +7,7 @@ const os = require('os');
 const path = require('path');
 const {
   MAX_CONTEXT_CHARS,
+  recentLessonFeedback,
   buildTutorContext,
   buildTutorPrompt,
   withHumanizerSkill,
@@ -34,8 +35,8 @@ function fixtureCourse() {
   }]));
   fs.writeFileSync(path.join(root, 'assessments', '0001-example.json'), JSON.stringify({
     claims: [
-      { id: 'claim-mastered', label: '能解释相关与因果的区别' },
-      { id: 'claim-weak', label: '能识别混杂变量' },
+      { id: 'claim-mastered', label: '能解释相关与因果的区别', sourceRefs: ['source:book#confounders'] },
+      { id: 'claim-weak', label: '能识别混杂变量', sourceRefs: ['source:book#confounders'] },
     ],
     activities: [{
       id: 'q-weak',
@@ -59,6 +60,11 @@ function fixtureCourse() {
       submittedAt: '2026-07-21T00:00:00.000Z',
     }],
   }));
+  fs.writeFileSync(path.join(root, 'learning-activity.json'), JSON.stringify([
+    { id: 'open', type: 'lesson-opened', lessonFile: '0001-example.html', timestamp: 1 },
+    { id: 'old', type: 'lesson-feedback', lessonFile: '0001-example.html', signal: 'aligned', detail: '旧选择', timestamp: 10 },
+    { id: 'latest', type: 'lesson-feedback', lessonFile: '0001-example.html', signal: 'deeper', detail: '需要更严格的边界条件', timestamp: 20 },
+  ]));
   return root;
 }
 
@@ -76,9 +82,35 @@ test('builds a compact tutor context from mission, notes, mastery, and misconcep
   assert.match(context, /能识别混杂变量/);
   assert.match(context, /把结果变量当成了混杂变量/);
   assert.match(context, /增长实验/);
+  assert.match(context, /最近课节反馈/);
+  assert.match(context, /deeper/);
+  assert.match(context, /需要更严格的边界条件/);
+  assert.match(context, /source:book#confounders/);
+  assert.equal(context.includes('旧选择'), false);
   assert.match(context, /观察到同时变化/);
   assert.equal(context.includes('secret-answer'), false);
   assert.ok(context.length <= MAX_CONTEXT_CHARS);
+});
+
+test('feedback projection is latest-wins, bounded, and excludes answer keys', () => {
+  const root = fixtureCourse();
+  const events = JSON.parse(fs.readFileSync(path.join(root, 'learning-activity.json'), 'utf8'));
+  for (let index = 2; index <= 8; index += 1) {
+    const lessonFile = `${String(index).padStart(4, '0')}-example.html`;
+    fs.writeFileSync(path.join(root, 'assessments', lessonFile.replace(/\.html$/, '.json')), JSON.stringify({
+      claims: [{ id: `claim-${index}`, label: `能力 ${index}`, sourceRefs: [`source:book#${index}`] }],
+      activities: [{ correctOptionId: `secret-${index}`, sourceRefs: [`source:book#${index}`] }],
+    }));
+    events.push({ id: `feedback-${index}`, type: 'lesson-feedback', lessonFile, signal: index % 2 ? 'faster' : 'aligned', detail: 'x'.repeat(400), timestamp: 20 + index });
+  }
+  fs.writeFileSync(path.join(root, 'learning-activity.json'), JSON.stringify(events));
+
+  const projection = recentLessonFeedback(root);
+  assert.equal(projection.length, 5);
+  assert.equal(projection[0].lessonFile, '0008-example.html');
+  assert.equal(projection.some((item) => item.lessonFile === '0001-example.html'), false);
+  assert.equal(projection.every((item) => item.detail.length <= 240), true);
+  assert.equal(JSON.stringify(projection).includes('secret-'), false);
 });
 
 test('uses the uploaded humanizer skill only for tutor session bootstrap', () => {

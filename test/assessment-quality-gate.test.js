@@ -7,6 +7,8 @@ function assessment(overrides = {}) {
   return {
     claims: [{
       id: 'claim-1',
+      label: '能诊断关键限制',
+      description: '帮助用户修订方案中的关键判断，并形成可提交的决策说明。',
       mastery: { requiredPassed: 2, requiredStages: ['independent', 'transfer'] },
     }],
     activities: [
@@ -23,7 +25,7 @@ function assessment(overrides = {}) {
           { id: 'reward' }, { id: 'no-rules' }, { id: 'mood' },
         ],
       },
-      { id: 'transfer-1', claimId: 'claim-1', type: 'short-answer', stage: 'transfer', scoring: { mode: 'completion', minimumLength: 40 } },
+      { id: 'transfer-1', claimId: 'claim-1', type: 'short-answer', stage: 'transfer', prompt: '修订你的方案片段并解释关键判断。', scoring: { mode: 'completion', minimumLength: 40 } },
     ],
     ...overrides,
   };
@@ -91,4 +93,33 @@ test('claim mastery must require both independent and transfer evidence', () => 
   assert.equal(result.ok, false);
   assert.match(result.blockers.join('\n'), /require transfer evidence/);
   assert.match(result.blockers.join('\n'), /requiredPassed must be at least 2/);
+});
+
+test('Mission alignment checks are warnings and never semantic blockers', () => {
+  const spec = assessment();
+  spec.claims[0].description = spec.claims[0].label;
+  spec.activities[1].prompt = '把概念用到一个新情境，并写满要求字数。';
+  const result = auditAssessmentQuality(spec);
+  assert.equal(result.ok, true, result.blockers.join('\n'));
+  assert.match(result.warnings.join('\n'), /claim\.description only repeats/);
+  assert.match(result.warnings.join('\n'), /transfer does not visibly advance/);
+});
+
+test('feedback response checks remain observable warnings', () => {
+  const faster = auditAssessmentQuality(assessment(), { latestFeedback: { signal: 'faster' }, curiosityPresent: true });
+  assert.equal(faster.ok, true);
+  assert.match(faster.warnings.join('\n'), /faster feedback/);
+
+  const deeperSpec = assessment();
+  deeperSpec.activities[1].prompt = '修订你的方案片段并解释判断。';
+  const deeper = auditAssessmentQuality(deeperSpec, { latestFeedback: { signal: 'deeper' } });
+  assert.equal(deeper.ok, true);
+  assert.match(deeper.warnings.join('\n'), /deeper transfer stricter/);
+
+  const skipped = auditAssessmentQuality(assessment(), {
+    latestFeedback: { signal: 'skip_irrelevant' },
+    repeatsSkippedNeighborhood: true,
+  });
+  assert.equal(skipped.ok, true);
+  assert.match(skipped.warnings.join('\n'), /same claim or source neighborhood/);
 });

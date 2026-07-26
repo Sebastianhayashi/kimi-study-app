@@ -28,6 +28,7 @@ const {
 } = require('./lib/next-lesson');
 const {
   cleanupNextLessonDelta,
+  validatePublishedLesson,
   validateNextLessonDelta,
 } = require('./lib/lesson-publish-validator');
 const { normalizeLessonSpecShape, validateLessonSpec, scoreActivity, computeClaimProgress, toPublicLessonSpec } = require('./lib/activity-engine');
@@ -52,10 +53,12 @@ const {
   studySurfaceByteLength,
 } = require('./lib/study-surface-state');
 const {
+  auditMissionSemantics,
   answerMissionPrompt,
   initialMissionPrompt,
   isRepairableMissionError,
   materializeMissionDocument,
+  readMissionPresentation,
   parseMissionTurn,
   promoteMissionSession,
   readMissionSessionState,
@@ -106,6 +109,9 @@ const ASSESSMENT_INSTRUCTION =
   `\n\n互动教学要求：MISSION.md 是用户学习意图的权威来源；若已存在且已填写，不要重复 Mission 问答。` +
   `按 skills/teach/ASSESSMENT-DESIGN.md 执行：分析材料单元，生成 learning claims、evidence requirements、` +
   `assessment blueprint、misconceptions、answer-first question candidates 和 quality report。` +
+  `第一课与后续课使用同一发布合同：每课恰好 1 个 claim 和 2 个 activities，分别为 independent 单选 hinge 与 transfer short-answer。` +
+  `claim.description 必须说明该能力如何推进 MISSION.md 的期望产出或成功证据。transfer 必须直接形成、修订、判断或演练期望产出的一部分。` +
+  `short-answer minimumLength 至少 40，但它只表示输入完整性下限，不是质量或成功证据。` +
   `为生成的 lessons/NNNN-name.html 同时写 assessments/NNNN-name.json，并在 HTML 中放置对应的 ` +
   '`<div data-kimi-activity="activity-id"></div>`。' +
   `普通选择、填空、排序题必须可确定性评分；答案和评分键只能放在 assessments/，不要写入 HTML。`;
@@ -319,6 +325,18 @@ function launchStandardMissionTurn(id, { answer = null, retry = false } = {}) {
     try {
       const turn = parseMissionTurn(result.text);
       if (turn.status === 'question') return markMissionQuestion(courseDir, turn);
+      const semanticWarnings = turn.mission ? auditMissionSemantics(turn.mission) : [];
+      if (allowRepair && semanticWarnings.length) {
+        throw new OnboardingError(
+          'MISSION_SEMANTIC_REPAIR_NEEDED',
+          '学习目标需要补充可检查的期望产出与成功证据',
+          502,
+          semanticWarnings,
+        );
+      }
+      if (semanticWarnings.length) {
+        console.log(`[mission ${id}] semantic warning after one repair: ${semanticWarnings.join('; ')}`);
+      }
       materializeMissionDocument(courseDir, turn);
       return markMissionReady(courseDir, turn);
     } catch (error) {
@@ -362,6 +380,7 @@ function runKimi(id, prompt, {
 
   const runId = crypto.randomUUID();
   const isNextLesson = kind === 'next-lesson';
+  const firstRunLessons = isNextLesson ? [] : lessonsOf(id);
   const operationKind = isNextLesson ? 'next-lesson' : 'first-course';
   const stage = lessonsOf(id).length ? 'generating' : 'understanding';
   const startedAt = new Date().toISOString();
@@ -475,9 +494,23 @@ function runKimi(id, prompt, {
       if (!validation.ok) {
         throw new Error(`新增课节未通过发布验证：${validation.errors.join('；')}`);
       }
+      if (validation.published?.warnings?.length) {
+        console.warn(`[lesson-publish] ${id}/${validation.newLesson}: ${validation.published.warnings.join('；')}`);
+      }
       newLesson = validation.newLesson;
     } else if (!lessonsOf(id).length) {
       throw new Error('Kimi finished without generating a lesson');
+    } else {
+      const currentLessons = lessonsOf(id);
+      const firstLesson = currentLessons.find((name) => !firstRunLessons.includes(name)) || currentLessons[0];
+      const validation = validatePublishedLesson(dirOf(id), firstLesson);
+      if (!validation.ok) {
+        throw new Error(`第一课未通过发布验证：${validation.errors.join('；')}`);
+      }
+      if (validation.warnings?.length) {
+        console.warn(`[lesson-publish] ${id}/${firstLesson}: ${validation.warnings.join('；')}`);
+      }
+      newLesson = firstLesson;
     }
 
     if (isNextLesson) clearNextLessonTransaction(dirOf(id));
@@ -644,9 +677,14 @@ function reconcileCourseOnboarding(id) {
 function onboardingSnapshot(id, record = reconcileCourseOnboarding(id)) {
   const job = readJob(id);
   const stage = onboardingGenerationStage(record, job.stage);
+  const onboarding = publicOnboarding(record);
+  if (onboarding?.mission && ['ready', 'confirmed'].includes(onboarding.mission.status)) {
+    const presentation = readMissionPresentation(dirOf(id));
+    if (presentation) onboarding.mission.presentation = presentation;
+  }
   return {
     id,
-    onboarding: publicOnboarding(record),
+    onboarding,
     generation: {
       stage,
       runId: stage === 'idle' ? null : job.runId || null,
@@ -1302,11 +1340,30 @@ app.post('/api/courses/:id/activity', (req, res) => {
   const id = req.params.id;
   if (!validId(id) || !fs.existsSync(dirOf(id))) return res.status(404).json({ error: 'course not found' });
   const type = String(req.body && req.body.type || '').trim();
-  if (!['lesson-opened'].includes(type)) return res.status(400).json({ error: 'invalid activity type' });
+  if (!['lesson-opened', 'lesson-feedback'].includes(type)) return res.status(400).json({ error: 'invalid activity type' });
   const lessonFile = safeLesson(id, req.body && req.body.lessonFile);
   if (!lessonFile) return res.status(400).json({ error: 'invalid lesson' });
   const now = Date.now();
   const events = readCourseActivity(id);
+  if (type === 'lesson-feedback') {
+    const signal = String(req.body && req.body.signal || '').trim();
+    if (!['aligned', 'skip_irrelevant', 'faster', 'deeper'].includes(signal)) {
+      return res.status(400).json({ error: 'invalid feedback signal' });
+    }
+    const detail = String(req.body && req.body.detail || '').trim();
+    if (detail.length > 500) return res.status(400).json({ error: 'feedback detail too long' });
+    const event = {
+      id: crypto.randomUUID(),
+      type,
+      lessonFile,
+      signal,
+      ...(detail ? { detail } : {}),
+      timestamp: now,
+    };
+    events.push(event);
+    writeJsonAtomic(courseActivityFile(id), events.slice(-1000));
+    return res.json({ ok: true, event });
+  }
   const recent = events[events.length - 1];
   if (!recent || recent.type !== type || recent.lessonFile !== lessonFile || now - Number(recent.timestamp || 0) > 30 * 60 * 1000) {
     events.push({ id: crypto.randomUUID(), type, lessonFile, timestamp: now });
