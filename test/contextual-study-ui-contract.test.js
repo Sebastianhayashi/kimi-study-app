@@ -30,6 +30,16 @@ test('right Tutor is preserved while notes use the lesson panel and global noteb
   assert.match(index, /src="\/vendor\/lenis\/lenis\.min\.js"/);
   assert.match(index, /src="\/landing-scroll\.js"/);
   assert.doesNotMatch(index + landingCss, /live-dot/);
+  assert.match(index, /class="library-preview"/);
+  assert.doesNotMatch(index, /course-library\.webp/);
+  assert.doesNotMatch(index, /class="step-number"/);
+  assert.doesNotMatch(index, />0[1-4] · /);
+  assert.doesNotMatch(landingCss, /story-step-course[\s\S]{0,180}background:\s*#0b57d0/);
+  assert.match(i18n, /if \(rootNode\.matches\?\.\('textarea'\)\) return/);
+  assert.match(i18n, /Shopping mall floor tile example/);
+  assert.match(i18n, /Remove quote/);
+  assert.match(scratch, /\? '收起学习草稿' : '展开学习草稿'/);
+  assert.doesNotMatch(scratch, /缩小学习草稿/);
   assert.match(landingCss, /\.hero-title-line[\s\S]*white-space:\s*nowrap/);
   assert.match(landingScroll, /prefers-reduced-motion:\s*reduce/);
   assert.match(landingScroll, /autoRaf:\s*true/);

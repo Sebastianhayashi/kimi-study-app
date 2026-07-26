@@ -20,7 +20,7 @@
     ['Choose an outcome and use case', '选择目标与使用场景', '成果と利用場面を選ぶ'],
     ['Study', '学习', '学ぶ'],
     ['Lessons, practice, and review history', '课节、练习与复习记录', 'レッスン、練習、復習履歴'],
-    ['01 · From material to mastery', '01 · 从材料到掌握', '01 · 教材から習得まで'],
+    ['From material to mastery', '从材料到掌握', '教材から習得へ'],
     ['Upload material, choose a goal,', '上传材料，选定目标，', '教材を追加して目標を選び、'],
     ['then start the first lesson.', '然后开始第一课。', '最初のレッスンを始めます。'],
     ['Choose material', '选择材料', '教材を選ぶ'],
@@ -29,11 +29,11 @@
     ['Choose where you plan to use the material. Lucubro uses that choice to shape examples and practice.', '选择你准备使用这份材料的场景。课程会据此安排案例与练习。', '教材をどこで使いたいか選びます。その選択に合わせて例と練習を構成します。'],
     ['Start the course', '开始课程', 'コースを始める'],
     ['Read the lesson, complete the practice, and ask questions with the current source attached.', '阅读课节、完成练习；有疑问时直接引用当前材料提问。', 'レッスンを読み、練習に取り組み、現在の教材を参照しながら質問できます。'],
-    ['02 · Learning workspace', '02 · 学习工作区', '02 · 学習ワークスペース'],
+    ['Inside the learning workspace', '学习工作区一览', '学習ワークスペースの中'],
     ['Lessons, notes, and questions stay on one page.', '课程、笔记和提问在同一个页面。', 'レッスン、ノート、質問を一つの画面に。'],
     ['Goals and the course outline stay on the left, the current lesson stays in the center, and Lucubro Assistant answers from the lesson and source on the right.', '左侧查看学习目标和目录，中间阅读当前课节，右侧的 Lucubro 助手会引用课节与原始材料回答。', '左に目標と目次、中央に現在のレッスン、右にレッスンと原文を参照して答える Lucubro アシスタントを配置します。'],
     ['Open course library', '进入课程库', 'コースライブラリを開く'],
-    ['03 · Evidence of learning', '03 · 学会的证据', '03 · 学習の証拠'],
+    ['Evidence of learning', '学会的证据', '学習の証拠'],
     ['Every lesson asks you to do something with what you learned.', '每节课都要回答问题。', '各レッスンで、学んだことを実際に使います。'],
     ['Practice checks whether you can explain an idea, judge a case, and apply it in a new situation. The result stays in your course progress.', '练习会检查你能否解释概念、判断案例并用到新场景。结果保存在课程进度里。', '概念を説明し、事例を判断し、新しい状況に応用できるかを練習で確かめます。結果はコース進捗に保存されます。'],
     ['Understand the source', '理解材料', '教材を理解'],
@@ -43,9 +43,14 @@
     ['The course emphasis follows your goal and starting point instead of sending everyone through the same outline.', '课程重点由目标和基础决定，不把所有人送进同一套章节目录。', '全員を同じ目次に通すのではなく、目標と現在地に合わせて重点を変えます。'],
     ['Questions include the current lesson', '提问会带上当前课节', '質問に現在のレッスンを添付'],
     ['Lucubro Assistant answers from the current lesson and original source first, and keeps answers available for review.', 'Lucubro 助手优先引用当前课节和原始材料，并保留可回看的回答。', 'Lucubro アシスタントは現在のレッスンと原文を優先して回答し、あとから見返せるように残します。'],
-    ['04 · Your course library', '04 · 你的课程库', '04 · コースライブラリ'],
+    ['Your course library', '你的课程库', 'あなたのコースライブラリ'],
     ['Come back and continue the lesson you left.', '下次打开，接着上次的课节。', '次に開いたとき、前回の続きから。'],
     ['The library shows your current lesson, creation status, and recent study time. Start another course whenever you have new material.', '课程库会显示当前课节、创建状态和最近学习时间，也可以从另一份材料新建课程。', 'ライブラリには現在のレッスン、作成状況、最近の学習時間が表示されます。別の教材から新しいコースも作れます。'],
+    ['Course library preview', '课程库预览', 'コースライブラリのプレビュー'],
+    ['Scout Mindset', '侦察兵思维', 'スカウト・マインドセット'],
+    ['Lesson 1 · Two ways of thinking', '第 1 课 · 两种思维模式', 'レッスン 1 · 二つの思考様式'],
+    ['Made to Stick', '让创意更有黏性', 'アイデアのちから'],
+    ['Management communication', '管理沟通', 'マネジメント・コミュニケーション'],
     ['Open library', '打开课程库', 'ライブラリを開く'],
     ['New course', '新建课程', '新しいコース'],
     ['Choose something you genuinely want to learn from.', '选一份你准备认真读的材料。', '本気で学びたい教材を一つ選びましょう。'],
@@ -543,6 +548,9 @@
     ['Activity intensity', '活动强度', 'アクティビティ強度'],
     ['Close generation panel', '关闭生成过程', '生成パネルを閉じる'],
     ['Generation stages', '生成阶段', '生成ステージ'],
+    ['Shopping mall floor tile example', '商场地砖案例', 'ショッピングモールの床タイル事例'],
+    ['Remove quote', '移除引用', '引用を削除'],
+    ['Collapse or expand notes panel', '收起 / 展开笔记栏', 'ノート欄を折りたたむ / 展開する'],
     ['Clear history and start a new chat', '清空记录，开始新对话', '履歴を消去して新しい会話を開始'],
     ['Initialization progress', '初始化进度', '初期化の進捗'],
   ];
@@ -801,12 +809,17 @@
       translateTextNode(rootNode);
       return;
     }
-    if (rootNode.matches?.('script, style, code, pre, textarea, [data-i18n-ignore]')) return;
+    if (rootNode.matches?.('script, style, code, pre, [data-i18n-ignore]')) return;
     if (rootNode.nodeType === Node.ELEMENT_NODE) translateAttributes(rootNode);
+    if (rootNode.matches?.('textarea')) return;
     const walker = document.createTreeWalker(rootNode, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
-        const parent = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
-        return parent?.closest('script, style, code, pre, textarea, [data-i18n-ignore]')
+        if (node.nodeType === Node.TEXT_NODE) {
+          return node.parentElement?.closest('script, style, code, pre, textarea, [data-i18n-ignore]')
+            ? NodeFilter.FILTER_REJECT
+            : NodeFilter.FILTER_ACCEPT;
+        }
+        return node.closest?.('script, style, code, pre, [data-i18n-ignore]')
           ? NodeFilter.FILTER_REJECT
           : NodeFilter.FILTER_ACCEPT;
       },

@@ -440,7 +440,7 @@
   surface.querySelector('[data-action="close"]').addEventListener('click', closeSurface);
   surface.querySelector('[data-action="expand"]').addEventListener('click', () => {
     surface.classList.toggle('is-expanded');
-    surface.querySelector('[data-action="expand"]').setAttribute('aria-label', surface.classList.contains('is-expanded') ? '缩小学习草稿' : '展开学习草稿');
+    surface.querySelector('[data-action="expand"]').setAttribute('aria-label', surface.classList.contains('is-expanded') ? '收起学习草稿' : '展开学习草稿');
     requestAnimationFrame(fitCanvas);
   });
   retryButton.addEventListener('click', () => {
