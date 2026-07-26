@@ -11,6 +11,12 @@ test('right Tutor is preserved while notes use the lesson panel and global noteb
   const marginNotes = read('public/margin-notes.js');
   const server = read('server.js');
   const scratch = read('public/study-surface.js');
+  const index = read('public/index.html');
+  const landingCss = read('public/landing.css');
+  const landingScroll = read('public/landing-scroll.js');
+  const glue = read('public/glue.js');
+  const i18n = read('public/i18n.js');
+  const marginCss = read('public/margin-notes.css');
   assert.match(notes, /type: 'focus-note'/);
   assert.match(marginNotes, /className = 'kn-notes-panel'/);
   assert.match(marginNotes, /this\.layout\.addCard\(card\.el\)/);
@@ -18,6 +24,24 @@ test('right Tutor is preserved while notes use the lesson panel and global noteb
   assert.doesNotMatch(notes, /tabs\.appendChild\(tab\)/);
   assert.match(scratch, /course-stage/);
   assert.doesNotMatch(notes + marginNotes + scratch, /replaceChildren\([^)]*assistantPanel/);
+
+  assert.match(index, /class="hero-title-line hero-title-accent"/);
+  assert.match(index, /class="appbar-avatar landing-avatar"/);
+  assert.match(index, /src="\/vendor\/lenis\/lenis\.min\.js"/);
+  assert.match(index, /src="\/landing-scroll\.js"/);
+  assert.doesNotMatch(index + landingCss, /live-dot/);
+  assert.match(landingCss, /\.hero-title-line[\s\S]*white-space:\s*nowrap/);
+  assert.match(landingScroll, /prefers-reduced-motion:\s*reduce/);
+  assert.match(landingScroll, /autoRaf:\s*true/);
+  assert.match(landingScroll, /anchors:\s*true/);
+  assert.doesNotMatch(landingScroll, /window\.scrollTo\s*=/);
+  assert.match(glue, /function stripLessonNumberPrefix/);
+  assert.match(glue, /function formatLessonLabel/);
+  assert.doesNotMatch(glue, /Lesson \$\{lessonIndex \+ 1\} · \$\{title\}/);
+  assert.match(marginNotes, /Core\.chooseRailMode/);
+  assert.match(marginNotes, /syncContentReservation\(reserveRight && !this\.collapsed/);
+  assert.match(marginCss, /\.kn-content-reserved/);
+  assert.ok(i18n.indexOf("['Note', '笔记', 'ノート']") < i18n.indexOf("['Notes', '笔记', 'ノート']"));
 });
 
 test('contextual menu is selection-driven, capped, and keeps stable action nodes', () => {

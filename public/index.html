@@ -12,6 +12,7 @@
   <meta name="theme-color" content="#10141c" media="(prefers-color-scheme: dark)">
   <title>Lucubro · 个人学习课程</title>
   <script src="/brand-compat.js"></script>
+  <link rel="stylesheet" href="/vendor/lenis/lenis.css">
   <link rel="stylesheet" href="/landing.css">
 </head>
 <body>
@@ -28,13 +29,14 @@
       <a href="/app">我的课程</a>
       <a href="/notes">笔记</a>
     </nav>
-    <a class="header-action" href="/new-course">创建课程 <i class="ph ph-arrow-up-right" aria-hidden="true"></i></a>
+    <a class="header-action" href="/new-course" aria-label="Create a course"><span>创建课程</span><i class="ph ph-arrow-up-right" aria-hidden="true"></i></a>
+    <button class="appbar-avatar landing-avatar" type="button" aria-label="Account"><i class="ph ph-user" aria-hidden="true"></i></button>
   </header>
 
   <main id="main">
     <section class="hero">
       <div class="hero-copy">
-        <h1>把一本书，<br><span>变成一门课。</span></h1>
+        <h1><span class="hero-title-line">把一本书，</span><span class="hero-title-line hero-title-accent">变成一门课。</span></h1>
         <p>上传 EPUB、PDF 或文本，选定你要解决的问题。Lucubro 会安排课节、练习和复习。</p>
         <div class="hero-actions">
           <a class="button button-primary" href="/new-course">用我的材料开始 <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
@@ -49,7 +51,7 @@
 
       <figure class="hero-visual">
         <img src="/assets/product/hero-showcase.webp" width="1440" height="900" alt="Lucubro goal selection built from Made to Stick">
-        <figcaption><span class="live-dot" aria-hidden="true"></span>《让创意更有黏性》学习目标</figcaption>
+        <figcaption>《让创意更有黏性》学习目标</figcaption>
       </figure>
     </section>
 
@@ -163,6 +165,8 @@
   </footer>
 
   <div class="toast" id="landingToast" role="status" aria-live="polite"></div>
+  <script src="/vendor/lenis/lenis.min.js"></script>
+  <script src="/landing-scroll.js"></script>
   <script>
     const toast = document.getElementById('landingToast');
     let toastTimer;

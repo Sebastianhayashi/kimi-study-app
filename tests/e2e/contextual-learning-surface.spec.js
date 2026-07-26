@@ -129,7 +129,15 @@ test('lesson notes open in their own panel and the global notebook stays outside
   const notesToggle = page.locator('#lessonResourceSlot .kn-notes-toggle');
   await expect(notesToggle).toBeVisible();
   await notesToggle.click();
-  await expect(page.frameLocator('#lessonFrame').locator('.kn-notes-panel')).toBeVisible();
+  const lessonPanel = page.frameLocator('#lessonFrame').locator('.kn-notes-panel');
+  const lessonHeading = page.frameLocator('#lessonFrame').locator('h1').first();
+  await expect(lessonPanel).toBeVisible();
+  const [headingBox, panelBox] = await Promise.all([lessonHeading.boundingBox(), lessonPanel.boundingBox()]);
+  expect(headingBox).not.toBeNull();
+  expect(panelBox).not.toBeNull();
+  const overlapWidth = Math.max(0, Math.min(headingBox.x + headingBox.width, panelBox.x + panelBox.width) - Math.max(headingBox.x, panelBox.x));
+  const overlapHeight = Math.max(0, Math.min(headingBox.y + headingBox.height, panelBox.y + panelBox.height) - Math.max(headingBox.y, panelBox.y));
+  expect(overlapWidth * overlapHeight).toBe(0);
   await expect(page.locator('#assistantPanel .panel-title')).toContainText('Lucubro');
   await expect(page.locator('#assistantPanel #chatThread')).toBeVisible();
 

@@ -3,6 +3,31 @@
 (() => {
   const path = location.pathname;
 
+  function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function stripLessonNumberPrefix(value, lessonNumber) {
+    const text = String(value || '').replace(/\s+/g, ' ').trim();
+    if (!text) return '';
+    const number = escapeRegExp(lessonNumber);
+    const patterns = [
+      new RegExp(`^第\\s*${number}\\s*[课課](?:\\s*[：:、.·–—-]+\\s*)?`, 'i'),
+      new RegExp(`^(?:Lesson|レッスン)\\s*${number}(?:\\s*[：:、.·–—-]+\\s*)?`, 'i'),
+    ];
+    for (const pattern of patterns) {
+      const cleaned = text.replace(pattern, '').trim();
+      if (cleaned !== text) return cleaned || text;
+    }
+    return text;
+  }
+
+  function formatLessonLabel(index, title = '') {
+    const lessonNumber = Number(index) + 1;
+    const cleanedTitle = stripLessonNumberPrefix(title, lessonNumber);
+    return cleanedTitle ? `Lesson ${lessonNumber} · ${cleanedTitle}` : `Lesson ${lessonNumber}`;
+  }
+
   async function fetchCourseOperation(courseId) {
     const operationResponse = await fetch(`/api/courses/${encodeURIComponent(courseId)}/operation`);
     if (operationResponse.ok) return operationResponse.json();
@@ -405,7 +430,7 @@
       card.querySelector('.ks-continue-title').textContent = course.title;
       const lessonLabel = card.querySelector('.ks-continue-lesson strong');
       // 先只显示课节序号，真实标题异步从课节 HTML 的 <h1> 读取；文件名 slug 永不展示。
-      lessonLabel.textContent = `Lesson ${lessonIndex + 1}`;
+      lessonLabel.textContent = formatLessonLabel(lessonIndex);
       if (lessonFile) {
         fetch(`/api/courses/${encodeURIComponent(course.id)}/lessons/${encodeURIComponent(lessonFile)}`)
           .then((response) => (response.ok ? response.text() : ''))
@@ -415,7 +440,7 @@
               ? match[1].replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim()
               : '';
             if (title && title.length <= 120 && lessonLabel.isConnected) {
-              lessonLabel.textContent = `Lesson ${lessonIndex + 1} · ${title}`;
+              lessonLabel.textContent = formatLessonLabel(lessonIndex, title);
             }
           })
           .catch(() => {});
@@ -718,7 +743,7 @@
         if (evidence.determinate) compactProgressTrack.setAttribute('aria-valuenow', String(evidence.value));
         else compactProgressTrack.removeAttribute('aria-valuenow');
       }
-      if (currentLessonLabel) currentLessonLabel.textContent = backgroundNextLesson && lessons[current] ? `Lesson ${current + 1} · ${titleOf(lessons[current])}` : '课程创建未完成';
+      if (currentLessonLabel) currentLessonLabel.textContent = backgroundNextLesson && lessons[current] ? formatLessonLabel(current, titleOf(lessons[current])) : '课程创建未完成';
       if (contextBar && !backgroundNextLesson) contextBar.textContent = '当前上下文：课程创建未完成';
       if (lessonResourceSlot) lessonResourceSlot.style.visibility = backgroundNextLesson ? '' : 'hidden';
       if (overviewRecordList) {
@@ -772,10 +797,10 @@
       }
       updateInfo();
       if (lessons.length && currentLessonLabel) {
-        currentLessonLabel.textContent = `Lesson ${current + 1} · ${titleOf(lessons[current])}`;
+        currentLessonLabel.textContent = formatLessonLabel(current, titleOf(lessons[current]));
       }
       if (contextBar && lessons.length) {
-        contextBar.textContent = `当前上下文：Lesson ${current + 1} · ${titleOf(lessons[current])}`;
+        contextBar.textContent = `当前上下文：${formatLessonLabel(current, titleOf(lessons[current]))}`;
       }
     }
 
@@ -795,9 +820,9 @@
       currentLessonUrl = `/api/courses/${courseId}/lessons/${encodeURIComponent(lessons[i])}`;
       lessonFrame.removeAttribute('srcdoc');
       lessonFrame.src = currentLessonUrl;
-      document.querySelector('.current-lesson').textContent = `Lesson ${i + 1} · ${titleOf(lessons[i])}`;
+      document.querySelector('.current-lesson').textContent = formatLessonLabel(i, titleOf(lessons[i]));
       if (contextBar) {
-        contextBar.textContent = `当前上下文：Lesson ${i + 1} · ${titleOf(lessons[i])}`;
+        contextBar.textContent = `当前上下文：${formatLessonLabel(i, titleOf(lessons[i]))}`;
       }
       const progress = document.querySelector('.compact-progress > span');
       if (progress) progress.textContent = `${i + 1} / ${lessons.length}`;
@@ -810,13 +835,14 @@
         const heading = lessonFrame.contentDocument?.querySelector('h1');
         const title = String(heading?.textContent || '').replace(/\s+/g, ' ').trim();
         if (!title || title.length > 120) return;
-        lessonTitles.set(current, title);
-        const label = `Lesson ${current + 1} · ${title}`;
+        lessonTitles.set(current, stripLessonNumberPrefix(title, current + 1));
+        const cleanedTitle = stripLessonNumberPrefix(title, current + 1);
+        const label = formatLessonLabel(current, cleanedTitle);
         if (currentLessonLabel) currentLessonLabel.textContent = label;
         if (contextBar) contextBar.textContent = `当前上下文：${label}`;
         const item = document.querySelectorAll('.lesson-item')[current];
         const itemTitle = item?.querySelector('span:last-child');
-        if (itemTitle) itemTitle.textContent = title;
+        if (itemTitle) itemTitle.textContent = cleanedTitle;
         renderLearningRecords();
       } catch {}
     }
@@ -1021,7 +1047,7 @@
         </article>
       `;
 
-      const currentTitle = lessons[current] ? escapeHtml(lessonTitles.get(current) || titleOf(lessons[current])) : '';
+      const currentTitle = lessons[current] ? escapeHtml(stripLessonNumberPrefix(lessonTitles.get(current) || titleOf(lessons[current]), current + 1)) : '';
       const record2Html = `
         <article class="record">
           <span class="record-icon">${current + 1}</span>

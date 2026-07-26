@@ -573,6 +573,8 @@
       this.content = content;
       this.mode = 'drawer';
       this.raf = 0;
+      this.reservationActive = false;
+      this.basePaddingInlineEnd = '';
       this.layer = document.createElement('div');
       this.layer.className = 'kn-ui kn-margin-layer';
       document.body.appendChild(this.layer);
@@ -630,6 +632,7 @@
 
     setCollapsed(collapsed, options = {}) {
       this.collapsed = collapsed;
+      if (collapsed) this.syncContentReservation(false);
       if (!options.automatic) {
         this.autoMode = false;
         try { localStorage.setItem(this.storageKey, JSON.stringify({ userCollapsed: collapsed })); } catch {}
@@ -656,6 +659,28 @@
       this.empty.hidden = count > 0 || !!this.controller.draft;
     }
 
+    syncContentReservation(active, reserveSize = 0) {
+      if (active === this.reservationActive) {
+        const nextReserve = `${reserveSize}px`;
+        if (active && this.content.style.getPropertyValue('--kn-panel-reserve') !== nextReserve) {
+          this.content.style.setProperty('--kn-panel-reserve', nextReserve);
+        }
+        return;
+      }
+      this.reservationActive = active;
+      if (active) {
+        this.basePaddingInlineEnd = getComputedStyle(this.content).paddingInlineEnd || '0px';
+        this.content.style.setProperty('--kn-content-padding-end', this.basePaddingInlineEnd);
+        this.content.style.setProperty('--kn-panel-reserve', `${reserveSize}px`);
+        this.content.classList.add('kn-content-reserved');
+      } else {
+        this.content.classList.remove('kn-content-reserved');
+        this.content.style.removeProperty('--kn-content-padding-end');
+        this.content.style.removeProperty('--kn-panel-reserve');
+        this.basePaddingInlineEnd = '';
+      }
+    }
+
     request() {
       if (this.raf) return;
       this.raf = requestAnimationFrame(() => {
@@ -667,32 +692,47 @@
     position() {
       const rect = this.content.getBoundingClientRect();
       const viewport = document.documentElement.clientWidth;
-      const rightSpace = Math.max(0, viewport - rect.right);
-      const leftSpace = Math.max(0, rect.left);
-      const marginSide = rightSpace >= 324 ? 'right' : leftSpace >= 324 ? 'left' : '';
-      const nextMode = marginSide ? `margin-${marginSide}` : 'drawer';
+      const panelWidth = 336;
+      const gap = 12;
+      const railMode = viewport <= 640 ? 'drawer' : Core.chooseRailMode({
+        viewportWidth: viewport,
+        contentLeft: rect.left,
+        contentRight: rect.right,
+        cardWidth: panelWidth,
+        gap,
+        minContentWidth: 320,
+      });
+      const marginSide = railMode === 'left' ? 'left' : (railMode === 'right' || railMode === 'both' ? 'right' : '');
+      const reserveRight = railMode === 'reserve-right';
+      const nextMode = reserveRight ? 'reserve-right' : (marginSide ? `margin-${marginSide}` : 'drawer');
 
       if (this.autoMode) {
         const shouldCollapse = !marginSide;
         if (shouldCollapse !== this.collapsed) this.setCollapsed(shouldCollapse, { automatic: true });
       }
 
+      this.syncContentReservation(reserveRight && !this.collapsed, panelWidth + gap * 2);
       this.mode = nextMode;
       this.layer.dataset.mode = nextMode;
       this.panel.style.removeProperty('left');
       this.panel.style.removeProperty('right');
       this.panel.style.removeProperty('width');
       if (marginSide === 'right') {
-        const width = Math.min(336, rightSpace - 24);
-        this.panel.style.left = `${Math.round(rect.right + 12)}px`;
+        const rightSpace = Math.max(0, viewport - rect.right);
+        const width = Math.min(panelWidth, rightSpace - gap * 2);
+        this.panel.style.left = `${Math.round(rect.right + gap)}px`;
         this.panel.style.width = `${Math.max(280, width)}px`;
       } else if (marginSide === 'left') {
-        const width = Math.min(336, leftSpace - 24);
-        this.panel.style.right = `${Math.round(viewport - rect.left + 12)}px`;
+        const leftSpace = Math.max(0, rect.left);
+        const width = Math.min(panelWidth, leftSpace - gap * 2);
+        this.panel.style.right = `${Math.round(viewport - rect.left + gap)}px`;
         this.panel.style.width = `${Math.max(280, width)}px`;
+      } else if (reserveRight) {
+        this.panel.style.right = `${gap}px`;
+        this.panel.style.width = `${panelWidth}px`;
       }
       for (const card of this.controller.cards.values()) {
-        card.setSideAvailable(Boolean(marginSide));
+        card.setSideAvailable(Boolean(marginSide || reserveRight));
       }
     }
 
@@ -700,6 +740,7 @@
       if (this.raf) cancelAnimationFrame(this.raf);
       window.removeEventListener('resize', this.onResize);
       this.resizeObserver.disconnect();
+      this.syncContentReservation(false);
       this.layer.remove();
     }
   }

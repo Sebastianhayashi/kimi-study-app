@@ -21,5 +21,16 @@ for (const route of ['/', '/app', '/new-course']) {
     await page.goto(route);
     await expect(page.locator('body')).toContainText('Lucubro');
     await expect(page.locator('body')).not.toContainText('Kimi Study');
+    if (route === '/') {
+      await expect(page.locator('.landing-avatar')).toBeVisible();
+      await expect(page.locator('.live-dot')).toHaveCount(0);
+      await page.evaluate(() => window.scrollTo(0, 1500));
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(1400);
+      await page.getByRole('link', { name: /How it works|如何工作|使い方/ }).click();
+      await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('#how');
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.reload();
+      await expect.poll(() => page.evaluate(() => Boolean(window.__lucubroLandingLenis))).toBe(false);
+    }
   });
 }
