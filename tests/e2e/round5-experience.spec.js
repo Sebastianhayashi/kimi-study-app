@@ -108,36 +108,40 @@ test('current learning strip updates from real practice outcomes', async ({ page
   }
 });
 
-test('five critical routes expose named controls, live status, focus, and a 44px account target', async ({ page }) => {
+test('five critical routes expose named controls, live status, and only real account targets', async ({ page }) => {
   const routes = [
-    ['/', '#landingToast'],
-    ['/app', '#toast'],
-    ['/notes', '.notes-summary'],
-    ['/new-course', '#uploadTransfer'],
-    ['/course/readycourse', '#currentLearningStrip'],
+    ['/', '#landingToast', false],
+    ['/app', '#toast', false],
+    ['/notes', '.notes-summary', true],
+    ['/new-course', '#uploadTransfer', true],
+    ['/course/readycourse', '#currentLearningStrip', true],
   ];
-  for (const [route, statusSelector] of routes) {
+  for (const [route, statusSelector, hasAccountTarget] of routes) {
     await page.goto(route);
     expect(await visibleControlNames(page), `${route} has unnamed visible controls`).toEqual([]);
     const avatar = page.locator('.appbar-avatar');
-    await expect(avatar).toBeVisible();
-    const box = await avatar.boundingBox();
-    expect(box.width).toBeGreaterThanOrEqual(44);
-    expect(box.height).toBeGreaterThanOrEqual(44);
-    await focusWithKeyboard(page, avatar);
-    await expect(avatar).toBeFocused();
-    const focus = await avatar.evaluate((node) => {
-      const style = getComputedStyle(node);
-      return {
-        outline: style.outlineStyle,
-        outlineWidth: parseFloat(style.outlineWidth),
-        boxShadow: style.boxShadow,
-      };
-    });
-    expect(
-      (focus.outline !== 'none' && focus.outlineWidth > 0) || focus.boxShadow !== 'none',
-      `${route} exposes a visible keyboard focus treatment`,
-    ).toBe(true);
+    if (!hasAccountTarget) {
+      await expect(avatar).toHaveCount(0);
+    } else {
+      await expect(avatar).toBeVisible();
+      const box = await avatar.boundingBox();
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      await focusWithKeyboard(page, avatar);
+      await expect(avatar).toBeFocused();
+      const focus = await avatar.evaluate((node) => {
+        const style = getComputedStyle(node);
+        return {
+          outline: style.outlineStyle,
+          outlineWidth: parseFloat(style.outlineWidth),
+          boxShadow: style.boxShadow,
+        };
+      });
+      expect(
+        (focus.outline !== 'none' && focus.outlineWidth > 0) || focus.boxShadow !== 'none',
+        `${route} exposes a visible keyboard focus treatment`,
+      ).toBe(true);
+    }
     await expect(page.locator(statusSelector)).toHaveCount(1);
   }
 });

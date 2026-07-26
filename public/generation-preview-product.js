@@ -176,7 +176,8 @@
     quality(context) {
       const accepted = metricFrom(context, 'accepted');
       const rejected = metricFrom(context, 'rejected');
-      const suffix = accepted === null && rejected === null ? '' : ` · 保留 ${accepted ?? '—'} / 移除 ${rejected ?? '—'}`;
+      const missing = window.LucubroI18n?.t('Not recorded') || 'Not recorded';
+      const suffix = accepted === null && rejected === null ? '' : ` · 保留 ${accepted ?? missing} / 移除 ${rejected ?? missing}`;
       return `
         <div class="ks-fidelity-stage-caption">题目质量检查${suffix}</div>
         <div class="ks-fidelity-quality-grid">

@@ -96,8 +96,9 @@ body,
 }
 
 .pill.primary {
-  border-color: #0b57d0;
-  background: #0b57d0;
+  border-color: var(--ds-brand);
+  color: var(--ds-brand-on);
+  background: var(--ds-brand);
 }
 
 .toast {
@@ -194,10 +195,10 @@ body,
 .current-learning-action {
   min-height: 44px;
   padding: 0 17px;
-  border: 1px solid #0b57d0;
+  border: 1px solid var(--ds-brand);
   border-radius: var(--ds-radius-pill);
-  color: #fff;
-  background: #0b57d0;
+  color: var(--ds-brand-on);
+  background: var(--ds-brand);
   font: inherit;
   font-size: 13px;
   font-weight: 680;
@@ -569,9 +570,9 @@ body,
 }
 
 .ks-generation-recovery .ks-generation-recovery-primary {
-  border-color: #0b57d0;
-  color: #fff;
-  background: #0b57d0;
+  border-color: var(--ds-brand);
+  color: var(--ds-brand-on);
+  background: var(--ds-brand);
 }
 
 .ks-generation-fidelity .ks-generation-progress > span::after,

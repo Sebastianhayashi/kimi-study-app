@@ -7,13 +7,15 @@
     ['Skip to main content', '跳到主要内容', 'メインコンテンツへ移動'],
     ['How it works', '如何工作', '使い方'],
     ['Learning workspace', '课程工作区', '学習ワークスペース'],
+    ['Open navigation', '打开导航', 'ナビゲーションを開く'],
+    ['App navigation', '应用导航', 'アプリナビゲーション'],
     ['My courses', '我的课程', 'マイコース'],
-    ['Create a course', '创建课程', 'コースを作成'],
+    ['Create course', '创建课程', 'コースを作成'],
     ['Turn one book', '把一本书，', '一冊の本を'],
     ['into a course', '变成一门课。', '学べるコースへ'],
     ['Upload an EPUB, PDF, or text file and choose what you want to accomplish. Lucubro builds the lessons, practice, and review around that goal.', '上传 EPUB、PDF 或文本，选定你要解决的问题。Lucubro 会安排课节、练习和复习。', 'EPUB、PDF、テキストをアップロードし、達成したいことを選びます。Lucubro がその目標に合わせてレッスン、練習、復習を組み立てます。'],
-    ['Start with my material', '用我的材料开始', '自分の教材ではじめる'],
     ['View my courses', '查看我的课程', 'コースを見る'],
+    ['Sample course interface shown in Chinese', '示例课程界面为中文', 'サンプルコース画面は中国語で表示しています'],
     ['Upload', '上传', 'アップロード'],
     ['EPUB, PDF, and text', 'EPUB、PDF 与文本', 'EPUB、PDF、テキスト'],
     ['Set a goal', '设定', '目標を設定'],
@@ -29,10 +31,8 @@
     ['Choose where you plan to use the material. Lucubro uses that choice to shape examples and practice.', '选择你准备使用这份材料的场景。课程会据此安排案例与练习。', '教材をどこで使いたいか選びます。その選択に合わせて例と練習を構成します。'],
     ['Start the course', '开始课程', 'コースを始める'],
     ['Read the lesson, complete the practice, and ask questions with the current source attached.', '阅读课节、完成练习；有疑问时直接引用当前材料提问。', 'レッスンを読み、練習に取り組み、現在の教材を参照しながら質問できます。'],
-    ['Inside the learning workspace', '学习工作区一览', '学習ワークスペースの中'],
     ['Lessons, notes, and questions stay on one page.', '课程、笔记和提问在同一个页面。', 'レッスン、ノート、質問を一つの画面に。'],
     ['Goals and the course outline stay on the left, the current lesson stays in the center, and Lucubro Assistant answers from the lesson and source on the right.', '左侧查看学习目标和目录，中间阅读当前课节，右侧的 Lucubro 助手会引用课节与原始材料回答。', '左に目標と目次、中央に現在のレッスン、右にレッスンと原文を参照して答える Lucubro アシスタントを配置します。'],
-    ['Open course library', '进入课程库', 'コースライブラリを開く'],
     ['Evidence of learning', '学会的证据', '学習の証拠'],
     ['Every lesson asks you to do something with what you learned.', '每节课都要回答问题。', '各レッスンで、学んだことを実際に使います。'],
     ['Practice checks whether you can explain an idea, judge a case, and apply it in a new situation. The result stays in your course progress.', '练习会检查你能否解释概念、判断案例并用到新场景。结果保存在课程进度里。', '概念を説明し、事例を判断し、新しい状況に応用できるかを練習で確かめます。結果はコース進捗に保存されます。'],
@@ -43,7 +43,6 @@
     ['The course emphasis follows your goal and starting point instead of sending everyone through the same outline.', '课程重点由目标和基础决定，不把所有人送进同一套章节目录。', '全員を同じ目次に通すのではなく、目標と現在地に合わせて重点を変えます。'],
     ['Questions include the current lesson', '提问会带上当前课节', '質問に現在のレッスンを添付'],
     ['Lucubro Assistant answers from the current lesson and original source first, and keeps answers available for review.', 'Lucubro 助手优先引用当前课节和原始材料，并保留可回看的回答。', 'Lucubro アシスタントは現在のレッスンと原文を優先して回答し、あとから見返せるように残します。'],
-    ['Your course library', '你的课程库', 'あなたのコースライブラリ'],
     ['Come back and continue the lesson you left.', '下次打开，接着上次的课节。', '次に開いたとき、前回の続きから。'],
     ['The library shows your current lesson, creation status, and recent study time. Start another course whenever you have new material.', '课程库会显示当前课节、创建状态和最近学习时间，也可以从另一份材料新建课程。', 'ライブラリには現在のレッスン、作成状況、最近の学習時間が表示されます。別の教材から新しいコースも作れます。'],
     ['Course library preview', '课程库预览', 'コースライブラリのプレビュー'],
@@ -54,7 +53,6 @@
     ['Open library', '打开课程库', 'ライブラリを開く'],
     ['New course', '新建课程', '新しいコース'],
     ['Choose something you genuinely want to learn from.', '选一份你准备认真读的材料。', '本気で学びたい教材を一つ選びましょう。'],
-    ['Create my first course', '创建第一门课程', '最初のコースを作る'],
     ['Upload material and start learning toward a clear outcome.', '上传材料，按目标开始学习。', '教材を追加し、明確な成果に向けて学び始めます。'],
     ['Product', '产品原理', 'プロダクト'],
     ['Privacy', '隐私说明', 'プライバシー'],
@@ -161,7 +159,7 @@
     ['Skip to notes', '跳到笔记', 'ノートへ移動'],
     ['Your learning record', '你的学习记录', '学習記録'],
     ['Notes from every course, in one place.', '所有课程的笔记，都在这里。', 'すべてのコースのノートを一か所に。'],
-    ['Review what you highlighted, wrote, and asked Lucubro—then return to the exact lesson and source context.', '集中回看划线、笔记和向 Lucubro 提过的问题，并随时回到对应课节和原文位置。', 'ハイライト、ノート、Lucubro への質問をまとめて振り返り、元のレッスンと原文へ戻れます。'],
+    ['Review what you highlighted, wrote, and asked Lucubro. Then return to the exact lesson and source context.', '集中回看划线、笔记和向 Lucubro 提过的问题。随后可回到对应课节和原文位置。', 'ハイライト、ノート、Lucubro への質問をまとめて振り返ります。その後、元のレッスンと原文へ戻れます。'],
     ['saved notes', '条已保存笔记', '保存済みノート'],
     ['Study rhythm', '学习节奏', '学習リズム'],
     ['Your learning activity', '你的学习活动', '学習アクティビティ'],
@@ -533,7 +531,6 @@
     ['Back to course library', '返回课程库', 'コースライブラリに戻る'],
     ['Course creation steps', '课程创建步骤', 'コース作成ステップ'],
     ['Set goal', '设定目标', '目標を設定'],
-    ['Create course', '创建课程', 'コースを作成'],
     ['Current step', '当前步骤', '現在のステップ'],
     ['Completed step', '已完成步骤', '完了したステップ'],
     ['Upcoming step', '未到达步骤', '未到達のステップ'],
@@ -610,6 +607,25 @@
     ['Design one small action that uses a chosen constraint.', '设计一个利用所选限制的小行动。', '選んだ制約を使う小さな行動を設計します。'],
     ['Application chapter and summary', '应用章节与总结', '応用章とまとめ'],
     ['Draft an action, predict risk, and define completion evidence.', '起草一个行动，预测风险，并定义完成证据。', '行動案を作り、リスクを予測し、完了の証拠を定義します。'],
+    ['Not recorded', '未记录', '記録なし'],
+    ['Creation stalled', '创建已停滞', '作成が停止しています'],
+    ['The first lesson was not created. Retry or delete this course.', '第一课未能创建。请重试或删除这门课程。', '最初のレッスンを作成できませんでした。再試行するか、このコースを削除してください。'],
+    ['Retrying', '正在重试', '再試行中'],
+    ['Retry failed. Try again.', '重试失败，请再试一次。', '再試行に失敗しました。もう一度お試しください。'],
+    ['Delete this course? This cannot be undone.', '删除这门课程？此操作不可恢复。', 'このコースを削除しますか？この操作は元に戻せません。'],
+    ['Delete failed. Try again.', '删除失败，请再试一次。', '削除に失敗しました。もう一度お試しください。'],
+    ['Lucubro | Goal-shaped courses', 'Lucubro | 围绕目标生成课程', 'Lucubro | 目標に沿った学習コース'],
+    ['Upload material, define the problem you need to solve, and study through lessons shaped around that outcome.', '上传材料，明确要解决的问题，并通过围绕该产出生成的课节学习。', '教材を追加し、解決したい課題を明確にして、その成果に沿ったレッスンで学びます。'],
+    ['Turn one book into a course', '把一本书变成一门课', '一冊の本を学べるコースへ'],
+    ['Upload material, define the problem you need to solve, and start the first lesson.', '上传材料，明确要解决的问题，然后开始第一课。', '教材を追加し、解決したい課題を明確にして、最初のレッスンを始めます。'],
+    ['My courses | Lucubro', '我的课程 | Lucubro', 'マイコース | Lucubro'],
+    ['Review your courses, resume a lesson, or create a course from new material.', '查看课程、继续上次课节，或从新材料创建课程。', 'コースを確認し、前回のレッスンを再開するか、新しい教材からコースを作成します。'],
+    ['Notes | Lucubro', '笔记 | Lucubro', 'ノート | Lucubro'],
+    ['Review highlights, notes, and Lucubro answers across every course.', '集中查看所有课程中的划线、笔记和 Lucubro 回答。', 'すべてのコースのハイライト、ノート、Lucubro の回答をまとめて確認します。'],
+    ['Create course | Lucubro', '创建课程 | Lucubro', 'コースを作成 | Lucubro'],
+    ['Upload material and define the problem, expected output, and evidence for a new course.', '上传材料，并为新课程明确问题、期望产出和成功证据。', '教材を追加し、新しいコースの課題、期待する成果物、成功の証拠を定義します。'],
+    ['Learning workspace | Lucubro', '课程学习工作区 | Lucubro', '学習ワークスペース | Lucubro'],
+    ['Read the current lesson, practice, review notes, and ask Lucubro from one learning workspace.', '在同一个学习工作区阅读当前课节、完成练习、回看笔记并向 Lucubro 提问。', '一つの学習ワークスペースで、現在のレッスン、練習、ノート、Lucubro への質問を扱います。'],
   ];
 
   const messages = Object.fromEntries(phraseEntries.map(([en, zh, ja]) => [en, { en, 'zh-CN': zh, ja }]));
@@ -839,6 +855,63 @@
     return key ? t(key) : translatePattern(value);
   }
 
+  function routeMetadata(pathname = location.pathname) {
+    if (pathname === '/') {
+      return {
+        title: 'Lucubro | Goal-shaped courses',
+        description: 'Upload material, define the problem you need to solve, and study through lessons shaped around that outcome.',
+        ogTitle: 'Turn one book into a course',
+        ogDescription: 'Upload material, define the problem you need to solve, and start the first lesson.',
+      };
+    }
+    if (pathname === '/app') {
+      return {
+        title: 'My courses | Lucubro',
+        description: 'Review your courses, resume a lesson, or create a course from new material.',
+      };
+    }
+    if (pathname === '/notes') {
+      return {
+        title: 'Notes | Lucubro',
+        description: 'Review highlights, notes, and Lucubro answers across every course.',
+      };
+    }
+    if (pathname === '/new-course') {
+      return {
+        title: 'Create course | Lucubro',
+        description: 'Upload material and define the problem, expected output, and evidence for a new course.',
+      };
+    }
+    if (pathname.startsWith('/course/')) {
+      return {
+        title: 'Learning workspace | Lucubro',
+        description: 'Read the current lesson, practice, review notes, and ask Lucubro from one learning workspace.',
+      };
+    }
+    return null;
+  }
+
+  function ensureMeta(selector, attributes) {
+    let element = document.head.querySelector(selector);
+    if (!element) {
+      element = document.createElement('meta');
+      for (const [name, value] of Object.entries(attributes)) element.setAttribute(name, value);
+      document.head.appendChild(element);
+    }
+    return element;
+  }
+
+  function applyMetadata() {
+    const metadata = routeMetadata();
+    if (!metadata) return;
+    const title = t(metadata.title);
+    const description = t(metadata.description);
+    document.title = title;
+    ensureMeta('meta[name="description"]', { name: 'description' }).setAttribute('content', description);
+    ensureMeta('meta[property="og:title"]', { property: 'og:title' }).setAttribute('content', t(metadata.ogTitle || metadata.title));
+    ensureMeta('meta[property="og:description"]', { property: 'og:description' }).setAttribute('content', t(metadata.ogDescription || metadata.description));
+  }
+
   function translateTextNode(node) {
     const raw = node.nodeValue || '';
     const trimmed = raw.trim();
@@ -860,6 +933,7 @@
   }
 
   function apply(target = document) {
+    const appliesToDocument = target.nodeType === Node.DOCUMENT_NODE || target === document.documentElement;
     const rootNode = target.nodeType === Node.DOCUMENT_NODE ? target.documentElement : target;
     if (!rootNode || rootNode.closest?.('[data-i18n-ignore]')) return;
     if (rootNode.nodeType === Node.TEXT_NODE) {
@@ -888,6 +962,7 @@
     }
     document.documentElement.lang = locale;
     document.documentElement.dataset.locale = locale;
+    if (appliesToDocument) applyMetadata();
   }
 
   function mountSwitcher() {

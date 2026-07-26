@@ -26,7 +26,7 @@ test('right Tutor is preserved while notes use the lesson panel and global noteb
   assert.doesNotMatch(notes + marginNotes + scratch, /replaceChildren\([^)]*assistantPanel/);
 
   assert.match(index, /class="hero-title-line hero-title-accent"/);
-  assert.match(index, /class="appbar-avatar landing-avatar"/);
+  assert.doesNotMatch(index, /class="[^"]*(?:appbar-avatar|landing-avatar)/);
   assert.match(index, /src="\/vendor\/lenis\/lenis\.min\.js"/);
   assert.match(index, /src="\/landing-scroll\.js"/);
   assert.doesNotMatch(index + landingCss, /live-dot/);

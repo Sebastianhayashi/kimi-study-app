@@ -4,6 +4,7 @@
   --ds-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 
   --ds-brand: #0b57d0;
+  --ds-brand-on: #ffffff;
   --ds-brand-hover: #0842a0;
   --ds-brand-pressed: #062e6f;
   --ds-brand-soft: #e9f0ff;
@@ -225,6 +226,23 @@ select {
   transform: translateY(1px);
 }
 
+:where(
+  button.primary-button,
+  button.dialog-primary,
+  button.choose-button,
+  button.create-button,
+  button.ks-study-add,
+  button.current-learning-action,
+  button.pill.primary
+):disabled {
+  border-color: var(--ds-border) !important;
+  color: var(--ds-text-muted) !important;
+  background: var(--ds-surface-muted) !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  cursor: not-allowed;
+}
+
 :where(time, progress, .progress, .progress-value, .course-meta, .lesson-meta, .elapsed) {
   font-variant-numeric: tabular-nums;
 }
@@ -236,7 +254,7 @@ select {
   left: 12px;
   padding: 10px 14px;
   border-radius: var(--ds-radius-control);
-  color: #fff;
+  color: var(--ds-brand-on);
   background: var(--ds-brand);
   box-shadow: var(--ds-shadow-float);
   transform: translateY(-160%);
@@ -248,13 +266,14 @@ select {
 }
 
 ::selection {
-  color: #fff;
+  color: var(--ds-brand-on);
   background: var(--ds-brand);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --ds-brand: #8ab4f8;
+    --ds-brand-on: #0b1c3f;
     --ds-brand-hover: #aecbfa;
     --ds-brand-pressed: #d2e3fc;
     --ds-brand-soft: #18345d;

@@ -108,13 +108,13 @@ body {
 .create-button {
   min-height: 44px;
   border-radius: var(--ds-radius-pill);
-  color: #fff;
-  background: #0b57d0;
+  color: var(--ds-brand-on);
+  background: var(--ds-brand);
   box-shadow: none;
 }
 
 .create-button:hover {
-  background: #0842a0;
+  background: var(--ds-brand-hover);
 }
 
 .section {
@@ -265,7 +265,7 @@ body {
   min-height: 44px;
   padding: 0 18px;
   border-radius: var(--ds-radius-pill);
-  color: #fff;
+  color: var(--ds-brand-on);
   background: var(--ds-brand);
   font-size: 13px;
   font-weight: 700;
@@ -504,7 +504,8 @@ body {
 .dialog-primary,
 .choose-button {
   border-radius: var(--ds-radius-pill);
-  background: #0b57d0;
+  color: var(--ds-brand-on);
+  background: var(--ds-brand);
 }
 
 @keyframes status-pulse {
@@ -826,4 +827,68 @@ body {
 
 .course-card.is-generating .course-status::before {
   content: none;
+}
+
+.course-card.is-stalled .course-cover {
+  border-color: color-mix(in srgb, var(--ds-danger) 42%, var(--ds-border));
+}
+
+.course-card.is-stalled .course-status {
+  color: var(--ds-danger);
+  background: var(--ds-danger-soft);
+}
+
+.course-card.is-stalled .course-status::before {
+  display: none;
+}
+
+.course-error-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.course-error-actions[hidden] {
+  display: none;
+}
+
+.course-error-actions button {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-control);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 680;
+  cursor: pointer;
+}
+
+.course-error-actions button:disabled {
+  cursor: not-allowed;
+  opacity: .62;
+}
+
+.course-error-actions .course-retry {
+  border-color: var(--ds-brand);
+  color: var(--ds-brand-on);
+  background: var(--ds-brand);
+}
+
+.course-error-actions .course-retry:hover:not(:disabled) {
+  border-color: var(--ds-brand-hover);
+  background: var(--ds-brand-hover);
+}
+
+.course-error-actions .course-delete {
+  color: var(--ds-danger);
+  background: var(--ds-surface);
+}
+
+.course-error-action-status {
+  grid-column: 1 / -1;
+  min-height: 0;
+  color: var(--ds-danger);
+  font-size: 11px;
+  line-height: 1.45;
 }

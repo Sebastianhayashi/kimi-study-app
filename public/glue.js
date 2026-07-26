@@ -205,6 +205,29 @@
     const genericCourseTitles = new Set(['My courses', '我的课程', 'マイコース']);
     const resolvedCourseTitles = new Map();
     const courseTitleRequests = new Map();
+    const stalledCourseIds = new Set();
+    const onboardingHealthRequests = new Map();
+    const STALLED_COURSE_MS = 10 * 60 * 1000;
+
+    function isCreatingState(state) {
+      return state === 'queued' || state === 'starting' || state === 'generating' || state === 'understanding';
+    }
+
+    function queuedCourseIsStale(course) {
+      const updated = Number(course.updated);
+      return courseState(course) === 'queued'
+        && Number.isFinite(updated)
+        && updated > 0
+        && Date.now() - updated > STALLED_COURSE_MS;
+    }
+
+    function courseHasCreationError(course) {
+      const state = courseState(course);
+      return state === 'failed'
+        || state === 'interrupted'
+        || stalledCourseIds.has(course.id)
+        || queuedCourseIsStale(course);
+    }
 
     function isGenericCourseTitle(value) {
       return !String(value || '').trim() || genericCourseTitles.has(String(value).trim());
@@ -212,8 +235,9 @@
 
     function courseFilterStatus(course) {
       const state = courseState(course);
-      if (state === 'starting' || state === 'generating' || state === 'understanding') return 'creating';
-      if (state === 'failed' || state === 'interrupted' || state === 'awaiting_mission' || state === 'idle') return 'attention';
+      if (courseHasCreationError(course)) return 'attention';
+      if (isCreatingState(state)) return 'creating';
+      if (state === 'awaiting_mission' || state === 'idle') return 'attention';
       if (state === 'ready' || Number(course.lessons) > 0) return 'ready';
       return 'attention';
     }
@@ -239,6 +263,7 @@
       if (!isGenericCourseTitle(raw)) return raw;
       const resolved = resolvedCourseTitles.get(course.id);
       if (resolved) return resolved;
+      if (courseHasCreationError(course)) return 'Creation stalled';
       return courseFilterStatus(course) === 'creating' ? 'Creating course' : 'Learning material';
     }
 
@@ -284,6 +309,7 @@
 
     function courseDestination(course) {
       const state = courseState(course);
+      if (courseHasCreationError(course)) return '';
       if (state !== 'ready') {
         return `/new-course?course=${encodeURIComponent(course.id)}`;
       }
@@ -294,13 +320,9 @@
       // 设计规范：每行最多 1 个 · 分隔符，材料数改用逗号并入第二段。
       const material = `${course.ext}，1 份材料`;
       const state = courseState(course);
+      if (courseHasCreationError(course)) return 'The first lesson was not created. Retry or delete this course.';
       if (state === 'awaiting_mission' || state === 'idle') return `等待学习设置 · ${material}`;
-      if (state === 'starting' || state === 'generating' || state === 'understanding') {
-        return `正在创建课程 · ${material}`;
-      }
-      if (state === 'failed' || state === 'interrupted') {
-        return `创建未完成，可重试 · ${material}`;
-      }
+      if (isCreatingState(state)) return `正在创建课程 · ${material}`;
       return `${course.lessons} 节课 · ${material}`;
     }
 
@@ -415,8 +437,27 @@
     demoCards.forEach((card) => card.remove());
 
     function activeOnboarding(course) {
-      const state = courseState(course);
-      return state === 'starting' || state === 'generating' || state === 'understanding';
+      return isCreatingState(courseState(course)) && !courseHasCreationError(course);
+    }
+
+    function updateShelfActivity() {
+      shelfHasActive = [...courseCardsById.values()].some((card) => activeOnboarding(card._course || {}));
+    }
+
+    function checkQueuedCourseHealth(course) {
+      if (courseState(course) !== 'queued' || courseHasCreationError(course) || onboardingHealthRequests.has(course.id)) return;
+      const request = fetch(`/api/courses/${encodeURIComponent(course.id)}/onboarding`)
+        .then((response) => {
+          if (response.status !== 404) return;
+          stalledCourseIds.add(course.id);
+          const card = courseCardsById.get(course.id);
+          if (card && card._course?.id === course.id) updateCourseCard(card, card._course);
+          updateShelfActivity();
+          applyShelfView();
+        })
+        .catch(() => {})
+        .finally(() => onboardingHealthRequests.delete(course.id));
+      onboardingHealthRequests.set(course.id, request);
     }
 
     function stopShelfPolling() {
@@ -434,16 +475,89 @@
       }, delay);
     }
 
+    function ensureCourseErrorActions(el) {
+      let actions = el.querySelector('.course-error-actions');
+      if (actions) return actions;
+      actions = document.createElement('div');
+      actions.className = 'course-error-actions';
+      actions.hidden = true;
+      actions.innerHTML =
+        '<button class="course-retry" type="button">Retry</button>' +
+        '<button class="course-delete" type="button">Delete</button>' +
+        '<span class="course-error-action-status" role="status" aria-live="polite"></span>';
+      actions.addEventListener('click', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const course = el._course || {};
+        if (!course.id) return;
+        const retry = event.target.closest('.course-retry');
+        const remove = event.target.closest('.course-delete');
+        const status = actions.querySelector('.course-error-action-status');
+        if (retry) {
+          retry.disabled = true;
+          retry.textContent = 'Retrying';
+          status.textContent = '';
+          window.LucubroI18n?.apply(actions);
+          try {
+            const response = await fetch(`/api/courses/${encodeURIComponent(course.id)}/retry`, { method: 'POST' });
+            if (!response.ok) throw new Error(`Retry failed: ${response.status}`);
+            stalledCourseIds.delete(course.id);
+            updateCourseCard(el, { ...course, stage: 'queued', onboardingState: null, updated: Date.now() });
+            updateShelfActivity();
+            scheduleShelfRefresh(0);
+          } catch {
+            retry.disabled = false;
+            retry.textContent = 'Retry';
+            status.textContent = 'Retry failed. Try again.';
+            window.LucubroI18n?.apply(actions);
+          }
+          return;
+        }
+        if (remove) {
+          const confirmation = window.LucubroI18n?.t('Delete this course? This cannot be undone.') || 'Delete this course? This cannot be undone.';
+          if (!confirm(confirmation)) return;
+          remove.disabled = true;
+          status.textContent = '';
+          try {
+            const response = await fetch(`/api/courses/${encodeURIComponent(course.id)}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error(`Delete failed: ${response.status}`);
+            stalledCourseIds.delete(course.id);
+            courseCardsById.delete(course.id);
+            el.remove();
+            shelfCourseCount = Math.max(0, shelfCourseCount - 1);
+            updateShelfActivity();
+            applyShelfView();
+          } catch {
+            remove.disabled = false;
+            status.textContent = 'Delete failed. Try again.';
+            window.LucubroI18n?.apply(actions);
+          }
+        }
+      });
+      el.querySelector('.course-meta').insertAdjacentElement('afterend', actions);
+      return actions;
+    }
+
     function updateCourseCard(el, course) {
       el._course = course;
       const state = courseState(course);
-      const generating = state === 'starting' || state === 'generating' || state === 'understanding';
+      if (state !== 'queued') stalledCourseIds.delete(course.id);
+      if (queuedCourseIsStale(course)) stalledCourseIds.add(course.id);
+      const failed = courseHasCreationError(course);
+      const generating = isCreatingState(state) && !failed;
       const title = displayedCourseTitle(course);
       el.dataset.courseId = course.id;
       el.dataset.title = title;
       el.dataset.status = courseFilterStatus(course);
       el.dataset.date = String(Number(course.updated) || 0);
       el.setAttribute('aria-label', title);
+      if (failed) {
+        el.removeAttribute('role');
+        el.tabIndex = -1;
+      } else {
+        el.setAttribute('role', 'button');
+        el.tabIndex = 0;
+      }
       const cover = el.querySelector('.course-cover');
       if (course.cover) {
         cover.className = 'course-cover real-cover';
@@ -465,26 +579,33 @@
         const coverTitle = cover.querySelector('.cover-title');
         if (coverTitle) coverTitle.textContent = title;
         const coverKind = cover.querySelector('.cover-kind');
-        if (coverKind) coverKind.textContent = generating ? 'Creating course' : 'Learning material';
+        if (coverKind) coverKind.textContent = failed ? 'Creation stalled' : generating ? 'Creating course' : 'Learning material';
         const coverAuthor = cover.querySelector('.cover-author');
-        if (coverAuthor) coverAuthor.textContent = generating ? 'Preparing the first lesson' : `${course.ext} 材料`;
+        if (coverAuthor) coverAuthor.textContent = failed
+          ? 'The first lesson was not created. Retry or delete this course.'
+          : generating ? 'Preparing the first lesson' : `${course.ext} 材料`;
       }
-      el.classList.toggle('is-generating', state === 'starting' || state === 'generating' || state === 'understanding');
-      el.classList.toggle('is-failed', state === 'failed' || state === 'interrupted');
+      el.classList.toggle('is-generating', generating);
+      el.classList.toggle('is-failed', failed);
+      el.classList.toggle('is-stalled', failed);
       el.classList.toggle('is-ready', state === 'ready' || Number(course.lessons) > 0);
       el.classList.toggle('is-empty', state === 'awaiting_mission' || state === 'idle');
+      const courseMenu = el.querySelector('.course-menu');
+      if (courseMenu) courseMenu.hidden = failed;
       let statusBadge = cover.querySelector('.course-status');
       if (!statusBadge) {
         statusBadge = document.createElement('span');
         statusBadge.className = 'course-status';
         cover.appendChild(statusBadge);
       }
-      if (state === 'starting' || state === 'generating' || state === 'understanding') statusBadge.textContent = '生成中';
-      else if (state === 'failed' || state === 'interrupted') statusBadge.textContent = '可重试';
-      else if (state === 'awaiting_mission' || state === 'idle') statusBadge.textContent = '待设置';
-      else statusBadge.textContent = '可学习';
+      if (failed) statusBadge.textContent = 'Creation stalled';
+      else if (generating) statusBadge.textContent = 'Creating';
+      else if (state === 'awaiting_mission' || state === 'idle') statusBadge.textContent = 'Needs attention';
+      else statusBadge.textContent = 'Ready to learn';
       el.querySelector('.course-title').textContent = title;
       el.querySelector('.course-meta').textContent = courseMeta(course);
+      ensureCourseErrorActions(el).hidden = !failed;
+      if (state === 'queued' && !failed) checkQueuedCourseHealth(course);
       if (isGenericCourseTitle(course.title) && !resolvedCourseTitles.has(course.id)) {
         resolveCourseTitle(course).then((resolvedTitle) => {
           if (!resolvedTitle || el._course?.id !== course.id) return;
@@ -492,6 +613,7 @@
           applyShelfView();
         });
       }
+      window.LucubroI18n?.apply(el);
     }
 
     function renderFeaturedCourse(list) {
@@ -572,14 +694,17 @@
       const el = tpl.cloneNode(true);
       el.classList.add('ks-vertical');
       el.addEventListener('click', (event) => {
-        if (event.target.closest('.course-menu')) return;
-        location.href = courseDestination(el._course);
+        if (event.target.closest('.course-menu, .course-error-actions')) return;
+        const destination = courseDestination(el._course);
+        if (destination) location.href = destination;
       });
       el.addEventListener('keydown', (event) => {
-        if (event.target.closest('.course-menu')) return;
+        if (event.target.closest('.course-menu, .course-error-actions')) return;
         if (event.key !== 'Enter' && event.key !== ' ') return;
+        const destination = courseDestination(el._course);
+        if (!destination) return;
         event.preventDefault();
-        location.href = courseDestination(el._course);
+        location.href = destination;
       });
       el.querySelector('.course-menu').addEventListener('click', (event) => {
         event.stopPropagation();
@@ -611,7 +736,7 @@
         courseCardsById.delete(id);
       }
       applyShelfView();
-      shelfHasActive = list.some(activeOnboarding);
+      updateShelfActivity();
     }
 
     async function refreshCourses() {

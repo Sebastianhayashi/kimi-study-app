@@ -95,7 +95,7 @@
   box-shadow: 0 8px 24px rgba(60,64,67,.11);
 }
 .ks-study-quick-note textarea { min-width: 0; min-height: 42px; flex: 1; border: 0; outline: none; resize: none; font: inherit; font-size: 12px; }
-.ks-study-add { min-width: 48px; border: 0; border-radius: var(--ds-radius-control); color: #fff; background: #0b57d0; cursor: pointer; font-weight: 700; }
+.ks-study-add { min-width: 48px; border: 0; border-radius: var(--ds-radius-control); color: var(--ds-brand-on); background: var(--ds-brand); cursor: pointer; font-weight: 700; }
 .ks-study-reopen {
   position: absolute;
   right: 16px;

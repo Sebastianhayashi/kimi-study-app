@@ -3,8 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="查看课程进度，继续上次课节，或从新材料创建课程。" />
-  <title>Lucubro</title>
+  <meta name="description" content="Review your courses, resume a lesson, or create a course from new material." />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="My courses | Lucubro" />
+  <meta property="og:description" content="Review your courses, resume a lesson, or create a course from new material." />
+  <title>My courses | Lucubro</title>
   <script src="/brand-compat.js"></script>
   <style>
     :root {
@@ -117,8 +120,7 @@
     }
 
     .settings-button,
-    .icon-button,
-    .avatar {
+    .icon-button {
       border: 1px solid var(--line-2);
       background: transparent;
       cursor: pointer;
@@ -147,23 +149,6 @@
       place-items: center;
     }
 
-    .avatar {
-      width: 38px;
-      height: 38px;
-      border: 0;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      overflow: hidden;
-      color: #f2d5ff;
-      background:
-        radial-gradient(circle at 50% 30%, #e7d2ff 0 17%, transparent 18%),
-        radial-gradient(circle at 50% 48%, #4d3975 0 29%, transparent 30%),
-        linear-gradient(145deg, #72609d, #30263f);
-      box-shadow: inset 0 0 0 2px rgba(255,255,255,.2);
-      font-size: 12px;
-      font-weight: 800;
-    }
 
     .page {
       width: min(calc(100% - 48px), var(--max));
@@ -894,7 +879,14 @@
       color: #f0f2ff;
       background: var(--brand-soft);
     }
-    .dialog-primary:disabled { cursor: not-allowed; opacity: .45; }
+    .dialog-primary:disabled {
+      border-color: var(--ds-border);
+      color: var(--ds-text-muted);
+      background: var(--ds-surface-muted);
+      box-shadow: none;
+      cursor: not-allowed;
+      opacity: 1;
+    }
 
     .toast {
       position: fixed;
@@ -1041,11 +1033,6 @@
     }
     .settings-button:hover,
     .icon-button:hover { background: var(--surface-2); }
-    .avatar {
-      color: #fff;
-      background: linear-gradient(145deg, #6f8fe7, #345fb8);
-      box-shadow: inset 0 0 0 2px rgba(255,255,255,.35);
-    }
 
     .page {
       width: min(calc(100% - 40px), var(--max));
@@ -1085,12 +1072,12 @@
         #fff;
     }
     .create-button {
-      color: #fff;
-      background: var(--brand);
+      color: var(--ds-brand-on);
+      background: var(--ds-brand);
       box-shadow: 0 1px 2px rgba(60,64,67,.08), 0 4px 12px rgba(11,87,208,.20);
       font-weight: 700;
     }
-    .create-button:hover { background: var(--brand-2); }
+    .create-button:hover { background: var(--ds-brand-hover); }
 
     .section-title {
       color: var(--text);
@@ -1241,11 +1228,18 @@
       background: #fff;
     }
     .dialog-primary {
-      color: #fff;
-      border-color: var(--brand);
-      background: var(--brand);
+      color: var(--ds-brand-on);
+      border-color: var(--ds-brand);
+      background: var(--ds-brand);
     }
-    .dialog-primary:disabled { opacity: .45; }
+    .dialog-primary:disabled {
+      border-color: var(--ds-border);
+      color: var(--ds-text-muted);
+      background: var(--ds-surface-muted);
+      box-shadow: none;
+      cursor: not-allowed;
+      opacity: 1;
+    }
 
     .toast { color: #fff; background: #303134; }
 
@@ -2179,7 +2173,7 @@
     .sample-journey-kicker { margin: 0 0 5px; color: var(--ds-brand-ink); font-size: 12px; font-weight: 720; letter-spacing: .04em; text-transform: uppercase; }
     .sample-journey h1 { margin: 0; color: var(--ds-text); font-size: clamp(20px, 2.2vw, 30px); line-height: 1.18; }
     .sample-journey p { max-width: 720px; margin: 7px 0 0; color: var(--ds-text-secondary); line-height: 1.6; }
-    .sample-journey-action { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 18px; border-radius: var(--ds-radius-pill); color: #fff; background: #0b57d0; font-weight: 680; text-decoration: none; white-space: nowrap; }
+    .sample-journey-action { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 18px; border-radius: var(--ds-radius-pill); color: var(--ds-brand-on); background: var(--ds-brand); font-weight: 680; text-decoration: none; white-space: nowrap; }
     @media (max-width: 680px) {
       .sample-journey { grid-template-columns: 1fr; margin-top: 14px; padding: 16px; }
       .sample-journey-action { width: 100%; }
@@ -2217,7 +2211,6 @@
               <circle cx="5" cy="19" r="1.8"/><circle cx="12" cy="19" r="1.8"/><circle cx="19" cy="19" r="1.8"/>
             </svg>
           </button>
-          <button class="avatar appbar-avatar" type="button" aria-label="账户"><i class="ph ph-user" aria-hidden="true"></i></button>
         </div>
       </div>
     </header>
