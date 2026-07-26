@@ -126,13 +126,24 @@ Curiosity 不是随机冷知识。完成课节与 Assessment 后，可选择生�
   `source.label 或 sourceRefs，以及 scores：relevance>=4、surprise>=3、clarity>=3、confidence>=4、load<=3。` +
   `不得把答案、Assessment 评分键或无关趣闻写入 Curiosity。`;
 
+const {
+  ASSESSMENT_MACHINE_CONTRACT_LINES,
+  preflightInstruction,
+} = require('./lib/assessment-machine-contract');
+
+// 首课与下一课共用同一段 Assessment wire schema（见 R6 P0.1「同一发布合同」）。
+// 首课没有 transaction baseline，预检走 first-lesson-preflight（逐课验证 lessons/）。
+const FIRST_LESSON_MACHINE_CONTRACT =
+  '\n\n' + ASSESSMENT_MACHINE_CONTRACT_LINES.join('\n') + '\n' +
+  preflightInstruction(`node ${JSON.stringify(path.join(ROOT, 'lib', 'first-lesson-preflight.js'))}`).join('\n');
+
 const FIRST_PROMPT = (ext) =>
   `/skill:teach 用户上传了一本书想学习，材料是当前目录的 book${ext}` +
   `（如为 epub 可用 unzip 提取文本，如为 pdf 请自行想办法提取文本）。` +
   `请按 teach skill 的流程执行：先写 MISSION.md（mission：掌握这本书的核心内容）和 RESOURCES.md，` +
   `然后生成第一课 lessons/0001-*.html。所有产出用中文。` +
   `另外把书的封面图片提取保存到工作区根目录 cover.jpg（epub 解压后在 OPF manifest 里找 cover 项；` +
-  `pdf 可用 sips 把第一页转成 jpg）。` + ASSESSMENT_INSTRUCTION + CURIOSITY_INSTRUCTION + MAP_INSTRUCTION;
+  `pdf 可用 sips 把第一页转成 jpg）。` + ASSESSMENT_INSTRUCTION + FIRST_LESSON_MACHINE_CONTRACT + CURIOSITY_INSTRUCTION + MAP_INSTRUCTION;
 
 const languageInstruction = (locale = 'en') => ({
   'zh-CN': '所有面向用户的课程内容使用简体中文。',
@@ -147,7 +158,7 @@ const FIRST_ONBOARDING_PROMPT = (ext, profile = {}) =>
   `继续当前 teach Session。用户已经确认 MISSION.md；不要重新进行 Mission 访谈，也不要改写 Mission。` +
   `材料是当前目录的 book${ext}。${modeInstruction(profile.mode)}读取已确认的 MISSION.md，写 RESOURCES.md，然后生成第一课 lessons/0001-*.html。${languageInstruction(profile.locale)}` +
   `另外把书的封面图片提取保存到工作区根目录 cover.jpg（epub 解压后在 OPF manifest 里找 cover 项；` +
-  `pdf 可用 sips 把第一页转成 jpg）。` + ASSESSMENT_INSTRUCTION + CURIOSITY_INSTRUCTION + MAP_INSTRUCTION;
+  `pdf 可用 sips 把第一页转成 jpg）。` + ASSESSMENT_INSTRUCTION + FIRST_LESSON_MACHINE_CONTRACT + CURIOSITY_INSTRUCTION + MAP_INSTRUCTION;
 
 
 const app = express();
