@@ -40,7 +40,7 @@ body {
   overflow: hidden;
   color: var(--text);
   background: var(--bg);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+  font-family: "Geist Variable", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -94,7 +94,7 @@ svg { display: block; }
   width: 36px;
   height: 36px;
   flex: none;
-  border-radius: 12px;
+  border-radius: var(--ds-radius-control);
   display: grid;
   place-items: center;
   color: #fff;
@@ -126,7 +126,7 @@ svg { display: block; }
   min-height: 38px;
   padding: 0 14px;
   border: 1px solid var(--line);
-  border-radius: 19px;
+  border-radius: var(--ds-radius-pill);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -200,7 +200,7 @@ svg { display: block; }
 .left-tab {
   min-height: 34px;
   border: 0;
-  border-radius: 9px;
+  border-radius: var(--ds-radius-control);
   color: var(--muted);
   background: transparent;
   cursor: pointer;
@@ -225,7 +225,7 @@ svg { display: block; }
 .mission-card {
   padding: 15px;
   border: 1px solid #bfd2f2;
-  border-radius: 14px;
+  border-radius: var(--ds-radius-card);
   background: #f5f8ff;
 }
 .section-kicker {
@@ -275,7 +275,7 @@ svg { display: block; }
   flex: 1;
   height: 5px;
   overflow: hidden;
-  border-radius: 99px;
+  border-radius: var(--ds-radius-pill);
   background: var(--surface-2);
 }
 .progress-track span {
@@ -300,14 +300,14 @@ svg { display: block; }
   grid-template-columns: 25px minmax(0,1fr);
   gap: 9px;
   padding: 10px;
-  border-radius: 10px;
+  border-radius: var(--ds-radius-card);
   color: var(--text-2);
   background: var(--surface-2);
 }
 .record-icon {
   width: 25px;
   height: 25px;
-  border-radius: 8px;
+  border-radius: var(--ds-radius-control);
   display: grid;
   place-items: center;
   color: var(--brand);
@@ -342,7 +342,7 @@ svg { display: block; }
   gap: 8px;
   padding: 10px 9px;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--ds-radius-control);
   color: var(--text-2);
   background: transparent;
   cursor: pointer;
@@ -448,7 +448,7 @@ svg { display: block; }
 .message {
   max-width: 94%;
   padding: 11px 12px;
-  border-radius: 14px;
+  border-radius: var(--ds-radius-card);
   font-size: 11px;
   line-height: 1.62;
 }
@@ -474,7 +474,7 @@ svg { display: block; }
   min-height: 25px;
   padding: 0 8px;
   border: 1px solid #b9cdf0;
-  border-radius: 13px;
+  border-radius: var(--ds-radius-card);
   color: var(--brand-ink);
   background: #f7faff;
   cursor: pointer;
@@ -493,7 +493,7 @@ svg { display: block; }
   min-height: 29px;
   padding: 0 9px;
   border: 1px solid var(--line);
-  border-radius: 15px;
+  border-radius: var(--ds-radius-control);
   color: var(--muted);
   background: #fff;
   cursor: pointer;
@@ -511,7 +511,7 @@ svg { display: block; }
 .composer-shell {
   padding: 9px;
   border: 1px solid var(--line-2);
-  border-radius: 15px;
+  border-radius: var(--ds-radius-card);
   background: #fff;
 }
 .composer textarea {
@@ -558,7 +558,7 @@ svg { display: block; }
   z-index: 100;
   display: none;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: var(--ds-radius-card);
   color: #fff;
   background: #303134;
   box-shadow: var(--shadow);
@@ -614,7 +614,7 @@ svg { display: block; }
     --left: 268px;
     --right: 370px;
     --resize-gap: 12px;
-    --module-radius: 20px;
+    --module-radius: var(--ds-radius-module);
     --module-outline: rgba(60, 64, 67, .11);
     --module-shadow:
       0 1px 2px rgba(60, 64, 67, .05),
@@ -670,7 +670,7 @@ svg { display: block; }
     margin: 0 10px;
     padding: 5px;
     border-bottom: 0;
-    border-radius: 13px;
+    border-radius: var(--ds-radius-control);
     background: var(--surface-2);
   }
 
@@ -693,7 +693,7 @@ svg { display: block; }
   .context-bar {
     margin: 0 12px;
     padding: 9px 11px;
-    border-radius: 10px;
+    border-radius: var(--ds-radius-card);
   }
 
   .course-panel {
@@ -709,12 +709,12 @@ svg { display: block; }
     margin: 0 10px 10px;
     overflow: hidden;
     border: 0;
-    border-radius: 15px;
+    border-radius: var(--ds-radius-module);
     background: #fbfaf7;
   }
 
   .lesson-frame {
-    border-radius: 15px;
+    border-radius: var(--ds-radius-card);
   }
 
   .assistant-panel .panel-header {
@@ -752,7 +752,7 @@ svg { display: block; }
     left: 50%;
     width: 4px;
     height: 48px;
-    border-radius: 99px;
+    border-radius: var(--ds-radius-pill);
     background: rgba(116, 119, 117, .16);
     transform: translate(-50%, -50%);
     transition:
@@ -840,7 +840,7 @@ svg { display: block; }
 
     .left-panel,
     .assistant-panel {
-      border-radius: 18px;
+      border-radius: var(--ds-radius-module);
     }
 
     .course-stage {
@@ -1028,7 +1028,7 @@ svg { display: block; }
   .context-chip {
     min-height: 24px;
     padding: 0 8px;
-    border-radius: 12px;
+    border-radius: var(--ds-radius-control);
     display: inline-flex;
     align-items: center;
     gap: 5px;
@@ -1101,7 +1101,7 @@ svg { display: block; }
 
   .teach-card {
     padding: 13px;
-    border-radius: 13px;
+    border-radius: var(--ds-radius-card);
     background: var(--surface-2);
   }
 
@@ -1168,7 +1168,7 @@ svg { display: block; }
     height: 5px;
     margin-top: 7px;
     overflow: hidden;
-    border-radius: 99px;
+    border-radius: var(--ds-radius-pill);
     background: rgba(255,255,255,.78);
   }
 
@@ -1187,7 +1187,7 @@ svg { display: block; }
 
   .method-card {
     padding: 11px;
-    border-radius: 11px;
+    border-radius: var(--ds-radius-card);
     background: #fff;
     box-shadow: inset 0 0 0 1px var(--line);
   }
@@ -1231,7 +1231,7 @@ svg { display: block; }
   .path-index {
     width: 20px;
     height: 20px;
-    border-radius: 7px;
+    border-radius: var(--ds-radius-control);
     display: grid;
     place-items: center;
     color: var(--brand);
@@ -1251,7 +1251,7 @@ svg { display: block; }
     min-height: 23px;
     padding: 0 8px;
     border: 1px solid #b9cdf0;
-    border-radius: 12px;
+    border-radius: var(--ds-radius-card);
     color: var(--brand-ink);
     background: #fff;
     cursor: pointer;
@@ -1361,7 +1361,7 @@ svg { display: block; }
     min-height: 44px;
     flex: 0 0 auto;
     padding: 0 14px;
-    border-radius: 22px;
+    border-radius: var(--ds-radius-pill);
     white-space: nowrap;
     word-break: keep-all;
     writing-mode: horizontal-tb;
@@ -1473,7 +1473,7 @@ svg { display: block; }
       width: min(390px, calc(100vw - 24px));
       max-width: calc(100vw - 24px);
       border: 1px solid rgba(60,64,67,.14);
-      border-radius: 22px;
+      border-radius: var(--ds-radius-module);
       box-shadow: 0 24px 70px rgba(31,31,31,.24), 0 8px 24px rgba(31,31,31,.13);
       overflow: hidden;
       transition: transform .22s cubic-bezier(.2,.8,.2,1);

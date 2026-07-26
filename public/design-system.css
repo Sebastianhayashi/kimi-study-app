@@ -27,6 +27,9 @@
   --ds-danger: #b3261e;
   --ds-danger-soft: #fce8e6;
 
+  /* Radius contract: controls, inputs, tabs and chips use control; content cards use card;
+     large panels and page modules use module; only explicit capsule CTAs and filters use pill.
+     Circular icon buttons remain 50% at the component rule. */
   --ds-radius-control: 10px;
   --ds-radius-card: 16px;
   --ds-radius-module: 20px;
@@ -74,7 +77,7 @@
   min-height: 38px;
   padding: 0 28px 0 11px;
   border: 1px solid var(--ds-border, #d8e0ec);
-  border-radius: 10px;
+  border-radius: var(--ds-radius-control);
   color: var(--ds-text, #172033);
   background: var(--ds-surface, #fff);
   font: 650 12px/1 var(--ds-font-sans);

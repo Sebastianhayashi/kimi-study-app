@@ -15,7 +15,7 @@ body {
   background:
     radial-gradient(circle at 82% -10%, rgba(11, 87, 208, .08), transparent 28rem),
     var(--notes-canvas);
-  font-family: "Geist Variable", Geist, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Geist Variable", Geist, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 a { color: inherit; }
 button, input, select { font: inherit; }
@@ -36,7 +36,7 @@ button, input, select { font: inherit; }
   top: 10px;
   left: 10px;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: var(--ds-radius-control);
   color: #fff;
   background: var(--notes-blue);
   transform: translateY(-160%);
@@ -69,14 +69,14 @@ button, input, select { font: inherit; }
   font-size: 16px;
   font-weight: 760;
 }
-.notes-brand img { border-radius: 10px; }
+.notes-brand img { border-radius: var(--ds-radius-control); }
 .notes-nav { display: flex; align-items: center; gap: 4px; }
 .notes-nav a {
   min-height: 40px;
   display: inline-flex;
   align-items: center;
   padding: 0 14px;
-  border-radius: 10px;
+  border-radius: var(--ds-radius-control);
   color: var(--notes-muted);
   text-decoration: none;
   font-size: 13px;
@@ -94,7 +94,7 @@ button, input, select { font: inherit; }
   align-items: center;
   gap: 7px;
   padding: 0 15px;
-  border-radius: 999px;
+  border-radius: var(--ds-radius-pill);
   color: #fff;
   background: var(--notes-blue);
   text-decoration: none;
@@ -140,7 +140,7 @@ button, input, select { font: inherit; }
   margin-top: 54px;
   padding: 26px 28px 22px;
   border: 1px solid var(--notes-line);
-  border-radius: 20px;
+  border-radius: var(--ds-radius-module);
   background: var(--notes-paper);
   box-shadow: 0 16px 46px rgba(34, 55, 84, .06);
 }
@@ -254,7 +254,7 @@ button, input, select { font: inherit; }
   width: 100%;
   min-height: 44px;
   border: 1px solid var(--notes-line);
-  border-radius: 11px;
+  border-radius: var(--ds-radius-control);
   color: var(--notes-ink);
   background: var(--notes-paper);
   outline: none;
@@ -276,7 +276,7 @@ button, input, select { font: inherit; }
   min-height: 40px;
   padding: 0 12px;
   border: 0;
-  border-radius: 9px;
+  border-radius: var(--ds-radius-control);
   color: var(--notes-muted);
   background: transparent;
   text-align: left;
@@ -376,7 +376,7 @@ button, input, select { font: inherit; }
   margin: 0 auto 18px;
   display: grid;
   place-items: center;
-  border-radius: 16px;
+  border-radius: var(--ds-radius-card);
   color: var(--notes-blue);
   background: rgba(11, 87, 208, .09);
   font-size: 22px;
@@ -388,7 +388,7 @@ button, input, select { font: inherit; }
   display: inline-flex;
   align-items: center;
   padding: 0 16px;
-  border-radius: 999px;
+  border-radius: var(--ds-radius-pill);
   color: #fff;
   background: var(--notes-blue);
   text-decoration: none;

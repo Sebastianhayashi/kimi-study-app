@@ -147,9 +147,9 @@
       .course-card.ks-vertical .course-title { margin: 16px 0 0; align-self: stretch; }
       .course-card.ks-vertical .course-meta { position: static; margin-top: 6px; }
       .ks-menu { position: absolute; z-index: 60; background: #fff; border: 1px solid #e0e3e7;
-        border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,.12); padding: 4px; min-width: 96px; }
+        border-radius: var(--ds-radius-card); box-shadow: 0 4px 16px rgba(0,0,0,.12); padding: 4px; min-width: 96px; }
       .ks-menu button { display: block; width: 100%; text-align: left; border: 0; background: none;
-        padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        padding: 8px 12px; border-radius: var(--ds-radius-control); cursor: pointer; font-size: 13px; }
       .ks-menu button:hover { background: #f1f3f4; }
       .ks-menu button.ks-danger { color: #c5221f; }
     `;
@@ -175,7 +175,7 @@
         e.stopPropagation();
         closeCardMenu();
         if (act === 'delete') {
-          if (!confirm(`删除《${course.title}》？此操作不可恢复。`)) return;
+          if (!confirm(`删除《${displayedCourseTitle(course)}》？此操作不可恢复。`)) return;
           fetch(`/api/courses/${course.id}`, { method: 'DELETE' }).then(() => card.remove());
         } else {
           fetch(`/api/courses/${course.id}/archive`, { method: 'POST' }).then(() => card.remove());
@@ -186,6 +186,86 @@
 
     function courseState(course) {
       return course.onboardingState || course.stage || (Number(course.lessons) > 0 ? 'ready' : 'idle');
+    }
+
+    const genericCourseTitles = new Set(['My courses', '我的课程', 'マイコース']);
+    const resolvedCourseTitles = new Map();
+    const courseTitleRequests = new Map();
+
+    function isGenericCourseTitle(value) {
+      return !String(value || '').trim() || genericCourseTitles.has(String(value).trim());
+    }
+
+    function courseFilterStatus(course) {
+      const state = courseState(course);
+      if (state === 'starting' || state === 'generating' || state === 'understanding') return 'creating';
+      if (state === 'failed' || state === 'interrupted' || state === 'awaiting_mission' || state === 'idle') return 'attention';
+      if (state === 'ready' || Number(course.lessons) > 0) return 'ready';
+      return 'attention';
+    }
+
+    function cleanMaterialTitle(filename) {
+      const value = String(filename || '').trim();
+      if (!value) return '';
+      let decoded = value;
+      try { decoded = decodeURIComponent(value); } catch {}
+      return decoded.replace(/\.[^.]+$/, '').trim();
+    }
+
+    function cleanLessonTitle(value) {
+      return String(value || '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/^(?:第\s*(?:\d+|[一二三四五六七八九十百零〇两]+)\s*[课課]|(?:Lesson|レッスン)\s*\d+)\s*[：:、.·-]*\s*/i, '')
+        .trim();
+    }
+
+    function displayedCourseTitle(course) {
+      const raw = String(course.title || '').trim();
+      if (!isGenericCourseTitle(raw)) return raw;
+      const resolved = resolvedCourseTitles.get(course.id);
+      if (resolved) return resolved;
+      return courseFilterStatus(course) === 'creating' ? 'Creating course' : 'Learning material';
+    }
+
+    async function resolveCourseTitle(course) {
+      if (!isGenericCourseTitle(course.title)) return String(course.title || '').trim();
+      if (resolvedCourseTitles.has(course.id)) return resolvedCourseTitles.get(course.id);
+      if (courseTitleRequests.has(course.id)) return courseTitleRequests.get(course.id);
+
+      const request = (async () => {
+        try {
+          const response = await fetch(`/api/courses/${encodeURIComponent(course.id)}/onboarding`);
+          if (response.ok) {
+            const snapshot = await response.json();
+            const materialTitle = cleanMaterialTitle(snapshot?.onboarding?.source?.originalFilename);
+            if (materialTitle && !isGenericCourseTitle(materialTitle)) {
+              resolvedCourseTitles.set(course.id, materialTitle);
+              return materialTitle;
+            }
+          }
+        } catch {}
+
+        const lessonFile = Array.isArray(course.lessonFiles) ? course.lessonFiles[0] : '';
+        if (lessonFile) {
+          try {
+            const response = await fetch(`/api/courses/${encodeURIComponent(course.id)}/lessons/${encodeURIComponent(lessonFile)}`);
+            if (response.ok) {
+              const html = await response.text();
+              const documentFragment = new DOMParser().parseFromString(html, 'text/html');
+              const lessonTitle = cleanLessonTitle(documentFragment.querySelector('h1')?.textContent || documentFragment.title);
+              if (lessonTitle && !isGenericCourseTitle(lessonTitle)) {
+                resolvedCourseTitles.set(course.id, lessonTitle);
+                return lessonTitle;
+              }
+            }
+          } catch {}
+        }
+        return '';
+      })().finally(() => courseTitleRequests.delete(course.id));
+
+      courseTitleRequests.set(course.id, request);
+      return request;
     }
 
     function courseDestination(course) {
@@ -225,6 +305,7 @@
     let shelfStopped = false;
     let shelfFilter = 'all';
     let shelfCourseCount = 0;
+    let shelfFeaturedCourse = null;
 
     function createShelfGuide(kind) {
       const guide = document.createElement('a');
@@ -252,7 +333,7 @@
       const cards = [...courseCardsById.values()];
       cards.sort((a, b) => {
         if (sortSelect.value === 'title') {
-          return (a._course?.title || '').localeCompare(b._course?.title || '', 'zh-CN');
+          return displayedCourseTitle(a._course || {}).localeCompare(displayedCourseTitle(b._course || {}), 'zh-CN');
         }
         const direction = sortSelect.value === 'oldest' ? 1 : -1;
         return (Number(a._course?.updated) - Number(b._course?.updated)) * direction;
@@ -262,11 +343,9 @@
       let visible = 0;
       for (const card of cards) {
         const course = card._course || {};
-        const status = course.lessons > 0 ? 'learning' : 'mine';
-        const matchesFilter = shelfFilter === 'all'
-          || shelfFilter === 'mine'
-          || status === shelfFilter;
-        const matchesSearch = String(course.title || '').toLocaleLowerCase('zh-CN').includes(query);
+        const status = courseFilterStatus(course);
+        const matchesFilter = shelfFilter === 'all' || status === shelfFilter;
+        const matchesSearch = displayedCourseTitle(course).toLocaleLowerCase('zh-CN').includes(query);
         const show = matchesFilter && matchesSearch;
         card.hidden = !show;
         // 原型样式为 .course-card.ks-vertical 设置了 display:flex，会覆盖浏览器的 [hidden] 默认样式。
@@ -285,7 +364,16 @@
         hasGuide = true;
       }
 
-      const showFilteredEmpty = visible === 0 && !hasGuide;
+      const featuredTitle = shelfFeaturedCourse ? displayedCourseTitle(shelfFeaturedCourse) : '';
+      const showFeatured = Boolean(
+        shelfFeaturedCourse
+        && (shelfFilter === 'all' || shelfFilter === 'ready')
+        && featuredTitle.toLocaleLowerCase('zh-CN').includes(query),
+      );
+      featuredSection.hidden = !showFeatured;
+      featuredSection.style.display = showFeatured ? '' : 'none';
+
+      const showFilteredEmpty = visible === 0 && !hasGuide && !showFeatured;
       emptyState.classList.toggle('show', showFilteredEmpty);
       emptyState.style.display = showFilteredEmpty ? '' : 'none';
       grid.style.display = visible > 0 || hasGuide ? 'grid' : 'none';
@@ -336,11 +424,12 @@
       el._course = course;
       const state = courseState(course);
       const generating = state === 'starting' || state === 'generating' || state === 'understanding';
+      const title = displayedCourseTitle(course);
       el.dataset.courseId = course.id;
-      el.dataset.title = course.title;
-      el.dataset.status = course.lessons ? 'learning' : 'mine';
+      el.dataset.title = title;
+      el.dataset.status = courseFilterStatus(course);
       el.dataset.date = String(Number(course.updated) || 0);
-      el.setAttribute('aria-label', course.title);
+      el.setAttribute('aria-label', title);
       const cover = el.querySelector('.course-cover');
       if (course.cover) {
         cover.className = 'course-cover real-cover';
@@ -349,10 +438,10 @@
         if (!currentImage || currentImage.getAttribute('src') !== src) {
           const image = document.createElement('img');
           image.src = src;
-          image.alt = course.title;
+          image.alt = title;
           cover.replaceChildren(image);
         } else {
-          currentImage.alt = course.title;
+          currentImage.alt = title;
         }
       } else {
         if (!cover.querySelector('.cover-title')) {
@@ -360,7 +449,7 @@
           cover.innerHTML = generatedCoverHtml;
         }
         const coverTitle = cover.querySelector('.cover-title');
-        if (coverTitle) coverTitle.textContent = course.title;
+        if (coverTitle) coverTitle.textContent = title;
         const coverKind = cover.querySelector('.cover-kind');
         if (coverKind) coverKind.textContent = generating ? 'Creating course' : 'Learning material';
         const coverAuthor = cover.querySelector('.cover-author');
@@ -380,8 +469,15 @@
       else if (state === 'failed' || state === 'interrupted') statusBadge.textContent = '可重试';
       else if (state === 'awaiting_mission' || state === 'idle') statusBadge.textContent = '待设置';
       else statusBadge.textContent = '可学习';
-      el.querySelector('.course-title').textContent = course.title;
+      el.querySelector('.course-title').textContent = title;
       el.querySelector('.course-meta').textContent = courseMeta(course);
+      if (isGenericCourseTitle(course.title) && !resolvedCourseTitles.has(course.id)) {
+        resolveCourseTitle(course).then((resolvedTitle) => {
+          if (!resolvedTitle || el._course?.id !== course.id) return;
+          updateCourseCard(el, el._course);
+          applyShelfView();
+        });
+      }
     }
 
     function renderFeaturedCourse(list) {
@@ -390,11 +486,12 @@
         try { return Number(localStorage.getItem(`lucubro-course:${item.id}:last-opened`)) || 0; } catch { return 0; }
       };
       const course = readyCourses.sort((a, b) => lastOpened(b) - lastOpened(a))[0];
+      shelfFeaturedCourse = course || null;
       if (!course) {
+        featuredSection.hidden = true;
         featuredSection.style.display = 'none';
         return null;
       }
-      featuredSection.style.display = '';
       const destination = courseDestination(course);
       const lessonFiles = Array.isArray(course.lessonFiles) ? course.lessonFiles : [];
       let lessonIndex = 0;
@@ -427,7 +524,7 @@
           `<a class="ks-continue-secondary" href="${destination}?view=source"><i class="ph ph-book-open-text" aria-hidden="true"></i><span>打开原文</span></a>` +
         '</div>' +
         '<span class="ks-continue-available"></span>';
-      card.querySelector('.ks-continue-title').textContent = course.title;
+      card.querySelector('.ks-continue-title').textContent = displayedCourseTitle(course);
       const lessonLabel = card.querySelector('.ks-continue-lesson strong');
       // 先只显示课节序号，真实标题异步从课节 HTML 的 <h1> 读取；文件名 slug 永不展示。
       lessonLabel.textContent = formatLessonLabel(lessonIndex);
@@ -1332,7 +1429,7 @@
 
     function resourceDocument(markdown, baseUrl) {
       const safeBase = escapeHtml(baseUrl).replace(/"/g, '&quot;');
-      return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="${safeBase}" target="_blank"><style>*{box-sizing:border-box}body{max-width:920px;margin:0 auto;padding:34px clamp(24px,6vw,72px) 52px;color:#3c4043;background:#fff;font-family:Inter,system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.78}h1,h2,h3{color:#1f1f1f}h1{font-size:28px}h2{margin-top:30px;font-size:20px}h3{margin-top:24px;font-size:17px}a{color:#0b57d0}table{display:block;max-width:100%;overflow:auto;border-collapse:collapse}th,td{padding:8px 10px;border:1px solid #dfe3ea;text-align:left}th{background:#f1f4f9}code{padding:2px 5px;border-radius:5px;background:#f1f4f9}blockquote{margin:18px 0;padding:10px 14px;border-left:3px solid #a9c7f4;background:#edf4ff}</style></head><body>${mdToHtml(markdown)}</body></html>`;
+      return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base href="${safeBase}" target="_blank"><style>*{box-sizing:border-box}body{max-width:920px;margin:0 auto;padding:34px clamp(24px,6vw,72px) 52px;color:#3c4043;background:#fff;font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.78}h1,h2,h3{color:#1f1f1f}h1{font-size:28px}h2{margin-top:30px;font-size:20px}h3{margin-top:24px;font-size:17px}a{color:#0b57d0}table{display:block;max-width:100%;overflow:auto;border-collapse:collapse}th,td{padding:8px 10px;border:1px solid #dfe3ea;text-align:left}th{background:#f1f4f9}code{padding:2px 5px;border-radius:5px;background:#f1f4f9}blockquote{margin:18px 0;padding:10px 14px;border-left:3px solid #a9c7f4;background:#edf4ff}</style></head><body>${mdToHtml(markdown)}</body></html>`;
     }
 
     function mountResourceTools() {

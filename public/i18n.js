@@ -372,6 +372,7 @@
     ['Learning resource', '学习资源', '学習リソース'],
     ['This file format is not supported yet', '当前文件格式暂不支持', 'このファイル形式はまだ対応していません'],
     ['Ready', '准备就绪', '準備完了'],
+    ['Needs attention', '需要处理', '要対応'],
     ['Retry saving study draft', '重试保存学习草稿', '学習メモの保存を再試行'],
     ['Retry save', '重试保存', '保存を再試行'],
     ['Draw draft', '画草稿', 'メモを描く'],

@@ -39,12 +39,16 @@ body {
 
 .primary-nav-button,
 .settings-button,
-.icon-button,
 .view-button,
 .sort-select,
 .show-all {
   min-height: 40px;
   border-radius: var(--ds-radius-control);
+}
+
+.icon-button {
+  min-height: 40px;
+  border-radius: 50%;
 }
 
 .primary-nav-button.active {
@@ -75,7 +79,7 @@ body {
 
 .tab {
   min-height: 38px;
-  border-radius: 8px;
+  border-radius: var(--ds-radius-pill);
   font-size: 13px;
 }
 
@@ -89,7 +93,16 @@ body {
 .view-toggle,
 .sort-select {
   border-color: var(--ds-border);
+  border-radius: var(--ds-radius-control);
   background: var(--ds-surface);
+}
+
+.view-button:first-child {
+  border-radius: var(--ds-radius-control) 0 0 var(--ds-radius-control);
+}
+
+.view-button:last-child {
+  border-radius: 0 var(--ds-radius-control) var(--ds-radius-control) 0;
 }
 
 .create-button {
@@ -164,7 +177,7 @@ body {
   aspect-ratio: 3 / 4;
   overflow: hidden;
   border: 1px solid var(--ds-border);
-  border-radius: 12px;
+  border-radius: var(--ds-radius-card);
   background: var(--ds-brand);
   box-shadow: 0 10px 24px rgb(24 39 75 / 16%);
 }
@@ -298,6 +311,14 @@ body {
   gap: 34px 22px;
 }
 
+.course-card {
+  border-radius: var(--ds-radius-card);
+}
+
+.course-card .course-cover {
+  border-radius: var(--ds-radius-card);
+}
+
 .course-card.ks-vertical {
   position: relative;
   min-width: 0;
@@ -354,7 +375,7 @@ body {
   width: 36px;
   height: 36px;
   border: 1px solid rgb(255 255 255 / 54%);
-  border-radius: var(--ds-radius-control);
+  border-radius: 50%;
   color: #26364f;
   background: rgb(255 255 255 / 84%);
   backdrop-filter: blur(8px);
@@ -673,7 +694,7 @@ body {
   width: 46px;
   height: 68px;
   border: 1px solid var(--ds-border-strong);
-  border-radius: 8px;
+  border-radius: var(--ds-radius-control);
   background: var(--ds-brand-soft);
   content: "";
 }
@@ -706,7 +727,10 @@ body {
 }
 
 .ks-shelf-guide {
+  position: relative;
+  z-index: 1;
   min-height: 300px;
+  overflow: visible;
   padding: 30px 24px;
   border: 1px dashed var(--ds-border-strong);
   border-radius: var(--ds-radius-card);
@@ -762,10 +786,15 @@ body {
 }
 
 .ks-shelf-guide-action {
+  min-height: 32px;
   margin-top: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: var(--ds-brand);
   font-size: 13px;
   font-weight: 700;
+  line-height: 1.4;
 }
 
 .course-grid.list-view .ks-shelf-guide {

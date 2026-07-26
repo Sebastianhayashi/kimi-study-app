@@ -21,12 +21,12 @@ select {
 }
 
 :where(.ks-lesson-document-root, body > main, body > article) :where(blockquote, .callout, .note, [class*="quote"]) {
-  border-radius: 10px;
+  border-radius: var(--ds-radius-card);
 }
 
 .kimi-activity {
   border-color: #dce3ec;
-  border-radius: 16px;
+  border-radius: var(--ds-radius-card);
   box-shadow: 0 1px 2px rgb(24 39 75 / 4%), 0 10px 26px rgb(24 39 75 / 6%);
 }
 
@@ -36,7 +36,7 @@ select {
 .kimi-activity__feedback,
 .kimi-activity__hint,
 .kimi-activity__order-item {
-  border-radius: 10px;
+  border-radius: var(--ds-radius-control);
 }
 
 .kimi-activity__button {

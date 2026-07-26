@@ -4,7 +4,7 @@
   min-height: 40px;
   padding: 4px;
   border: 1px solid rgba(60,64,67,.16);
-  border-radius: 12px;
+  border-radius: var(--ds-radius-card);
   display: flex;
   align-items: center;
   gap: 2px;
@@ -18,7 +18,7 @@
   min-height: 34px;
   padding: 0 10px;
   border: 0;
-  border-radius: 9px;
+  border-radius: var(--ds-radius-control);
   color: #3c4043;
   background: transparent;
   cursor: pointer;

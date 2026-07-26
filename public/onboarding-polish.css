@@ -60,7 +60,7 @@ body {
 .circle-button {
   min-width: 44px;
   min-height: 44px;
-  border-radius: var(--ds-radius-control);
+  border-radius: 50%;
   font-size: 18px;
 }
 
@@ -159,7 +159,7 @@ details {
 }
 
 .file-badge {
-  border-radius: 8px;
+  border-radius: var(--ds-radius-control);
   color: var(--ds-brand-ink);
   background: var(--ds-brand-soft);
 }
@@ -432,4 +432,10 @@ details {
     color: #fff;
     background: #0b57d0;
   }
+}
+
+
+/* Decorative icon tiles follow the same compact radius as nearby controls. */
+.course-purpose-icon {
+  border-radius: var(--ds-radius-control);
 }

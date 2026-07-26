@@ -28,9 +28,9 @@
       --danger: #ff9c96;
       --shadow: 0 18px 44px rgba(0,0,0,.24);
       --shadow-dialog: 0 32px 100px rgba(0,0,0,.46);
-      --radius-sm: 12px;
-      --radius-md: 18px;
-      --radius-lg: 24px;
+      --radius-sm: var(--ds-radius-control);
+      --radius-md: var(--ds-radius-card);
+      --radius-lg: var(--ds-radius-module);
       --max: 1180px;
     }
 
@@ -42,7 +42,7 @@
       min-height: 100vh;
       color: var(--text);
       background: var(--bg);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+      font-family: "Geist Variable", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
         "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
       -webkit-font-smoothing: antialiased;
     }
@@ -127,7 +127,7 @@
     .settings-button {
       height: 40px;
       padding: 0 15px;
-      border-radius: 21px;
+      border-radius: var(--ds-radius-control);
       display: inline-flex;
       align-items: center;
       gap: 9px;
@@ -193,7 +193,7 @@
       min-height: 42px;
       padding: 0 18px;
       border: 0;
-      border-radius: 23px;
+      border-radius: var(--ds-radius-pill);
       color: var(--text-2);
       background: transparent;
       white-space: nowrap;
@@ -220,7 +220,7 @@
       width: 44px;
       height: 44px;
       border: 1px solid var(--line-2);
-      border-radius: 23px;
+      border-radius: var(--ds-radius-control);
       display: flex;
       align-items: center;
       overflow: hidden;
@@ -264,7 +264,7 @@
       height: 44px;
       padding: 3px;
       border: 1px solid var(--line-2);
-      border-radius: 23px;
+      border-radius: var(--ds-radius-control);
       display: flex;
       align-items: center;
       background: transparent;
@@ -281,8 +281,8 @@
       background: transparent;
       cursor: pointer;
     }
-    .view-button:first-child { border-radius: 19px 0 0 19px; }
-    .view-button:last-child { border-radius: 0 19px 19px 0; }
+    .view-button:first-child { border-radius: var(--ds-radius-control) 0 0 var(--ds-radius-control); }
+    .view-button:last-child { border-radius: 0 var(--ds-radius-control) var(--ds-radius-control) 0; }
     .view-button.active {
       color: #f3f5ff;
       background: var(--brand-soft);
@@ -293,7 +293,7 @@
       min-width: 134px;
       padding: 0 39px 0 16px;
       border: 1px solid var(--line-2);
-      border-radius: 23px;
+      border-radius: var(--ds-radius-control);
       appearance: none;
       color: var(--text-2);
       background:
@@ -308,7 +308,7 @@
       height: 44px;
       padding: 0 18px;
       border: 0;
-      border-radius: 23px;
+      border-radius: var(--ds-radius-pill);
       display: inline-flex;
       align-items: center;
       gap: 9px;
@@ -343,7 +343,7 @@
       min-height: 40px;
       padding: 0 17px;
       border: 1px solid var(--line-2);
-      border-radius: 21px;
+      border-radius: var(--ds-radius-control);
       display: inline-flex;
       align-items: center;
       gap: 9px;
@@ -364,7 +364,7 @@
       min-width: 0;
       height: 242px;
       border: 0;
-      border-radius: 13px;
+      border-radius: var(--ds-radius-card);
       position: relative;
       overflow: hidden;
       cursor: pointer;
@@ -565,7 +565,7 @@
       height: 240px;
       padding: 28px 26px 24px;
       border: 0;
-      border-radius: 13px;
+      border-radius: var(--ds-radius-card);
       position: relative;
       overflow: hidden;
       cursor: pointer;
@@ -667,7 +667,7 @@
       display: none;
       min-height: 280px;
       border: 1px dashed var(--line-2);
-      border-radius: 14px;
+      border-radius: var(--ds-radius-module);
       place-items: center;
       text-align: center;
       color: var(--muted);
@@ -678,7 +678,7 @@
       width: 62px;
       height: 62px;
       margin: 0 auto;
-      border-radius: 19px;
+      border-radius: var(--ds-radius-card);
       display: grid;
       place-items: center;
       color: #dfe5ff;
@@ -706,7 +706,7 @@
       max-height: min(760px, calc(100vh - 44px));
       overflow: auto;
       border: 1px solid var(--line-2);
-      border-radius: 25px;
+      border-radius: var(--ds-radius-module);
       background: #292d33;
       box-shadow: var(--shadow-dialog);
     }
@@ -745,7 +745,7 @@
       min-height: 310px;
       padding: 34px;
       border: 1.5px dashed rgba(174,186,210,.46);
-      border-radius: 20px;
+      border-radius: var(--ds-radius-module);
       display: grid;
       place-items: center;
       text-align: center;
@@ -764,7 +764,7 @@
       width: 66px;
       height: 66px;
       margin: 0 auto;
-      border-radius: 21px;
+      border-radius: var(--ds-radius-card);
       display: grid;
       place-items: center;
       color: #e7ebff;
@@ -783,7 +783,7 @@
       margin-top: 19px;
       padding: 0 18px;
       border: 1px solid var(--brand-line);
-      border-radius: 22px;
+      border-radius: var(--ds-radius-pill);
       color: #e5e9ff;
       background: var(--brand-soft);
       cursor: pointer;
@@ -803,14 +803,14 @@
       gap: 13px;
       padding: 14px;
       border: 1px solid var(--line);
-      border-radius: 14px;
+      border-radius: var(--ds-radius-card);
       background: var(--surface);
     }
     .file-badge {
       width: 44px;
       height: 50px;
       flex: none;
-      border-radius: 11px;
+      border-radius: var(--ds-radius-control);
       display: grid;
       place-items: center;
       color: #dfe5ff;
@@ -842,7 +842,7 @@
     .progress-item {
       min-height: 48px;
       padding: 0 14px;
-      border-radius: 13px;
+      border-radius: var(--ds-radius-card);
       display: flex;
       align-items: center;
       gap: 11px;
@@ -880,7 +880,7 @@
     .dialog-primary {
       min-height: 40px;
       padding: 0 17px;
-      border-radius: 21px;
+      border-radius: var(--ds-radius-control);
       cursor: pointer;
       font-size: 13px;
       font-weight: 650;
@@ -904,7 +904,7 @@
       display: none;
       max-width: min(440px, calc(100% - 30px));
       padding: 12px 17px;
-      border-radius: 12px;
+      border-radius: var(--ds-radius-card);
       color: #f5f5f5;
       background: #101216;
       box-shadow: var(--shadow);
@@ -984,9 +984,9 @@
       --danger: #b3261e;
       --shadow: 0 8px 24px rgba(60,64,67,.12), 0 2px 6px rgba(60,64,67,.08);
       --shadow-dialog: 0 24px 70px rgba(32,33,36,.22);
-      --radius-sm: 10px;
-      --radius-md: 16px;
-      --radius-lg: 22px;
+      --radius-sm: var(--ds-radius-control);
+      --radius-md: var(--ds-radius-card);
+      --radius-lg: var(--ds-radius-module);
       --max: 1200px;
     }
 
@@ -1010,7 +1010,7 @@
     .brand-mark {
       width: 36px;
       height: 36px;
-      border-radius: 12px;
+      border-radius: var(--ds-radius-control);
       display: grid;
       place-items: center;
       color: #fff;
@@ -1106,7 +1106,7 @@
     .featured-grid { gap: 18px; }
     .featured-card {
       border: 1px solid var(--line);
-      border-radius: 18px;
+      border-radius: var(--ds-radius-card);
       background: #fff;
       box-shadow: 0 1px 2px rgba(60,64,67,.08), 0 1px 3px rgba(60,64,67,.06);
     }
@@ -1154,7 +1154,7 @@
     .course-grid { gap: 18px; }
     .course-card {
       border: 1px solid var(--line);
-      border-radius: 18px;
+      border-radius: var(--ds-radius-card);
       background: #fff;
       box-shadow: 0 1px 2px rgba(60,64,67,.07), 0 1px 3px rgba(60,64,67,.05);
     }
@@ -1262,7 +1262,7 @@
       height: 204px;
       padding: 24px;
       border: 1px solid var(--line);
-      border-radius: 18px;
+      border-radius: var(--ds-radius-card);
       background: #fff;
       box-shadow: 0 1px 2px rgba(60,64,67,.08), 0 1px 3px rgba(60,64,67,.06);
     }
@@ -1573,7 +1573,7 @@
 
     .featured-progress-track {
       height: 5px;
-      border-radius: 999px;
+      border-radius: var(--ds-radius-pill);
       overflow: hidden;
       background: var(--surface-2);
     }
@@ -1777,7 +1777,7 @@
       min-height: 38px;
       padding: 0 15px;
       border: 0;
-      border-radius: 19px;
+      border-radius: var(--ds-radius-control);
       color: var(--muted);
       background: transparent;
       cursor: pointer;
@@ -1859,7 +1859,7 @@
       min-height: 36px;
       padding: 0 14px;
       border: 1px solid var(--line);
-      border-radius: 18px;
+      border-radius: var(--ds-radius-pill);
       color: var(--text-2);
       background: var(--surface);
       cursor: pointer;
@@ -1885,7 +1885,7 @@
       gap: 9px;
       padding: 0 13px;
       border: 1px solid var(--line);
-      border-radius: 20px;
+      border-radius: var(--ds-radius-control);
       background: var(--surface);
     }
 
@@ -1964,7 +1964,7 @@
       height: 284px;
       padding: 16px;
       border: 1px solid var(--line);
-      border-radius: 17px;
+      border-radius: var(--ds-radius-card);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -2043,7 +2043,7 @@
       min-height: 174px;
       padding: 18px;
       border: 1px solid var(--line);
-      border-radius: 16px;
+      border-radius: var(--ds-radius-card);
       display: flex;
       flex-direction: column;
       align-items: flex-start;
@@ -2065,7 +2065,7 @@
     .create-path-icon {
       width: 42px;
       height: 42px;
-      border-radius: 13px;
+      border-radius: var(--ds-radius-control);
       display: grid;
       place-items: center;
       color: var(--brand);
@@ -2201,10 +2201,10 @@
     <main class="page page-view active" id="page-learning-home">
       <section class="toolbar" aria-label="课程导航和工具">
         <nav class="tabs" aria-label="课程筛选">
-          <button class="tab active" type="button" data-filter="all">全部</button>
-          <button class="tab" type="button" data-filter="mine">我的课程</button>
-          <button class="tab" type="button" data-filter="learning">学习中</button>
-          <button class="tab" type="button" data-filter="completed">已完成</button>
+          <button class="tab active" type="button" data-filter="all">All</button>
+          <button class="tab" type="button" data-filter="ready">Ready to learn</button>
+          <button class="tab" type="button" data-filter="creating">Creating</button>
+          <button class="tab" type="button" data-filter="attention">Needs attention</button>
         </nav>
 
         <div class="toolbar-actions">
@@ -2864,7 +2864,7 @@
 
     bindOpenCards([...featuredCards, ...courseCards]);
     document.getElementById('showAllFeatured').addEventListener('click', () => {
-      document.querySelector('[data-filter="learning"]').click();
+      document.querySelector('[data-filter="ready"]').click();
       document.getElementById('courseGrid').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
     document.getElementById('settingsButton').addEventListener('click', () => showToast('原型：打开设置'));

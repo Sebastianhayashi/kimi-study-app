@@ -75,7 +75,7 @@ button {
   height: 5px;
   border: 2px solid var(--ds-brand);
   border-bottom: 0;
-  border-radius: 14px 14px 0 0;
+  border-radius: var(--ds-radius-card) var(--ds-radius-card) 0 0;
   transform-origin: 50% 100%;
 }
 
@@ -573,7 +573,7 @@ html[data-locale="ja"] .hero h1 {
   width: 100%;
   min-height: 98px;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: var(--ds-radius-card);
   color: var(--ds-text-secondary);
   background:
     linear-gradient(145deg, color-mix(in srgb, var(--ds-brand) 10%, var(--ds-surface)), var(--ds-bg-subtle));
@@ -893,7 +893,7 @@ html[data-locale="ja"] .hero h1 {
 
   .hero-visual {
     overflow: visible;
-    border-radius: 14px;
+    border-radius: var(--ds-radius-card);
   }
 
   .hero-visual figcaption {

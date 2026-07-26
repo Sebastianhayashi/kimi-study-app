@@ -1,6 +1,6 @@
 /* Targeted UI polish for the current course shell. Existing layout and feature ownership stay unchanged. */
 :root {
-  --ks-control-radius: 999px;
+  --ks-control-radius: var(--ds-radius-control);
   --ks-focus-ring: 0 0 0 3px rgba(11, 87, 208, .18);
 }
 
@@ -112,7 +112,7 @@ input:focus-visible {
   min-width: 0;
   overflow: hidden;
   padding: 13px 14px;
-  border-radius: 15px;
+  border-radius: var(--ds-radius-card);
   color: #343940;
   background: #f1f4f9;
 }
@@ -148,7 +148,7 @@ input:focus-visible {
   margin: 10px 0;
   padding: 9px 11px;
   border-left: 3px solid #8cb1e9;
-  border-radius: 0 9px 9px 0;
+  border-radius: 0 var(--ds-radius-control) var(--ds-radius-control) 0;
   color: #44536b;
   background: #eaf1fc;
 }
@@ -156,7 +156,7 @@ input:focus-visible {
 .assistant-panel .ks-markdown a { color: var(--brand); text-underline-offset: 2px; }
 .assistant-panel .ks-markdown code {
   padding: 2px 5px;
-  border-radius: 5px;
+  border-radius: var(--ds-radius-control);
   color: #243b61;
   background: #e5ecf8;
   font-size: .92em;
@@ -167,7 +167,7 @@ input:focus-visible {
   padding: 11px 12px;
   overflow-x: auto;
   border: 1px solid #dce2eb;
-  border-radius: 10px;
+  border-radius: var(--ds-radius-card);
   color: #29313c;
   background: #fff;
   white-space: pre;
@@ -179,7 +179,7 @@ input:focus-visible {
   margin: 10px 0;
   overflow-x: auto;
   border: 1px solid #dce2eb;
-  border-radius: 10px;
+  border-radius: var(--ds-radius-card);
   background: #fff;
 }
 .assistant-panel .ks-markdown table { width: 100%; margin: 0; border: 0; border-collapse: collapse; font-size: 11px; }
@@ -222,7 +222,7 @@ input:focus-visible {
   margin: 7px 11px;
   padding: 9px 10px 9px 12px;
   border: 1px solid #cbdaf3;
-  border-radius: 12px;
+  border-radius: var(--ds-radius-card);
   display: flex;
   align-items: flex-start;
   gap: 8px;
