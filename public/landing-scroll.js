@@ -3,7 +3,6 @@
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const root = document.documentElement;
-  let lenis = null;
   let revealObserver = null;
 
   function revealEverything() {
@@ -36,47 +35,18 @@
     targets.forEach((target) => revealObserver.observe(target));
   }
 
-  function destroyLenis() {
-    if (!lenis) return;
-    lenis.destroy();
-    lenis = null;
-    if (window.__lucubroLandingLenis) delete window.__lucubroLandingLenis;
-  }
-
-  function configureScroll() {
-    destroyLenis();
-    root.style.scrollBehavior = 'auto';
-
-    if (reducedMotion.matches || typeof window.Lenis !== 'function') {
-      root.classList.add('landing-native-scroll');
-      return;
-    }
-
-    root.classList.remove('landing-native-scroll');
-    lenis = new window.Lenis({
-      autoRaf: true,
-      autoResize: true,
-      smoothWheel: true,
-      syncTouch: false,
-      lerp: 0.14,
-      wheelMultiplier: 0.9,
-      anchors: true,
-      overscroll: true,
-      stopInertiaOnNavigate: true,
-    });
-    window.__lucubroLandingLenis = lenis;
-  }
-
   function configureMotion() {
-    configureScroll();
+    // Native scrolling is the single owner on the landing page. The previous
+    // Lenis wheel interpolation competed with anchor navigation and page
+    // reveals without improving task comprehension.
+    delete window.__lucubroLandingLenis;
+    root.classList.add('landing-native-scroll');
+    root.style.scrollBehavior = 'auto';
     configureReveal();
   }
 
   configureMotion();
-  window.addEventListener('pagehide', () => {
-    destroyLenis();
-    destroyRevealObserver();
-  }, { once: true });
+  window.addEventListener('pagehide', destroyRevealObserver, { once: true });
   if (typeof reducedMotion.addEventListener === 'function') {
     reducedMotion.addEventListener('change', configureMotion);
   } else {

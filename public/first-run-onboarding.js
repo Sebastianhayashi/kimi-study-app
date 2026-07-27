@@ -37,6 +37,8 @@
   const readingTitle = byId('readingTitle');
   const readingCopy = byId('readingCopy');
   const missionMeta = byId('missionMeta');
+  const missionStageTitle = byId('missionStageTitle');
+  const missionLead = byId('missionLead');
   const questionTitle = byId('questionTitle');
   const options = byId('options');
   const missionQuestion = byId('missionQuestion');
@@ -105,6 +107,8 @@
     });
   }
   let missionRecord = null;
+  let missionEditing = false;
+  let missionSaveBusy = false;
   let missionPollTimer = null;
   let uploadRequest = null;
   let pollTimer = null;
@@ -360,67 +364,242 @@
     showStage('mission', 1);
   }
 
+  function missionLines(value) {
+    return Array.isArray(value) ? value.filter(Boolean) : [];
+  }
+
+  function editableMissionFromRecord(mission) {
+    const editable = mission?.editable && typeof mission.editable === 'object' ? mission.editable : null;
+    const presentation = mission?.presentation && typeof mission.presentation === 'object' ? mission.presentation : {};
+    if (editable) {
+      return {
+        topic: String(editable.topic || ''),
+        problemStatement: String(editable.problemStatement || ''),
+        expectedOutput: String(editable.expectedOutput || ''),
+        successEvidence: missionLines(editable.successEvidence),
+        constraints: missionLines(editable.constraints),
+        outOfScope: missionLines(editable.outOfScope),
+      };
+    }
+    if (!presentation.expectedOutput) return null;
+    return {
+      topic: '',
+      problemStatement: String(presentation.problemStatement || ''),
+      expectedOutput: String(presentation.expectedOutput || ''),
+      successEvidence: missionLines(presentation.successEvidence),
+      constraints: [],
+      outOfScope: [],
+    };
+  }
+
+  function appendMissionReviewSection(container, labelText, content, className = '') {
+    const values = Array.isArray(content) ? content.filter(Boolean) : [];
+    if (!values.length && !String(content || '').trim()) return;
+    const section = document.createElement('section');
+    section.className = `mission-presentation-section ${className}`.trim();
+    const label = document.createElement('div');
+    label.className = 'mission-presentation-label';
+    label.textContent = tr(labelText);
+    section.appendChild(label);
+    if (Array.isArray(content)) {
+      const list = document.createElement('ul');
+      for (const item of values) {
+        const row = document.createElement('li');
+        row.textContent = item;
+        list.appendChild(row);
+      }
+      section.appendChild(list);
+    } else {
+      const copy = document.createElement('p');
+      copy.textContent = content;
+      section.appendChild(copy);
+    }
+    container.appendChild(section);
+  }
+
+  function renderMissionReview(mission) {
+    missionEditing = false;
+    missionLead.textContent = tr('Review and correct the mission before creating the course.');
+    options.replaceChildren();
+    const review = document.createElement('div');
+    review.className = 'mission-review';
+    const presentationWrap = document.createElement('div');
+    presentationWrap.className = 'mission-presentation';
+    const editable = editableMissionFromRecord(mission);
+    if (editable) {
+      appendMissionReviewSection(presentationWrap, 'Mission title', editable.topic, 'is-topic');
+      appendMissionReviewSection(presentationWrap, 'Problem statement', editable.problemStatement, 'is-problem');
+      appendMissionReviewSection(presentationWrap, 'Expected output', editable.expectedOutput, 'is-output');
+      appendMissionReviewSection(presentationWrap, 'Success evidence', editable.successEvidence, 'is-evidence');
+      appendMissionReviewSection(presentationWrap, 'Constraints', editable.constraints, 'is-constraints');
+      appendMissionReviewSection(presentationWrap, 'Out of scope', editable.outOfScope, 'is-scope');
+    } else {
+      const summary = document.createElement('div');
+      summary.className = 'mission-summary';
+      summary.textContent = mission.summary || tr('The learning mission is ready.');
+      presentationWrap.appendChild(summary);
+    }
+    review.appendChild(presentationWrap);
+    if (editable) {
+      const actions = document.createElement('div');
+      actions.className = 'mission-review-actions';
+      const edit = document.createElement('button');
+      edit.type = 'button';
+      edit.className = 'quiet-button';
+      edit.id = 'editMissionButton';
+      edit.textContent = tr('Edit mission');
+      edit.addEventListener('click', () => renderMissionEditor(mission));
+      actions.appendChild(edit);
+      review.appendChild(actions);
+    }
+    options.appendChild(review);
+    missionNext.textContent = tr('Confirm and create course');
+    missionNext.disabled = false;
+    window.LucubroI18n?.apply?.(options);
+  }
+
+  function appendMissionEditField(grid, { key, label, value, rows = 1, help = '', wide = false }) {
+    const wrap = document.createElement('label');
+    wrap.className = `mission-edit-field${wide ? ' is-wide' : ''}`;
+    const labelNode = document.createElement('span');
+    labelNode.className = 'mission-edit-label';
+    labelNode.textContent = tr(label);
+    const input = rows > 1 ? document.createElement('textarea') : document.createElement('input');
+    input.className = rows > 1 ? 'mission-edit-textarea' : 'mission-edit-input';
+    input.dataset.missionField = key;
+    input.value = value || '';
+    input.required = true;
+    if (rows > 1) input.rows = rows;
+    wrap.append(labelNode, input);
+    if (help) {
+      const helpNode = document.createElement('span');
+      helpNode.className = 'mission-edit-help';
+      helpNode.textContent = tr(help);
+      wrap.appendChild(helpNode);
+    }
+    grid.appendChild(wrap);
+    return input;
+  }
+
+  function renderMissionEditor(mission) {
+    const editable = editableMissionFromRecord(mission);
+    if (!editable || missionSaveBusy) return;
+    missionEditing = true;
+    missionError.hidden = true;
+    missionLead.textContent = tr('Correct any field, save the changes, then confirm the mission.');
+    missionNext.disabled = true;
+    options.replaceChildren();
+    const form = document.createElement('form');
+    form.className = 'mission-edit-form';
+    form.id = 'missionEditForm';
+    const grid = document.createElement('div');
+    grid.className = 'mission-edit-grid';
+    appendMissionEditField(grid, { key: 'topic', label: 'Mission title', value: editable.topic, wide: true });
+    appendMissionEditField(grid, { key: 'problemStatement', label: 'Problem statement', value: editable.problemStatement, rows: 4, wide: true });
+    appendMissionEditField(grid, { key: 'expectedOutput', label: 'Expected output', value: editable.expectedOutput, rows: 3, wide: true });
+    appendMissionEditField(grid, { key: 'successEvidence', label: 'Success evidence', value: editable.successEvidence.join('\n'), rows: 4, help: 'One item per line' });
+    appendMissionEditField(grid, { key: 'constraints', label: 'Constraints', value: editable.constraints.join('\n'), rows: 4, help: 'One item per line' });
+    appendMissionEditField(grid, { key: 'outOfScope', label: 'Out of scope', value: editable.outOfScope.join('\n'), rows: 4, help: 'One item per line', wide: true });
+    form.appendChild(grid);
+    const status = document.createElement('p');
+    status.className = 'mission-save-status';
+    status.id = 'missionSaveStatus';
+    status.setAttribute('aria-live', 'polite');
+    form.appendChild(status);
+    const actions = document.createElement('div');
+    actions.className = 'mission-edit-actions';
+    const cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.className = 'quiet-button';
+    cancel.textContent = tr('Cancel editing');
+    cancel.addEventListener('click', () => renderMissionReview(mission));
+    const save = document.createElement('button');
+    save.type = 'submit';
+    save.className = 'primary-button';
+    save.textContent = tr('Save changes');
+    actions.append(cancel, save);
+    form.appendChild(actions);
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      saveMissionEdits(form, mission, save, cancel, status);
+    });
+    options.appendChild(form);
+    window.LucubroI18n?.apply?.(form);
+    form.querySelector('[data-mission-field="topic"]')?.focus();
+  }
+
+  async function saveMissionEdits(form, mission, saveButton, cancelButton, status) {
+    if (missionSaveBusy || !courseId) return;
+    const value = (key) => form.querySelector(`[data-mission-field="${key}"]`)?.value.trim() || '';
+    const lines = (key) => value(key).split(/\r?\n/).map((item) => item.replace(/^[-*+]\s+/, '').trim()).filter(Boolean);
+    const payload = {
+      topic: value('topic'),
+      problemStatement: value('problemStatement'),
+      expectedOutput: value('expectedOutput'),
+      successEvidence: lines('successEvidence'),
+      constraints: lines('constraints'),
+      outOfScope: lines('outOfScope'),
+    };
+    if (!payload.topic || !payload.problemStatement || !payload.expectedOutput || !payload.successEvidence.length || !payload.constraints.length || !payload.outOfScope.length) {
+      missionError.textContent = tr('Complete every mission field and add at least one item to each list.');
+      missionError.hidden = false;
+      return;
+    }
+    missionSaveBusy = true;
+    saveButton.disabled = true;
+    cancelButton.disabled = true;
+    status.textContent = tr('Saving mission changes…');
+    try {
+      const snapshot = await requestJson(`/api/courses/${encodeURIComponent(courseId)}/mission`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+      missionRecord = snapshot.onboarding;
+      missionError.hidden = true;
+      renderMissionReview(missionRecord.mission);
+      missionLead.textContent = tr('Mission changes saved. Review once more, then confirm and create the course.');
+      options.querySelector('#editMissionButton')?.focus();
+    } catch (error) {
+      missionError.textContent = error.message || tr('Mission changes could not be saved.');
+      missionError.hidden = false;
+      status.textContent = tr('Mission changes could not be saved.');
+      saveButton.disabled = false;
+      cancelButton.disabled = false;
+    } finally {
+      missionSaveBusy = false;
+    }
+  }
+
   function renderMission(record) {
     missionRecord = record;
+    missionEditing = false;
     const mission = record && record.mission || {};
     missionError.hidden = true;
     missionError.textContent = '';
-    missionMeta.textContent = `${fileName.textContent || '学习材料'} · 学习目标`;
-    missionBack.textContent = '返回课程库';
+    missionMeta.textContent = `${fileName.textContent || tr('Learning material')} · ${tr('Learning goal')}`;
+    missionBack.textContent = tr('Back to course library');
     missionBack.disabled = false;
     options.replaceChildren();
     if (mission.status === 'ready') {
-      questionTitle.textContent = '确认学习目标';
-      const summary = document.createElement('div');
-      summary.className = 'mission-summary';
-      summary.textContent = mission.summary || '学习目标已经整理完成。';
-      options.appendChild(summary);
-      const presentation = mission.presentation;
-      if (presentation?.expectedOutput && Array.isArray(presentation.successEvidence)) {
-        const presentationWrap = document.createElement('div');
-        presentationWrap.className = 'mission-presentation';
-        const appendSection = (labelText, content, className) => {
-          const section = document.createElement('section');
-          section.className = `mission-presentation-section ${className}`;
-          const label = document.createElement('div');
-          label.className = 'mission-presentation-label';
-          label.textContent = tr(labelText);
-          section.appendChild(label);
-          if (Array.isArray(content)) {
-            const list = document.createElement('ul');
-            for (const item of content) {
-              const row = document.createElement('li');
-              row.textContent = item;
-              list.appendChild(row);
-            }
-            section.appendChild(list);
-          } else {
-            const copy = document.createElement('p');
-            copy.textContent = content;
-            section.appendChild(copy);
-          }
-          presentationWrap.appendChild(section);
-        };
-        appendSection('Expected output', presentation.expectedOutput, 'is-output');
-        appendSection('Success evidence', presentation.successEvidence, 'is-evidence');
-        appendSection('Problem statement', presentation.problemStatement, 'is-problem');
-        options.appendChild(presentationWrap);
-        window.LucubroI18n?.apply?.(presentationWrap);
-      }
-      missionNext.textContent = '确认并创建课程';
-      missionNext.disabled = false;
+      missionStageTitle.textContent = tr('Check and correct learning mission');
+      questionTitle.textContent = tr('Confirm learning mission');
+      renderMissionReview(mission);
     } else if (mission.status === 'failed') {
-      questionTitle.textContent = '学习目标没有整理完成';
-      missionError.textContent = mission.errorMessage || '材料和已经填写的内容都已保留，可以重试。';
+      missionStageTitle.textContent = tr('Learning mission needs attention');
+      missionLead.textContent = tr('The learning mission needs attention before the course can be created.');
+      questionTitle.textContent = tr('The learning mission was not completed');
+      missionError.textContent = mission.errorMessage || tr('Your material and answers are preserved. You can retry.');
       missionError.hidden = false;
       const recovery = document.createElement('p');
       recovery.className = 'mission-recovery-copy';
-      recovery.textContent = '重试会从当前访谈继续，不需要重新上传材料，也不会提前开始生成课程。';
+      recovery.textContent = tr('Retry continues from the current interview. You do not need to upload the material again, and course generation will not start early.');
       options.appendChild(recovery);
-      missionNext.textContent = '继续整理';
+      missionNext.textContent = tr('Continue preparing');
       missionNext.disabled = false;
     } else {
-      questionTitle.textContent = mission.question || '正在准备下一个问题';
+      missionStageTitle.textContent = tr('Set learning goal');
+      missionLead.textContent = tr('Choose the closest situation. Lucubro uses it to shape examples and practice.');
+      questionTitle.textContent = mission.question || tr('Preparing the next question');
       const choices = Array.isArray(mission.options) ? mission.options : [];
       const draft = readMissionDraft(mission);
       let selectedId = choices.some((choice) => choice?.id === draft.selectionId) ? draft.selectionId : '';
@@ -428,13 +607,13 @@
       if (choices.length) {
         const choiceLabel = document.createElement('div');
         choiceLabel.className = 'mission-choice-label';
-        choiceLabel.textContent = '选择最接近的一项';
+        choiceLabel.textContent = tr('Choose the closest option');
         options.appendChild(choiceLabel);
 
         const choiceList = document.createElement('div');
         choiceList.className = 'mission-choice-list';
         choiceList.setAttribute('role', 'radiogroup');
-        choiceList.setAttribute('aria-label', mission.question || '学习目标选项');
+        choiceList.setAttribute('aria-label', mission.question || tr('Learning goal options'));
         for (const choice of choices) {
           if (!choice || !choice.id || !choice.label) continue;
           const button = document.createElement('button');
@@ -479,14 +658,14 @@
       answerWrap.className = 'mission-answer-wrap';
       const answerLabel = document.createElement('span');
       answerLabel.className = 'mission-answer-label';
-      answerLabel.textContent = choices.length ? '补充说明（可选）' : '你的回答';
+      answerLabel.textContent = choices.length ? tr('Additional details (optional)') : tr('Your answer');
       const textarea = document.createElement('textarea');
       textarea.className = 'mission-answer';
       textarea.rows = 3;
       textarea.maxLength = choices.length ? 2000 : 4000;
       textarea.placeholder = choices.length
-        ? '可以补充你的具体场景、目标或限制；不填也可以继续。'
-        : '写下你的具体目标或使用场景。';
+        ? tr('Add your specific situation, goal, or constraints. You can also continue without extra details.')
+        : tr('Describe your specific goal or use case.');
       textarea.value = draft.detail;
       textarea.addEventListener('input', () => {
         writeMissionDraft(mission, { selectionId: selectedId, detail: textarea.value });
@@ -499,7 +678,7 @@
         const details = document.createElement('details');
         details.className = 'mission-material-details';
         const detailsSummary = document.createElement('summary');
-        detailsSummary.textContent = '查看材料摘要';
+        detailsSummary.textContent = tr('View material summary');
         const summary = document.createElement('p');
         summary.className = 'mission-material-summary';
         summary.textContent = mission.materialSummary;
@@ -507,7 +686,7 @@
         options.appendChild(details);
       }
 
-      missionNext.textContent = '继续';
+      missionNext.textContent = tr('Continue');
       missionNext.disabled = choices.length ? !selectedId : !textarea.value.trim();
       setTimeout(() => {
         const selected = options.querySelector('.option.is-selected');

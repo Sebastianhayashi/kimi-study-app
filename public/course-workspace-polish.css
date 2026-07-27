@@ -1175,3 +1175,14 @@ body:has(.ks-generation-preview:not([hidden])) .ks-course-nav-progress {
   color: var(--ds-brand);
   background: var(--ds-brand-soft);
 }
+
+.next-lesson-adjust-button {
+  flex: 0 0 auto;
+  color: var(--text-2);
+}
+.next-lesson-adjust-button:hover:not(:disabled) {
+  color: var(--brand);
+  border-color: var(--brand-border, var(--brand));
+  background: var(--brand-soft);
+}
+.next-lesson-adjust-button:disabled { opacity: .48; cursor: not-allowed; }

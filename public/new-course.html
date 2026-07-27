@@ -226,19 +226,19 @@
       width: 100%;
       display: none;
       opacity: 0;
-      transform: translateY(10px) scale(.994);
+      transform: translateY(4px);
     }
 
     .stage.is-active { display: block; }
     .stage.is-visible {
       opacity: 1;
-      transform: translateY(0) scale(1);
-      transition: opacity .38s cubic-bezier(.22,1,.36,1), transform .38s cubic-bezier(.22,1,.36,1);
+      transform: translateY(0);
+      transition: opacity .18s ease, transform .18s ease;
     }
     .stage.is-leaving {
       opacity: 0;
-      transform: translateY(-7px) scale(.996);
-      transition: opacity .22s ease, transform .22s ease;
+      transform: translateY(-2px);
+      transition: opacity .12s ease, transform .12s ease;
     }
 
     .panel {
@@ -424,6 +424,24 @@
     .mission-material-details summary { cursor: pointer; font-weight: 650; }
     .mission-material-details .mission-material-summary { margin-top: 10px; }
     .mission-preparing-copy { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+
+    .mission-review { display: grid; gap: 14px; }
+    .mission-review-actions { display: flex; justify-content: flex-end; margin-top: 2px; }
+    .mission-edit-form { display: grid; gap: 16px; }
+    .mission-edit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .mission-edit-field { display: grid; gap: 7px; min-width: 0; }
+    .mission-edit-field.is-wide { grid-column: 1 / -1; }
+    .mission-edit-label { color: var(--ink); font-size: 13px; font-weight: 700; }
+    .mission-edit-help { color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .mission-edit-input, .mission-edit-textarea {
+      width: 100%; border: 1px solid var(--ds-border-subtle); border-radius: var(--ds-radius-control);
+      padding: 12px 13px; color: var(--ink); background: var(--surface); font: inherit; line-height: 1.55;
+      transition: border-color .16s ease, box-shadow .16s ease;
+    }
+    .mission-edit-textarea { min-height: 92px; resize: vertical; }
+    .mission-edit-input:focus, .mission-edit-textarea:focus { outline: none; border-color: var(--ds-action-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ds-action-primary) 16%, transparent); }
+    .mission-edit-actions { display: flex; justify-content: flex-end; gap: 10px; }
+    .mission-save-status { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
     .mission-option-skeleton {
       height: 58px;
       border: 1px solid #e4e9f1;
@@ -437,22 +455,10 @@
       to { background-position: -100% 0; }
     }
 
-    .mission-question {
-      opacity: 1;
-      transform: translateX(0);
-    }
-    .mission-question.is-changing {
-      opacity: 0;
-      transform: translateX(-8px);
-      transition: opacity .16s ease, transform .16s ease;
-    }
-    .mission-question.is-entering {
-      animation: questionIn .28s cubic-bezier(.22,1,.36,1) both;
-    }
-    @keyframes questionIn {
-      from { opacity: 0; transform: translateX(9px); }
-      to { opacity: 1; transform: translateX(0); }
-    }
+    .mission-question { opacity: 1; }
+    .mission-question.is-changing { opacity: 0; transition: opacity .12s ease; }
+    .mission-question.is-entering { animation: questionIn .18s ease both; }
+    @keyframes questionIn { from { opacity: 0; } to { opacity: 1; } }
 
     .reading-panel {
       width: min(100%, 620px);
@@ -553,6 +559,7 @@
       pointer-events: none;
     }
     .visual-scene.is-active { opacity: 1; transform: scale(1); }
+    .visual-scene:not(.is-active) *, .visual-scene:not(.is-active)::before, .visual-scene:not(.is-active)::after { animation-play-state: paused !important; }
 
     .orbit-core {
       width: 24px; height: 24px; border-radius: 50%;
@@ -565,7 +572,7 @@
       position: absolute;
       width: 72px; height: 72px; border-radius: 50%;
       border: 1px solid #b9cbea;
-      animation: orbitSpin 3.8s linear infinite;
+      animation: none;
       
 }
     .orbit-ring::after {
@@ -573,26 +580,27 @@
       width: 8px; height: 8px; border-radius: 50%; background: var(--primary);
       
 }
-    @keyframes orbitSpin { to { transform: rotate(360deg); } }
     @keyframes breathe { 50% { transform: scale(.86); opacity: .72; } }
 
     .card-stack { position: relative; width: 62px; height: 60px; }
     .card-sheet {
       position: absolute; left: 8px; width: 46px; height: 56px;
       border: 1px solid #aac0e2; border-radius: var(--ds-radius-card); background: white;
-      animation: cardCycle 2.7s ease-in-out infinite;
+      animation: none;
       
 }
-    .card-sheet:nth-child(1) { transform: translate(-8px,6px) rotate(-8deg); opacity:.48; animation-delay:-1.8s; }
-    .card-sheet:nth-child(2) { transform: translate(8px,6px) rotate(8deg); opacity:.62; animation-delay:-.9s; }
+    .card-sheet:nth-child(1) { transform: translate(-8px,6px) rotate(-8deg); opacity:.48; }
+    .card-sheet:nth-child(2) { transform: translate(8px,6px) rotate(8deg); opacity:.62; }
     .card-sheet:nth-child(3) { transform: translate(0,0); }
+    .visual-scene[data-visual="cards"].is-active .card-sheet:nth-child(3) { animation: cardBreathe 2.2s ease-in-out infinite; }
     .card-sheet::before, .card-sheet::after { border-radius: var(--ds-radius-pill); content:""; position:absolute; left:9px; right:9px; height:3px;  background:#d7e2f2; }
     .card-sheet::before { top:15px; } .card-sheet::after { top:24px; right:17px; }
-    @keyframes cardCycle { 0%,100% { translate:0 0; } 50% { translate:0 -5px; } }
+    @keyframes cardBreathe { 50% { translate: 0 -3px; } }
 
     .node-field { position: relative; width: 76px; height: 76px; }
-    .node-field i { border-radius: 50%; position:absolute; width:9px; height:9px;  background:var(--primary); animation: nodePulse 1.9s ease-in-out infinite; }
-    .node-field i:nth-child(1){left:7px;top:33px}.node-field i:nth-child(2){left:33px;top:8px;animation-delay:-.5s}.node-field i:nth-child(3){right:7px;top:33px;animation-delay:-1s}.node-field i:nth-child(4){left:33px;bottom:7px;animation-delay:-1.4s}.node-field i:nth-child(5){left:33px;top:33px;animation-delay:-.8s}
+    .node-field i { border-radius: 50%; position:absolute; width:9px; height:9px; background:var(--primary); animation:none; }
+    .node-field i:nth-child(1){left:7px;top:33px}.node-field i:nth-child(2){left:33px;top:8px}.node-field i:nth-child(3){right:7px;top:33px}.node-field i:nth-child(4){left:33px;bottom:7px}.node-field i:nth-child(5){left:33px;top:33px}
+    .visual-scene[data-visual="nodes"].is-active .node-field i:nth-child(5) { animation: nodePulse 2s ease-in-out infinite; }
     .node-field::before,.node-field::after{content:"";position:absolute;left:14px;right:14px;top:37px;height:1px;background:#a9bfdf}.node-field::after{transform:rotate(90deg)}
     @keyframes nodePulse { 50% { transform:scale(.62); opacity:.45; } }
 
@@ -808,15 +816,23 @@
       .workspace-main { padding: 28px 22px; }
       .panel-footer { align-items: stretch; flex-direction: column-reverse; }
       .panel-footer button { width: 100%; }
+      .mission-edit-grid { grid-template-columns: 1fr; }
+      .mission-edit-field.is-wide { grid-column: auto; }
+      .mission-review-actions, .mission-edit-actions { justify-content: stretch; flex-direction: column-reverse; }
+      .mission-review-actions button, .mission-edit-actions button { width: 100%; }
     }
 
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
-        animation-duration: .01ms !important;
-        animation-iteration-count: 1 !important;
+        animation: none !important;
+        transition: none !important;
         scroll-behavior: auto !important;
-        transition-duration: .01ms !important;
       }
+      .stage, .stage.is-visible, .stage.is-leaving, .mission-question, .mission-question.is-changing, .mission-question.is-entering {
+        opacity: 1 !important;
+        transform: none !important;
+      }
+      .reading-sweep, .scan-grid::after { transform: none !important; }
     }
 
 
@@ -994,8 +1010,8 @@
       <section class="stage" data-stage="mission">
         <div class="panel">
           <p class="eyebrow" id="missionMeta">学习材料 · 学习目标</p>
-          <h1 style="font-size:clamp(30px,3.4vw,42px)">设定学习目标</h1>
-          <p class="lead">选择最接近的使用场景。Lucubro 会据此安排案例和练习。</p>
+          <h1 id="missionStageTitle" style="font-size:clamp(30px,3.4vw,42px)">设定学习目标</h1>
+          <p class="lead" id="missionLead">选择最接近的使用场景。Lucubro 会据此安排案例和练习。</p>
 
           <div class="mission-question" id="missionQuestion">
             <div class="mission-heading" id="questionTitle"></div>

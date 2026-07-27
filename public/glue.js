@@ -868,6 +868,7 @@
     // 课节真实标题（iframe <h1>）按 index 缓存，避免在任何界面露出文件名 slug。
     const lessonTitles = new Map();
     const nextButton = document.getElementById('nextLessonButton');
+    const adjustNextButton = document.getElementById('adjustNextLessonButton');
     const nextButtonHtml = nextButton?.innerHTML || '下一课';
     const currentLessonLabel = document.querySelector('.current-lesson');
     const compactProgressBar = document.querySelector('.compact-progress .progress-track span');
@@ -1596,7 +1597,7 @@
         if (idx >= 0 && idx < lessons.length) showLesson(idx);
         return;
       }
-      if (e.target.closest('#nextLessonButton')) {
+      if (e.target.closest('#adjustNextLessonButton')) {
         e.preventDefault();
         e.stopImmediatePropagation();
         if (feedbackFlowActive || nextButton?.disabled) return;
@@ -1607,6 +1608,13 @@
           .finally(() => {
             feedbackFlowActive = false;
           });
+        return;
+      }
+      if (e.target.closest('#nextLessonButton')) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (nextButton?.disabled) return;
+        nextLesson();
         return;
       }
       if (e.target.closest('#sendButton')) {
@@ -1770,6 +1778,7 @@
       '.thinking-dots i{display:inline-block;width:5px;height:5px;border-radius:50%;background:#3568c8;margin-left:4px;animation:kimiThinking 1.2s infinite}' +
       '.thinking-dots i:nth-child(2){animation-delay:.15s}.thinking-dots i:nth-child(3){animation-delay:.3s}' +
       '@keyframes kimiThinking{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}' +
+      '@media (prefers-reduced-motion:reduce){.thinking-dots i{animation:none!important;opacity:.65;transform:none!important}}' +
       '.thinking-elapsed{color:#777b82;font-size:12px;margin-left:6px}' +
       '.quick-prompt:disabled{opacity:.5;cursor:default}' +
       '.message.assistant p{margin:0 0 8px}.message.assistant p:last-child{margin-bottom:0}' +

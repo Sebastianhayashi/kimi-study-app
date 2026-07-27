@@ -57,16 +57,21 @@ test('first-course generation reuses the published lesson validator without chan
   assert.match(server.slice(firstValidation, firstValidation + 380), /第一课未通过发布验证/);
 });
 
-test('feedback UI awaits persistence before invoking the existing next lesson flow', () => {
+test('optional feedback awaits persistence while the primary next action continues directly', () => {
   const glue = read('public/glue.js');
   const collectStart = glue.indexOf('async function collectLessonFeedbackBeforeNext()');
   const feedbackPost = glue.indexOf("fetch(`/api/courses/${encodeURIComponent(courseId)}/activity`", collectStart);
-  const captureStart = glue.indexOf("if (e.target.closest('#nextLessonButton'))", feedbackPost);
-  const collectCall = glue.indexOf('collectLessonFeedbackBeforeNext()', captureStart);
-  const nextCall = glue.indexOf('nextLesson({ feedbackSaveFailed:', collectCall);
+  const adjustStart = glue.indexOf("if (e.target.closest('#adjustNextLessonButton'))", feedbackPost);
+  const collectCall = glue.indexOf('collectLessonFeedbackBeforeNext()', adjustStart);
+  const adjustedNextCall = glue.indexOf('nextLesson({ feedbackSaveFailed:', collectCall);
+  const directStart = glue.indexOf("if (e.target.closest('#nextLessonButton'))", adjustedNextCall);
+  const directNextCall = glue.indexOf('nextLesson();', directStart);
   assert.ok(collectStart >= 0 && feedbackPost > collectStart);
-  assert.ok(captureStart > feedbackPost && collectCall > captureStart && nextCall > collectCall);
-  assert.match(glue.slice(collectCall, nextCall), /\.then\(\(result\) =>/);
+  assert.ok(adjustStart > feedbackPost && collectCall > adjustStart && adjustedNextCall > collectCall);
+  assert.ok(directStart > adjustedNextCall && directNextCall > directStart);
+  assert.doesNotMatch(glue.slice(directStart, directNextCall), /collectLessonFeedbackBeforeNext/);
+  assert.match(glue.slice(collectCall, adjustedNextCall), /\.then\(\(result\) =>/);
+  assert.match(read('public/course.html'), /id="adjustNextLessonButton"/);
   assert.match(glue, /closeMobileDrawers\(\{ restoreFocus: false \}\)/);
   assert.match(glue, /event\.stopImmediatePropagation\(\)/);
   assert.match(read('public/course-workspace-polish.css'), /prefers-reduced-motion:[\s\S]*\.lesson-feedback-sheet\s*\{\s*animation: none;/);

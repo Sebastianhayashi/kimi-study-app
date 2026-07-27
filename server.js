@@ -67,6 +67,7 @@ const {
   readMissionSessionState,
   repairMissionPrompt,
   validateMissionDocument,
+  writeMissionDocument,
   writeMissionSessionState,
 } = require('./lib/standard-teach-mission');
 const { buildSourceDigest } = require('./lib/source-digest');
@@ -713,6 +714,37 @@ function reconcileCourseOnboarding(id) {
   });
 }
 
+function missionListFromSection(section) {
+  return String(section || '')
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^\s*[-*+]\s+/, '').trim())
+    .filter(Boolean)
+    .slice(0, 8);
+}
+
+function readEditableMission(courseDir) {
+  const markdown = validateMissionDocument(courseDir);
+  const title = markdown.match(/^# Mission:\s*(.+)$/m)?.[1]?.trim() || '';
+  const section = (heading, nextHeading) => {
+    const startToken = `## ${heading}`;
+    const start = markdown.indexOf(startToken);
+    if (start < 0) return '';
+    const contentStart = markdown.indexOf('\n', start + startToken.length);
+    if (contentStart < 0) return '';
+    const end = nextHeading ? markdown.indexOf(`\n## ${nextHeading}`, contentStart + 1) : markdown.length;
+    return markdown.slice(contentStart + 1, end < 0 ? markdown.length : end).trim();
+  };
+  const successLooksLike = missionListFromSection(section('Success looks like', 'Constraints'));
+  return {
+    topic: title,
+    problemStatement: section('Why', 'Success looks like'),
+    expectedOutput: successLooksLike[0] || '',
+    successEvidence: successLooksLike.slice(1),
+    constraints: missionListFromSection(section('Constraints', 'Out of scope')),
+    outOfScope: missionListFromSection(section('Out of scope')),
+  };
+}
+
 function onboardingSnapshot(id, record = reconcileCourseOnboarding(id)) {
   const job = readJob(id);
   const stage = onboardingGenerationStage(record, job.stage);
@@ -720,6 +752,7 @@ function onboardingSnapshot(id, record = reconcileCourseOnboarding(id)) {
   if (onboarding?.mission && ['ready', 'confirmed'].includes(onboarding.mission.status)) {
     const presentation = readMissionPresentation(dirOf(id));
     if (presentation) onboarding.mission.presentation = presentation;
+    try { onboarding.mission.editable = readEditableMission(dirOf(id)); } catch {}
   }
   return {
     id,
@@ -1161,6 +1194,32 @@ app.post('/api/courses/:id/mission/retry', (req, res) => {
   try {
     const record = launchStandardMissionTurn(id, { retry: true });
     return res.status(202).json(onboardingSnapshot(id, record));
+  } catch (error) {
+    return sendOnboardingError(res, error);
+  }
+});
+
+app.patch('/api/courses/:id/mission', (req, res) => {
+  const id = req.params.id;
+  if (!validId(id) || !fs.existsSync(dirOf(id))) {
+    return sendOnboardingError(res, new OnboardingError('COURSE_NOT_FOUND', '课程不存在', 404));
+  }
+  try {
+    const record = readOnboarding(dirOf(id));
+    if (record.state !== 'mission_ready' || record.mission?.status !== 'ready') {
+      throw new OnboardingError('MISSION_NOT_EDITABLE', '当前 Mission 不能修改', 409);
+    }
+    const body = req.body && typeof req.body === 'object' ? req.body : {};
+    const mission = {
+      topic: body.topic,
+      why: body.problemStatement,
+      successLooksLike: [body.expectedOutput, ...(Array.isArray(body.successEvidence) ? body.successEvidence : [])],
+      constraints: Array.isArray(body.constraints) ? body.constraints : [],
+      outOfScope: Array.isArray(body.outOfScope) ? body.outOfScope : [],
+    };
+    writeMissionDocument(dirOf(id), mission);
+    validateMissionDocument(dirOf(id));
+    return res.json(onboardingSnapshot(id, readOnboarding(dirOf(id))));
   } catch (error) {
     return sendOnboardingError(res, error);
   }

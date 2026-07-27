@@ -294,7 +294,6 @@ test('生成下一课完成后进入 Lesson 2，并恢复进度和下一课按�
   await page.goto('/course/readycourse');
   await expect(page.frameLocator('#lessonFrame').getByRole('heading', { name: '稳定化测试课节' })).toBeVisible();
   await page.locator('#nextLessonButton').click();
-  await page.locator('.lesson-feedback-skip').click();
   await emitGenerationEvent(page, {
     id: 1,
     runId: 'run-next',

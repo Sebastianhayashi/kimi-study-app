@@ -76,6 +76,15 @@ test('真实上传进度、Mission 卡片过渡、学习设置与 ready 交接�
   let state = 'awaiting_mission';
   let missionStatus = 'question';
   let missionAnswer = null;
+  let missionPatch = null;
+  let editableMission = {
+    topic: '系统思考用于团队项目决策',
+    problemStatement: '团队经常只处理表面症状。',
+    expectedOutput: '写出一份团队项目决策复盘。',
+    successEvidence: ['指出至少一个反馈回路', '解释一个延迟造成的误判'],
+    constraints: ['使用材料中的系统术语'],
+    outOfScope: ['不展开完整组织变革方案'],
+  };
   let onboardingCalls = 0;
   let lessons = 0;
 
@@ -102,6 +111,14 @@ test('真实上传进度、Mission 卡片过渡、学习设置与 ready 交接�
         status: missionStatus,
         question: missionStatus === 'question' ? '你希望用系统思考改变哪一个现实决策？' : null,
         summary: missionStatus === 'ready' ? '把系统思考用于团队项目决策，并能识别反馈、延迟和杠杆点。' : null,
+        ...(missionStatus === 'ready' ? {
+          editable: editableMission,
+          presentation: {
+            problemStatement: editableMission.problemStatement,
+            expectedOutput: editableMission.expectedOutput,
+            successEvidence: editableMission.successEvidence,
+          },
+        } : {}),
         confirmedAt: missionStatus === 'confirmed' ? '2026-07-21T00:00:01.000Z' : null,
       },
     });
@@ -121,6 +138,24 @@ test('真实上传进度、Mission 卡片过渡、学习设置与 ready 交接�
     missionStatus = 'ready';
     state = 'mission_ready';
     await route.fulfill({ status: 202, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
+  });
+  await page.route(/\/api\/courses\/firstrunfixture\/mission$/, async (route) => {
+    missionPatch = route.request().postDataJSON();
+    editableMission = missionPatch;
+    const record = onboardingRecord('mission_ready', {
+      mission: {
+        ...onboardingRecord('awaiting_mission').mission,
+        status: 'ready',
+        summary: '已保存修改后的学习任务。',
+        editable: editableMission,
+        presentation: {
+          problemStatement: editableMission.problemStatement,
+          expectedOutput: editableMission.expectedOutput,
+          successEvidence: editableMission.successEvidence,
+        },
+      },
+    });
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'firstrunfixture', onboarding: record }) });
   });
   await page.route('**/api/courses/firstrunfixture/mission/confirm', async (route) => {
     missionStatus = 'confirmed';
@@ -204,8 +239,17 @@ test('真实上传进度、Mission 卡片过渡、学习设置与 ready 交接�
   await page.locator('.mission-answer').fill('我想避免只处理表面症状。');
 
   await page.locator('#missionNext').click();
-  await expect(page.locator('#questionTitle')).toHaveText('确认学习目标');
-  await expect(page.locator('.mission-summary')).toContainText('团队项目决策');
+  await expect(page.locator('#questionTitle')).toHaveText('确认学习任务');
+  await expect(page.locator('#editMissionButton')).toBeVisible();
+  await page.locator('#editMissionButton').click();
+  await expect(page.locator('#missionNext')).toBeDisabled();
+  await page.locator('[data-mission-field="problemStatement"]').fill('团队复盘经常跳过延迟与反馈回路。');
+  await page.locator('[data-mission-field="expectedOutput"]').fill('写出一份可用于下次项目评审的复盘。');
+  await page.locator('[data-mission-field="successEvidence"]').fill('指出至少一个反馈回路\n解释一个延迟造成的误判\n给出下一次评审动作');
+  await page.getByRole('button', { name: '保存修改' }).click();
+  await expect.poll(() => missionPatch?.problemStatement).toContain('跳过延迟');
+  await expect(page.locator('#missionNext')).toBeEnabled();
+  await expect(page.locator('.mission-presentation-section.is-output')).toContainText('下次项目评审');
   await page.locator('#missionNext').click();
 
   await expect.poll(() => missionAnswer?.selectionId).toBe('team-decisions');

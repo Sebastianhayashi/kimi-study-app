@@ -42,8 +42,8 @@ test('right Tutor is preserved while notes use the lesson panel and global noteb
   assert.doesNotMatch(scratch, /缩小学习草稿/);
   assert.match(landingCss, /\.hero-title-line[\s\S]*white-space:\s*nowrap/);
   assert.match(landingScroll, /prefers-reduced-motion:\s*reduce/);
-  assert.match(landingScroll, /autoRaf:\s*true/);
-  assert.match(landingScroll, /anchors:\s*true/);
+  assert.match(landingScroll, /landing-native-scroll/);
+  assert.doesNotMatch(landingScroll, /new window\.Lenis/);
   assert.doesNotMatch(landingScroll, /window\.scrollTo\s*=/);
   assert.match(glue, /function stripLessonNumberPrefix/);
   assert.match(glue, /function formatLessonLabel/);

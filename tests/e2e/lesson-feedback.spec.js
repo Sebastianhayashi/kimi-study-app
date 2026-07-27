@@ -27,7 +27,7 @@ test('feedback POST completes before next-lesson request', async ({ page, browse
   });
 
   await page.goto('/course/readycourse');
-  await page.locator('#nextLessonButton').click();
+  await page.locator('#adjustNextLessonButton').click();
   const sheet = page.locator('.lesson-feedback-sheet');
   await expect(sheet).toBeVisible();
   await expect(sheet.locator('[data-feedback-signal="aligned"]')).toBeFocused();
@@ -41,6 +41,26 @@ test('feedback POST completes before next-lesson request', async ({ page, browse
     signal: 'aligned',
     detail: 'Keep the concrete example',
   });
+  await expect(page.locator('.lesson-feedback-layer')).toHaveCount(0);
+});
+
+test('primary next action does not force feedback', async ({ page, browserGuard }) => {
+  browserGuard.allow(/status of 409/);
+  let feedbackPosts = 0;
+  let nextPosts = 0;
+  await routeActivity(page, async (route) => {
+    feedbackPosts += 1;
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
+  });
+  await page.route('**/api/courses/readycourse/lessons/next', async (route) => {
+    nextPosts += 1;
+    await route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error: 'busy' }) });
+  });
+
+  await page.goto('/course/readycourse');
+  await page.locator('#nextLessonButton').click();
+  await expect.poll(() => nextPosts).toBe(1);
+  expect(feedbackPosts).toBe(0);
   await expect(page.locator('.lesson-feedback-layer')).toHaveCount(0);
 });
 
@@ -61,7 +81,7 @@ test('dismiss skips persistence but still continues', async ({ page, browserGuar
   });
 
   await page.goto('/course/readycourse');
-  await page.locator('#nextLessonButton').click();
+  await page.locator('#adjustNextLessonButton').click();
   await expect(page.locator('.lesson-feedback-sheet')).toBeVisible();
   await page.keyboard.press('Escape');
 
@@ -91,7 +111,7 @@ test('feedback failure is non-blocking and mobile drawer is closed first', async
   await page.goto('/course/readycourse');
   await page.locator('#mobileContextButton').click();
   await expect(page.locator('#leftPanel')).toHaveClass(/mobile-open/);
-  await page.evaluate(() => document.querySelector('#nextLessonButton').click());
+  await page.evaluate(() => document.querySelector('#adjustNextLessonButton').click());
 
   await expect(page.locator('#leftPanel')).not.toHaveClass(/mobile-open/);
   const sheet = page.locator('.lesson-feedback-sheet');
