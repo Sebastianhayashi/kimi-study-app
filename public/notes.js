@@ -41,6 +41,36 @@
   const dateLabel = (timestamp, options = { year: 'numeric', month: 'short', day: 'numeric' }) =>
     new Intl.DateTimeFormat(i18n()?.locale || 'en', options).format(new Date(timestamp));
 
+  function setActivityTabStop(target, { focus = false } = {}) {
+    const cells = [...activityGrid.querySelectorAll('.activity-day')];
+    if (!cells.length) return;
+    const next = target && cells.includes(target) ? target : cells[cells.length - 1];
+    cells.forEach((cell) => { cell.tabIndex = cell === next ? 0 : -1; });
+    if (focus) {
+      next.focus({ preventScroll: true });
+      next.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+  }
+
+  function handleActivityGridKeydown(event) {
+    const current = event.target.closest?.('.activity-day');
+    if (!current || !activityGrid.contains(current)) return;
+    const cells = [...activityGrid.querySelectorAll('.activity-day')];
+    const index = cells.indexOf(current);
+    if (index < 0) return;
+    const last = cells.length - 1;
+    let nextIndex = index;
+    if (event.key === 'ArrowUp') nextIndex = index - 1;
+    else if (event.key === 'ArrowDown') nextIndex = index + 1;
+    else if (event.key === 'ArrowLeft') nextIndex = index - 7;
+    else if (event.key === 'ArrowRight') nextIndex = index + 7;
+    else if (event.key === 'Home') nextIndex = event.ctrlKey ? 0 : index - (index % 7);
+    else if (event.key === 'End') nextIndex = event.ctrlKey ? last : Math.min(last, index + (6 - (index % 7)));
+    else return;
+    event.preventDefault();
+    setActivityTabStop(cells[Math.max(0, Math.min(last, nextIndex))], { focus: true });
+  }
+
   function updateCourseOptions() {
     const previous = courseFilter.value;
     const courses = [...new Map(notes.map((note) => [note.courseId, note.courseTitle])).entries()]
@@ -131,6 +161,8 @@
     const max = Math.max(1, ...[...byDay.values()].map((events) => events.length));
     activityGrid.replaceChildren();
     activityMonths.replaceChildren();
+    activityGrid.setAttribute('aria-rowcount', '7');
+    activityGrid.setAttribute('aria-colcount', String(Math.ceil(days.length / 7)));
     const monthSeen = new Set();
     days.forEach((date, index) => {
       if (date.getDate() <= 7) {
@@ -153,6 +185,10 @@
       cell.dataset.day = key;
       cell.dataset.level = String(level);
       cell.setAttribute('role', 'gridcell');
+      cell.setAttribute('aria-rowindex', String((index % 7) + 1));
+      cell.setAttribute('aria-colindex', String(Math.floor(index / 7) + 1));
+      cell.setAttribute('aria-selected', String(selectedDay === key));
+      cell.tabIndex = -1;
       const label = text(
         `${dateLabel(date)}: ${count} ${count === 1 ? 'activity' : 'activities'}`,
         `${dateLabel(date)}：${count} 项学习活动`,
@@ -162,8 +198,12 @@
       cell.setAttribute('aria-label', label);
       cell.addEventListener('click', () => {
         selectedDay = selectedDay === key ? '' : key;
-        document.querySelectorAll('.activity-day.active').forEach((item) => item.classList.remove('active'));
-        if (selectedDay) cell.classList.add('active');
+        document.querySelectorAll('.activity-day').forEach((item) => {
+          const active = selectedDay === item.dataset.day;
+          item.classList.toggle('active', active);
+          item.setAttribute('aria-selected', String(active));
+        });
+        setActivityTabStop(cell);
         if (!count) {
           activityDetail.textContent = text('No recorded activity on this day.', '这一天还没有学习记录。', 'この日の学習記録はありません。');
         } else {
@@ -178,8 +218,10 @@
         }
         renderNotes();
       });
+      cell.classList.toggle('active', selectedDay === key);
       activityGrid.appendChild(cell);
     });
+    setActivityTabStop(activityGrid.querySelector(`[data-day="${CSS.escape(selectedDay)}"]`) || activityGrid.lastElementChild);
     const activeDays = byDay.size;
     activitySummary.textContent = text(
       `${activeDays} active ${activeDays === 1 ? 'day' : 'days'} in the past year.`,
@@ -213,6 +255,7 @@
 
   search.addEventListener('input', renderNotes);
   courseFilter.addEventListener('change', renderNotes);
+  activityGrid.addEventListener('keydown', handleActivityGridKeydown);
   kindButtons.forEach((button) => button.addEventListener('click', () => {
     selectedKind = button.dataset.kind || '';
     kindButtons.forEach((item) => item.classList.toggle('active', item === button));

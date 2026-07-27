@@ -1554,7 +1554,8 @@ svg { display: block; }
     }
 
     .compact-progress,
-    #fullscreenButton {
+    #fullscreenButton,
+    #readerThemeButton {
       display: none;
     }
 
@@ -1629,7 +1630,6 @@ svg { display: block; }
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 5.5h14v10H9l-4 3v-13Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
           助手
         </button>
-        <button class="appbar-avatar" type="button" aria-label="Account"><i class="ph ph-user" aria-hidden="true"></i></button>
       </div>
     </div>
   </header>
@@ -1850,6 +1850,11 @@ svg { display: block; }
             <div class="progress-track" role="progressbar" aria-label="课程进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
             <span>1 / 7</span>
           </div>
+          <button class="course-control" id="readerThemeButton" type="button" aria-label="Use dark reading theme" title="Use dark reading theme" aria-pressed="false" data-reader-theme="paper">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+              <path d="M20 13.5A8 8 0 0 1 10.5 4 8 8 0 1 0 20 13.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+            </svg>
+          </button>
           <button class="course-control" id="focusModeButton" aria-label="切换专注模式" title="切换专注模式">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
               <path d="M8 4H4v4M16 4h4v4M8 20H4v-4M16 20h4v-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1964,6 +1969,45 @@ svg { display: block; }
 
 <script>
 const lessonFrame = document.getElementById('lessonFrame');
+
+const readerThemeButton = document.getElementById('readerThemeButton');
+const READER_THEME_KEY = 'lucubro:reader-theme';
+let readerTheme = 'paper';
+try { readerTheme = localStorage.getItem(READER_THEME_KEY) === 'dark' ? 'dark' : 'paper'; } catch (error) {}
+
+function readerThemeActionLabel() {
+  const key = readerTheme === 'dark' ? 'Use paper reading theme' : 'Use dark reading theme';
+  return window.LucubroI18n?.t(key) || key;
+}
+
+function applyReaderTheme() {
+  const dark = readerTheme === 'dark';
+  if (readerThemeButton) {
+    const label = readerThemeActionLabel();
+    readerThemeButton.setAttribute('aria-pressed', String(dark));
+    readerThemeButton.dataset.readerTheme = readerTheme;
+    readerThemeButton.setAttribute('aria-label', label);
+    readerThemeButton.title = label;
+  }
+  const coursePanel = document.querySelector('.course-panel');
+  if (coursePanel) coursePanel.classList.toggle('reader-dark', dark);
+  try {
+    const frameRoot = lessonFrame.contentDocument && lessonFrame.contentDocument.documentElement;
+    if (frameRoot) frameRoot.classList.toggle('ks-reader-dark', dark);
+  } catch (error) {}
+  window.dispatchEvent(new CustomEvent('lucubro:readerthemechange', { detail: { theme: readerTheme } }));
+}
+
+if (readerThemeButton) {
+  readerThemeButton.addEventListener('click', () => {
+    readerTheme = readerTheme === 'dark' ? 'paper' : 'dark';
+    try { localStorage.setItem(READER_THEME_KEY, readerTheme); } catch (error) {}
+    applyReaderTheme();
+  });
+}
+lessonFrame.addEventListener('load', applyReaderTheme);
+window.addEventListener('lucubro:localechange', applyReaderTheme);
+applyReaderTheme();
 
 const leftPanel = document.getElementById('leftPanel');
 const assistantPanel = document.getElementById('assistantPanel');

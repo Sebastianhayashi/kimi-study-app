@@ -49,3 +49,36 @@ html.ks-lesson-ready body {
   html.ks-lesson-enter body,
   html.ks-lesson-ready body { opacity: 1; transform: none; transition: none; }
 }
+
+/* Night reading theme. The course workspace (parent page) toggles
+   .ks-reader-dark on this document's <html> element. */
+html.ks-reader-dark {
+  --ks-reader-bg: #17181a;
+  --ks-reader-surface: #202124;
+  --ks-reader-surface-raised: #282a2d;
+  --ks-reader-border: #3c4043;
+  --ks-reader-text: #e8eaed;
+  --ks-reader-muted: #bdc1c6;
+  --ks-reader-link: #8ab4f8;
+  color-scheme: dark;
+  background: var(--ks-reader-bg);
+}
+html.ks-reader-dark body { color: var(--ks-reader-text); background: var(--ks-reader-bg); }
+html.ks-reader-dark .ks-lesson-document-root :where(h1, h2, h3, h4) { color: var(--ks-reader-text); }
+html.ks-reader-dark a { color: var(--ks-reader-link); }
+html.ks-reader-dark body .soldier { color: var(--ks-reader-link); }
+html.ks-reader-dark :where(hr) { border-color: var(--ks-reader-border); }
+html.ks-reader-dark .ks-lesson-document-root :where(blockquote, pre, table) {
+  border-color: var(--ks-reader-border);
+}
+
+/* Generated lessons ship their own light-tinted containers; re-tone the
+   common ones so they stop glowing white in night mode. */
+html.ks-reader-dark .ks-lesson-document-root:where(.card) { background: transparent; }
+html.ks-reader-dark .ks-lesson-document-root :where(.card, .activity-box, .tip, .note, .callout, .example, .kimi-activity-error, blockquote) {
+  border-color: var(--ks-reader-border);
+  color: var(--ks-reader-text);
+  background: var(--ks-reader-surface);
+}
+html.ks-reader-dark .ks-lesson-document-root :where(th) { background: var(--ks-reader-surface-raised); }
+html.ks-reader-dark .ks-lesson-document-root :where(td) { background: transparent; }

@@ -201,14 +201,16 @@ input:focus-visible {
 
 .ks-new-chat-button {
   min-height: 28px;
+  flex: none;
   padding: 0 10px;
-  border: 1px solid #d9dee7;
+  border: 1px solid var(--ds-border);
   border-radius: var(--ks-control-radius);
-  color: #59616d;
-  background: #fff;
+  color: var(--ds-text-secondary);
+  background: var(--ds-surface);
   cursor: pointer;
   font-size: 10px;
   font-weight: 680;
+  white-space: nowrap;
 }
 
 .ks-new-chat-button:hover {

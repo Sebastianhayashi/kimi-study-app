@@ -760,7 +760,14 @@
       this.drawer = new DetailDrawer(this);
       this.toolbar = this.createToolbar();
       this.onMouseUp = (event) => this.handleSelection(event);
-      this.onScroll = () => this.hideToolbar();
+      this.scrollFrame = 0;
+      this.onScroll = () => {
+        if (this.scrollFrame) return;
+        this.scrollFrame = window.requestAnimationFrame(() => {
+          this.scrollFrame = 0;
+          this.hideToolbar();
+        });
+      };
       this.onMessage = (event) => this.handleMessage(event);
       document.addEventListener('mouseup', this.onMouseUp);
       window.addEventListener('scroll', this.onScroll, { passive: true });
@@ -1008,6 +1015,7 @@
       document.removeEventListener('mouseup', this.onMouseUp);
       window.removeEventListener('scroll', this.onScroll);
       window.removeEventListener('message', this.onMessage);
+      if (this.scrollFrame) window.cancelAnimationFrame(this.scrollFrame);
       this.closeDraft();
       this.toolbar.remove();
       for (const card of this.cards.values()) card.destroy();

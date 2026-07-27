@@ -9,6 +9,7 @@ const json = (route, body, status = 200) => route.fulfill({
 });
 
 test('route metadata follows the requested locale on all five product routes', async ({ page }) => {
+  await page.route(/\/api\/courses\/[^/]+\/onboarding(?:\?.*)?$/, (route) => json(route, {}));
   const routes = [
     ['/?lang=ja', 'Lucubro | 目標に沿った学習コース'],
     ['/app?lang=ja', 'マイコース | Lucubro'],

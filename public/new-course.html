@@ -328,9 +328,9 @@
       transition: transform .16s ease, background .16s ease, border-color .16s ease, opacity .16s ease;
     }
 
-    .quiet-button { background: white; color: #526076; }
-    .quiet-button:hover { background: #f8fafe; border-color: #cbd6e5; }
-    .primary-button { color: white; background: var(--primary); border-color: var(--primary); }
+    .quiet-button { background: transparent; color: var(--ds-text-secondary); }
+    .quiet-button:hover { background: var(--ds-surface-muted); border-color: var(--ds-border-strong); }
+    .primary-button { color: var(--ds-brand-on); background: var(--primary); border-color: var(--primary); }
     .primary-button:hover { background: var(--primary-hover); }
     .quiet-button:active, .primary-button:active { transform: scale(.98); }
     .primary-button:disabled { border-color: var(--ds-border); color: var(--ds-text-muted); background: var(--ds-surface-muted); opacity: 1; cursor: not-allowed; box-shadow: none; }
@@ -753,9 +753,40 @@
     .workspace-wrap { position: relative; }
 
     @media (max-width: 820px) {
-      .topbar { grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 9px; padding: 8px 14px; }
-      .top-progress { gap: 7px; }
+      .topbar {
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        gap: 8px 10px;
+        padding: 8px 14px 10px;
+      }
+      .top-progress {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .top-step {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr);
+        align-items: center;
+        gap: 6px;
+      }
       .top-step-copy {
+        position: static;
+        width: auto;
+        height: auto;
+        margin: 0;
+        overflow: visible;
+        clip: auto;
+        clip-path: none;
+        white-space: normal;
+      }
+      .top-step-label {
+        font-size: 10px;
+        line-height: 1.2;
+      }
+      .top-step-state {
         position: absolute;
         width: 1px;
         height: 1px;
@@ -884,7 +915,6 @@
         </span>
       </div>
       <div class="top-actions">
-        <button class="avatar appbar-avatar" type="button" aria-label="Account"><i class="ph ph-user" aria-hidden="true"></i></button>
       </div>
     </header>
 

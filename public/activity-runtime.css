@@ -33,6 +33,54 @@
 .kimi-activity__recording { display: grid; gap: 12px; }
 .kimi-activity__progress { margin: 18px 0 4px; padding: 12px 14px; border-radius: var(--ds-radius-card); background: #f6f8fb; color: #53677e; font-size: 13px; }
 .kimi-activity-error { margin: 24px 0; padding: 14px; border: 1px solid #f0c6c6; border-radius: var(--ds-radius-card); background: #fff4f4; color: #8a2c2c; }
+
+html.ks-reader-dark .kimi-activity {
+  border-color: var(--ks-reader-border);
+  color: var(--ks-reader-text);
+  background: var(--ks-reader-surface);
+  box-shadow: none;
+}
+html.ks-reader-dark .kimi-activity__eyebrow,
+html.ks-reader-dark .kimi-activity__progress { color: var(--ks-reader-muted); }
+html.ks-reader-dark .kimi-activity__stimulus,
+html.ks-reader-dark .kimi-activity__hint,
+html.ks-reader-dark .kimi-activity__progress {
+  border-color: var(--ks-reader-border);
+  color: var(--ks-reader-text);
+  background: var(--ks-reader-surface-raised);
+}
+html.ks-reader-dark .kimi-activity__option,
+html.ks-reader-dark .kimi-activity__input,
+html.ks-reader-dark .kimi-activity__textarea,
+html.ks-reader-dark .kimi-activity__order-item,
+html.ks-reader-dark .kimi-activity__icon-button,
+html.ks-reader-dark .kimi-activity__button--secondary {
+  border-color: var(--ks-reader-border);
+  color: var(--ks-reader-text);
+  background: var(--ks-reader-surface-raised);
+}
+html.ks-reader-dark .kimi-activity__option:hover,
+html.ks-reader-dark .kimi-activity__option:focus-within,
+html.ks-reader-dark .kimi-activity__icon-button:hover,
+html.ks-reader-dark .kimi-activity__icon-button:focus-visible {
+  border-color: var(--ks-reader-link);
+  background: var(--ks-reader-surface);
+}
+html.ks-reader-dark .kimi-activity__input::placeholder,
+html.ks-reader-dark .kimi-activity__textarea::placeholder { color: var(--ks-reader-muted); }
+html.ks-reader-dark .kimi-activity__feedback[data-state="passed"] {
+  color: #c8e6c9;
+  background: color-mix(in srgb, var(--ks-reader-surface) 78%, #155c34);
+}
+html.ks-reader-dark .kimi-activity__feedback[data-state="retry"] {
+  color: #f7d99a;
+  background: color-mix(in srgb, var(--ks-reader-surface) 80%, #77500c);
+}
+html.ks-reader-dark .kimi-activity-error {
+  border-color: color-mix(in srgb, var(--ks-reader-border) 65%, #8a2c2c);
+  color: #f4b7b7;
+  background: color-mix(in srgb, var(--ks-reader-surface) 82%, #8a2c2c);
+}
 @media (max-width: 680px) {
   .kimi-activity { margin: 20px 0; padding: 17px; }
 }

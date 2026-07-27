@@ -488,7 +488,8 @@ body,
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: #0b57d0;
+  color: var(--ds-brand-on);
+  background: var(--ds-brand);
 }
 
 .ks-study-surface {
@@ -544,7 +545,7 @@ body,
 }
 
 .ks-generation-fidelity .ks-generation-progress > span {
-  background: #0b57d0;
+  background: var(--ds-brand);
 }
 
 .ks-generation-recovery {
@@ -870,6 +871,11 @@ body,
 }
 
 @media (max-width: 700px) {
+  .ks-course-more-trigger {
+    width: 44px;
+    min-width: 44px;
+  }
+
   .ks-materials-menu-list,
   .ks-course-more-menu {
     position: fixed;
@@ -1156,4 +1162,16 @@ body:has(.ks-generation-preview:not([hidden])) .ks-course-nav-progress {
   .lesson-feedback-sheet {
     animation: none;
   }
+}
+
+/* Night reading theme: re-tone the stage around the lesson iframe so the
+   frame stops floating on a paper-white canvas. The iframe document itself
+   is themed via .ks-reader-dark (see lesson-content-normalizer.css). */
+.course-panel.reader-dark .course-stage {
+  background: #17181a;
+}
+
+.course-panel.reader-dark #readerThemeButton {
+  color: var(--ds-brand);
+  background: var(--ds-brand-soft);
 }

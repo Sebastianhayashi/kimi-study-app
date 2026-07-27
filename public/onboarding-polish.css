@@ -48,8 +48,9 @@ body {
 }
 
 .top-step.active .top-step-number {
-  border-color: #0b57d0;
-  background: #0b57d0;
+  border-color: var(--ds-brand);
+  color: var(--ds-brand-on);
+  background: var(--ds-brand);
 }
 
 .top-step.done .top-step-number {
@@ -183,12 +184,13 @@ details {
 .primary-button {
   min-height: 44px;
   border-radius: var(--ds-radius-pill);
-  background: #0b57d0;
+  color: var(--ds-brand-on);
+  background: var(--ds-brand);
   box-shadow: none;
 }
 
 .primary-button:hover {
-  background: #0842a0;
+  background: var(--ds-brand-hover);
 }
 
 .quiet-button {
@@ -250,7 +252,7 @@ details {
   left: 32px;
   height: 8px;
   border-radius: var(--ds-radius-pill);
-  background: linear-gradient(90deg, #0b57d0 38%, var(--ds-border) 38%);
+  background: linear-gradient(90deg, var(--ds-brand) 38%, var(--ds-border) 38%);
   content: "";
 }
 
@@ -289,7 +291,7 @@ details {
 
 .progress-fill {
   border-radius: inherit;
-  background: #0b57d0;
+  background: var(--ds-brand);
 }
 
 .status-line {
@@ -427,15 +429,16 @@ details {
       radial-gradient(circle at 50% -120px, rgb(90 148 240 / 12%), transparent 460px),
       var(--ds-bg);
   }
-
-  .primary-button {
-    color: #fff;
-    background: #0b57d0;
-  }
 }
 
 
 /* Decorative icon tiles follow the same compact radius as nearby controls. */
 .course-purpose-icon {
   border-radius: var(--ds-radius-control);
+}
+
+/* Keep the icon legible when its card is selected (brand-soft wash behind it). */
+.course-purpose-card:has(input:checked) .course-purpose-icon {
+  color: var(--ds-brand-on);
+  background: var(--ds-brand);
 }

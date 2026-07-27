@@ -215,7 +215,7 @@
 
     function queuedCourseIsStale(course) {
       const updated = Number(course.updated);
-      return courseState(course) === 'queued'
+      return isCreatingState(courseState(course))
         && Number.isFinite(updated)
         && updated > 0
         && Date.now() - updated > STALLED_COURSE_MS;
@@ -333,6 +333,18 @@
     const templateCover = tpl.querySelector('.course-cover');
     const generatedCoverClass = templateCover.className;
     const generatedCoverHtml = templateCover.innerHTML;
+    const COVER_PALETTES = ['cover-blue', 'cover-green', 'cover-violet', 'cover-warm', 'cover-slate', 'cover-teal'];
+
+    function coverPaletteFor(id) {
+      const text = String(id || '');
+      let hash = 0;
+      for (let i = 0; i < text.length; i += 1) hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
+      return COVER_PALETTES[hash % COVER_PALETTES.length];
+    }
+
+    function generatedCoverClassFor(course) {
+      return generatedCoverClass.replace(/cover-(blue|green|violet|warm|slate|teal)/, coverPaletteFor(course.id || course.title));
+    }
     const courseCardsById = new Map();
     let shelfPollTimer = null;
     let shelfRequestInFlight = false;
@@ -445,7 +457,7 @@
     }
 
     function checkQueuedCourseHealth(course) {
-      if (courseState(course) !== 'queued' || courseHasCreationError(course) || onboardingHealthRequests.has(course.id)) return;
+      if (!isCreatingState(courseState(course)) || courseHasCreationError(course) || onboardingHealthRequests.has(course.id)) return;
       const request = fetch(`/api/courses/${encodeURIComponent(course.id)}/onboarding`)
         .then((response) => {
           if (response.status !== 404) return;
@@ -541,7 +553,7 @@
     function updateCourseCard(el, course) {
       el._course = course;
       const state = courseState(course);
-      if (state !== 'queued') stalledCourseIds.delete(course.id);
+      if (!isCreatingState(state)) stalledCourseIds.delete(course.id);
       if (queuedCourseIsStale(course)) stalledCourseIds.add(course.id);
       const failed = courseHasCreationError(course);
       const generating = isCreatingState(state) && !failed;
@@ -573,7 +585,7 @@
         }
       } else {
         if (!cover.querySelector('.cover-title')) {
-          cover.className = generatedCoverClass;
+          cover.className = generatedCoverClassFor(course);
           cover.innerHTML = generatedCoverHtml;
         }
         const coverTitle = cover.querySelector('.cover-title');
@@ -581,9 +593,7 @@
         const coverKind = cover.querySelector('.cover-kind');
         if (coverKind) coverKind.textContent = failed ? 'Creation stalled' : generating ? 'Creating course' : 'Learning material';
         const coverAuthor = cover.querySelector('.cover-author');
-        if (coverAuthor) coverAuthor.textContent = failed
-          ? 'The first lesson was not created. Retry or delete this course.'
-          : generating ? 'Preparing the first lesson' : `${course.ext} 材料`;
+        if (coverAuthor) coverAuthor.textContent = generating ? 'Preparing the first lesson' : `${course.ext} 材料`;
       }
       el.classList.toggle('is-generating', generating);
       el.classList.toggle('is-failed', failed);
@@ -605,7 +615,7 @@
       el.querySelector('.course-title').textContent = title;
       el.querySelector('.course-meta').textContent = courseMeta(course);
       ensureCourseErrorActions(el).hidden = !failed;
-      if (state === 'queued' && !failed) checkQueuedCourseHealth(course);
+      if (isCreatingState(state) && !failed) checkQueuedCourseHealth(course);
       if (isGenericCourseTitle(course.title) && !resolvedCourseTitles.has(course.id)) {
         resolveCourseTitle(course).then((resolvedTitle) => {
           if (!resolvedTitle || el._course?.id !== course.id) return;
@@ -1988,16 +1998,18 @@
       const actions = document.querySelector('.course-actions');
       const focus = document.getElementById('focusModeButton');
       const fullscreen = document.getElementById('fullscreenButton');
+      const readerTheme = document.getElementById('readerThemeButton');
       const next = document.getElementById('nextLessonButton');
-      if (!actions || !focus || !fullscreen || !next) return;
+      if (!actions || !focus || !fullscreen || !readerTheme || !next) return;
       focus.classList.add('ks-secondary-action');
       fullscreen.classList.add('ks-secondary-action');
+      const translate = (key) => window.LucubroI18n?.t(key) || key;
       const wrapper = document.createElement('div');
       wrapper.className = 'ks-course-more';
       const trigger = document.createElement('button');
       trigger.type = 'button';
       trigger.className = 'course-control ks-course-more-trigger';
-      trigger.setAttribute('aria-label', 'More study options');
+      trigger.setAttribute('aria-label', translate('More study options'));
       trigger.setAttribute('aria-haspopup', 'menu');
       trigger.setAttribute('aria-expanded', 'false');
       trigger.innerHTML = '<i class="ph ph-dots-three" aria-hidden="true"></i>';
@@ -2005,11 +2017,12 @@
       menu.className = 'ks-course-more-menu';
       menu.hidden = true;
       menu.setAttribute('role', 'menu');
-      const item = (label, icon, action) => {
+      const item = (label, icon, action, actionName = '') => {
         const button = document.createElement('button');
         button.type = 'button';
         button.setAttribute('role', 'menuitem');
-        button.innerHTML = `<i class="ph ${icon}" aria-hidden="true"></i><span>${label}</span>`;
+        if (actionName) button.dataset.action = actionName;
+        button.innerHTML = `<i class="ph ${icon}" aria-hidden="true"></i><span>${translate(label)}</span>`;
         button.addEventListener('click', () => {
           menu.hidden = true;
           trigger.setAttribute('aria-expanded', 'false');
@@ -2017,8 +2030,19 @@
         });
         return button;
       };
+      const readerThemeItem = item('Use dark reading theme', 'ph-moon', () => readerTheme.click(), 'reader-theme');
+      const updateReaderThemeItem = () => {
+        const dark = readerTheme.getAttribute('aria-pressed') === 'true';
+        const key = dark ? 'Use paper reading theme' : 'Use dark reading theme';
+        const label = translate(key);
+        readerThemeItem.querySelector('span').textContent = label;
+        readerThemeItem.querySelector('i').className = `ph ${dark ? 'ph-sun' : 'ph-moon'}`;
+        readerThemeItem.setAttribute('aria-label', label);
+        trigger.setAttribute('aria-label', translate('More study options'));
+      };
       menu.append(
         item('Focus reading', 'ph-corners-out', () => focus.click()),
+        readerThemeItem,
         item('Full screen course', 'ph-arrows-out', () => fullscreen.click()),
       );
       trigger.addEventListener('click', () => {
@@ -2040,6 +2064,9 @@
       });
       wrapper.append(trigger, menu);
       actions.insertBefore(wrapper, next);
+      updateReaderThemeItem();
+      window.addEventListener('lucubro:readerthemechange', updateReaderThemeItem);
+      window.addEventListener('lucubro:localechange', updateReaderThemeItem);
     }
     mountCourseMoreMenu();
 

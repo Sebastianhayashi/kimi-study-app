@@ -295,6 +295,16 @@ test('后台生成课程在书架无需刷新即可变为 ready，并支持 Ente
       }]),
     });
   });
+  await page.route('**/api/courses/backgroundcourse/onboarding', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      id: 'backgroundcourse',
+      onboarding: onboardingRecord(listCalls >= 2 ? 'ready' : 'generating', {
+        courseId: 'backgroundcourse',
+      }),
+    }),
+  }));
   await page.route('**/course/backgroundcourse', (route) => route.fulfill({
     status: 200,
     contentType: 'text/html',

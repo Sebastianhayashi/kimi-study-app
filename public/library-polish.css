@@ -167,9 +167,9 @@ body {
 }
 
 .featured-card.ks-continue-card:hover {
-  transform: none;
+  transform: translateY(-2px);
   border-color: color-mix(in srgb, var(--ds-brand) 32%, var(--ds-border));
-  box-shadow: 0 16px 40px rgb(24 39 75 / 10%);
+  box-shadow: 0 18px 44px rgb(24 39 75 / 12%);
 }
 
 .ks-continue-cover {
@@ -398,6 +398,14 @@ body {
   font-weight: 720;
 }
 
+/* State precedence: a card can be both "ready" (has lessons) and
+   "generating"/"failed" — the more urgent state must win, so is-ready comes
+   first and is-failed last. */
+.course-card.is-ready .course-status {
+  color: var(--ds-success);
+  background: var(--ds-success-soft);
+}
+
 .course-card.is-generating .course-status {
   color: var(--ds-brand-ink);
   background: color-mix(in srgb, var(--ds-brand-soft) 92%, white);
@@ -414,13 +422,8 @@ body {
 }
 
 .course-card.is-failed .course-status {
-  color: #8d1b16;
-  background: #fce8e6;
-}
-
-.course-card.is-ready .course-status {
-  color: #176244;
-  background: #e5f4ed;
+  color: var(--ds-danger);
+  background: var(--ds-danger-soft);
 }
 
 .empty {
@@ -546,25 +549,6 @@ body {
     min-height: 44px;
   }
 
-  .toolbar-actions {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    width: 100%;
-  }
-
-  .search-shell {
-    width: 100%;
-  }
-
-  .search-shell.open {
-    width: 100%;
-  }
-
-  .view-toggle,
-  .sort-select {
-    display: none;
-  }
-
   .create-button {
     min-height: 44px;
   }
@@ -616,12 +600,47 @@ body {
   }
 }
 
+@media (max-width: 520px) {
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    overflow: visible;
+  }
+
+  .tab {
+    width: 100%;
+    min-width: 0;
+    padding-inline: 10px;
+    white-space: normal;
+    line-height: 1.2;
+  }
+
+  .course-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .course-card.ks-vertical .course-title {
+    font-size: 16px;
+  }
+
+  .course-error-actions button {
+    min-height: 44px;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   .course-card .course-menu,
   .course-status {
     color: #dbe6f5;
     border-color: rgb(255 255 255 / 14%);
     background: rgb(23 32 46 / 84%);
+  }
+
+  .course-card.is-ready .course-status {
+    color: var(--ds-success);
+    background: var(--ds-success-soft);
   }
 
   .course-card.is-generating .course-status {
@@ -649,14 +668,9 @@ body {
       inset 0 1px 0 rgb(255 255 255 / 6%);
   }
 
-  .course-card.is-ready .course-status {
-    color: #a3e4c6;
-    background: #153b2d;
-  }
-
   .course-card.is-failed .course-status {
-    color: #f2a49d;
-    background: #4b211f;
+    color: var(--ds-danger);
+    background: var(--ds-danger-soft);
   }
 }
 
@@ -891,4 +905,159 @@ body {
   color: var(--ds-danger);
   font-size: 11px;
   line-height: 1.45;
+}
+
+/* Keep cover text clear of the status pill anchored bottom-left (28px pill
+   + 12px offset); without this the pill sat on top of wrapped titles. */
+.course-card .course-cover .cover-content {
+  padding-bottom: 54px;
+}
+
+.course-card.is-generating .generated-cover .cover-content {
+  padding-bottom: 54px;
+}
+
+/* The bottom status pill already carries the state; the top kind label was
+   repeating the same words ("创建已停滞" twice on one cover). */
+.course-card:is(.is-generating, .is-failed) .generated-cover .cover-kind {
+  display: none;
+}
+
+/* 8px micro type on placeholder covers was illegible. */
+.course-cover .cover-kind,
+.course-cover .cover-author {
+  font-size: 9px;
+}
+
+.course-cover .cover-title {
+  font-size: 14px;
+}
+
+/* List view repair. The card's DOM order (cover, menu, title, meta,
+   error-actions) auto-places into the wrong columns of the row grid, and the
+   ks-vertical card resets strip the row surface. Place every child
+   explicitly instead. */
+.course-grid.list-view .course-card.ks-vertical {
+  height: auto;
+  min-height: 92px;
+  padding: 14px 18px;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
+  background: var(--ds-surface);
+  grid-template-columns: 50px minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 16px;
+}
+
+.course-grid.list-view .course-card .course-cover {
+  grid-column: 1;
+  grid-row: 1 / -1;
+}
+
+.course-grid.list-view .course-card .course-title {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: end;
+  margin: 0;
+}
+
+.course-grid.list-view .course-card .course-meta {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: start;
+  min-height: 0;
+  margin-top: 4px;
+}
+
+.course-grid.list-view .course-card .course-menu {
+  grid-column: 3;
+  grid-row: 1 / -1;
+}
+
+.course-grid.list-view .course-card .course-error-actions {
+  grid-column: 2 / -1;
+  grid-row: 3;
+  margin-top: 10px;
+}
+
+/* The 50px list thumbnail cannot host the absolute status pill; the meta
+   line already carries the state in list view. */
+.course-grid.list-view .course-status {
+  display: none;
+}
+
+/* In list rows the 1fr button pair stretches the full row width; cap it. */
+.course-grid.list-view .course-error-actions {
+  grid-template-columns: repeat(2, minmax(120px, 180px));
+}
+
+/* ---- Editorial page intro (parity with /notes header) ---- */
+.library-intro {
+  max-width: 780px;
+  margin: 22px 0 42px;
+}
+.library-kicker {
+  margin: 0 0 10px;
+  color: var(--ds-brand);
+  font-size: 11px;
+  font-weight: 780;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.library-intro h1 {
+  margin: 0;
+  font-size: clamp(34px, 4.6vw, 58px);
+  font-weight: 800;
+  line-height: 1.0;
+  letter-spacing: -.05em;
+  text-wrap: balance;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+.library-lede {
+  max-width: 620px;
+  margin: 18px 0 0;
+  color: var(--ds-text-muted);
+  font-size: 16px;
+  line-height: 1.65;
+}
+@media (max-width: 640px) {
+  .library-intro { margin: 6px 0 28px; }
+  .library-intro h1 { font-size: 33px; }
+}
+
+/* ---- Motion polish (taste pass) ---- */
+/* Continue card: smooth the hover lift added above. */
+.featured-card.ks-continue-card {
+  transition:
+    transform 260ms cubic-bezier(.22, .72, .22, 1),
+    box-shadow 260ms cubic-bezier(.22, .72, .22, 1),
+    border-color 260ms cubic-bezier(.22, .72, .22, 1);
+}
+
+/* Cover art zooms gently inside the clipped card face on hover. */
+.course-card.ks-vertical .course-cover {
+  transition: transform 560ms cubic-bezier(.22, .72, .22, 1);
+}
+.course-card.ks-vertical:hover .course-cover {
+  transform: scale(1.03);
+}
+
+/* Staggered entrance for library cards. Uses the independent `translate`
+   property so it composes with the existing transform-based hover lift. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes ksCardIn {
+    from { opacity: 0; translate: 0 12px; }
+    to { opacity: 1; translate: 0 0; }
+  }
+  .course-grid .course-card {
+    animation: ksCardIn 420ms cubic-bezier(.22, .72, .22, 1) both;
+  }
+  .course-grid .course-card:nth-child(2) { animation-delay: 45ms; }
+  .course-grid .course-card:nth-child(3) { animation-delay: 90ms; }
+  .course-grid .course-card:nth-child(4) { animation-delay: 135ms; }
+  .course-grid .course-card:nth-child(5) { animation-delay: 180ms; }
+  .course-grid .course-card:nth-child(6) { animation-delay: 225ms; }
+  .course-grid .course-card:nth-child(n+7) { animation-delay: 270ms; }
 }

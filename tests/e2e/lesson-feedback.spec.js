@@ -44,9 +44,11 @@ test('feedback POST completes before next-lesson request', async ({ page, browse
   await expect(page.locator('.lesson-feedback-layer')).toHaveCount(0);
 });
 
-test('dismiss skips persistence but still continues', async ({ page }) => {
+test('dismiss skips persistence but still continues', async ({ page, browserGuard }) => {
+  browserGuard.allow(/status of 409/);
   let feedbackPosts = 0;
   let nextPosts = 0;
+  let nextCompleted = false;
   await routeActivity(page, async (route) => {
     feedbackPosts += 1;
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
@@ -55,6 +57,7 @@ test('dismiss skips persistence but still continues', async ({ page }) => {
     nextPosts += 1;
     await new Promise((resolve) => setTimeout(resolve, 250));
     await route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error: 'busy' }) });
+    nextCompleted = true;
   });
 
   await page.goto('/course/readycourse');
@@ -63,6 +66,7 @@ test('dismiss skips persistence but still continues', async ({ page }) => {
   await page.keyboard.press('Escape');
 
   await expect.poll(() => nextPosts).toBe(1);
+  await expect.poll(() => nextCompleted).toBe(true);
   expect(feedbackPosts).toBe(0);
   await expect(page.locator('.lesson-feedback-layer')).toHaveCount(0);
 });
@@ -73,6 +77,7 @@ test('feedback failure is non-blocking and mobile drawer is closed first', async
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   let nextPosts = 0;
+  let nextCompleted = false;
   await routeActivity(page, async (route) => {
     await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'write failed' }) });
   });
@@ -80,6 +85,7 @@ test('feedback failure is non-blocking and mobile drawer is closed first', async
     nextPosts += 1;
     await new Promise((resolve) => setTimeout(resolve, 400));
     await route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error: 'busy' }) });
+    nextCompleted = true;
   });
 
   await page.goto('/course/readycourse');
@@ -97,4 +103,5 @@ test('feedback failure is non-blocking and mobile drawer is closed first', async
   // 所以先断言保存失败提示，再等 next 请求完成。
   await expect(page.locator('.toast')).toContainText('反馈暂时未保存');
   await expect.poll(() => nextPosts).toBe(1);
+  await expect.poll(() => nextCompleted).toBe(true);
 });

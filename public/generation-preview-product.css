@@ -92,7 +92,7 @@
   height: 7px;
   flex: none;
   border-radius: 50%;
-  background: #0b57d0;
+  background: var(--ds-brand, #0b57d0);
   box-shadow: 0 0 0 0 rgba(11, 87, 208, .28);
   animation: ksFidelityStatusPulse 1.8s ease-out infinite;
 }
@@ -102,7 +102,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: #0b57d0;
+  color: var(--ds-brand, #0b57d0);
   font-size: 11px;
   font-weight: 700;
 }
@@ -136,7 +136,7 @@
   width: 0;
   height: 100%;
   border-radius: inherit;
-  background: #0b57d0;
+  background: var(--ds-brand, #0b57d0);
   transition: width 780ms cubic-bezier(.22, .72, .22, 1);
 }
 
@@ -286,7 +286,7 @@
 }
 
 .ks-generation-fidelity .ks-generation-process-step.is-active .ks-generation-step-state {
-  color: #0b57d0;
+  color: var(--ds-brand, #0b57d0);
   font-weight: 700;
 }
 
@@ -348,7 +348,7 @@
 .ks-generation-fidelity .ks-generation-paper-label-mark {
   width: 8px;
   height: 8px;
-  border: 2px solid #0b57d0;
+  border: 2px solid var(--ds-brand, #0b57d0);
   border-radius: 3px;
   opacity: .7;
 }
@@ -473,7 +473,7 @@
 
 .ks-generation-fidelity .ks-fidelity-stage-caption {
   margin-bottom: 12px;
-  color: #0b57d0;
+  color: var(--ds-brand, #0b57d0);
   font-size: 10px;
   font-weight: 760;
   letter-spacing: .05em;
@@ -513,7 +513,7 @@
   display: grid;
   place-items: center;
   border-radius: var(--ds-radius-control);
-  color: #0b57d0;
+  color: var(--ds-brand, #0b57d0);
   background: #dbe8ff;
   font-size: 10px;
   font-weight: 800;
@@ -557,7 +557,7 @@
   display: grid;
   place-items: center;
   border-radius: var(--ds-radius-control);
-  color: #0b57d0;
+  color: var(--ds-brand, #0b57d0);
   background: #dbe8ff;
   font-size: 11px;
   font-weight: 800;
@@ -725,7 +725,7 @@
 
 .ks-generation-fidelity .ks-fidelity-lesson-eyebrow {
   margin-bottom: 10px;
-  color: #0b57d0;
+  color: var(--ds-brand, #0b57d0);
   font-size: 10px;
   font-weight: 760;
 }
@@ -757,7 +757,7 @@
 }
 
 .ks-generation-fidelity .ks-fidelity-lesson-goal strong {
-  color: #0b57d0;
+  color: var(--ds-brand, #0b57d0);
 }
 
 .ks-generation-fidelity .ks-fidelity-lesson-section-title {
@@ -782,7 +782,7 @@
 }
 
 .ks-generation-fidelity .ks-fidelity-vocab-en {
-  color: #0b57d0;
+  color: var(--ds-brand, #0b57d0);
   font-size: 14px;
   font-weight: 760;
 }
@@ -1079,7 +1079,7 @@
   flex: none;
   padding: 3px 6px;
   border-radius: var(--ds-radius-pill);
-  color: #0b57d0;
+  color: var(--ds-brand, #0b57d0);
   background: #edf4ff;
   font-weight: 760;
 }
@@ -1108,7 +1108,7 @@
 }
 
 .ks-generation-product .ks-fidelity-ready-badge.is-working {
-  color: #0b57d0;
+  color: var(--ds-brand, #0b57d0);
   border-color: #c8d8f1;
   background: #f5f8ff;
 }

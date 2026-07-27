@@ -152,14 +152,14 @@
 .ks-source-retry {
   min-height: 34px;
   padding: 0 13px;
-  border: 1px solid #b8cef4;
+  border: 1px solid var(--ds-border-strong, #b8cef4);
   border-radius: var(--ds-radius-control);
-  color: #0b57d0;
-  background: #fff;
+  color: var(--ds-brand, #0b57d0);
+  background: var(--ds-surface, #fff);
   cursor: pointer;
   font: 700 12px/1 system-ui, -apple-system, "PingFang SC", sans-serif;
 }
-.ks-source-retry:hover { background: #edf4ff; }
+.ks-source-retry:hover { background: var(--ds-brand-soft, #edf4ff); }
 
 @media (max-width: 720px) {
   .ks-generation-elapsed { display: none; }
@@ -175,16 +175,51 @@
   .lesson-resource-slot {
     display: flex !important;
     flex: 0 0 auto !important;
-    max-width: 76px;
+    max-width: 100px;
+    align-items: center;
     gap: 5px !important;
   }
-  .lesson-resource-slot .lesson-resource-tool:not(.ks-source-launch):not(.kn-notes-toggle) {
+
+  .lesson-resource-slot > .lesson-resource-tool:not(.kn-notes-toggle) {
     display: none !important;
   }
-  .lesson-resource-slot .ks-source-launch,
-  .lesson-resource-slot .kn-notes-toggle {
-    width: 34px;
-    min-width: 34px;
+
+  #lessonResourceSlot .ks-materials-menu {
+    flex: 0 0 44px !important;
+    height: 44px;
+  }
+
+  #lessonResourceSlot .ks-materials-trigger,
+  #lessonResourceSlot > .kn-notes-toggle {
+    display: flex !important;
+    flex: 0 0 44px !important;
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    justify-content: center;
     padding: 0;
+  }
+
+  #lessonResourceSlot .ks-materials-menu-list .lesson-resource-tool {
+    display: flex !important;
+    width: 100%;
+    min-height: 48px !important;
+    padding-inline: 12px;
+  }
+
+  #lessonResourceSlot .ks-materials-menu-list .lesson-resource-tool-label {
+    position: static;
+    width: auto;
+    height: auto;
+    min-width: 0;
+    margin: 0;
+    overflow: visible;
+    display: inline;
+    flex: 1;
+    clip: auto;
+    clip-path: none;
+    white-space: normal;
+    text-align: left;
   }
 }

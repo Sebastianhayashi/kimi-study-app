@@ -42,6 +42,7 @@
     let activating = false;
     let activePress = null;
     let finalizeTimer = 0;
+    let scrollFrame = 0;
     let renderedScroll = { x: window.scrollX, y: window.scrollY };
     let speech = null;
 
@@ -298,13 +299,17 @@
     };
 
     const handleScroll = () => {
-      if (toolbar.hidden || activating) return;
+      if (toolbar.hidden || activating || scrollFrame) return;
       // A scroll event alone does not prove that the learner intended to
       // dismiss the menu. Browser actionability checks, focus restoration and
       // layout stabilization may scroll the lesson before pointerdown. Keep
       // the fixed toolbar connected and visible; explicit wheel/touch/key or
       // outside-pointer intent owns dismissal.
-      renderedScroll = { x: window.scrollX, y: window.scrollY };
+      scrollFrame = window.requestAnimationFrame(() => {
+        scrollFrame = 0;
+        if (toolbar.hidden || activating) return;
+        renderedScroll = { x: window.scrollX, y: window.scrollY };
+      });
     };
 
     const handleMessage = (event) => {
@@ -377,6 +382,7 @@
     return () => {
       requestId += 1;
       window.clearTimeout(finalizeTimer);
+      if (scrollFrame) window.cancelAnimationFrame(scrollFrame);
       document.removeEventListener('mouseup', handleSelection);
       document.removeEventListener('pointerdown', handleOutsidePointerDown, true);
       document.removeEventListener('keydown', handleKeyDown);

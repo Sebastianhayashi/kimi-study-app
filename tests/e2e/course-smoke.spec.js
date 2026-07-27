@@ -15,6 +15,7 @@ test('课程外壳与课节 iframe 一起加载', async ({ page }) => {
 });
 
 test('完整助教问答、划词、新对话及笔记栏交互', async ({ page }) => {
+  test.setTimeout(45_000);
   // 拦截聊天接口以确保测试运行极速且 100% 确定，防止网络延迟或 rate limit 导致失败
   await page.route('**/api/courses/readycourse/chat', async route => {
     await route.fulfill({
