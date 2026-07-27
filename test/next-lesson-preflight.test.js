@@ -73,7 +73,7 @@ test('preflight accepts the exact diagnostic lesson and assessment contract', ()
   const root = course();
   fs.writeFileSync(
     path.join(root, 'lessons', '0002-apply.html'),
-    '<div data-kimi-activity="hinge-1"></div><div data-kimi-activity="transfer-1"></div>',
+    '<section data-worked-example data-source-ref="source:book#chapter-2"><p data-worked-example-step="1">先识别关键限制并解释原因。</p><p data-worked-example-step="2">再判断动作空间并解释原因。</p></section><div data-kimi-activity="hinge-1"></div><div data-kimi-activity="transfer-1"></div>',
   );
   fs.writeFileSync(
     path.join(root, 'assessments', '0002-apply.json'),

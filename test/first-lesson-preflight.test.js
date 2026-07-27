@@ -10,8 +10,11 @@ const { buildNextLessonPrompt } = require('../lib/next-lesson');
 const { captureNextLessonBaseline } = require('../lib/next-lesson');
 const {
   ASSESSMENT_MACHINE_CONTRACT_LINES,
+  LESSON_PEDAGOGY_CONTRACT_LINES,
   preflightInstruction,
 } = require('../lib/assessment-machine-contract');
+
+const WORKED_EXAMPLE = '<section data-worked-example data-source-ref="source:book#chapter-1"><p data-worked-example-step="1">识别限制并解释原因。</p><p data-worked-example-step="2">判断动作并解释原因。</p></section>';
 
 function course() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'kimi-first-preflight-'));
@@ -72,7 +75,7 @@ test('first-lesson preflight accepts a valid first lesson without a transaction 
   const root = course();
   fs.writeFileSync(
     path.join(root, 'lessons', '0001-intro.html'),
-    '<div data-kimi-activity="hinge-1"></div><div data-kimi-activity="transfer-1"></div>',
+    `${WORKED_EXAMPLE}<div data-kimi-activity="hinge-1"></div><div data-kimi-activity="transfer-1"></div>`,
   );
   fs.writeFileSync(
     path.join(root, 'assessments', '0001-intro.json'),
@@ -122,6 +125,9 @@ test('next-lesson prompt keeps the shared machine contract verbatim (drift guard
   const prompt = buildNextLessonPrompt(root, baseline, { validatorCommand: 'node x.js' });
   for (const line of ASSESSMENT_MACHINE_CONTRACT_LINES) {
     assert.ok(prompt.includes(line), `prompt missing contract line: ${line.slice(0, 30)}`);
+  }
+  for (const line of LESSON_PEDAGOGY_CONTRACT_LINES) {
+    assert.ok(prompt.includes(line), `prompt missing pedagogy line: ${line.slice(0, 30)}`);
   }
   for (const line of preflightInstruction('node x.js')) {
     assert.ok(prompt.includes(line), `prompt missing preflight line: ${line.slice(0, 30)}`);

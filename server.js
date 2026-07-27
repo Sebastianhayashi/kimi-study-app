@@ -135,13 +135,15 @@ Curiosity 不是随机冷知识。完成课节与 Assessment 后，可选择生�
 
 const {
   ASSESSMENT_MACHINE_CONTRACT_LINES,
+  LESSON_PEDAGOGY_CONTRACT_LINES,
   preflightInstruction,
 } = require('./lib/assessment-machine-contract');
 
 // 首课与下一课共用同一段 Assessment wire schema（见 R6 P0.1「同一发布合同」）。
 // 首课没有 transaction baseline，预检走 first-lesson-preflight（逐课验证 lessons/）。
 const FIRST_LESSON_MACHINE_CONTRACT =
-  '\n\n' + ASSESSMENT_MACHINE_CONTRACT_LINES.join('\n') + '\n' +
+  '\n\n' + LESSON_PEDAGOGY_CONTRACT_LINES.join('\n') + '\n\n' +
+  ASSESSMENT_MACHINE_CONTRACT_LINES.join('\n') + '\n' +
   preflightInstruction(`node ${JSON.stringify(path.join(ROOT, 'lib', 'first-lesson-preflight.js'))}`).join('\n');
 
 const FIRST_PROMPT = (ext) =>

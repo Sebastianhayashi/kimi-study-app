@@ -317,6 +317,27 @@
       gap: 16px;
     }
 
+    .loading-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .loading-panel.is-cancelled .generation-visual,
+    .loading-panel.is-cancelled .progress-fill {
+      animation: none !important;
+      transition: none !important;
+    }
+
+    @media (max-width: 620px) {
+      .loading-panel .panel-footer { align-items: stretch; flex-direction: column; }
+      .loading-panel .panel-footer > button,
+      .loading-actions,
+      .loading-actions > button { width: 100%; }
+    }
+
     .quiet-button,
     .primary-button {
       min-height: 44px;
@@ -1027,7 +1048,7 @@
       </section>
 
       <section class="stage" data-stage="loading">
-        <div class="panel">
+        <div class="panel loading-panel" id="loadingPanel">
           <div class="loader-layout">
             <div class="generation-visual-wrap" aria-hidden="true">
               <div class="generation-visual">
@@ -1061,8 +1082,12 @@
 
           <p class="form-error loading-error" id="loadingError" hidden role="alert"></p>
           <div class="panel-footer">
-            <button class="quiet-button" id="backgroundButton" type="button">在后台继续</button>
-            <button class="primary-button" id="retryButton" type="button" hidden>重试创建</button>
+            <button class="quiet-button" id="cancelGenerationButton" type="button" hidden>Cancel generation</button>
+            <div class="loading-actions">
+              <button class="quiet-button" id="backgroundButton" type="button">在后台继续</button>
+              <button class="primary-button" id="restartGenerationButton" type="button" hidden>Start again</button>
+              <button class="primary-button" id="retryButton" type="button" hidden>重试创建</button>
+            </div>
             <span id="loadingHint" style="color:var(--muted);font-size:12px">材料已保留，可以离开此页在后台继续</span>
           </div>
         </div>

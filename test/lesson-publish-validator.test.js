@@ -70,8 +70,13 @@ function validSpec(base = '0002-two') {
   };
 }
 
+function workedExampleHtml() {
+  return '<section data-worked-example data-source-ref="source:book#2"><p data-worked-example-step="1">先识别关键限制，并说明为什么。</p><p data-worked-example-step="2">再判断动作空间如何变化，并说明原因。</p></section>';
+}
+
 function writePair(dir, html, spec = validSpec()) {
-  fs.writeFileSync(path.join(dir, 'lessons', '0002-two.html'), html);
+  const body = html.includes('data-worked-example') ? html : `${workedExampleHtml()}${html}`;
+  fs.writeFileSync(path.join(dir, 'lessons', '0002-two.html'), body);
   fs.writeFileSync(path.join(dir, 'assessments', '0002-two.json'), JSON.stringify(spec));
 }
 
@@ -136,6 +141,25 @@ test('rejects missing and orphan activity mounts', () => {
   assert.equal(result.ok, false);
   assert.ok(result.errors.some((item) => item.includes('no matching activity')));
   assert.ok(result.errors.some((item) => item.includes('not mounted')));
+});
+
+test('blocks a lesson without a worked-example container or two marked steps', () => {
+  const dir = root();
+  fs.writeFileSync(path.join(dir, 'assessments', '0002-two.json'), JSON.stringify(validSpec()));
+  fs.writeFileSync(path.join(dir, 'lessons', '0002-two.html'), '<div data-kimi-activity="hinge-2"></div><div data-kimi-activity="transfer-2"></div>');
+  const missing = validatePublishedLesson(dir, '0002-two.html');
+  assert.equal(missing.ok, false);
+  assert.match(missing.errors.join('\n'), /data-worked-example marker/);
+
+  fs.writeFileSync(path.join(dir, 'lessons', '0002-two.html'), '<section data-worked-example><p data-worked-example-step="1">一步</p></section><div data-kimi-activity="hinge-2"></div><div data-kimi-activity="transfer-2"></div>');
+  const oneStep = validatePublishedLesson(dir, '0002-two.html');
+  assert.equal(oneStep.ok, false);
+  assert.match(oneStep.errors.join('\n'), /at least two data-worked-example-step/);
+
+  fs.writeFileSync(path.join(dir, 'lessons', '0002-two.html'), '<!-- <section data-worked-example><p data-worked-example-step="1">隐藏一步</p><p data-worked-example-step="2">隐藏二步</p></section> --><div data-kimi-activity="hinge-2"></div><div data-kimi-activity="transfer-2"></div>');
+  const commentOnly = validatePublishedLesson(dir, '0002-two.html');
+  assert.equal(commentOnly.ok, false);
+  assert.match(commentOnly.errors.join('\n'), /data-worked-example marker/);
 });
 
 test('rejects answer-key fields leaked into lesson HTML', () => {

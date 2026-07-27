@@ -571,3 +571,117 @@ test('重试生成再次失败后重试按钮恢复为可操作状态', async ({
   await expect(retryButton).toBeVisible();
   await expect(retryButton).toBeEnabled();
 });
+
+test('生成中取消进入不可复活的终态，并提供返回课程库与重新开始出口', async ({ page }) => {
+  await page.addInitScript(() => {
+    const listeners = new Set();
+    const sources = [];
+    class ControllableEventSource {
+      constructor(url) { this.url = url; this.readyState = 1; sources.push(this); }
+      addEventListener(type, listener) { if (type === 'generation-event') listeners.add(listener); }
+      removeEventListener(type, listener) { if (type === 'generation-event') listeners.delete(listener); }
+      close() { this.readyState = 2; }
+    }
+    window.EventSource = ControllableEventSource;
+    window.__emitFirstRunGenerationEvent = (payload) => {
+      const event = { data: JSON.stringify(payload || {}) };
+      listeners.forEach((listener) => listener(event));
+    };
+    window.__firstRunEventSources = sources;
+  });
+
+  let cancelled = false;
+  let restarted = false;
+  let cancelCalls = 0;
+  let retryCalls = 0;
+
+  await page.context().route('**/api/courses/firstrunfixture/onboarding', async (route) => {
+    const state = cancelled && !restarted ? 'failed' : 'generating';
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'firstrunfixture',
+        onboarding: onboardingRecord(state, {
+          generation: {
+            attempts: 1,
+            activeRunId: state === 'generating' ? 'cancel-run' : null,
+            startedAt: '2026-07-21T00:00:01.000Z',
+            readyAt: null,
+            failedAt: state === 'failed' ? '2026-07-21T00:00:03.000Z' : null,
+            errorCode: state === 'failed' ? 'GENERATION_FAILED' : null,
+            errorMessage: state === 'failed' ? 'generation cancelled' : null,
+          },
+        }),
+        generation: { stage: state === 'failed' ? 'failed' : 'understanding', runId: 'cancel-run', busy: state === 'generating', lessons: 0 },
+      }),
+    });
+  });
+
+  await page.context().route('**/api/courses/firstrunfixture/operation', async (route) => {
+    const state = cancelled && !restarted ? 'cancelled' : 'running';
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        operationId: restarted ? 'restart-run' : 'cancel-run',
+        state,
+        stage: state === 'cancelled' ? 'failed' : 'generating',
+        progress: state === 'cancelled' ? 38 : 40,
+        phase: 'claims',
+        lessons: 0,
+        busy: state === 'running',
+        currentMessage: state === 'cancelled' ? '课程生成已取消' : '正在建立学习目标',
+        history: [{ id: 'claims', label: '确定学习目标', state: state === 'cancelled' ? 'error' : 'active' }],
+      }),
+    });
+  });
+
+  await page.context().route('**/api/courses/firstrunfixture/operation/cancel', async (route) => {
+    cancelCalls += 1;
+    cancelled = true;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ operationId: 'cancel-run', state: 'cancelled', stage: 'failed', progress: 38, phase: 'claims', lessons: 0, busy: false, currentMessage: '课程生成已取消' }),
+    });
+  });
+
+  await page.context().route('**/api/courses/firstrunfixture/retry', async (route) => {
+    retryCalls += 1;
+    restarted = true;
+    await route.fulfill({
+      status: 202,
+      contentType: 'application/json',
+      body: JSON.stringify({ id: 'firstrunfixture', onboarding: onboardingRecord('generating'), generation: { stage: 'understanding', runId: 'restart-run', busy: true, lessons: 0 }, reused: false }),
+    });
+  });
+
+  await page.goto('/new-course?course=firstrunfixture');
+  await expect(page.locator('#cancelGenerationButton')).toBeVisible();
+  await page.locator('#cancelGenerationButton').click();
+  await expect.poll(() => cancelCalls).toBe(1);
+  await expect(page.locator('#statusLine')).toContainText(/取消|cancel/i);
+  await expect(page.locator('#cancelGenerationButton')).toBeHidden();
+  await expect(page.locator('#backgroundButton')).toBeVisible();
+  await expect(page.locator('#restartGenerationButton')).toBeVisible();
+  await expect(page.locator('#restartGenerationButton')).toBeEnabled();
+  await expect.poll(() => page.evaluate(() => window.__firstRunEventSources.every((source) => source.readyState === 2))).toBe(true);
+
+  await page.evaluate(() => window.__emitFirstRunGenerationEvent({ phase: 'validating', message: '迟到的进度不应复活界面' }));
+  await page.waitForTimeout(120);
+  await expect(page.locator('#statusLine')).toContainText(/取消|cancel/i);
+  await expect(page.locator('#statusLine')).not.toContainText('迟到');
+
+  const exitPage = await page.context().newPage();
+  await exitPage.goto('/new-course?course=firstrunfixture');
+  await expect(exitPage.locator('#restartGenerationButton')).toBeVisible();
+  await exitPage.locator('#backgroundButton').click();
+  await expect(exitPage).toHaveURL(/\/app$/);
+  await exitPage.close();
+
+  await page.locator('#restartGenerationButton').click();
+  await expect.poll(() => retryCalls).toBe(1);
+  await expect(page.locator('#cancelGenerationButton')).toBeVisible();
+  await expect(page.locator('#statusLine')).toContainText('正在建立学习目标');
+});

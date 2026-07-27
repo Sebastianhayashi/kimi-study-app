@@ -50,7 +50,10 @@
   const elapsedTime = byId('elapsedTime');
   const statusLine = byId('statusLine');
   const processList = byId('processList');
+  const loadingPanel = byId('loadingPanel');
+  const cancelGenerationButton = byId('cancelGenerationButton');
   const backgroundButton = byId('backgroundButton');
+  const restartGenerationButton = byId('restartGenerationButton');
   const loadingError = byId('loadingError');
   const retryButton = byId('retryButton');
   const loadingHint = byId('loadingHint');
@@ -120,6 +123,8 @@
   let readyTimer = null;
   let generationStartedAt = 0;
   let elapsedTimer = null;
+  let generationTerminal = null;
+  let cancelBusy = false;
 
   function setTopStep(index) {
     topSteps.forEach((step, i) => {
@@ -819,8 +824,16 @@
   }
 
   function showLoading() {
+    generationTerminal = null;
+    cancelBusy = false;
+    loadingPanel?.classList.remove('is-cancelled');
     loadingError.hidden = true;
     retryButton.hidden = true;
+    restartGenerationButton.hidden = true;
+    cancelGenerationButton.hidden = false;
+    cancelGenerationButton.disabled = false;
+    cancelGenerationButton.textContent = tr('Cancel generation');
+    backgroundButton.textContent = tr('Continue in background');
     backgroundButton.hidden = false;
     loadingHint.hidden = false;
     setGenerationVisual('extracting');
@@ -843,6 +856,7 @@
   }
 
   function applyGenerationStatus(status) {
+    if (generationTerminal) return;
     const reportedStart = Date.parse(status.startedAt || '');
     if (Number.isFinite(reportedStart)) generationStartedAt = reportedStart;
     const value = Math.max(lastProgress, Math.max(0, Math.min(100, Number(status.progress) || 0)));
@@ -852,6 +866,10 @@
     statusLine.textContent = status.currentMessage || '正在创建课程';
     setGenerationVisual(status.phase || 'extracting');
     buildProcessList(Array.isArray(status.history) ? status.history : []);
+    const cancellable = ['queued', 'running', 'interrupted'].includes(String(status.state || ''))
+      || (!status.state && status.stage === 'generating');
+    cancelGenerationButton.hidden = !cancellable;
+    cancelGenerationButton.disabled = !cancellable || cancelBusy;
   }
 
   function clearPollTimer() {
@@ -883,8 +901,12 @@
   }
 
   function showFailure(message, { retryable = true, returnToMission = false } = {}) {
+    generationTerminal = 'failed';
     stopMonitoring();
     showStage('loading', 2);
+    loadingPanel?.classList.remove('is-cancelled');
+    cancelGenerationButton.hidden = true;
+    restartGenerationButton.hidden = true;
     statusLine.textContent = returnToMission ? '学习设置没有保存' : '课程创建没有完成';
     loadingError.textContent = `${message || '课程创建没有完成，请重试。'} 材料和已确认的学习设置仍然保留。`;
     loadingError.hidden = false;
@@ -894,8 +916,86 @@
     loadingHint.hidden = true;
   }
 
+  function showCancelled(message = '') {
+    generationTerminal = 'cancelled';
+    cancelBusy = false;
+    stopMonitoring();
+    showStage('loading', 2);
+    loadingPanel?.classList.add('is-cancelled');
+    statusLine.textContent = tr('Course generation cancelled');
+    loadingError.textContent = message || tr('The course generation was cancelled. Your material and confirmed learning settings are preserved.');
+    loadingError.hidden = false;
+    cancelGenerationButton.hidden = true;
+    cancelGenerationButton.disabled = true;
+    retryButton.hidden = true;
+    restartGenerationButton.hidden = false;
+    restartGenerationButton.disabled = false;
+    restartGenerationButton.textContent = tr('Start again');
+    backgroundButton.hidden = false;
+    backgroundButton.textContent = tr('Back to library');
+    loadingHint.hidden = true;
+  }
+
+  async function alignAfterCancelConflict() {
+    try {
+      const status = await requestOperation(courseId);
+      if (status.state === 'cancelled' || status.cancelled === true) {
+        showCancelled();
+        return;
+      }
+      if (status.state === 'ready' || status.stage === 'ready') {
+        generationTerminal = 'ready';
+        stopMonitoring();
+        await showReady(status.lessons || 1);
+        return;
+      }
+      if (['failed', 'interrupted'].includes(status.state) || status.stage === 'failed') {
+        showFailure(status.currentMessage || tr('Generation is no longer cancellable. The latest server state is shown.'));
+        return;
+      }
+      generationTerminal = null;
+      cancelBusy = false;
+      startMonitoring();
+      loadingError.textContent = tr('The generation could not be cancelled. The current server state is still active.');
+      loadingError.hidden = false;
+    } catch (error) {
+      generationTerminal = null;
+      cancelBusy = false;
+      cancelGenerationButton.hidden = false;
+      cancelGenerationButton.disabled = false;
+      cancelGenerationButton.textContent = tr('Cancel generation');
+      loadingError.textContent = error.message || tr('The generation could not be cancelled. The current server state is still active.');
+      loadingError.hidden = false;
+    }
+  }
+
+  async function cancelGeneration() {
+    if (!courseId || cancelBusy || generationTerminal) return;
+    cancelBusy = true;
+    cancelGenerationButton.disabled = true;
+    cancelGenerationButton.textContent = tr('Cancelling generation…');
+    loadingError.hidden = true;
+    try {
+      const status = await requestJson(`/api/courses/${encodeURIComponent(courseId)}/operation/cancel`, {
+        method: 'POST',
+        body: '{}',
+      });
+      if (status.state === 'cancelled' || status.cancelled === true) showCancelled();
+      else await alignAfterCancelConflict();
+    } catch (error) {
+      if (error.status === 409) await alignAfterCancelConflict();
+      else {
+        cancelBusy = false;
+        cancelGenerationButton.disabled = false;
+        cancelGenerationButton.textContent = tr('Cancel generation');
+        loadingError.textContent = error.message || tr('The generation could not be cancelled. The current server state is still active.');
+        loadingError.hidden = false;
+      }
+    }
+  }
+
   async function pollGeneration() {
-    if (!monitoring || !courseId) return;
+    if (!monitoring || !courseId || generationTerminal) return;
     if (pollInFlight) {
       pollRequested = true;
       return;
@@ -910,6 +1010,11 @@
       ]);
       if (!monitoring) return;
       const state = snapshot.onboarding?.state;
+      if (status.state === 'cancelled' || status.cancelled === true) {
+        terminal = true;
+        showCancelled();
+        return;
+      }
       if (state === 'ready' && status.stage === 'ready' && Number(status.lessons) > 0) {
         terminal = true;
         stopMonitoring();
@@ -936,12 +1041,14 @@
   function startMonitoring() {
     if (!courseId) return;
     stopMonitoring();
+    generationTerminal = null;
     monitoring = true;
     showLoading();
     schedulePoll(0);
     try {
       eventSource = new EventSource(`/api/courses/${encodeURIComponent(courseId)}/generation-events`);
       eventSource.addEventListener('generation-event', (event) => {
+        if (generationTerminal) return;
         try {
           const data = JSON.parse(event.data);
           if (data.message && lastProgress < 100) statusLine.textContent = data.message;
@@ -963,6 +1070,28 @@
     } catch (error) {
       showFailure(error.message);
       retryButton.disabled = false;
+    }
+  }
+
+  async function restartCancelledGeneration() {
+    if (!courseId || generationTerminal !== 'cancelled') return;
+    restartGenerationButton.disabled = true;
+    restartGenerationButton.textContent = tr('Restarting generation…');
+    loadingError.hidden = true;
+    try {
+      let snapshot = null;
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        snapshot = await requestJson(`/api/courses/${encodeURIComponent(courseId)}/onboarding`);
+        if (['failed', 'interrupted'].includes(snapshot.onboarding?.state)) break;
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+      await requestJson(`/api/courses/${encodeURIComponent(courseId)}/retry`, { method: 'POST', body: '{}' });
+      generationTerminal = null;
+      lastProgress = 0;
+      generationStartedAt = Date.now();
+      startMonitoring();
+    } catch (error) {
+      showCancelled(error.message || tr('The course generation was cancelled. Your material and confirmed learning settings are preserved.'));
     }
   }
 
@@ -1005,6 +1134,13 @@
         return;
       }
       if (record.state === 'failed' || record.state === 'interrupted') {
+        try {
+          const operation = await requestOperation(courseId);
+          if (operation.state === 'cancelled' || operation.cancelled === true) {
+            showCancelled();
+            return;
+          }
+        } catch {}
         const attempts = Number(record.generation?.attempts || 0);
         if (attempts > 0) showFailure(record.generation?.errorMessage || '课程创建没有完成，请重试。');
         else {
@@ -1056,6 +1192,8 @@
   cancelUpload.addEventListener('click', () => { location.href = exitDestination(); });
   backToLibrary.addEventListener('click', () => { location.href = exitDestination(); });
   backgroundButton.addEventListener('click', () => { location.href = exitDestination(); });
+  cancelGenerationButton.addEventListener('click', cancelGeneration);
+  restartGenerationButton.addEventListener('click', restartCancelledGeneration);
   retryButton.addEventListener('click', retryGeneration);
   startFirstLesson.addEventListener('click', () => {
     clearTimeout(readyTimer);

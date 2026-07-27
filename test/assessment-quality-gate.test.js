@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { auditAssessmentQuality } = require('../lib/assessment-quality-gate');
+const { auditAssessmentQuality, vagueClaimLabelReason } = require('../lib/assessment-quality-gate');
 
 function assessment(overrides = {}) {
   return {
@@ -122,4 +122,24 @@ test('feedback response checks remain observable warnings', () => {
   });
   assert.equal(skipped.ok, true);
   assert.match(skipped.warnings.join('\n'), /same claim or source neighborhood/);
+});
+
+test('vague claim verbs are deterministic blockers in Chinese and English', () => {
+  for (const label of ['了解反馈回路', '理解关键机制', '熟悉评审流程', '掌握论证方法', '知道何时使用', 'Understand feedback loops', 'Know the framework', 'Learn about induction', 'Be familiar with the process']) {
+    const spec = assessment();
+    spec.claims[0].label = label;
+    const result = auditAssessmentQuality(spec);
+    assert.equal(result.ok, false, label);
+    assert.match(result.blockers.join('\n'), /observable action/i);
+  }
+});
+
+test('observable leading actions are not falsely blocked when later text contains vague terms', () => {
+  for (const label of ['诊断理解偏差', '判断是否理解机制', '解释已掌握方法的边界', 'Diagnose understanding gaps', 'Explain what learners know']) {
+    assert.equal(vagueClaimLabelReason(label), null, label);
+    const spec = assessment();
+    spec.claims[0].label = label;
+    const result = auditAssessmentQuality(spec);
+    assert.equal(result.ok, true, `${label}: ${result.blockers.join('\n')}`);
+  }
 });
