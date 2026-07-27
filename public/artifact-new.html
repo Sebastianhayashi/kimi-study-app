@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New artifact · Lucubro</title>
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to main content</a>
+  <div class="artifact-shell">
+    <header class="artifact-topbar">
+      <a class="artifact-brand" href="/app?view=courses">Lucubro</a>
+      <nav class="artifact-nav" aria-label="Artifact navigation">
+        <a href="/app?view=courses">Courses and materials</a>
+        <a href="/notes">Notes</a>
+      </nav>
+    </header>
+    <main id="main" class="artifact-main">
+      <h1>Start a Zhihu answer</h1>
+      <p class="artifact-lede">Create the task owner first. You can link an existing course now or add source material later.</p>
+      <form id="artifactForm" class="artifact-panel artifact-stack" novalidate>
+        <div class="artifact-field">
+          <label for="artifactTitle">Zhihu question</label>
+          <input id="artifactTitle" name="title" maxlength="240" required>
+          <p class="artifact-hint">Use the exact question the answer must address.</p>
+        </div>
+        <div class="artifact-field">
+          <label for="artifactAudience">Target reader</label>
+          <input id="artifactAudience" name="audience" maxlength="500" required>
+        </div>
+        <fieldset class="artifact-field artifact-fieldset">
+          <legend>Minimum usable standards</legend>
+          <div class="artifact-stack">
+            <input name="rubric" maxlength="160" required placeholder="The central claim is clear">
+            <input name="rubric" maxlength="160" required placeholder="Key claims use source evidence">
+            <input name="rubric" maxlength="160" required placeholder="The answer helps the target reader act">
+          </div>
+        </fieldset>
+        <fieldset class="artifact-field artifact-fieldset">
+          <legend>Body privacy</legend>
+          <label class="artifact-radio"><input type="radio" name="contentStorage" value="local-body" checked><span><strong>Save body locally</strong><br><span class="artifact-hint">Draft and explicit checkpoints stay on this device.</span></span></label>
+          <label class="artifact-radio"><input type="radio" name="contentStorage" value="structure-only"><span><strong>Store structure only</strong><br><span class="artifact-hint">Draft and revision body text are never written to disk.</span></span></label>
+        </fieldset>
+        <div class="artifact-field">
+          <label for="artifactCourse">Existing course (optional)</label>
+          <select id="artifactCourse" name="courseId"><option value="">Link source material later</option></select>
+        </div>
+        <p id="artifactError" class="artifact-error" role="alert" hidden></p>
+        <div><button class="artifact-button primary" id="artifactSubmit" type="submit">Create artifact</button></div>
+      </form>
+    </main>
+  </div>
+</body>
+</html>

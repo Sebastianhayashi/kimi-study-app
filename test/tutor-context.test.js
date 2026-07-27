@@ -8,6 +8,7 @@ const path = require('path');
 const {
   MAX_CONTEXT_CHARS,
   recentLessonFeedback,
+  recentArtifactFocus,
   buildTutorContext,
   buildTutorPrompt,
   withHumanizerSkill,
@@ -111,6 +112,63 @@ test('feedback projection is latest-wins, bounded, and excludes answer keys', ()
   assert.equal(projection.some((item) => item.lessonFile === '0001-example.html'), false);
   assert.equal(projection.every((item) => item.detail.length <= 240), true);
   assert.equal(JSON.stringify(projection).includes('secret-'), false);
+});
+
+
+test('artifact focus projection is latest-only, bounded, and excludes body, answer keys, and other artifacts', () => {
+  const root = fixtureCourse();
+  const file = path.join(root, 'learning-activity.json');
+  const events = JSON.parse(fs.readFileSync(file, 'utf8'));
+  events.push({
+    id: 'focus-old',
+    type: 'artifact-gap-focus',
+    artifactId: 'a_oldartifact000001',
+    gapId: 'g_old',
+    rubricItemId: 'r_old',
+    gapSummary: 'Old gap must not survive latest-wins projection.',
+    sourceRefs: ['source:old#1'],
+    supportKind: 'next-lesson',
+    body: 'OLD FULL BODY SECRET',
+    answerKey: 'old-secret-answer',
+    timestamp: 30,
+  });
+  events.push({
+    id: 'focus-latest',
+    type: 'artifact-gap-focus',
+    artifactId: 'a_currentartifact01',
+    gapId: 'g_current',
+    rubricItemId: 'r_evidence',
+    gapSummary: `${'需要补强材料到论断之间的因果桥。'.repeat(40)}`,
+    sourceRefs: ['source:book#mechanism', 'source:book#boundary', 'source:book#third', 'source:book#fourth', 'source:book#fifth'],
+    supportKind: 'next-lesson',
+    body: 'CURRENT FULL BODY SECRET',
+    answerKey: 'current-secret-answer',
+    otherArtifact: { id: 'a_otherartifact001', title: 'Other artifact secret' },
+    decisionReason: 'private decision reason',
+    timestamp: 40,
+  });
+  fs.writeFileSync(file, JSON.stringify(events));
+
+  const projection = recentArtifactFocus(root);
+  assert.deepEqual(Object.keys(projection).sort(), [
+    'artifactId', 'gapId', 'gapSummary', 'rubricItemId', 'sourceRefs', 'supportKind', 'timestamp',
+  ]);
+  assert.equal(projection.artifactId, 'a_currentartifact01');
+  assert.equal(projection.gapSummary.length, 500);
+  assert.equal(projection.sourceRefs.length, 4);
+  assert.equal(JSON.stringify(projection).includes('FULL BODY'), false);
+  assert.equal(JSON.stringify(projection).includes('secret-answer'), false);
+  assert.equal(JSON.stringify(projection).includes('Other artifact'), false);
+  assert.equal(JSON.stringify(projection).includes('decision reason'), false);
+
+  const context = buildTutorContext(root);
+  assert.match(context, /【当前作品缺口】/);
+  assert.match(context, /a_currentartifact01/);
+  assert.ok(context.indexOf('【当前作品缺口】') < context.indexOf('【最近课节反馈】'));
+  assert.equal(context.includes('a_oldartifact000001'), false);
+  assert.equal(context.includes('FULL BODY SECRET'), false);
+  assert.equal(context.includes('secret-answer'), false);
+  assert.equal(context.includes('a_otherartifact001'), false);
 });
 
 test('uses the uploaded humanizer skill only for tutor session bootstrap', () => {

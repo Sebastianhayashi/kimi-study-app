@@ -82,10 +82,11 @@ test('builds a strict incremental prompt with learner context and no course-leve
   assert.match(prompt, /deeper 不得堆叠多个 claim/);
   const priorities = [
     '1. 对 MISSION.md 中期望产出与成功证据的边际贡献',
-    '2. 最近一条显性 lesson-feedback 的相关性或节奏约束',
-    '3. weak/mastered/misconception/notes 等学习证据',
-    '4. sourceRefs 对当前 claim 的真实材料支持',
-    '5. 已有课节覆盖只用于避免重复',
+    '2. 最近一条显式 artifact-gap-focus',
+    '3. 最近一条显性 lesson-feedback 的相关性或节奏约束',
+    '4. weak/mastered/misconception/notes 等学习证据',
+    '5. sourceRefs 对当前 claim 的真实材料支持',
+    '6. 已有课节覆盖只用于避免重复',
   ].map((text) => prompt.indexOf(text));
   assert.equal(priorities.every((index) => index >= 0), true, prompt);
   assert.deepEqual(priorities, priorities.slice().sort((a, b) => a - b));

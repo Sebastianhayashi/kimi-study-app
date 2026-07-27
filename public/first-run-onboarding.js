@@ -75,7 +75,35 @@
 
   let currentStage = 'upload';
   let selectedFile = null;
-  let courseId = new URLSearchParams(location.search).get('course');
+  const routeQuery = new URLSearchParams(location.search);
+  let courseId = routeQuery.get('course');
+  const requestedArtifactId = routeQuery.get('artifact');
+  const artifactId = window.__LUCUBRO_FEATURES__?.polV2 === true && /^a_[a-z0-9]{16,64}$/i.test(String(requestedArtifactId || ''))
+    ? String(requestedArtifactId)
+    : null;
+
+  function newCourseLocation(id = courseId) {
+    const query = new URLSearchParams();
+    if (id) query.set('course', id);
+    if (artifactId) query.set('artifact', artifactId);
+    return `/new-course${query.toString() ? `?${query}` : ''}`;
+  }
+
+  function artifactDestination() {
+    return artifactId ? `/artifact/${encodeURIComponent(artifactId)}?sourceReady=1` : `/course/${encodeURIComponent(courseId)}`;
+  }
+
+  function exitDestination() {
+    return artifactId ? `/artifact/${encodeURIComponent(artifactId)}` : '/app';
+  }
+
+  async function linkArtifactCourse() {
+    if (!artifactId || !courseId) return;
+    await requestJson(`/api/artifacts/${encodeURIComponent(artifactId)}/link-course`, {
+      method: 'POST',
+      body: JSON.stringify({ courseId }),
+    });
+  }
   let missionRecord = null;
   let missionPollTimer = null;
   let uploadRequest = null;
@@ -252,9 +280,10 @@
       // validations would otherwise skip straight past it.
       const elapsed = Date.now() - readingStageShownAt;
       const wait = Math.max(0, MIN_READING_STAGE_MS - elapsed);
-      setTimeout(() => {
+      setTimeout(async () => {
         courseId = data.id;
-        history.replaceState(null, '', `/new-course?course=${encodeURIComponent(courseId)}`);
+        history.replaceState(null, '', newCourseLocation(courseId));
+        try { await linkArtifactCourse(); } catch (error) { console.warn('[artifact] course link deferred:', error.message); }
         hydrateSource(data.onboarding?.source);
         showMissionPreparation();
         startMissionPolling();
@@ -761,7 +790,8 @@
   async function showReady(lessonCount) {
     const readyKey = `lucubro-first-run-ready:${courseId}`;
     if (sessionStorage.getItem(readyKey) === 'shown') {
-      location.replace(`/course/${encodeURIComponent(courseId)}`);
+      try { await linkArtifactCourse(); } catch (error) { console.warn('[artifact] mission snapshot refresh deferred:', error.message); }
+      location.replace(artifactDestination());
       return;
     }
     sessionStorage.setItem(readyKey, 'shown');
@@ -777,7 +807,7 @@
     const delay = reducedMotion ? 80 : 1350;
     readyTimer = setTimeout(() => {
       readyOverlay.classList.add('is-hidden');
-      setTimeout(() => location.replace(`/course/${encodeURIComponent(courseId)}`), reducedMotion ? 1 : 260);
+      setTimeout(() => location.replace(artifactDestination()), reducedMotion ? 1 : 260);
     }, delay);
   }
 
@@ -844,15 +874,15 @@
   });
   removeFile.addEventListener('click', clearFile);
   uploadContinue.addEventListener('click', uploadSelectedFile);
-  cancelUpload.addEventListener('click', () => { location.href = '/app'; });
-  backToLibrary.addEventListener('click', () => { location.href = '/app'; });
-  backgroundButton.addEventListener('click', () => { location.href = '/app'; });
+  cancelUpload.addEventListener('click', () => { location.href = exitDestination(); });
+  backToLibrary.addEventListener('click', () => { location.href = exitDestination(); });
+  backgroundButton.addEventListener('click', () => { location.href = exitDestination(); });
   retryButton.addEventListener('click', retryGeneration);
   startFirstLesson.addEventListener('click', () => {
     clearTimeout(readyTimer);
-    location.replace(`/course/${encodeURIComponent(courseId)}`);
+    location.replace(artifactDestination());
   });
-  missionBack.addEventListener('click', () => { location.href = '/app'; });
+  missionBack.addEventListener('click', () => { location.href = exitDestination(); });
   missionNext.addEventListener('click', submitMissionAndStart);
   window.addEventListener('pagehide', stopMonitoring);
 

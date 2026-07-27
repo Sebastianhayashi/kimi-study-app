@@ -43,6 +43,9 @@ const {
 const { runTrackedKimi } = require('./lib/kimi-generation-runner');
 const { appendGenerationEvent, readGenerationEvents, subscribeGenerationEvents } = require('./lib/generation-events');
 const { listCourseSources } = require('./lib/source-manifest');
+const { createArtifactStore, ArtifactError } = require('./lib/artifact-store');
+const { runArtifactCritique, ArtifactCritiqueError } = require('./lib/artifact-critique');
+const { appendCourseActivity, readCourseActivity: readCourseActivityFile, ActivityValidationError } = require('./lib/course-activity');
 const { resolveDataDir, assertSafeRuntime } = require('./lib/runtime-config');
 const { validateCuriosityDocument } = require('./lib/curiosity-contract');
 const { createLearningActionService } = require('./lib/learning-action-router');
@@ -93,8 +96,11 @@ const DATA = resolveDataDir({ root: ROOT });
 const SKILLS = path.join(ROOT, 'skills');
 const MODEL = 'kimi-code/kimi-for-coding'; // K2.7 Coding
 const PORT = process.env.PORT || 3000;
+const POL_V2_ENABLED = process.env.LUCUBRO_POL_V2 === '1';
 const RUNTIME = assertSafeRuntime({ root: ROOT, dataDir: DATA, port: PORT, env: process.env });
 fs.mkdirSync(DATA, { recursive: true });
+const artifactStore = createArtifactStore({ dataDir: DATA });
+const artifactOperationLocks = new Set();
 const selectLearningActions = createLearningActionService();
 
 const MAP_INSTRUCTION =
@@ -177,15 +183,19 @@ const COMMON_FRONTEND_HEAD =
   '<link rel="stylesheet" href="/vendor/phosphor/regular/style.css">' +
   '<link rel="stylesheet" href="/design-system.css">' +
   '<script src="/i18n.js" defer></script>';
-const page = (file, { head = '', body = '' } = {}) => (req, res) => {
+const page = (file, { head = '', body = '', glue = true, features = false } = {}) => (req, res) => {
+  const featureConfig = features && POL_V2_ENABLED
+    ? '<script>window.__LUCUBRO_FEATURES__={polV2:true}</script>'
+    : '';
   const html = fs.readFileSync(path.join(ROOT, 'public', file), 'utf8')
-    .replace('</head>', `${COMMON_FRONTEND_HEAD}${head}</head>`)
-    .replace('</body>', `${body}<script src="/glue.js"></script></body>`);
+    .replace('</head>', `${COMMON_FRONTEND_HEAD}${featureConfig}${head}</head>`)
+    .replace('</body>', `${body}${glue ? '<script src="/glue.js"></script>' : ''}</body>`);
   res.type('html').send(html);
 };
 app.get('/', page('index.html'));
 app.get('/app', page('app.html', {
   head: '<link rel="stylesheet" href="/library-polish.css">',
+  features: true,
 }));
 app.get('/notes', page('notes.html', {
   head: '<link rel="stylesheet" href="/notes.css">',
@@ -194,11 +204,29 @@ app.get('/notes', page('notes.html', {
 app.get('/new-course', page('new-course.html', {
   head: '<link rel="stylesheet" href="/onboarding-polish.css">',
   body: '<script src="/first-run-onboarding.js"></script>',
+  features: true,
 }));
 app.get('/course/:id', page('course.html', {
   head: '<link rel="stylesheet" href="/generation-preview-product.css"><link rel="stylesheet" href="/source-viewer.css"><link rel="stylesheet" href="/frontend-shell.css"><link rel="stylesheet" href="/core-journey-polish.css"><link rel="stylesheet" href="/course-notes-index.css"><link rel="stylesheet" href="/study-surface.css"><link rel="stylesheet" href="/course-workspace-polish.css">',
   body: '<script src="/assistant-markdown.js"></script><script src="/core-journey-progress.js"></script><script src="/generation-preview-product.js"></script><script src="/generation-events-client.js"></script><script src="/source-viewer.js"></script><script src="/course-notes-index.js"></script><script src="/study-surface.js"></script>',
+  features: true,
 }));
+
+if (POL_V2_ENABLED) {
+  app.get('/artifact/new', page('artifact-new.html', {
+    head: '<link rel="stylesheet" href="/artifact.css">',
+    body: '<script src="/artifact-new.js"></script>',
+    glue: false,
+    features: true,
+  }));
+  app.get('/artifact/:id', page('artifact.html', {
+    head: '<link rel="stylesheet" href="/artifact.css">',
+    body: '<script src="/artifact.js"></script>',
+    glue: false,
+    features: true,
+  }));
+}
+
 app.use('/vendor/lenis', express.static(path.join(ROOT, 'node_modules', 'lenis', 'dist')));
 app.use('/vendor/pdfjs', express.static(path.join(ROOT, 'node_modules', 'pdfjs-dist')));
 app.use('/vendor/epubjs', express.static(path.join(ROOT, 'node_modules', 'epubjs', 'dist')));
@@ -841,6 +869,193 @@ app.post('/api/course-onboarding', (req, res) => {
 });
 
 // 课程列表（书架页真实数据）
+
+function sendArtifactError(res, error) {
+  if (error instanceof ArtifactError || error instanceof ArtifactCritiqueError || error instanceof ActivityValidationError) {
+    return res.status(error.status || 400).json({
+      error: error.message,
+      code: error.code,
+      ...(error.details != null ? { details: error.details } : {}),
+    });
+  }
+  console.log(`[artifact] ${error && error.stack || error}`);
+  return res.status(500).json({ error: 'Artifact operation failed', code: 'ARTIFACT_INTERNAL_ERROR' });
+}
+
+function artifactCourseSnapshot(courseId) {
+  if (!validId(courseId) || !fs.existsSync(dirOf(courseId))) throw new ArtifactError('COURSE_NOT_FOUND', 'Course not found', 404);
+  return readMissionPresentation(dirOf(courseId));
+}
+
+if (POL_V2_ENABLED) {
+  app.get('/api/artifacts', (req, res) => {
+    try {
+      const status = String(req.query.status || '').trim();
+      if (status && !['all', 'active', 'delivered', 'archived', 'draft', 'revising', 'ready', 'waiting_for_source', 'waiting_for_mission'].includes(status)) {
+        throw new ArtifactError('ARTIFACT_STATUS_INVALID', 'Invalid artifact status filter', 400);
+      }
+      return res.json({ artifacts: artifactStore.list({ status }).map(artifactStore.metadata) });
+    } catch (error) { return sendArtifactError(res, error); }
+  });
+
+  app.post('/api/artifacts', (req, res) => {
+    try {
+      const input = { ...(req.body || {}) };
+      if (input.primaryCourseId) input.missionSnapshot = artifactCourseSnapshot(String(input.primaryCourseId));
+      const artifact = artifactStore.create(input);
+      return res.status(201).json({ artifact });
+    } catch (error) { return sendArtifactError(res, error); }
+  });
+
+  app.get('/api/artifacts/:id', (req, res) => {
+    try {
+      const result = artifactStore.get(req.params.id);
+      let events = [];
+      if (result.artifact.primaryCourseId && fs.existsSync(dirOf(result.artifact.primaryCourseId))) {
+        events = readCourseActivity(result.artifact.primaryCourseId)
+          .filter((event) => event.artifactId === result.artifact.id)
+          .slice(-100);
+      }
+      return res.json({ ...result, events });
+    } catch (error) { return sendArtifactError(res, error); }
+  });
+
+  app.put('/api/artifacts/:id/draft', (req, res) => {
+    try {
+      const artifact = artifactStore.saveDraft(req.params.id, req.body || {});
+      return res.json({ ok: true, draftVersion: artifact.draftVersion, updatedAt: artifact.updatedAt });
+    } catch (error) { return sendArtifactError(res, error); }
+  });
+
+  app.post('/api/artifacts/:id/checkpoints', (req, res) => {
+    try {
+      const result = artifactStore.createCheckpoint(req.params.id, req.body || {});
+      if (result.artifact.primaryCourseId) {
+        appendCourseActivity(dirOf(result.artifact.primaryCourseId), {
+          type: 'artifact-revision',
+          artifactId: result.artifact.id,
+          revisionId: result.revision.id,
+          parentRevisionId: result.revision.parentRevisionId,
+          trigger: result.revision.trigger,
+          acceptedCritiqueIds: req.body && req.body.acceptedCritiqueIds,
+          rejectedCritiqueIds: req.body && req.body.rejectedCritiqueIds,
+          resolvedGapIds: req.body && req.body.resolvedGapIds,
+        });
+      }
+      return res.status(201).json({ revisionId: result.revision.id, sha256: result.revision.sha256 });
+    } catch (error) { return sendArtifactError(res, error); }
+  });
+
+  app.post('/api/artifacts/:id/link-course', (req, res) => {
+    try {
+      const courseId = String(req.body && req.body.courseId || '').trim();
+      const missionSnapshot = artifactCourseSnapshot(courseId);
+      const artifact = artifactStore.linkCourse(req.params.id, { courseId, missionSnapshot });
+      return res.json({ artifact });
+    } catch (error) { return sendArtifactError(res, error); }
+  });
+
+  app.post('/api/artifacts/:id/status', (req, res) => {
+    try {
+      const artifact = artifactStore.updateStatus(req.params.id, req.body && req.body.status);
+      return res.json({ artifact });
+    } catch (error) { return sendArtifactError(res, error); }
+  });
+
+  app.post('/api/artifacts/:id/critique', async (req, res) => {
+    const artifactId = req.params.id;
+    let courseId = null;
+    if (artifactOperationLocks.has(artifactId)) return res.status(409).json({ error: 'Artifact is busy', code: 'ARTIFACT_BUSY' });
+    artifactOperationLocks.add(artifactId);
+    try {
+      const { artifact } = artifactStore.get(artifactId, { includeBody: false });
+      courseId = artifact.primaryCourseId;
+      if (!courseId || !validId(courseId) || !fs.existsSync(dirOf(courseId))) throw new ArtifactError('COURSE_NOT_FOUND', 'Linked course not found', 409);
+      if (locks.has(courseId)) throw new ArtifactError('COURSE_BUSY', 'Course is busy', 409);
+      const revisionId = String(req.body && req.body.revisionId || '').trim();
+      if (!revisionId || revisionId !== artifact.currentRevisionId) throw new ArtifactError('ARTIFACT_REVISION_STALE', 'Critique requires the current checkpoint', 409);
+      let body;
+      if (artifact.contentStorage === 'local-body') {
+        body = artifactStore.revisionBody(artifactId, revisionId);
+      } else {
+        body = String(req.body && req.body.selectedExcerpt || '');
+        if (!body.trim()) throw new ArtifactError('ARTIFACT_EXCERPT_REQUIRED', 'Paste an excerpt for structure-only critique', 422);
+        if (Buffer.byteLength(body, 'utf8') > 64 * 1024) throw new ArtifactError('ARTIFACT_EXCERPT_TOO_LARGE', 'Selected excerpt is too large', 413);
+      }
+      const rubricItemIds = Array.isArray(req.body && req.body.rubricItemIds)
+        ? req.body.rubricItemIds.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 5)
+        : [];
+      locks.add(courseId);
+      let gaps;
+      try {
+        gaps = await runArtifactCritique({
+          courseDir: dirOf(courseId),
+          artifact,
+          revisionId,
+          body,
+          rubricItemIds,
+          runTrackedKimiImpl: runTrackedKimi,
+          model: MODEL,
+          skillsDir: SKILLS,
+        });
+      } finally {
+        locks.delete(courseId);
+      }
+      const critiqueId = `c_${crypto.randomUUID().replace(/-/g, '')}`;
+      const updated = artifactStore.applyCritique(artifactId, { revisionId, critiqueId, gaps });
+      for (const gap of gaps) {
+        appendCourseActivity(dirOf(courseId), {
+          type: 'artifact-critique',
+          artifactId,
+          revisionId,
+          critiqueId,
+          action: 'proposed',
+          gapId: gap.id,
+          rubricItemId: gap.rubricItemId,
+          summary: gap.summary,
+          evidence: gap.evidence,
+          anchorHash: gap.anchor.anchorHash,
+          sourceRefs: gap.sourceRefs,
+        });
+      }
+      return res.status(201).json({ critiqueId, gaps: updated.gaps });
+    } catch (error) {
+      if (courseId) locks.delete(courseId);
+      return sendArtifactError(res, error);
+    } finally {
+      artifactOperationLocks.delete(artifactId);
+    }
+  });
+
+  app.post('/api/artifacts/:id/critiques/:critiqueId/decisions', (req, res) => {
+    try {
+      const action = String(req.body && req.body.action || '').trim();
+      if (!['accepted', 'rejected', 'modified'].includes(action)) throw new ArtifactError('ARTIFACT_DECISION_INVALID', 'Invalid critique decision', 422);
+      const result = artifactStore.applyDecision(req.params.id, {
+        critiqueId: req.params.critiqueId,
+        gapId: req.body && req.body.gapId,
+        action,
+        reason: req.body && req.body.reason,
+        modifiedSummary: req.body && req.body.modifiedSummary,
+      });
+      if (!result.artifact.primaryCourseId) throw new ArtifactError('COURSE_NOT_FOUND', 'Linked course not found', 409);
+      for (const gap of result.gaps) {
+        appendCourseActivity(dirOf(result.artifact.primaryCourseId), {
+          type: 'artifact-critique',
+          artifactId: result.artifact.id,
+          revisionId: gap.revisionId,
+          critiqueId: req.params.critiqueId,
+          gapId: gap.id,
+          action,
+          reason: req.body && req.body.reason,
+          modifiedSummary: req.body && req.body.modifiedSummary,
+        });
+      }
+      return res.json({ artifact: result.artifact });
+    } catch (error) { return sendArtifactError(res, error); }
+  });
+}
+
 app.get('/api/courses', (req, res) => {
   const list = fs.readdirSync(DATA, { withFileTypes: true })
     .filter((d) => d.isDirectory())
@@ -893,6 +1108,9 @@ app.post('/api/courses/:id/archive', (req, res) => {
 });
 app.delete('/api/courses/:id', (req, res) => {
   if (!validId(req.params.id)) return res.status(400).end();
+  if (POL_V2_ENABLED && artifactStore.courseReferenced(req.params.id)) {
+    return res.status(409).json({ error: 'Course is linked to an artifact', code: 'COURSE_LINKED_TO_ARTIFACT' });
+  }
   fs.rmSync(dirOf(req.params.id), { recursive: true, force: true });
   res.json({ ok: true });
 });
@@ -1282,10 +1500,7 @@ const lessonDisplayTitle = (id, file) => {
   return lesson.replace(/^\d+-?/, '').replace(/\.html$/i, '').replace(/[-_]+/g, ' ');
 };
 const courseActivityFile = (id) => path.join(dirOf(id), 'learning-activity.json');
-const readCourseActivity = (id) => {
-  const value = readJson(courseActivityFile(id), []);
-  return Array.isArray(value) ? value.filter((item) => item && typeof item === 'object') : [];
-};
+const readCourseActivity = (id) => readCourseActivityFile(dirOf(id));
 const requestedNoteLesson = (id, value) => {
   const requested = String(value || '').trim();
   if (!requested) return null;
@@ -1352,35 +1567,15 @@ app.post('/api/courses/:id/activity', (req, res) => {
   if (!validId(id) || !fs.existsSync(dirOf(id))) return res.status(404).json({ error: 'course not found' });
   const type = String(req.body && req.body.type || '').trim();
   if (!['lesson-opened', 'lesson-feedback'].includes(type)) return res.status(400).json({ error: 'invalid activity type' });
-  const lessonFile = safeLesson(id, req.body && req.body.lessonFile);
-  if (!lessonFile) return res.status(400).json({ error: 'invalid lesson' });
-  const now = Date.now();
-  const events = readCourseActivity(id);
-  if (type === 'lesson-feedback') {
-    const signal = String(req.body && req.body.signal || '').trim();
-    if (!['aligned', 'skip_irrelevant', 'faster', 'deeper'].includes(signal)) {
-      return res.status(400).json({ error: 'invalid feedback signal' });
-    }
-    const detail = String(req.body && req.body.detail || '').trim();
-    if (detail.length > 500) return res.status(400).json({ error: 'feedback detail too long' });
-    const event = {
-      id: crypto.randomUUID(),
-      type,
-      lessonFile,
-      signal,
-      ...(detail ? { detail } : {}),
-      timestamp: now,
-    };
-    events.push(event);
-    writeJsonAtomic(courseActivityFile(id), events.slice(-1000));
-    return res.json({ ok: true, event });
+  try {
+    const result = appendCourseActivity(dirOf(id), req.body || {}, {
+      validateLesson: (lessonFile) => safeLesson(id, lessonFile),
+    });
+    return res.json({ ok: true, ...(result.event ? { event: result.event } : {}) });
+  } catch (error) {
+    if (error instanceof ActivityValidationError) return res.status(error.status || 400).json({ error: error.message, code: error.code });
+    throw error;
   }
-  const recent = events[events.length - 1];
-  if (!recent || recent.type !== type || recent.lessonFile !== lessonFile || now - Number(recent.timestamp || 0) > 30 * 60 * 1000) {
-    events.push({ id: crypto.randomUUID(), type, lessonFile, timestamp: now });
-    writeJsonAtomic(courseActivityFile(id), events.slice(-1000));
-  }
-  return res.json({ ok: true });
 });
 
 app.get('/api/activity', (req, res) => {
@@ -1391,6 +1586,7 @@ app.get('/api/activity', (req, res) => {
   for (const id of courses) {
     const courseTitle = courseTitleOf(id);
     for (const item of readCourseActivity(id)) {
+      if (!['lesson-opened', 'lesson-feedback'].includes(item.type)) continue;
       const timestamp = Number(item.timestamp || 0);
       if (timestamp > 0) events.push({
         id: item.id,
@@ -1489,57 +1685,94 @@ function saveGeneratorSession(id, value) {
   writeJsonAtomic(generatorSessionFile(id), normalizeGeneratorSessionState(value));
 }
 
-app.post('/api/courses/:id/lessons/next', (req, res) => {
-  const id = req.params.id;
-  if (locks.has(id)) return res.status(409).json({ error: 'busy' });
-
-  try {
-    const previousJob = reconcileStaleGeneration(id);
-    if (isGenerationJobActive(previousJob)) {
-      return res.status(409).json({ error: 'generation recovery pending' });
-    }
-    if (previousJob.repairRequired) {
-      return res.status(409).json({
-        error: 'course repair required',
-        details: previousJob.changedExisting || [],
-      });
-    }
-    const baseline = captureNextLessonBaseline(dirOf(id));
-    if (!baseline.lessons.length) return res.status(409).json({ error: 'first lesson is not ready' });
-    const generator = readGeneratorSession(id);
-    const resumedSession = generator.initialized === true;
-    const prompt = withTeachSkill(
-      buildNextLessonPrompt(dirOf(id), baseline, {
-        validatorCommand: `node ${JSON.stringify(path.join(ROOT, 'lib', 'next-lesson-preflight.js'))}`,
-        resumedSession,
-      }),
+function launchNextLesson(id, { beforeBaseline = null } = {}) {
+  if (locks.has(id)) return { status: 409, body: { error: 'busy' } };
+  const previousJob = reconcileStaleGeneration(id);
+  if (isGenerationJobActive(previousJob)) return { status: 409, body: { error: 'generation recovery pending' } };
+  if (previousJob.repairRequired) {
+    return { status: 409, body: { error: 'course repair required', details: previousJob.changedExisting || [] } };
+  }
+  if (typeof beforeBaseline === 'function') beforeBaseline();
+  const baseline = captureNextLessonBaseline(dirOf(id));
+  if (!baseline.lessons.length) return { status: 409, body: { error: 'first lesson is not ready' } };
+  const generator = readGeneratorSession(id);
+  const resumedSession = generator.initialized === true;
+  const prompt = withTeachSkill(
+    buildNextLessonPrompt(dirOf(id), baseline, {
+      validatorCommand: `node ${JSON.stringify(path.join(ROOT, 'lib', 'next-lesson-preflight.js'))}`,
       resumedSession,
-    );
-    const persistGeneratorResult = (result) => {
-      const sessionId = result.sessionId || generatorSessionIdForRun(generator);
-      saveGeneratorSession(id, {
-        ...generator,
-        initialized: Boolean(sessionId),
-        sessionId,
-        preferredMode: result.mode || generator.preferredMode || 'stream-json',
-      });
-    };
-    const run = runKimi(id, prompt, {
-      track: true,
-      kind: 'next-lesson',
-      baseline,
-      sessionId: generatorSessionIdForRun(generator),
-      preferredMode: generator.preferredMode || 'stream-json',
-      onResult: persistGeneratorResult,
+    }),
+    resumedSession,
+  );
+  const persistGeneratorResult = (result) => {
+    const sessionId = result.sessionId || generatorSessionIdForRun(generator);
+    saveGeneratorSession(id, {
+      ...generator,
+      initialized: Boolean(sessionId),
+      sessionId,
+      preferredMode: result.mode || generator.preferredMode || 'stream-json',
     });
-    const job = readJob(id);
-    Promise.resolve(run)
-      .catch((error) => console.log(`[kimi ${id}] failed: ${error.message}`));
-    return res.status(202).json({ ok: true, runId: job.runId });
+  };
+  const run = runKimi(id, prompt, {
+    track: true,
+    kind: 'next-lesson',
+    baseline,
+    sessionId: generatorSessionIdForRun(generator),
+    preferredMode: generator.preferredMode || 'stream-json',
+    onResult: persistGeneratorResult,
+  });
+  const job = readJob(id);
+  Promise.resolve(run).catch((error) => console.log(`[kimi ${id}] failed: ${error.message}`));
+  return { status: 202, body: { ok: true, runId: job.runId } };
+}
+
+app.post('/api/courses/:id/lessons/next', (req, res) => {
+  try {
+    const result = launchNextLesson(req.params.id);
+    return res.status(result.status).json(result.body);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 });
+
+if (POL_V2_ENABLED) {
+  app.post('/api/artifacts/:id/gaps/:gapId/next-lesson', (req, res) => {
+    const artifactId = req.params.id;
+    if (artifactOperationLocks.has(artifactId)) return res.status(409).json({ error: 'Artifact is busy', code: 'ARTIFACT_BUSY' });
+    artifactOperationLocks.add(artifactId);
+    try {
+      const { artifact } = artifactStore.get(artifactId, { includeBody: false });
+      const revisionId = String(req.body && req.body.revisionId || '').trim();
+      if (!revisionId || revisionId !== artifact.currentRevisionId) throw new ArtifactError('ARTIFACT_REVISION_STALE', 'Gap focus requires the current revision', 409);
+      const gap = artifact.gaps.find((item) => item.id === req.params.gapId && !['rejected', 'resolved'].includes(item.status));
+      if (!gap) throw new ArtifactError('ARTIFACT_GAP_NOT_FOUND', 'Gap not found', 404);
+      const courseId = artifact.primaryCourseId;
+      if (!courseId || !validId(courseId) || !fs.existsSync(dirOf(courseId))) throw new ArtifactError('COURSE_NOT_FOUND', 'Linked course not found', 409);
+      const result = launchNextLesson(courseId, {
+        beforeBaseline: () => {
+          const appended = appendCourseActivity(dirOf(courseId), {
+            type: 'artifact-gap-focus',
+            artifactId,
+            revisionId,
+            gapId: gap.id,
+            rubricItemId: gap.rubricItemId,
+            gapSummary: gap.summary,
+            sourceRefs: gap.sourceRefs,
+            supportKind: 'next-lesson',
+          });
+          const confirmed = readCourseActivity(courseId).some((event) => event.id === appended.event.id && event.type === 'artifact-gap-focus');
+          if (!confirmed) throw new ArtifactError('ARTIFACT_FOCUS_NOT_PERSISTED', 'Gap focus was not persisted before generation', 500);
+        },
+      });
+      return res.status(result.status).json(result.body);
+    } catch (error) {
+      return sendArtifactError(res, error);
+    } finally {
+      artifactOperationLocks.delete(artifactId);
+    }
+  });
+}
+
 
 // 助教问答：显式 tutor session + 确定性学习者上下文；首次会话原样加载 humanizer-zh Skill。
 const SUGGEST_MARKER = '<<<SUGGESTIONS>>>';

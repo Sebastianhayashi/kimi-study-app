@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Artifact · Lucubro</title>
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to main content</a>
+  <div class="artifact-shell">
+    <header class="artifact-topbar">
+      <a class="artifact-brand" href="/app?view=courses">Lucubro</a>
+      <nav class="artifact-nav" aria-label="Artifact navigation">
+        <a href="/artifact/new">New artifact</a>
+        <a href="/app?view=courses">Courses and materials</a>
+        <a href="/notes">Notes</a>
+      </nav>
+    </header>
+    <main id="main" class="artifact-main">
+      <section id="artifactLoading" class="artifact-panel artifact-skeleton" aria-label="Loading artifact"></section>
+      <section id="artifactError" class="artifact-panel" role="alert" hidden>
+        <h1>Artifact unavailable</h1>
+        <p id="artifactErrorMessage">The artifact could not be loaded.</p>
+        <button class="artifact-button" id="artifactRetry" type="button">Retry</button>
+      </section>
+      <article id="artifactWorkspace" hidden>
+        <p><span class="artifact-status" id="artifactStatus">Draft</span></p>
+        <h1 id="artifactTitle">Artifact</h1>
+        <p class="artifact-lede" id="artifactAudience"></p>
+        <div class="artifact-grid">
+          <section class="artifact-panel artifact-stack">
+            <div>
+              <h2>Document body</h2>
+              <p class="artifact-hint">Flag-A provides a safe route and real data only. Autosave and the productized writing workspace are not enabled.</p>
+            </div>
+            <div class="artifact-field">
+              <label for="artifactBody">Current local draft</label>
+              <textarea id="artifactBody" readonly placeholder="No body is saved yet"></textarea>
+            </div>
+            <p id="structureOnlyNotice" class="artifact-hint" hidden>Body text is not stored for this artifact. Paste a temporary excerpt only when calling critique.</p>
+          </section>
+          <aside class="artifact-panel artifact-stack">
+            <section>
+              <h2>Task contract</h2>
+              <dl class="artifact-meta">
+                <dt>Problem statement</dt><dd id="missionProblem">Not available yet</dd>
+                <dt>Expected output</dt><dd id="missionOutput">Not available yet</dd>
+              </dl>
+            </section>
+            <section>
+              <h2>Minimum usable standards</h2>
+              <ul id="artifactRubric" class="artifact-list"></ul>
+            </section>
+            <section>
+              <h2>Current gaps</h2>
+              <ul id="artifactGaps" class="artifact-list"><li>No critique gaps yet</li></ul>
+            </section>
+            <a id="artifactCourseLink" class="artifact-button" href="/app?view=courses">Open linked course</a>
+          </aside>
+        </div>
+      </article>
+    </main>
+  </div>
+</body>
+</html>
