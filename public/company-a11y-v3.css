@@ -1,3 +1,7 @@
+:root {
+  --muted: #667184;
+}
+
 .skip-link {
   position: fixed;
   z-index: 80;
