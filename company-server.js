@@ -136,9 +136,10 @@ function createCompanyServer({
 }
 
 if (require.main === module) {
+  const host = process.env.LUCUBRO_COMPANY_HOST || '127.0.0.1';
   const port = Number(process.env.LUCUBRO_COMPANY_PORT || process.env.PORT || 3200);
   const { app } = createCompanyServer();
-  app.listen(port, '127.0.0.1', () => console.log(`[lucubro-company] http://127.0.0.1:${port}/company`));
+  app.listen(port, host, () => console.log(`[lucubro-company] http://${host}:${port}/company`));
 }
 
 module.exports = { createCompanyServer };
