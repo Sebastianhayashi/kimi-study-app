@@ -27,11 +27,27 @@ jobs:
       - name: Install repository dependencies
         run: npm ci
 
+      - name: Probe Claude CLI login non-interactively
+        id: cli
+        shell: bash
+        run: |
+          set +e
+          {
+            echo "== claude version =="
+            claude --version
+            echo "== claude print-mode auth probe =="
+            timeout 90s claude -p 'Reply exactly LUCUBRO_CLI_OK and nothing else.' --output-format text
+          } > claude-cli-probe.log 2>&1
+          code=$?
+          cat claude-cli-probe.log
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
       - name: Install Claude Agent SDK for smoke only
         run: npm install --no-save --no-package-lock @anthropic-ai/claude-agent-sdk
 
-      - name: Run isolated real Claude smoke
-        id: smoke
+      - name: Run isolated real Claude SDK smoke
+        id: sdk
         shell: bash
         env:
           CI: "true"
@@ -47,26 +63,37 @@ jobs:
         if: always()
         uses: actions/github-script@v7
         env:
-          SMOKE_EXIT_CODE: ${{ steps.smoke.outputs.exit_code }}
+          CLI_EXIT_CODE: ${{ steps.cli.outputs.exit_code }}
+          SDK_EXIT_CODE: ${{ steps.sdk.outputs.exit_code }}
         with:
           script: |
             const fs = require('fs');
-            const raw = fs.existsSync('real-claude-smoke.log')
+            const cli = fs.existsSync('claude-cli-probe.log')
+              ? fs.readFileSync('claude-cli-probe.log', 'utf8')
+              : 'CLI probe did not produce a log file.';
+            const sdk = fs.existsSync('real-claude-smoke.log')
               ? fs.readFileSync('real-claude-smoke.log', 'utf8')
-              : 'Smoke did not produce a log file.';
+              : 'SDK smoke did not produce a log file.';
             const body = [
               `Trusted device: ${process.env.RUNNER_NAME}`,
               `Commit: ${context.sha}`,
-              `Exit code: ${process.env.SMOKE_EXIT_CODE || 'unknown'}`,
+              `Claude CLI exit: ${process.env.CLI_EXIT_CODE || 'unknown'}`,
+              `Claude Agent SDK exit: ${process.env.SDK_EXIT_CODE || 'unknown'}`,
               '',
+              '## CLI probe',
               '```text',
-              raw.slice(-12000),
+              cli.slice(-5000),
+              '```',
+              '',
+              '## SDK smoke',
+              '```text',
+              sdk.slice(-9000),
               '```',
             ].join('\n');
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `[device-smoke] real Claude ${context.sha.slice(0, 7)} exit ${process.env.SMOKE_EXIT_CODE || 'unknown'}`,
+              title: `[device-smoke] Claude CLI ${process.env.CLI_EXIT_CODE || '?'} SDK ${process.env.SDK_EXIT_CODE || '?'} ${context.sha.slice(0, 7)}`,
               body,
             });
 
@@ -74,6 +101,6 @@ jobs:
         if: always()
         run: git status --short
 
-      - name: Fail if real Claude smoke failed
-        if: steps.smoke.outputs.exit_code != '0'
+      - name: Fail if both Claude paths are unavailable
+        if: steps.cli.outputs.exit_code != '0' && steps.sdk.outputs.exit_code != '0'
         run: exit 1
