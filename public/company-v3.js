@@ -13,7 +13,6 @@
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const statusHistory = new WeakMap();
-  const durableWorks = new Map();
   const observers = [];
   let scheduled = false;
   let mediaContext = null;
@@ -72,23 +71,14 @@
     }
   }
 
-  function addDurableCounts(liveWorkIds, counts) {
-    for (const work of durableWorks.values()) {
-      if (liveWorkIds.has(work.id)) continue;
-      if (work.status === 'review') counts.review += 1;
-      if (['starting', 'in-progress', 'needs-you', 'needs-rework', 'held'].includes(work.status)) counts.active += 1;
-    }
-  }
-
   function refresh() {
     scheduled = false;
 
     const cards = [...document.querySelectorAll('.work-object')];
-    const liveWorkIds = new Set();
-    const counts = { active: 0, review: 0 };
+    let active = 0;
+    let review = 0;
 
     for (const card of cards) {
-      if (card.dataset.workId) liveWorkIds.add(card.dataset.workId);
       const status = card.querySelector('.status');
       if (!status) continue;
       const previous = statusHistory.get(status) || '';
@@ -96,19 +86,16 @@
       statusHistory.set(status, current);
       animateStatus(card, status, previous, current);
 
-      if (current === 'Ready for review') counts.review += 1;
-      if (['Starting', 'In progress', 'Needs you', 'Reconnecting…', 'Needs rework'].includes(current)) counts.active += 1;
+      if (current === 'Ready for review') review += 1;
+      if (['Starting', 'In progress', 'Needs you', 'Reconnecting…', 'Needs rework'].includes(current)) active += 1;
     }
 
-    addDurableCounts(liveWorkIds, counts);
-
     const decisions = Number.parseInt(needsCount.textContent, 10) || 0;
-    setMetric(activeCount, counts.active);
-    setMetric(reviewCount, counts.review);
+    setMetric(activeCount, active);
+    setMetric(reviewCount, review);
     setMetric(decisionCount, decisions);
 
-    const hasWork = cards.length > 0 || durableWorks.size > 0;
-    document.body.dataset.companyHasWork = hasWork ? 'true' : 'false';
+    document.body.dataset.companyHasWork = cards.length ? 'true' : 'false';
 
     if (decisions > 0) {
       context.dataset.state = 'decision';
@@ -118,45 +105,30 @@
       return;
     }
 
-    if (counts.review > 0) {
+    if (review > 0) {
       context.dataset.state = 'review';
-      contextCopy.textContent = counts.review === 1
+      contextCopy.textContent = review === 1
         ? '1 Work item is ready for review.'
-        : `${counts.review} Work items are ready for review.`;
+        : `${review} Work items are ready for review.`;
       return;
     }
 
-    if (counts.active > 0) {
+    if (active > 0) {
       context.dataset.state = 'active';
-      contextCopy.textContent = counts.active === 1
-        ? '1 Work item is moving or held. Alex will surface material changes.'
-        : `${counts.active} Work items are moving or held. Alex will surface material changes.`;
+      contextCopy.textContent = active === 1
+        ? '1 Work item is moving. Alex will surface material changes.'
+        : `${active} Work items are moving. Alex will surface material changes.`;
       return;
     }
 
     context.dataset.state = 'quiet';
-    contextCopy.textContent = hasWork ? 'No Work needs action right now.' : 'Quiet until something changes.';
+    contextCopy.textContent = cards.length ? 'No Work needs action right now.' : 'Quiet until something changes.';
   }
 
   function scheduleRefresh() {
     if (scheduled) return;
     scheduled = true;
     queueMicrotask(refresh);
-  }
-
-  async function loadDurableWorkSummary() {
-    try {
-      const response = await fetch('/api/company/works');
-      if (!response.ok) return;
-      const payload = await response.json();
-      durableWorks.clear();
-      for (const work of payload.works || []) {
-        if (work && work.id) durableWorks.set(work.id, work);
-      }
-      scheduleRefresh();
-    } catch {
-      // The primary bootstrap surface already owns workspace-unavailable messaging.
-    }
   }
 
   const feedObserver = new MutationObserver(scheduleRefresh);
@@ -189,7 +161,6 @@
   }
 
   requestAnimationFrame(refresh);
-  void loadDurableWorkSummary();
 
   window.addEventListener('pagehide', () => {
     for (const observer of observers) observer.disconnect();
