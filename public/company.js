@@ -43,6 +43,19 @@
     document.body.dataset.canvasState = next;
   }
 
+  function reconcileCanvasState() {
+    if (state.needsYou.size) {
+      setCanvasState('decision');
+      return;
+    }
+    const phases = [...state.views.values()].map((view) => view.phase || view.card.dataset.canvasPhase || 'active');
+    if (phases.includes('decision')) setCanvasState('decision');
+    else if (phases.includes('review')) setCanvasState('review');
+    else if (phases.some((phase) => ['starting', 'active'].includes(phase))) setCanvasState('active');
+    else if (phases.includes('failed')) setCanvasState('failed');
+    else setCanvasState('quiet');
+  }
+
   function animateIn(node, { y = 8, duration = 0.32 } = {}) {
     if (!hasGsap()) return;
     window.gsap.fromTo(
@@ -87,6 +100,16 @@
     runtime.disabled = isSubmitting;
   }
 
+  function closeExecutionSetupForSubmit() {
+    if (!runSettings.open) return;
+    const closeEvent = new CustomEvent('lucubro:close-execution', {
+      cancelable: true,
+      detail: { restoreFocus: false },
+    });
+    const unhandled = runSettings.dispatchEvent(closeEvent);
+    if (unhandled) runSettings.open = false;
+  }
+
   function managerMessage(text) {
     const article = el('article', 'message manager-message canvas-manager-message');
     const avatar = el('div', 'message-avatar', 'A');
@@ -122,10 +145,10 @@
     return { intent, receipt };
   }
 
-  function resolveCanvasIntent(intentView, work) {
+  function resolveCanvasIntent(intentView) {
     if (!intentView) return;
     intentView.intent.dataset.state = 'formed';
-    const text = `Work formed · assigned to Ben${work && work.id ? '' : ''}`;
+    const text = 'Work formed · assigned to Ben';
     if (!hasGsap()) {
       intentView.receipt.textContent = text;
       return;
@@ -179,43 +202,29 @@
   }
 
   function pulseLiveState(view) {
-    view.live.dataset.eventPulse = 'true';
-    if (!hasGsap()) {
-      view.live.dataset.eventPulse = 'false';
-      return;
-    }
-    const rule = view.live;
-    window.gsap.killTweensOf(rule);
+    if (!hasGsap()) return;
+    window.gsap.killTweensOf([view.liveProgress, view.signal]);
     window.gsap.fromTo(
-      rule,
-      { '--canvas-pulse': 0 },
-      { '--canvas-pulse': 1, duration: 0.01 },
+      view.liveProgress,
+      { autoAlpha: 0.7, scaleX: 0 },
+      {
+        autoAlpha: 0,
+        scaleX: 1,
+        duration: 0.38,
+        transformOrigin: 'left center',
+        ease: 'power2.out',
+        clearProps: 'opacity',
+        onComplete: () => window.gsap.set(view.liveProgress, { scaleX: 0 }),
+      },
     );
-    const afterProxy = { value: 0 };
-    window.gsap.to(afterProxy, {
-      value: 1,
-      duration: 0.34,
-      ease: 'power2.out',
-      onUpdate: () => {
-        rule.style.setProperty('--canvas-pulse-scale', String(afterProxy.value));
-        const pseudo = rule.querySelector('.canvas-live-progress');
-        if (pseudo) pseudo.style.transform = `scaleX(${afterProxy.value})`;
-      },
-      onComplete: () => {
-        window.setTimeout(() => {
-          rule.dataset.eventPulse = 'false';
-          const pseudo = rule.querySelector('.canvas-live-progress');
-          if (pseudo) pseudo.style.transform = 'scaleX(0)';
-        }, 80);
-      },
-    });
     window.gsap.fromTo(view.signal, { scale: 0.72 }, { scale: 1, duration: 0.22, ease: 'back.out(2)', clearProps: 'transform' });
   }
 
   function updateLiveState(view, { label, copy, tone = 'neutral', phase = null, event = null } = {}) {
     if (phase) {
+      view.phase = phase;
       view.card.dataset.canvasPhase = phase;
-      setCanvasState(phase === 'accepted' ? 'quiet' : phase);
+      reconcileCanvasState();
     }
     if (tone === 'neutral') view.live.removeAttribute('data-tone');
     else view.live.dataset.tone = tone;
@@ -242,7 +251,7 @@
     card.dataset.workId = work.id;
     card.dataset.runId = run.id;
     card.dataset.canvasObject = 'work';
-    card.dataset.canvasPhase = 'starting';
+    card.dataset.canvasPhase = 'active';
 
     const header = el('div', 'work-object-header');
     const title = el('div', 'work-object-title');
@@ -292,7 +301,7 @@
     }
 
     card.scrollIntoView({ block: 'nearest', behavior: reducedMotion.matches ? 'auto' : 'smooth' });
-    return { card, body, progress, status, live, signal, liveLabel, liveCopy, history };
+    return { card, body, progress, status, live, signal, liveLabel, liveCopy, liveProgress, history, phase: 'active' };
   }
 
   function setStatus(view, text, tone = 'neutral') {
@@ -415,7 +424,7 @@
         tone: decision === 'allow' ? 'neutral' : 'attention',
         phase: decision === 'allow' ? 'active' : 'decision',
       });
-    }
+    } else reconcileCanvasState();
   }
 
   async function decideWork(workId, view, decision) {
@@ -575,6 +584,7 @@
     const source = new EventSource(`/api/company/runs/${encodeURIComponent(run.id)}/stream`);
     state.active.set(run.id, source);
     state.views.set(run.id, view);
+    reconcileCanvasState();
     source.onmessage = (message) => {
       const event = JSON.parse(message.data);
       handleRunEvent(view, event);
@@ -636,7 +646,7 @@
     const intentView = canvasIntent(text);
     setCanvasState('intent');
     brief.value = '';
-    runSettings.open = false;
+    closeExecutionSetupForSubmit();
     setSubmitting(true);
 
     try {
@@ -654,9 +664,10 @@
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || 'Unable to create Work');
 
-      resolveCanvasIntent(intentView, payload.work);
+      resolveCanvasIntent(intentView);
       const view = workObject(payload.work, payload.run);
-      setCanvasState('active');
+      state.views.set(payload.run.id, view);
+      reconcileCanvasState();
       watchRun(payload.run, view);
     } catch (error) {
       showComposerError(error.message);
