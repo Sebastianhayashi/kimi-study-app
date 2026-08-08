@@ -158,42 +158,33 @@ test('workspace tree remains contained and touchable on a mobile viewport', asyn
   await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-mobile-workspace-tree.png') });
 });
 
-test('company shell keeps Projects, Knowledge, Usage, Account, and core work surfaces visible', async ({ page }) => {
+test('company routes expose Manager, Work, Employees, and Settings as real product sections', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
 
-  const routes = [
-    ['/company/work', 'Work'],
-    ['/company/projects', 'Projects'],
-    ['/company/employees', 'Employees'],
-    ['/company/knowledge', 'Knowledge'],
-    ['/company/usage', 'Usage'],
-    ['/company/account', 'Account'],
-    ['/company/settings', 'Settings'],
-  ];
+  await page.goto(`${URL}/company/work`);
+  await expect(page.getByRole('heading', { name: 'Work', exact: true })).toBeVisible();
+  await expect(page.locator('[data-company-nav="work"]')).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('.composer-dock')).toBeHidden();
 
-  for (const [route, heading] of routes) {
-    await page.goto(`${URL}${route}`);
-    await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible();
-  }
+  await page.goto(`${URL}/company/employees`);
+  await expect(page.getByRole('heading', { name: 'Employees', exact: true })).toBeVisible();
+  await expect(page.locator('[data-company-nav="employees"]')).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('#employee-page-list')).toContainText('Alex');
+  await expect(page.locator('#employee-page-list')).toContainText('Ben');
+  await expect(page.locator('#employee-page-list')).toContainText('Primary Manager');
 
-  await page.goto(`${URL}/company/projects`);
-  await expect(page.locator('#projects-view-tabs')).toContainText('Issues');
-  await expect(page.locator('#projects-view-tabs')).toContainText('Map');
-  await expect(page.locator('#projects-view-tabs')).toContainText('Activity');
-
-  await page.goto(`${URL}/company/usage`);
-  await expect(page.locator('#usage-page-body')).toContainText('Runs');
-  await expect(page.locator('#usage-page-body')).toContainText('Runtime');
-
-  await page.goto(`${URL}/company/account`);
-  await expect(page.locator('#account-page-body')).toContainText('Local-first');
-
-  await page.goto(`${URL}/company`);
-  await expect(page.getByRole('heading', { name: 'What should we move forward?' })).toBeVisible();
-  for (const nav of ['manager', 'work', 'projects', 'employees', 'knowledge', 'usage', 'account', 'settings']) {
-    await expect(page.locator(`[data-company-nav="${nav}"]`)).toBeVisible();
-  }
+  await page.goto(`${URL}/company/settings`);
+  await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
+  await expect(page.locator('[data-company-nav="settings"]')).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('#settings-runtime-list')).toContainText('mock');
+  await expect(page.locator('#settings-runtime-list')).toContainText('Available');
+  await expect(page.locator('#settings-workspace-root')).toHaveText(WORKSPACE_ROOT);
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
+
+  await page.locator('[data-company-nav="manager"]').click();
+  await expect(page).toHaveURL(`${URL}/company`);
+  await expect(page.getByRole('heading', { name: 'What should we move forward?' })).toBeVisible();
+  await expect(page.locator('.composer-dock')).toBeVisible();
 });
