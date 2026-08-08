@@ -19,6 +19,14 @@ async function waitForServer() {
   throw new Error('company-server did not become ready');
 }
 
+async function configureMockWork(page, brief) {
+  await page.locator('#run-settings').evaluate((element) => { element.open = true; });
+  await page.locator('#repo-dir').fill('/tmp/lucubro-fixture-repo');
+  await page.locator('#runtime').selectOption('mock');
+  await page.locator('#work-brief').fill(brief);
+  await page.getByRole('button', { name: 'Send to Alex' }).click();
+}
+
 test.beforeAll(async () => {
   const dataDir = path.join(ROOT, 'tests', '.runtime', 'company');
   fs.rmSync(dataDir, { recursive: true, force: true });
@@ -62,11 +70,7 @@ test('front door presents Alex, real working context, and Klein-blue primary act
 
 test('CEO request becomes durable Work, updates the working set, reaches review, and can be accepted', async ({ page }) => {
   await page.goto(`${URL}/company`);
-  await page.locator('#run-settings').evaluate((element) => { element.open = true; });
-  await page.locator('#repo-dir').fill('/tmp/lucubro-fixture-repo');
-  await page.locator('#runtime').selectOption('mock');
-  await page.locator('#work-brief').fill('Fix the session refresh bug');
-  await page.getByRole('button', { name: 'Send to Alex' }).click();
+  await configureMockWork(page, 'Fix the session refresh bug');
   await expect(page.locator('#run-settings')).not.toHaveAttribute('open', '');
   await expect(page.locator('.work-object-title strong')).toContainText('Fix the session refresh bug');
   await expect(page.getByText('Ben · Software Engineer')).toBeVisible();
@@ -84,13 +88,29 @@ test('CEO request becomes durable Work, updates the working set, reaches review,
   await expect(page.locator('#context-review-count')).toHaveText('0');
 });
 
+test('Working set preserves durable review state across a page reload', async ({ page }) => {
+  await page.goto(`${URL}/company`);
+  await configureMockWork(page, 'Prepare a durable review checkpoint');
+  await expect(page.locator('.status')).toHaveText('Ready for review');
+  const workId = await page.locator('.work-object').getAttribute('data-work-id');
+  expect(workId).toBeTruthy();
+
+  await page.reload();
+  await expect(page.locator('#context-review-count')).toHaveText('1');
+  await expect(page.locator('#context-copy')).toContainText('ready for review');
+  await expect(page.locator('.work-object')).toHaveCount(0);
+
+  const response = await page.request.post(`${URL}/api/company/works/${encodeURIComponent(workId)}/decision`, {
+    data: { decision: 'accept' },
+  });
+  expect(response.ok()).toBe(true);
+  await page.reload();
+  await expect(page.locator('#context-review-count')).toHaveText('0');
+});
+
 test('out-of-envelope request becomes a scoped Needs You decision and Working set reflects it', async ({ page }) => {
   await page.goto(`${URL}/company`);
-  await page.locator('#run-settings').evaluate((element) => { element.open = true; });
-  await page.locator('#repo-dir').fill('/tmp/lucubro-fixture-repo');
-  await page.locator('#runtime').selectOption('mock');
-  await page.locator('#work-brief').fill('Fix auth needs-approval');
-  await page.getByRole('button', { name: 'Send to Alex' }).click();
+  await configureMockWork(page, 'Fix auth needs-approval');
   await expect(page.locator('[data-testid="needs-you-card"]')).toBeVisible();
   await expect(page.getByText('network.access')).toBeVisible();
   await expect(page.locator('#needs-you-button')).toHaveAttribute('data-active', 'true');
@@ -128,6 +148,14 @@ test('mobile keeps relationship, working set, composer, and Work surface inside 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
   await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-blue-mobile-empty.png'), fullPage: true });
+});
+
+test('skip navigation reaches the manager conversation for keyboard users', async ({ page }) => {
+  await page.goto(`${URL}/company`);
+  await page.keyboard.press('Tab');
+  await expect(page.locator('.skip-link')).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#company-conversation')).toBeFocused();
 });
 
 test('reduced motion preserves the complete product state without GSAP dependency', async ({ page }) => {
