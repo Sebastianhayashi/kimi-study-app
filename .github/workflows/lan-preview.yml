@@ -32,11 +32,33 @@ jobs:
       - name: Install repository dependencies
         run: npm ci
 
-      - name: Deploy mock preview
+      - name: Deploy LAN-only mock preview
         id: deploy
         shell: bash
         run: |
           set -euo pipefail
+
+          ADDRESSES="$(ip -4 -o addr show scope global 2>/dev/null | awk '{split($4,a,"/"); print a[1]}')"
+          LAN_IP="$(printf '%s\n' "$ADDRESSES" | awk '/^192\.168\./ { print; exit }')"
+          if [ -z "$LAN_IP" ]; then
+            LAN_IP="$(printf '%s\n' "$ADDRESSES" | awk '/^10\./ { print; exit }')"
+          fi
+          if [ -z "$LAN_IP" ]; then
+            LAN_IP="$(printf '%s\n' "$ADDRESSES" | awk -F. '$1==172 && $2>=16 && $2<=31 { print; exit }')"
+          fi
+          if [ -z "$LAN_IP" ]; then
+            echo 'Unable to detect a private LAN IPv4 address' >&2
+            printf 'Detected global addresses:\n%s\n' "$ADDRESSES" >&2
+            exit 1
+          fi
+
+          FIREWALL='manual-required'
+          if command -v nixos-firewall-tool >/dev/null 2>&1 && sudo -n true >/dev/null 2>&1; then
+            sudo -n nixos-firewall-tool open tcp "$PREVIEW_PORT"
+            FIREWALL='temporary-open'
+          elif ! systemctl is-active --quiet firewall.service; then
+            FIREWALL='firewall-inactive'
+          fi
 
           PREVIEW_ROOT="$HOME/lucubro-preview"
           APP_DIR="$PREVIEW_ROOT/app"
@@ -48,7 +70,6 @@ jobs:
           mkdir -p "$PREVIEW_ROOT" "$STATE_DIR"
           rm -rf "$NEXT_DIR"
           mkdir -p "$NEXT_DIR"
-
           tar --exclude=.git --exclude=node_modules --exclude=data --exclude=tests/.runtime -cf - . | tar -xf - -C "$NEXT_DIR"
           cp -a node_modules "$NEXT_DIR/node_modules"
 
@@ -71,7 +92,7 @@ jobs:
           env -u RUNNER_TRACKING_ID \
             NODE_ENV=test \
             LUCUBRO_COMPANY_MOCK_RUNTIME=1 \
-            LUCUBRO_COMPANY_HOST=0.0.0.0 \
+            LUCUBRO_COMPANY_HOST="$LAN_IP" \
             LUCUBRO_COMPANY_PORT="$PREVIEW_PORT" \
             LUCUBRO_COMPANY_DATA_DIR="$STATE_DIR" \
             setsid "$NODE_BIN" company-server.js > "$LOG_FILE" 2>&1 < /dev/null &
@@ -79,158 +100,36 @@ jobs:
           echo "$PREVIEW_PID" > "$PID_FILE"
 
           for _ in $(seq 1 30); do
-            if "$NODE_BIN" -e "fetch('http://127.0.0.1:${PREVIEW_PORT}/api/company/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"; then
+            if "$NODE_BIN" -e "fetch('http://${LAN_IP}:${PREVIEW_PORT}/api/company/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"; then
               break
             fi
             sleep 1
           done
 
-          "$NODE_BIN" -e "fetch('http://127.0.0.1:${PREVIEW_PORT}/api/company/health').then(async r=>{if(!r.ok)throw new Error(String(r.status)); console.log(await r.text())}).catch(e=>{console.error(e);process.exit(1)})"
-
-          ADDRESSES="$(ip -4 -o addr show scope global 2>/dev/null | awk '{split($4,a,"/"); print a[1]}')"
-          LAN_IP="$(printf '%s\n' "$ADDRESSES" | awk '/^192\.168\./ { print; exit }')"
-          if [ -z "$LAN_IP" ]; then
-            LAN_IP="$(printf '%s\n' "$ADDRESSES" | awk '/^10\./ { print; exit }')"
-          fi
-          if [ -z "$LAN_IP" ]; then
-            LAN_IP="$(printf '%s\n' "$ADDRESSES" | awk -F. '$1==172 && $2>=16 && $2<=31 { print; exit }')"
-          fi
-          if [ -z "$LAN_IP" ]; then
-            LAN_IP="$(printf '%s\n' "$ADDRESSES" | awk '!/^198\.(18|19)\./ && !/^100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\./ { print; exit }')"
-          fi
-          if [ -z "$LAN_IP" ]; then
-            echo 'Unable to detect a usable LAN IPv4 address' >&2
-            printf 'Detected global addresses:\n%s\n' "$ADDRESSES" >&2
-            exit 1
-          fi
-
           "$NODE_BIN" -e "fetch('http://${LAN_IP}:${PREVIEW_PORT}/api/company/health').then(async r=>{if(!r.ok)throw new Error(String(r.status)); console.log(await r.text())}).catch(e=>{console.error(e);process.exit(1)})"
+          ss -ltn 2>&1 | awk 'NR == 1 || $4 ~ /:3217$/'
 
           echo "lan_ip=$LAN_IP" >> "$GITHUB_OUTPUT"
           echo "port=$PREVIEW_PORT" >> "$GITHUB_OUTPUT"
           echo "pid=$PREVIEW_PID" >> "$GITHUB_OUTPUT"
           echo "url=http://${LAN_IP}:${PREVIEW_PORT}/company" >> "$GITHUB_OUTPUT"
+          echo "firewall=$FIREWALL" >> "$GITHUB_OUTPUT"
 
-      - name: Diagnose LAN boundary
-        id: diagnose
-        if: steps.deploy.outcome == 'success'
-        shell: bash
-        env:
-          LAN_IP: ${{ steps.deploy.outputs.lan_ip }}
-        run: |
-          set -u
-          DIAG_FILE="$RUNNER_TEMP/lucubro-lan-diagnostics.txt"
-          NODE_BIN="$(command -v node)"
-          : > "$DIAG_FILE"
-
-          {
-            echo '== listener =='
-            ss -ltn 2>&1 | awk 'NR == 1 || $4 ~ /:3217$/'
-            echo
-            echo '== IPv4 interfaces =='
-            ip -4 -o addr show scope global 2>&1
-            echo
-            echo '== IPv4 routes =='
-            ip -4 route show 2>&1
-            echo
-            echo '== NixOS firewall service =='
-            systemctl is-active firewall.service 2>&1 || true
-            systemctl is-enabled firewall.service 2>&1 || true
-            echo
-            echo '== NixOS firewall options =='
-            if command -v nixos-option >/dev/null 2>&1; then
-              nixos-option networking.firewall.enable 2>&1 || true
-              nixos-option networking.firewall.allowedTCPPorts 2>&1 || true
-              nixos-option networking.firewall.allowedTCPPortRanges 2>&1 || true
-              nixos-option networking.firewall.trustedInterfaces 2>&1 || true
-            else
-              echo 'nixos-option unavailable'
-            fi
-            echo
-            echo '== passwordless sudo =='
-            if sudo -n true >/dev/null 2>&1; then
-              echo 'yes'
-              echo
-              echo '== firewall rules mentioning TCP/3217 =='
-              if command -v nft >/dev/null 2>&1; then
-                sudo -n nft list ruleset 2>/dev/null | grep -E -C 2 '3217|tcp dport' | head -n 100 || true
-              elif command -v iptables >/dev/null 2>&1; then
-                sudo -n iptables -S 2>/dev/null | grep -E '3217|INPUT' | head -n 100 || true
-              fi
-            else
-              echo 'no'
-            fi
-          } >> "$DIAG_FILE"
-
-          PROBE='not-run'
-          if sudo -n true >/dev/null 2>&1; then
-            NS="lucubro-probe-${GITHUB_RUN_ID}"
-            HOST_IF="lcbhost${GITHUB_RUN_NUMBER}"
-            NS_IF="lcbns${GITHUB_RUN_NUMBER}"
-            HOST_IF="${HOST_IF:0:15}"
-            NS_IF="${NS_IF:0:15}"
-
-            cleanup_probe() {
-              sudo -n ip netns del "$NS" >/dev/null 2>&1 || true
-              sudo -n ip link del "$HOST_IF" >/dev/null 2>&1 || true
-            }
-            trap cleanup_probe EXIT
-            cleanup_probe
-
-            if sudo -n ip netns add "$NS" \
-              && sudo -n ip link add "$HOST_IF" type veth peer name "$NS_IF" \
-              && sudo -n ip addr add 10.254.254.1/30 dev "$HOST_IF" \
-              && sudo -n ip link set "$HOST_IF" up \
-              && sudo -n ip link set "$NS_IF" netns "$NS" \
-              && sudo -n ip netns exec "$NS" ip addr add 10.254.254.2/30 dev "$NS_IF" \
-              && sudo -n ip netns exec "$NS" ip link set lo up \
-              && sudo -n ip netns exec "$NS" ip link set "$NS_IF" up; then
-              if sudo -n ip netns exec "$NS" "$NODE_BIN" -e "const t=setTimeout(()=>process.exit(2),3000);fetch('http://10.254.254.1:${PREVIEW_PORT}/api/company/health').then(r=>{clearTimeout(t);process.exit(r.ok?0:1)}).catch(()=>{clearTimeout(t);process.exit(1)})"; then
-                PROBE='pass'
-              else
-                PROBE='blocked'
-              fi
-            else
-              PROBE='setup-failed'
-            fi
-            cleanup_probe
-            trap - EXIT
-          fi
-
-          echo >> "$DIAG_FILE"
-          echo '== external-interface simulation =='
-          echo "$PROBE"
-          echo >> "$DIAG_FILE"
-          echo '== direct host checks =='
-          "$NODE_BIN" -e "fetch('http://127.0.0.1:${PREVIEW_PORT}/api/company/health').then(r=>console.log('loopback',r.status)).catch(e=>console.log('loopback error',e.message))" >> "$DIAG_FILE" 2>&1
-          "$NODE_BIN" -e "fetch('http://${LAN_IP}:${PREVIEW_PORT}/api/company/health').then(r=>console.log('lan-self',r.status)).catch(e=>console.log('lan-self error',e.message))" >> "$DIAG_FILE" 2>&1
-
-          echo "probe=$PROBE" >> "$GITHUB_OUTPUT"
-          cat "$DIAG_FILE"
-
-      - name: Report preview address and diagnostics
+      - name: Report preview address
         if: always()
         env:
           GITHUB_TOKEN: ${{ github.token }}
           DEPLOY_OUTCOME: ${{ steps.deploy.outcome }}
-          DIAG_OUTCOME: ${{ steps.diagnose.outcome }}
-          PROBE: ${{ steps.diagnose.outputs.probe }}
-          LAN_IP: ${{ steps.deploy.outputs.lan_ip }}
           LAN_PORT: ${{ steps.deploy.outputs.port }}
           LAN_URL: ${{ steps.deploy.outputs.url }}
           PREVIEW_PID: ${{ steps.deploy.outputs.pid }}
+          FIREWALL: ${{ steps.deploy.outputs.firewall }}
         run: |
           node <<'NODE'
-          const fs = require('fs');
-          const path = require('path');
           const {
             GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_SHA, STATUS_ISSUE,
-            DEPLOY_OUTCOME, DIAG_OUTCOME, PROBE, LAN_PORT, LAN_URL, PREVIEW_PID,
-            RUNNER_TEMP,
+            DEPLOY_OUTCOME, LAN_PORT, LAN_URL, PREVIEW_PID, FIREWALL,
           } = process.env;
-
-          const diagPath = path.join(RUNNER_TEMP, 'lucubro-lan-diagnostics.txt');
-          const diagnostics = fs.existsSync(diagPath) ? fs.readFileSync(diagPath, 'utf8').trim() : 'Diagnostics unavailable.';
           const ok = DEPLOY_OUTCOME === 'success';
           const body = ok
             ? [
@@ -238,15 +137,15 @@ jobs:
                 '',
                 `- Commit: \`${GITHUB_SHA}\``,
                 `- Address: \`${LAN_URL}\``,
-                `- Bind: \`0.0.0.0:${LAN_PORT}\``,
+                `- Bind: private LAN IP only, TCP/${LAN_PORT}`,
                 `- PID: \`${PREVIEW_PID}\``,
+                `- Firewall: \`${FIREWALL || 'unknown'}\``,
                 '- Runtime: deterministic mock only; Claude/Codex are not invoked.',
-                `- External-interface simulation: \`${PROBE || 'not-run'}\``,
-                `- Diagnostics step: \`${DIAG_OUTCOME || 'unknown'}\``,
+                '- Host-side health check: success.',
                 '',
-                '```text',
-                diagnostics.slice(0, 12000),
-                '```',
+                FIREWALL === 'manual-required'
+                  ? `The runner cannot elevate non-interactively. On the NixOS host run: sudo nixos-firewall-tool open tcp ${LAN_PORT}`
+                  : 'The preview port does not require a manual firewall command for this run.',
               ].join('\n')
             : [
                 'LAN preview deployment failed on the trusted self-hosted runner.',
