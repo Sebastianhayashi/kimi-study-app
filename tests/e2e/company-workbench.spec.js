@@ -27,6 +27,10 @@ async function configureMockWork(page, brief) {
   await page.getByRole('button', { name: 'Send to Alex' }).click();
 }
 
+async function useDesktopViewport(page) {
+  await page.setViewportSize({ width: 1440, height: 900 });
+}
+
 test.beforeAll(async () => {
   const dataDir = path.join(ROOT, 'tests', '.runtime', 'company');
   fs.rmSync(dataDir, { recursive: true, force: true });
@@ -48,6 +52,7 @@ test.beforeAll(async () => {
 test.afterAll(async () => { if (server && !server.killed) server.kill('SIGTERM'); });
 
 test('front door presents Alex, real working context, and Klein-blue primary actions', async ({ page }) => {
+  await useDesktopViewport(page);
   await page.goto(`${URL}/company`);
   await expect(page.getByRole('heading', { name: 'What should we move forward?' })).toBeVisible();
   await expect(page.getByLabel('Alex, Primary Manager')).toBeVisible();
@@ -65,9 +70,11 @@ test('front door presents Alex, real working context, and Klein-blue primary act
   const primary = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim());
   expect(primary).toBe('#002fa7');
   await expect(page.locator('#send-work')).toHaveCSS('background-color', 'rgb(0, 47, 167)');
+  await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-blue-desktop-empty.png') });
 });
 
 test('CEO request becomes durable Work, updates the working set, reaches review, and can be accepted', async ({ page }) => {
+  await useDesktopViewport(page);
   await page.goto(`${URL}/company`);
   await configureMockWork(page, 'Fix the session refresh bug');
   await expect(page.locator('#run-settings')).not.toHaveAttribute('open', '');
@@ -81,7 +88,10 @@ test('CEO request becomes durable Work, updates the working set, reaches review,
   await expect(page.locator('#context-copy')).toContainText('ready for review');
   await expect(page.locator('body')).toHaveAttribute('data-company-has-work', 'true');
   await expect(page.locator('.composer-dock')).toHaveCSS('position', 'fixed');
-  await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-blue-desktop-review.png'), fullPage: true });
+  await page.locator('.work-object').evaluate((element) => {
+    window.scrollTo(0, Math.max(0, element.offsetTop - 120));
+  });
+  await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-blue-desktop-review.png') });
   await page.getByRole('button', { name: 'Accept' }).click();
   await expect(page.getByText('Accepted. I recorded this Work as complete.')).toBeVisible();
   await expect(page.locator('.status')).toHaveText('Accepted');
@@ -90,6 +100,7 @@ test('CEO request becomes durable Work, updates the working set, reaches review,
 });
 
 test('out-of-envelope request becomes a scoped Needs You decision and Working set reflects it', async ({ page }) => {
+  await useDesktopViewport(page);
   await page.goto(`${URL}/company`);
   await configureMockWork(page, 'Fix auth needs-approval');
   await expect(page.locator('[data-testid="needs-you-card"]')).toBeVisible();
@@ -98,7 +109,7 @@ test('out-of-envelope request becomes a scoped Needs You decision and Working se
   await expect(page.locator('#context-decision-count')).toHaveText('1');
   await expect(page.locator('#company-context')).toHaveAttribute('data-state', 'decision');
   await expect(page.locator('#context-copy')).toContainText('authority decision');
-  await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-blue-needs-you.png'), fullPage: true });
+  await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-blue-needs-you.png') });
   await page.keyboard.press('Escape');
   await expect(page.locator('#needs-you-panel')).toBeHidden();
   await page.locator('#needs-you-button').click();
@@ -129,7 +140,7 @@ test('mobile keeps relationship, working set, composer, and Work surface inside 
   await expect(page.locator('.composer-dock')).toHaveCSS('position', 'relative');
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
-  await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-blue-mobile-empty.png'), fullPage: true });
+  await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-blue-mobile-empty.png') });
 });
 
 test('skip navigation reaches the manager conversation for keyboard users', async ({ page }) => {
