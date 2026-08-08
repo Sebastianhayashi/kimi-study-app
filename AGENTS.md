@@ -104,14 +104,19 @@ Install for a local agent with:
 npx skills add https://github.com/greensock/gsap-skills
 ```
 
+Detailed lifecycle choreography is specified in [`docs/company-workbench/MOTION-SYSTEM.md`](docs/company-workbench/MOTION-SYSTEM.md).
+
 Prefer the relevant GSAP skill for the task (`gsap-core`, `gsap-timeline`, `gsap-performance`, framework-specific guidance, etc.).
 
 Motion rules:
 
 - Motion must communicate state, hierarchy, causality, continuity, focus, acknowledgement, or receipt.
+- Visible components use a complete `mount → entering → active → exiting → unmount/hidden/replacement` lifecycle when that transition is user-visible.
+- Do not instantly replace a visible component set. Exit the old set, replace state/DOM, then enter the new set.
+- Exit choreography should normally be shorter than entrance choreography.
 - Prefer transforms and `autoAlpha`/opacity over layout properties.
 - Prefer timelines and position parameters for coordinated sequences over arbitrary delay chains.
-- Use stagger for related choices that enter as a group.
+- Use stagger for related choices that enter as a group and reverse stagger when they leave as a group.
 - Use `will-change` only on elements that actually animate.
 - Clean up or kill GSAP timelines/tweens/listeners on lifecycle teardown.
 - Respect `prefers-reduced-motion` and land directly in meaningful end states.
@@ -135,6 +140,8 @@ For kinetic UI changes, verify at minimum:
 
 - selection semantics and keyboard/focus state;
 - deterministic receipts are truthful;
+- component entrance and exit have a defined lifecycle;
+- visible replacement does not jump directly between DOM states;
 - mobile containment and touch reachability;
 - reduced-motion end states;
 - unavailable provider states remain legible;
