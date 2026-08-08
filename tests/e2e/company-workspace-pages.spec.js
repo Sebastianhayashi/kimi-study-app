@@ -92,6 +92,32 @@ test('workspace picker expands a host tree, autocompletes paths, and creates fol
   await expect(page.locator('#repo-path-receipt')).toHaveText('Folder created');
 });
 
+test('Manager is a conversation-driven live canvas whose Work object grows with real events', async ({ page }) => {
+  await page.setViewportSize({ width: 1100, height: 820 });
+  await page.goto(`${URL}/company`);
+  await expect(page.locator('body')).toHaveAttribute('data-canvas-state', 'quiet');
+
+  await page.locator('#run-settings > summary').click();
+  await page.locator('[data-runtime-id="mock"]').click();
+  await page.locator('#repo-dir').fill(FIXTURE_REPO);
+  await expect(page.locator('#repo-path-control')).toHaveAttribute('data-state', 'received');
+
+  await page.locator('#work-brief').fill('Turn the canvas into a live product surface');
+  await page.getByRole('button', { name: 'Send to Alex' }).click();
+
+  const intent = page.locator('[data-canvas-intent]').filter({ hasText: 'Turn the canvas into a live product surface' });
+  await expect(intent).toBeVisible();
+
+  const work = page.locator('[data-canvas-object="work"]').filter({ hasText: 'Turn the canvas into a live product surface' });
+  await expect(work).toBeVisible();
+  await expect(work.locator('.canvas-live-state')).toBeVisible();
+  await expect(work.locator('.canvas-event-history .canvas-event')).not.toHaveCount(0);
+  await expect(work.locator('.artifact:not(.run-detail)')).toBeVisible();
+  await expect(work.locator('.status')).toHaveText('Ready for review');
+  await expect(work.locator('.canvas-live-label')).toHaveText('Evidence ready');
+  await expect(page.locator('body')).toHaveAttribute('data-canvas-state', 'review');
+});
+
 test('company routes expose Manager, Work, Employees, and Settings as real product sections', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
 
