@@ -3,49 +3,107 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f2ec">
   <title>Lucubro · Company</title>
   <link rel="stylesheet" href="/vendor/geist/wght.css">
   <link rel="stylesheet" href="/company.css">
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" integrity="sha512-NcZdtrT77bJr4STcmsGAESr06BYGE8woZdSdEgqnpyqac7sugNO+Tr4bGwGF3MsnEkGKhU2KL2xh6Ec+BqsaHA==" crossorigin="anonymous" defer></script>
 </head>
 <body>
-  <div class="shell">
-    <header class="topbar">
-      <a class="brand" href="/company" aria-label="Lucubro Company home"><span class="brand-mark">L</span><span>Lucubro</span></a>
-      <div class="manager-identity"><span class="avatar">A</span><span><strong>Alex</strong><small>Primary Manager</small></span></div>
-      <button id="needs-you-button" class="attention-button" type="button" aria-expanded="false"><span id="needs-you-count">0</span> need you</button>
+  <div class="app-shell" data-ui="company-v2">
+    <header class="topbar" aria-label="Company workspace header">
+      <a class="brand" href="/company" aria-label="Lucubro Company home">
+        <img class="brand-mark" src="/assets/brand/lucubro-mark.svg" width="28" height="28" alt="">
+        <span class="brand-wordmark">Lucubro</span>
+      </a>
+
+      <div class="manager-presence" aria-label="Alex, Primary Manager">
+        <span class="manager-avatar" aria-hidden="true">A</span>
+        <span class="manager-copy">
+          <strong>Alex</strong>
+          <small>Primary Manager</small>
+        </span>
+        <span class="presence-state"><span aria-hidden="true"></span>Available</span>
+      </div>
+
+      <button id="needs-you-button" class="attention-button" type="button" aria-controls="needs-you-panel" aria-expanded="false">
+        <span class="attention-label">Needs you</span>
+        <span id="needs-you-count" class="attention-count" aria-label="0 decisions">0</span>
+      </button>
     </header>
 
-    <main class="conversation" aria-label="Manager conversation">
-      <section id="conversation-feed" class="conversation-feed" aria-live="polite">
-        <article class="message manager-message">
-          <div class="message-author">Alex</div>
-          <p>What should we move forward?</p>
-          <p class="quiet">I’ll turn a concrete coding request into Work, assign Ben, and keep execution details out of your way unless a decision needs you.</p>
-        </article>
+    <main class="workspace">
+      <section class="conversation" aria-label="Manager conversation">
+        <div id="conversation-feed" class="conversation-feed" aria-live="polite" aria-relevant="additions">
+          <article class="message manager-message intro-message" data-animate="intro">
+            <div class="message-avatar" aria-hidden="true">A</div>
+            <div class="message-content">
+              <div class="message-author">Alex</div>
+              <h1>What should we move forward?</h1>
+              <p class="lede">Give me the outcome. I’ll structure the Work, assign the right Employee, and only bring back decisions that need you.</p>
+            </div>
+          </article>
+        </div>
       </section>
     </main>
 
-    <aside id="needs-you-panel" class="needs-you-panel" aria-label="Needs you" hidden>
-      <div class="panel-header"><strong>Needs you</strong><button id="close-needs-you" type="button" aria-label="Close">×</button></div>
-      <div id="needs-you-list" class="needs-you-list"><p class="quiet">Nothing needs your decision.</p></div>
+    <aside id="needs-you-panel" class="needs-you-panel" aria-label="Needs you" hidden tabindex="-1">
+      <div class="panel-header">
+        <div>
+          <strong>Needs you</strong>
+          <span>Only decisions that change authority or commitments.</span>
+        </div>
+        <button id="close-needs-you" class="icon-button" type="button" aria-label="Close Needs you panel">×</button>
+      </div>
+      <div id="needs-you-list" class="needs-you-list">
+        <div class="empty-panel-state">
+          <strong>Nothing needs your decision.</strong>
+          <span>Running work stays quiet until your judgment matters.</span>
+        </div>
+      </div>
     </aside>
 
-    <footer class="composer-wrap">
-      <form id="work-form" class="composer">
-        <label class="sr-only" for="work-brief">Tell Alex what to do</label>
-        <textarea id="work-brief" rows="2" placeholder="Tell Alex what you want done…" required></textarea>
-        <div class="composer-footer">
-          <details class="run-settings">
-            <summary>Run settings</summary>
-            <div class="settings-grid">
-              <label>Repository path<input id="repo-dir" name="repoDir" placeholder="/absolute/path/to/repo" required></label>
-              <label>Runtime<select id="runtime" name="runtime"></select></label>
+    <footer class="composer-dock" data-animate="composer">
+      <form id="work-form" class="composer" novalidate>
+        <div class="composer-main">
+          <label class="sr-only" for="work-brief">Tell Alex what to do</label>
+          <textarea id="work-brief" rows="2" placeholder="Tell Alex what you want moved forward…" required aria-describedby="composer-help composer-error"></textarea>
+        </div>
+
+        <div class="composer-toolbar">
+          <details id="run-settings" class="run-settings">
+            <summary>
+              <span class="settings-summary-label">Execution setup</span>
+              <span id="settings-summary-value" class="settings-summary-value">Checking local workspace…</span>
+            </summary>
+            <div class="settings-panel">
+              <p>Execution stays behind the Work. Change these only when the local target or runtime changes.</p>
+              <div class="settings-grid">
+                <label for="repo-dir">Repository path
+                  <input id="repo-dir" name="repoDir" placeholder="/path/to/repository" autocomplete="off" required>
+                </label>
+                <label for="runtime">Runtime
+                  <select id="runtime" name="runtime" required aria-describedby="runtime-note"></select>
+                </label>
+              </div>
+              <div class="runtime-line">
+                <span id="runtime-indicator" class="runtime-indicator" aria-hidden="true"></span>
+                <p id="runtime-note" class="runtime-note" role="status">Checking local workspace…</p>
+                <button id="runtime-retry" class="text-button" type="button" hidden>Retry</button>
+              </div>
             </div>
           </details>
-          <button id="send-work" class="primary-action" type="submit">Send</button>
+
+          <div class="composer-actions">
+            <span id="composer-help" class="composer-help">⌘/Ctrl + Enter to send</span>
+            <button id="send-work" class="primary-action" type="submit" disabled>
+              <span class="send-label">Send to Alex</span>
+              <span class="send-progress" aria-hidden="true"></span>
+            </button>
+          </div>
         </div>
+        <p id="composer-error" class="composer-error" role="alert" hidden></p>
       </form>
-      <p id="runtime-note" class="runtime-note"></p>
     </footer>
   </div>
   <script src="/company.js" defer></script>
