@@ -7,6 +7,7 @@
   const reviewCount = document.querySelector('#context-review-count');
   const decisionCount = document.querySelector('#context-decision-count');
   const feed = document.querySelector('#conversation-feed');
+  const durableContext = document.querySelector('#durable-work-context');
   const needsCount = document.querySelector('#needs-you-count');
 
   if (!context || !contextCopy || !activeCount || !reviewCount || !decisionCount || !feed || !needsCount) return;
@@ -74,7 +75,7 @@
   function refresh() {
     scheduled = false;
 
-    const cards = [...document.querySelectorAll('.work-object')];
+    const cards = [...document.querySelectorAll('.work-object, [data-testid="durable-work-row"]')];
     let active = 0;
     let review = 0;
 
@@ -134,6 +135,12 @@
   const feedObserver = new MutationObserver(scheduleRefresh);
   feedObserver.observe(feed, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['data-tone'] });
   observers.push(feedObserver);
+
+  if (durableContext) {
+    const durableObserver = new MutationObserver(scheduleRefresh);
+    durableObserver.observe(durableContext, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['data-tone', 'hidden'] });
+    observers.push(durableObserver);
+  }
 
   const needsObserver = new MutationObserver(scheduleRefresh);
   needsObserver.observe(needsCount, { childList: true, subtree: true, characterData: true });
