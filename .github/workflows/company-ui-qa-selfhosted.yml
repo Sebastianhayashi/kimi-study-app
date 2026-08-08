@@ -1,0 +1,99 @@
+name: Company UI QA on trusted device
+
+on:
+  push:
+    branches:
+      - design/company-front-door-v2
+    paths:
+      - public/company.html
+      - public/company.css
+      - public/company.js
+      - tests/e2e/company-workbench.spec.js
+      - .github/workflows/company-ui-qa-selfhosted.yml
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: company-ui-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ui-qa:
+    runs-on: [self-hosted, lucubro-local]
+    timeout-minutes: 20
+    env:
+      CI: "true"
+    steps:
+      - name: Check out trusted design branch
+        uses: actions/checkout@v5
+        with:
+          ref: design/company-front-door-v2
+          clean: true
+          persist-credentials: false
+
+      - name: Install repository dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install chromium
+
+      - name: Run Company Workbench UI journey
+        id: qa
+        shell: bash
+        run: |
+          set +e
+          npx playwright test tests/e2e/company-workbench.spec.js --workers=1 > company-ui-qa.log 2>&1
+          code=$?
+          cat company-ui-qa.log
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload visual evidence
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: company-ui-qa-${{ github.run_id }}
+          path: |
+            test-results/company-desktop-review.png
+            test-results/company-needs-you.png
+            test-results/company-mobile-empty.png
+            playwright-report/
+            company-ui-qa.log
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Report UI QA result
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          QA_EXIT_CODE: ${{ steps.qa.outputs.exit_code }}
+        with:
+          script: |
+            const fs = require('fs');
+            const raw = fs.existsSync('company-ui-qa.log')
+              ? fs.readFileSync('company-ui-qa.log', 'utf8')
+              : 'UI QA did not produce a log file.';
+            const body = [
+              `Trusted device: ${process.env.RUNNER_NAME}`,
+              `Branch: ${context.ref}`,
+              `Commit: ${context.sha}`,
+              `Run id: ${context.runId}`,
+              `Exit code: ${process.env.QA_EXIT_CODE || 'unknown'}`,
+              `Artifact: company-ui-qa-${context.runId}`,
+              '',
+              '```text',
+              raw.slice(-12000),
+              '```',
+            ].join('\n');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[ui-qa] ${context.sha.slice(0, 7)} exit ${process.env.QA_EXIT_CODE || 'unknown'} run ${context.runId}`,
+              body,
+            });
+
+      - name: Fail when UI QA fails
+        if: steps.qa.outputs.exit_code != '0'
+        run: exit 1
