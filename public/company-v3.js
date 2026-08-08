@@ -39,8 +39,8 @@
 
   function normalizeStatus(status) {
     const text = status.textContent.trim();
-    if (text === 'Ready for review') status.dataset.tone = 'review';
-    if (text === 'Accepted') status.dataset.tone = 'success';
+    if (text === 'Ready for review' && status.dataset.tone !== 'review') status.dataset.tone = 'review';
+    if (text === 'Accepted' && status.dataset.tone !== 'success') status.dataset.tone = 'success';
     return text;
   }
 
@@ -108,16 +108,16 @@
     if (review > 0) {
       context.dataset.state = 'review';
       contextCopy.textContent = review === 1
-        ? '1 Work is ready for review.'
-        : `${review} Works are ready for review.`;
+        ? '1 Work item is ready for review.'
+        : `${review} Work items are ready for review.`;
       return;
     }
 
     if (active > 0) {
       context.dataset.state = 'active';
       contextCopy.textContent = active === 1
-        ? '1 Work is moving. Alex will surface material changes.'
-        : `${active} Works are moving. Alex will surface material changes.`;
+        ? '1 Work item is moving. Alex will surface material changes.'
+        : `${active} Work items are moving. Alex will surface material changes.`;
       return;
     }
 
