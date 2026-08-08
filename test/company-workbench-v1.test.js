@@ -53,7 +53,7 @@ test('out-of-envelope capability becomes a resolvable Needs You item', async () 
   assert.equal(store.readEvents('run_a').at(-1).type,'approval.resolved');
 });
 
-test('orchestrator preserves Lucubro Run identity and produces reviewable diff evidence', async () => {
+test('orchestrator preserves Lucubro Run identity and publishes review evidence before completion', async () => {
   const store=createRunStore({rootDir:tmp('lucubro-orch-')});
   const approvals=createApprovalBroker({runStore:store});
   const runtime={async *run(){yield {type:'run.started',providerSessionId:'provider_abc'};yield {type:'run.completed',summary:'Fixed'};}};
@@ -62,7 +62,10 @@ test('orchestrator preserves Lucubro Run identity and produces reviewable diff e
   await orchestrator.wait(run.id);
   assert.equal(store.get(run.id).providerSessionId,'provider_abc');
   assert.equal(store.get(run.id).status,'completed');
-  assert.equal(store.readEvents(run.id).some(e=>e.type==='artifact.produced'),true);
+  const eventTypes=store.readEvents(run.id).map(e=>e.type);
+  assert.equal(eventTypes.includes('artifact.produced'),true);
+  assert.equal(eventTypes.at(-1),'run.completed');
+  assert.ok(eventTypes.indexOf('artifact.produced') < eventTypes.lastIndexOf('run.completed'));
 });
 
 test('Claude adapter projects text/tools but never raw thinking', async () => {
