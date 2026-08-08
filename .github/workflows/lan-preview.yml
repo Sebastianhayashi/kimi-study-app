@@ -111,39 +111,148 @@ jobs:
           echo "pid=$PREVIEW_PID" >> "$GITHUB_OUTPUT"
           echo "url=http://${LAN_IP}:${PREVIEW_PORT}/company" >> "$GITHUB_OUTPUT"
 
-      - name: Report preview address
+      - name: Diagnose LAN boundary
+        id: diagnose
+        if: steps.deploy.outcome == 'success'
+        shell: bash
+        env:
+          LAN_IP: ${{ steps.deploy.outputs.lan_ip }}
+        run: |
+          set -u
+          DIAG_FILE="$RUNNER_TEMP/lucubro-lan-diagnostics.txt"
+          NODE_BIN="$(command -v node)"
+          : > "$DIAG_FILE"
+
+          {
+            echo '== listener =='
+            ss -ltn 2>&1 | awk 'NR == 1 || $4 ~ /:3217$/'
+            echo
+            echo '== IPv4 interfaces =='
+            ip -4 -o addr show scope global 2>&1
+            echo
+            echo '== IPv4 routes =='
+            ip -4 route show 2>&1
+            echo
+            echo '== NixOS firewall service =='
+            systemctl is-active firewall.service 2>&1 || true
+            systemctl is-enabled firewall.service 2>&1 || true
+            echo
+            echo '== NixOS firewall options =='
+            if command -v nixos-option >/dev/null 2>&1; then
+              nixos-option networking.firewall.enable 2>&1 || true
+              nixos-option networking.firewall.allowedTCPPorts 2>&1 || true
+              nixos-option networking.firewall.allowedTCPPortRanges 2>&1 || true
+              nixos-option networking.firewall.trustedInterfaces 2>&1 || true
+            else
+              echo 'nixos-option unavailable'
+            fi
+            echo
+            echo '== passwordless sudo =='
+            if sudo -n true >/dev/null 2>&1; then
+              echo 'yes'
+              echo
+              echo '== firewall rules mentioning TCP/3217 =='
+              if command -v nft >/dev/null 2>&1; then
+                sudo -n nft list ruleset 2>/dev/null | grep -E -C 2 '3217|tcp dport' | head -n 100 || true
+              elif command -v iptables >/dev/null 2>&1; then
+                sudo -n iptables -S 2>/dev/null | grep -E '3217|INPUT' | head -n 100 || true
+              fi
+            else
+              echo 'no'
+            fi
+          } >> "$DIAG_FILE"
+
+          PROBE='not-run'
+          if sudo -n true >/dev/null 2>&1; then
+            NS="lucubro-probe-${GITHUB_RUN_ID}"
+            HOST_IF="lcbhost${GITHUB_RUN_NUMBER}"
+            NS_IF="lcbns${GITHUB_RUN_NUMBER}"
+            HOST_IF="${HOST_IF:0:15}"
+            NS_IF="${NS_IF:0:15}"
+
+            cleanup_probe() {
+              sudo -n ip netns del "$NS" >/dev/null 2>&1 || true
+              sudo -n ip link del "$HOST_IF" >/dev/null 2>&1 || true
+            }
+            trap cleanup_probe EXIT
+            cleanup_probe
+
+            if sudo -n ip netns add "$NS" \
+              && sudo -n ip link add "$HOST_IF" type veth peer name "$NS_IF" \
+              && sudo -n ip addr add 10.254.254.1/30 dev "$HOST_IF" \
+              && sudo -n ip link set "$HOST_IF" up \
+              && sudo -n ip link set "$NS_IF" netns "$NS" \
+              && sudo -n ip netns exec "$NS" ip addr add 10.254.254.2/30 dev "$NS_IF" \
+              && sudo -n ip netns exec "$NS" ip link set lo up \
+              && sudo -n ip netns exec "$NS" ip link set "$NS_IF" up; then
+              if sudo -n ip netns exec "$NS" "$NODE_BIN" -e "const t=setTimeout(()=>process.exit(2),3000);fetch('http://10.254.254.1:${PREVIEW_PORT}/api/company/health').then(r=>{clearTimeout(t);process.exit(r.ok?0:1)}).catch(()=>{clearTimeout(t);process.exit(1)})"; then
+                PROBE='pass'
+              else
+                PROBE='blocked'
+              fi
+            else
+              PROBE='setup-failed'
+            fi
+            cleanup_probe
+            trap - EXIT
+          fi
+
+          echo >> "$DIAG_FILE"
+          echo '== external-interface simulation =='
+          echo "$PROBE"
+          echo >> "$DIAG_FILE"
+          echo '== direct host checks =='
+          "$NODE_BIN" -e "fetch('http://127.0.0.1:${PREVIEW_PORT}/api/company/health').then(r=>console.log('loopback',r.status)).catch(e=>console.log('loopback error',e.message))" >> "$DIAG_FILE" 2>&1
+          "$NODE_BIN" -e "fetch('http://${LAN_IP}:${PREVIEW_PORT}/api/company/health').then(r=>console.log('lan-self',r.status)).catch(e=>console.log('lan-self error',e.message))" >> "$DIAG_FILE" 2>&1
+
+          echo "probe=$PROBE" >> "$GITHUB_OUTPUT"
+          cat "$DIAG_FILE"
+
+      - name: Report preview address and diagnostics
         if: always()
         env:
           GITHUB_TOKEN: ${{ github.token }}
           DEPLOY_OUTCOME: ${{ steps.deploy.outcome }}
+          DIAG_OUTCOME: ${{ steps.diagnose.outcome }}
+          PROBE: ${{ steps.diagnose.outputs.probe }}
           LAN_IP: ${{ steps.deploy.outputs.lan_ip }}
           LAN_PORT: ${{ steps.deploy.outputs.port }}
           LAN_URL: ${{ steps.deploy.outputs.url }}
           PREVIEW_PID: ${{ steps.deploy.outputs.pid }}
         run: |
           node <<'NODE'
-          const { GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_SHA, STATUS_ISSUE, DEPLOY_OUTCOME, LAN_PORT, LAN_URL, PREVIEW_PID } = process.env;
+          const fs = require('fs');
+          const path = require('path');
+          const {
+            GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_SHA, STATUS_ISSUE,
+            DEPLOY_OUTCOME, DIAG_OUTCOME, PROBE, LAN_PORT, LAN_URL, PREVIEW_PID,
+            RUNNER_TEMP,
+          } = process.env;
+
+          const diagPath = path.join(RUNNER_TEMP, 'lucubro-lan-diagnostics.txt');
+          const diagnostics = fs.existsSync(diagPath) ? fs.readFileSync(diagPath, 'utf8').trim() : 'Diagnostics unavailable.';
           const ok = DEPLOY_OUTCOME === 'success';
           const body = ok
             ? [
-                'LAN preview deployed successfully on the trusted self-hosted runner.',
+                'LAN preview is running on the trusted self-hosted runner.',
                 '',
                 `- Commit: \`${GITHUB_SHA}\``,
                 `- Address: \`${LAN_URL}\``,
                 `- Bind: \`0.0.0.0:${LAN_PORT}\``,
                 `- PID: \`${PREVIEW_PID}\``,
                 '- Runtime: deterministic mock only; Claude/Codex are not invoked.',
-                '- Health: loopback and detected private LAN address both returned success.',
+                `- External-interface simulation: \`${PROBE || 'not-run'}\``,
+                `- Diagnostics step: \`${DIAG_OUTCOME || 'unknown'}\``,
                 '',
-                'If another device on the same LAN cannot connect, the remaining likely boundary is the NixOS host firewall. No sudo/firewall mutation is performed by this workflow.',
+                '```text',
+                diagnostics.slice(0, 12000),
+                '```',
               ].join('\n')
             : [
                 'LAN preview deployment failed on the trusted self-hosted runner.',
                 '',
                 `- Commit: \`${GITHUB_SHA}\``,
                 `- Deploy outcome: \`${DEPLOY_OUTCOME || 'unknown'}\``,
-                '',
-                'Inspect the Trusted LAN preview workflow logs on the self-hosted runner.',
               ].join('\n');
 
           const response = await fetch(`https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${STATUS_ISSUE}`, {
