@@ -1,0 +1,91 @@
+name: Trusted local-device smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      browser:
+        description: Run Chromium Company Workbench browser test
+        required: true
+        default: true
+        type: boolean
+      inspect_runtimes:
+        description: Report locally installed Claude/Codex runtime availability
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trusted-local-device-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    # SECURITY: this workflow is manual-only. Never add pull_request or
+    # pull_request_target triggers while it targets a personal machine.
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, lucubro-local]
+    timeout-minutes: 30
+    env:
+      CI: "true"
+      LUCUBRO_COMPANY_PORT: "3217"
+      LUCUBRO_COMPANY_DATA_DIR: "${{ github.workspace }}/tests/.runtime/company-device"
+
+    steps:
+      - name: Check out trusted main
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          clean: true
+          persist-credentials: false
+
+      - name: Show runner boundary
+        shell: bash
+        run: |
+          printf 'runner=%s\n' "$RUNNER_NAME"
+          printf 'os=%s arch=%s\n' "$RUNNER_OS" "$RUNNER_ARCH"
+          printf 'workspace=%s\n' "$GITHUB_WORKSPACE"
+          git status --short
+
+      - name: Install repository dependencies
+        run: npm ci
+
+      - name: Static and Company Workbench behavior tests
+        shell: bash
+        run: |
+          npm run check
+          node --test test/company-workbench-v1.test.js
+
+      - name: Inspect local agent runtimes
+        if: inputs.inspect_runtimes
+        shell: bash
+        run: |
+          set +e
+          printf '\n== Claude ==\n'
+          command -v claude || true
+          claude --version || true
+          printf '\n== Codex ==\n'
+          command -v codex || true
+          codex --version || true
+          printf '\n== Node ==\n'
+          node --version
+          npm --version
+
+      - name: Install Chromium for Playwright
+        if: inputs.browser
+        run: npx playwright install chromium
+
+      - name: Run Company Workbench browser journey
+        if: inputs.browser
+        shell: bash
+        run: |
+          LUCUBRO_COMPANY_MOCK_RUNTIME=1 \
+          npx playwright test tests/e2e/company-workbench.spec.js --workers=1
+
+      - name: Verify working tree remains clean
+        if: always()
+        shell: bash
+        run: |
+          git status --short
