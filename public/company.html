@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/vendor/geist/wght.css">
   <link rel="stylesheet" href="/company.css">
   <link rel="stylesheet" href="/company-v3.css">
+  <link rel="stylesheet" href="/company-durable.css">
   <link rel="stylesheet" href="/company-a11y-v3.css">
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" integrity="sha512-NcZdtrT77bJr4STcmsGAESr06BYGE8woZdSdEgqnpyqac7sugNO+Tr4bGwGF3MsnEkGKhU2KL2xh6Ec+BqsaHA==" crossorigin="anonymous" defer></script>
 </head>
@@ -73,6 +74,18 @@
               <dd id="context-decision-count">0</dd>
             </div>
           </dl>
+        </section>
+
+        <section id="durable-work-context" class="durable-work-context" aria-label="Durable Work context" hidden>
+          <div class="durable-work-context-header">
+            <div class="durable-work-context-title">
+              <span class="context-kicker">Work context</span>
+              <strong>Recent durable Work</strong>
+            </div>
+            <span id="durable-work-summary" class="durable-work-summary">Loading Work context…</span>
+          </div>
+          <div id="durable-work-list" class="durable-work-list"></div>
+          <div id="durable-work-detail-host" class="durable-work-detail-host" hidden></div>
         </section>
 
         <div id="conversation-feed" class="conversation-feed" aria-live="polite" aria-relevant="additions"></div>
@@ -139,6 +152,7 @@
     </footer>
   </div>
   <script src="/company.js" defer></script>
+  <script src="/company-durable.js" defer></script>
   <script src="/company-v3.js" defer></script>
 </body>
 </html>
