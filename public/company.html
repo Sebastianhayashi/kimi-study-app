@@ -3,17 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f4f2ec">
+  <meta name="theme-color" content="#f6f7fb">
   <title>Lucubro · Company</title>
   <link rel="stylesheet" href="/vendor/geist/wght.css">
   <link rel="stylesheet" href="/company.css">
+  <link rel="stylesheet" href="/company-v3.css">
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" integrity="sha512-NcZdtrT77bJr4STcmsGAESr06BYGE8woZdSdEgqnpyqac7sugNO+Tr4bGwGF3MsnEkGKhU2KL2xh6Ec+BqsaHA==" crossorigin="anonymous" defer></script>
 </head>
 <body>
-  <div class="app-shell" data-ui="company-v2">
+  <div class="app-shell" data-ui="company-v3">
     <header class="topbar" aria-label="Company workspace header">
       <a class="brand" href="/company" aria-label="Lucubro Company home">
-        <img class="brand-mark" src="/assets/brand/lucubro-mark.svg" width="28" height="28" alt="">
+        <img class="brand-mark" src="/assets/brand/lucubro-mark.svg" width="30" height="30" alt="">
         <span class="brand-wordmark">Lucubro</span>
       </a>
 
@@ -34,16 +35,43 @@
 
     <main class="workspace">
       <section class="conversation" aria-label="Manager conversation">
-        <div id="conversation-feed" class="conversation-feed" aria-live="polite" aria-relevant="additions">
-          <article class="message manager-message intro-message" data-animate="intro">
-            <div class="message-avatar" aria-hidden="true">A</div>
-            <div class="message-content">
-              <div class="message-author">Alex</div>
-              <h1>What should we move forward?</h1>
-              <p class="lede">Give me the outcome. I’ll structure the Work, assign the right Employee, and only bring back decisions that need you.</p>
+        <article class="message manager-message intro-message" data-animate="intro">
+          <div class="message-avatar" aria-hidden="true">A</div>
+          <div class="message-content">
+            <div class="message-author">Alex</div>
+            <h1>What should we move forward?</h1>
+            <p class="lede">Give me the outcome. I’ll structure the Work, assign the right Employee, and only bring back decisions that need you.</p>
+            <p class="manager-operating-model" aria-label="Alex operating model">
+              <span>Clarify intent</span>
+              <span>Structure Work</span>
+              <span>Assign Employees</span>
+              <span>Surface decisions</span>
+            </p>
+          </div>
+        </article>
+
+        <section id="company-context" class="company-context" aria-label="Current company context" data-state="quiet">
+          <div class="context-intro">
+            <span class="context-kicker">Working set</span>
+            <span id="context-copy" class="context-copy">Quiet until something changes.</span>
+          </div>
+          <dl class="context-stats">
+            <div class="context-stat">
+              <dt>Active Work</dt>
+              <dd id="context-active-count">0</dd>
             </div>
-          </article>
-        </div>
+            <div class="context-stat">
+              <dt>Review</dt>
+              <dd id="context-review-count">0</dd>
+            </div>
+            <div class="context-stat">
+              <dt>Needs you</dt>
+              <dd id="context-decision-count">0</dd>
+            </div>
+          </dl>
+        </section>
+
+        <div id="conversation-feed" class="conversation-feed" aria-live="polite" aria-relevant="additions"></div>
       </section>
     </main>
 
@@ -107,5 +135,6 @@
     </footer>
   </div>
   <script src="/company.js" defer></script>
+  <script src="/company-v3.js" defer></script>
 </body>
 </html>
