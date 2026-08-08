@@ -59,13 +59,12 @@ test('front door presents Alex, real working context, and Klein-blue primary act
   await expect(page.locator('#run-settings')).not.toHaveAttribute('open', '');
   await expect(page.getByRole('button', { name: 'Send to Alex' })).toBeEnabled();
   await expect(page.locator('#runtime-note')).toContainText('Ready: mock');
+  await expect(page.locator('body')).toHaveAttribute('data-company-has-work', 'false');
+  await expect(page.locator('.composer-dock')).toHaveCSS('position', 'relative');
 
-  const palette = await page.evaluate(() => ({
-    primary: getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim(),
-    button: getComputedStyle(document.querySelector('#send-work')).backgroundColor,
-  }));
-  expect(palette.primary).toBe('#002fa7');
-  expect(palette.button).toBe('rgb(0, 47, 167)');
+  const primary = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim());
+  expect(primary).toBe('#002fa7');
+  await expect(page.locator('#send-work')).toHaveCSS('background-color', 'rgb(0, 47, 167)');
 });
 
 test('CEO request becomes durable Work, updates the working set, reaches review, and can be accepted', async ({ page }) => {
@@ -80,6 +79,8 @@ test('CEO request becomes durable Work, updates the working set, reaches review,
   await expect(page.locator('#context-review-count')).toHaveText('1');
   await expect(page.locator('#context-active-count')).toHaveText('0');
   await expect(page.locator('#context-copy')).toContainText('ready for review');
+  await expect(page.locator('body')).toHaveAttribute('data-company-has-work', 'true');
+  await expect(page.locator('.composer-dock')).toHaveCSS('position', 'fixed');
   await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-blue-desktop-review.png'), fullPage: true });
   await page.getByRole('button', { name: 'Accept' }).click();
   await expect(page.getByText('Accepted. I recorded this Work as complete.')).toBeVisible();
@@ -125,6 +126,7 @@ test('mobile keeps relationship, working set, composer, and Work surface inside 
   await expect(page.getByLabel('Current company context')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Send to Alex' })).toBeVisible();
   await expect(page.locator('#context-active-count')).toBeVisible();
+  await expect(page.locator('.composer-dock')).toHaveCSS('position', 'relative');
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
   await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-blue-mobile-empty.png'), fullPage: true });
