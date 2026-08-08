@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
+// One-shot trusted-device smoke trigger. Remove with its workflow after verification.
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const os = require('os');
