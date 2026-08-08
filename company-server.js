@@ -72,10 +72,6 @@ function createCompanyServer({
     });
   });
 
-  app.get('/api/company/works', (req, res) => {
-    res.json({ works: company.listWorks() });
-  });
-
   app.post('/api/company/works', async (req, res) => {
     try {
       const body = req.body || {};
