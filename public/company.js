@@ -353,6 +353,7 @@
 
     userMessage(text);
     brief.value = '';
+    runSettings.open = false;
     setSubmitting(true);
 
     try {
