@@ -59,8 +59,14 @@ test('P1-04 governs reproducible three-locale README media', () => {
   assertContains('scripts/verify-readme-media.js', [/byteBudget/, /manifest\.json/]);
 });
 
-test('P1-05 keeps the three README structures and media slots in parity', () => {
-  for (const file of ['README.md', 'README.zh-CN.md', 'README.ja.md']) {
+test('P1-05 freezes legacy localized README parity after the Company Workbench pivot', () => {
+  assertContains('README.md', [
+    /A local-first AI company workbench for a single CEO/,
+    /docs\/company-workbench\/SPEC\.md/,
+    /AGENTS\.md/,
+    /Frozen legacy/,
+  ]);
+  for (const file of ['README.zh-CN.md', 'README.ja.md']) {
     assertContains(file, [
       /<!-- section:hero -->/,
       /<!-- section:journey -->/,
@@ -69,6 +75,7 @@ test('P1-05 keeps the three README structures and media slots in parity', () => 
       /docs\/media\/readme\//,
     ]);
   }
+  assertContains('AGENTS.md', [/previous learning-workspace product is frozen legacy/i]);
   assertContains('scripts/verify-readme-parity.js', [/section:/, /README\.zh-CN\.md/, /README\.ja\.md/]);
 });
 
