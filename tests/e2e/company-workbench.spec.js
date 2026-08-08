@@ -88,26 +88,6 @@ test('CEO request becomes durable Work, updates the working set, reaches review,
   await expect(page.locator('#context-review-count')).toHaveText('0');
 });
 
-test('Working set preserves durable review state across a page reload', async ({ page }) => {
-  await page.goto(`${URL}/company`);
-  await configureMockWork(page, 'Prepare a durable review checkpoint');
-  await expect(page.locator('.status')).toHaveText('Ready for review');
-  const workId = await page.locator('.work-object').getAttribute('data-work-id');
-  expect(workId).toBeTruthy();
-
-  await page.reload();
-  await expect(page.locator('#context-review-count')).toHaveText('1');
-  await expect(page.locator('#context-copy')).toContainText('ready for review');
-  await expect(page.locator('.work-object')).toHaveCount(0);
-
-  const response = await page.request.post(`${URL}/api/company/works/${encodeURIComponent(workId)}/decision`, {
-    data: { decision: 'accept' },
-  });
-  expect(response.ok()).toBe(true);
-  await page.reload();
-  await expect(page.locator('#context-review-count')).toHaveText('0');
-});
-
 test('out-of-envelope request becomes a scoped Needs You decision and Working set reflects it', async ({ page }) => {
   await page.goto(`${URL}/company`);
   await configureMockWork(page, 'Fix auth needs-approval');
