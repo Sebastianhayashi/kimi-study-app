@@ -116,6 +116,22 @@ test('Manager is a conversation-driven live canvas whose Work object grows with 
   await expect(work.locator('.status')).toHaveText('Ready for review');
   await expect(work.locator('.canvas-live-label')).toHaveText('Evidence ready');
   await expect(page.locator('body')).toHaveAttribute('data-canvas-state', 'review');
+
+  await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-live-canvas.png') });
+});
+
+test('workspace tree remains contained and touchable on a mobile viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${URL}/company`);
+  await page.locator('#run-settings > summary').click();
+  await page.locator('#workspace-tree-toggle').click();
+  await expect(page.locator('#workspace-tree-panel')).toBeVisible();
+  await expect(page.locator('.workspace-node-name').filter({ hasText: 'Projects' }).first()).toBeVisible();
+
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
+
+  await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-mobile-workspace-tree.png') });
 });
 
 test('company routes expose Manager, Work, Employees, and Settings as real product sections', async ({ page }) => {
