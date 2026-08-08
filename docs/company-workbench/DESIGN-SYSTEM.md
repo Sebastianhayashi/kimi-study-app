@@ -43,11 +43,11 @@ Klein blue is the brand axis, not the paint bucket. Brand blue is used for ident
 - Strong surface: `#ffffff`
 - Primary ink: `#121722`
 - Secondary ink: `#323b4a`
-- Muted text: `#758093`
+- Muted text: `#667184`
 - Border: `#e1e6ef`
 - Strong border: `#cbd3e1`
 
-The neutral family stays cool so the Klein blue reads as intentional rather than pasted onto a warm beige UI.
+The neutral family stays cool so the Klein blue reads as intentional rather than pasted onto a warm beige UI. The muted text token is intentionally dark enough for normal-size metadata on both the main canvas and white surfaces instead of treating low contrast as a visual style.
 
 ### Semantic colors
 
@@ -104,7 +104,7 @@ Alex is visible in the top bar and in the opening prompt. Presence uses semantic
 
 ### Working set
 
-The Working set is not a dashboard. It is a compact state projection derived from the durable Work objects already present in the conversation.
+The Working set is not a dashboard. It is a compact state projection derived from the actionable Work objects currently present in the conversation.
 
 It shows:
 
@@ -112,7 +112,7 @@ It shows:
 - Review-ready Work.
 - Needs You decisions.
 
-Counts must come from real UI state. Do not invent productivity metrics.
+Counts must come from real UI state. Do not invent productivity metrics. Persisted historical Work should not be projected here until Lucubro can also provide a corresponding Work detail and review path; a visible count without an actionable destination is a dead end.
 
 ### Work
 
