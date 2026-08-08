@@ -95,6 +95,8 @@ jobs:
             LUCUBRO_COMPANY_HOST="$LAN_IP" \
             LUCUBRO_COMPANY_PORT="$PREVIEW_PORT" \
             LUCUBRO_COMPANY_DATA_DIR="$STATE_DIR" \
+            LUCUBRO_WORKSPACE_ROOT="$HOME" \
+            LUCUBRO_ALLOW_LAN_WORKSPACE_BROWSER=1 \
             setsid "$NODE_BIN" company-server.js > "$LOG_FILE" 2>&1 < /dev/null &
           PREVIEW_PID=$!
           echo "$PREVIEW_PID" > "$PID_FILE"
@@ -107,6 +109,7 @@ jobs:
           done
 
           "$NODE_BIN" -e "fetch('http://${LAN_IP}:${PREVIEW_PORT}/api/company/health').then(async r=>{if(!r.ok)throw new Error(String(r.status)); console.log(await r.text())}).catch(e=>{console.error(e);process.exit(1)})"
+          "$NODE_BIN" -e "fetch('http://${LAN_IP}:${PREVIEW_PORT}/api/company/workspaces/root').then(async r=>{if(!r.ok)throw new Error(await r.text()); const x=await r.json(); console.log('workspace root:', x.root.displayPath)}).catch(e=>{console.error(e);process.exit(1)})"
           ss -ltn 2>&1 | awk 'NR == 1 || $4 ~ /:3217$/'
 
           echo "lan_ip=$LAN_IP" >> "$GITHUB_OUTPUT"
@@ -141,7 +144,8 @@ jobs:
                 `- PID: \`${PREVIEW_PID}\``,
                 `- Firewall: \`${FIREWALL || 'unknown'}\``,
                 '- Runtime: deterministic mock only; Claude/Codex are not invoked.',
-                '- Host-side health check: success.',
+                '- Host workspace browser: enabled for this trusted LAN preview, rooted at the runner user home; hidden directories are omitted from normal listing.',
+                '- Host-side health and workspace-root checks: success.',
                 '',
                 FIREWALL === 'manual-required'
                   ? `The runner cannot elevate non-interactively. On the NixOS host run: sudo nixos-firewall-tool open tcp ${LAN_PORT}`
