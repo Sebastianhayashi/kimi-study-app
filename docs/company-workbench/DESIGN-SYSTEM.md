@@ -79,8 +79,9 @@ Whitespace must connect related content. Large empty areas are not a feature. Th
 2. Outcome prompt.
 3. Manager operating model.
 4. Working set.
-5. Conversation / Work evidence.
-6. Composer.
+5. Durable Work Context when stored Work exists.
+6. Current Conversation / Work evidence.
+7. Composer.
 
 ## Radius and elevation
 
@@ -104,7 +105,7 @@ Alex is visible in the top bar and in the opening prompt. Presence uses semantic
 
 ### Working set
 
-The Working set is not a dashboard. It is a compact state projection derived from the actionable Work objects currently present in the conversation.
+The Working set is not a dashboard. It is a compact state projection derived from actionable current Work and reload-restored durable Work that has a corresponding interaction path.
 
 It shows:
 
@@ -112,7 +113,25 @@ It shows:
 - Review-ready Work.
 - Needs You decisions.
 
-Counts must come from real UI state. Do not invent productivity metrics. Persisted historical Work should not be projected here until Lucubro can also provide a corresponding Work detail and review path; a visible count without an actionable destination is a dead end.
+Counts must come from real product state. Do not invent productivity metrics. A durable count is allowed only when the corresponding Work can be opened and acted on. A visible count without an actionable destination is a dead end.
+
+### Durable Work Context
+
+Durable Work Context is the bridge between Conversation and persistent company state. It appears only when stored Work exists.
+
+It is not a second navigation system and not a permanent sidebar. The surface sits inline below the Working set and shows a compact recent Work list. Selecting a Work expands its detail in place.
+
+The contract is:
+
+- reload restores Work objects, not fabricated historical chat;
+- each row exposes title, Employee, updated time, and current semantic status;
+- selecting a row reveals the latest attached Run, recent activity, Artifact evidence, and execution metadata;
+- review-ready Work exposes Accept / Rework directly in the durable detail;
+- accepted and terminal Work remain inspectable without pretending to be active;
+- loading copy says what is being recovered, for example `Loading Work evidence…`;
+- an evidence-load failure preserves the Work row and reports that evidence is unavailable rather than making the Work disappear.
+
+The current surface may show a bounded recent set. A dedicated history browser is a separate future product decision.
 
 ### Work
 
@@ -128,7 +147,9 @@ Status rules:
 
 ### Artifact
 
-Artifacts remain inline inside Work. The default state is collapsed. The summary must say what evidence is available, for example `Code changes · 1 file`, instead of a generic `Details` label.
+Artifacts remain inline inside Work. The summary must say what evidence is available, for example `Code changes · 1 file`, instead of a generic `Details` label.
+
+In the current Conversation, Artifacts default to collapsed. In Durable Work Context, a review-ready Artifact may open by default because the explicit task is evidence review.
 
 ### Needs You
 
@@ -145,7 +166,7 @@ The panel must support:
 
 ### Composer
 
-The composer is the command surface, not the biggest card on the page. On an empty front door it stays in the normal content flow directly after the Working set, so the first screen feels intentional rather than hollow. Once Work exists in the current conversation, it becomes a fixed bottom dock so the CEO can issue the next instruction without losing the Work context.
+The composer is the command surface, not the biggest card on the page. On a truly empty front door it stays in the normal content flow directly after the Working set, so the first screen feels intentional rather than hollow. Once current or durable Work exists, it becomes a fixed bottom dock so the CEO can issue the next instruction without losing Work context.
 
 Execution setup remains a disclosure because repository and runtime details are implementation context, not CEO-level primary content.
 
@@ -157,7 +178,8 @@ GSAP owns:
 
 1. top-bar / working-set entrance sequencing;
 2. state-count changes;
-3. Work transitions into Ready for review or Needs You.
+3. Work transitions into Ready for review or Needs You;
+4. one-time entrance of restored Durable Work and its selected detail.
 
 Existing functional animations for messages and the Needs You panel remain in the current Company script.
 
@@ -168,7 +190,7 @@ Rules:
 - Primary easing: `power2.out`.
 - Attention motion happens once on state change, never loops indefinitely.
 - `prefers-reduced-motion: reduce` skips non-essential motion.
-- `gsap.matchMedia()` owns responsive and reduced-motion setup and must be reverted on page lifecycle cleanup.
+- `gsap.matchMedia()` owns responsive and reduced-motion setup where responsive motion differs and must be reverted on page lifecycle cleanup.
 - No ScrollTrigger for this product surface. Scroll is navigation, not a storytelling timeline.
 
 ## Responsive contract
@@ -178,11 +200,14 @@ Rules:
 - 980px maximum conversation container.
 - Manager relationship remains centered in top bar.
 - Working set uses one description column and three compact numeric columns.
+- Durable Work uses a compact two-column row: Work identity on the left, status on the right.
+- Selected Work detail expands inline instead of opening a permanent side rail.
 
 ### Tablet, 561 to 860px
 
 - Working set stacks description above metrics.
 - Work stays aligned to the conversation avatar gutter when space allows.
+- Durable Work remains inline and keeps status readable without horizontal scrolling.
 
 ### Mobile, 560px and below
 
@@ -190,8 +215,9 @@ Rules:
 - Manager remains identifiable.
 - Needs You retains text plus count.
 - Working set occupies the full conversation width.
-- Work becomes full width.
-- Empty-state composer follows the content flow; active-work composer docks with safe-area spacing.
+- Current and durable Work become full width.
+- Durable Work rows stack identity above status.
+- Empty-state composer follows the content flow; Work-context composer docks with safe-area spacing.
 - Touch actions keep at least 40 to 44px practical target height where space permits.
 
 ## Checklist Design release gate
@@ -211,7 +237,8 @@ Every Company UI change should explicitly verify:
 - Accordion / disclosure: collapsed, expanded, hover, focus.
 - Needs You: empty, decision present, approve, deny, dismiss.
 - Work: starting, in progress, Needs You, review, accepted, failed.
-- Loading copy describes the action, for example `Checking local workspace…`.
+- Durable Work: empty, list, selected, evidence loading, evidence error, review decision, terminal state.
+- Loading copy describes the action, for example `Checking local workspace…` or `Loading Work evidence…`.
 
 ### Responsiveness
 
@@ -228,6 +255,7 @@ Every Company UI change should explicitly verify:
 - Reduced motion.
 - Live regions only announce dynamic product state, not static onboarding content.
 - Color is never the only carrier of status.
+- Expandable Work rows expose their expanded state and have a clear detail destination.
 
 ## Taste-skill audit notes
 
