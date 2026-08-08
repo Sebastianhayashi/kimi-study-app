@@ -65,6 +65,14 @@
     );
   }
 
+  function syncWorkUrl(workId) {
+    if (window.location.pathname !== '/company' && window.location.pathname !== '/company/') return;
+    const url = new URL(window.location.href);
+    if (workId) url.searchParams.set('work', workId);
+    else url.searchParams.delete('work');
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+  }
+
   function activeWorkCount() {
     return state.works.filter((work) => ['starting', 'in-progress', 'needs-you', 'needs-rework'].includes(work.status)).length;
   }
@@ -145,7 +153,7 @@
     const index = state.works.findIndex((item) => item.id === work.id);
     if (index >= 0) state.works[index] = payload.work;
     renderRows();
-    await openWork(work.id, { preserveSelection: true });
+    await openWork(work.id, { preserveSelection: true, syncHistory: false });
   }
 
   function renderDetail(work, runPayload) {
@@ -259,7 +267,6 @@
     detail.append(header, meta, body);
     detailHost.append(detail);
     animateIn(detail, { y: 8, duration: 0.3 });
-    detail.querySelector('h2')?.focus?.({ preventScroll: true });
 
     const selectedRow = list.querySelector(`[data-work-id="${CSS.escape(work.id)}"]`);
     selectedRow?.setAttribute('aria-expanded', 'true');
@@ -269,7 +276,7 @@
     detail.dataset.statusLabel = statusLabel;
   }
 
-  async function openWork(workId, { preserveSelection = false } = {}) {
+  async function openWork(workId, { preserveSelection = false, syncHistory = true } = {}) {
     const work = state.works.find((item) => item.id === workId);
     if (!work) return;
 
@@ -279,6 +286,7 @@
     }
 
     state.selectedWorkId = workId;
+    if (syncHistory) syncWorkUrl(workId);
     for (const row of list.querySelectorAll('[data-testid="durable-work-row"]')) {
       const selected = row.dataset.workId === workId;
       row.setAttribute('aria-expanded', String(selected));
@@ -314,6 +322,7 @@
 
   function closeDetail() {
     state.selectedWorkId = null;
+    syncWorkUrl(null);
     for (const row of list.querySelectorAll('[data-testid="durable-work-row"]')) {
       row.setAttribute('aria-expanded', 'false');
       row.classList.remove('is-selected');
@@ -337,6 +346,11 @@
       section.hidden = false;
       renderRows();
       animateIn(section, { y: 7, duration: 0.3 });
+
+      const requestedWorkId = new URL(window.location.href).searchParams.get('work');
+      if (requestedWorkId && state.works.some((work) => work.id === requestedWorkId)) {
+        await openWork(requestedWorkId, { syncHistory: false });
+      }
     } catch (error) {
       section.hidden = false;
       list.replaceChildren();
