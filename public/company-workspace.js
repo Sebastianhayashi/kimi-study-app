@@ -19,6 +19,7 @@
   const dropReceipt = document.querySelector('#workspace-drop-receipt');
   const dropReceiptTitle = document.querySelector('#workspace-drop-receipt-title');
   const dropReceiptCopy = document.querySelector('#workspace-drop-receipt-copy');
+  const runSettings = document.querySelector('#run-settings');
 
   if (!picker || !toggle || !panel || !tree || !rootLabel || !newFolderButton || !createForm || !createInput || !createCancel || !input || !suggestions || !repoControl || !repoNote || !repoReceipt || !repoScan || !dropReceipt || !dropReceiptTitle || !dropReceiptCopy) return;
 
@@ -31,7 +32,6 @@
     suggestTimer: null,
     inspectTimer: null,
     inputRevision: 0,
-    selectingFromUi: false,
     rootRendered: false,
   };
 
@@ -118,7 +118,11 @@
 
   function updateSuggestionActive() {
     const buttons = [...suggestions.querySelectorAll('.workspace-suggestion')];
-    buttons.forEach((button, index) => button.dataset.active = String(index === state.suggestionIndex));
+    buttons.forEach((button, index) => {
+      const active = index === state.suggestionIndex;
+      button.dataset.active = String(active);
+      button.setAttribute('aria-selected', String(active));
+    });
   }
 
   function renderSuggestions(items) {
@@ -165,10 +169,16 @@
     } catch (error) {
       if (revision !== state.inputRevision) return;
       hideSuggestions();
-      if (/disabled for LAN clients/i.test(error.message)) {
-        repoNote.textContent = 'Host browsing is disabled for this LAN client.';
-      }
+      if (/disabled for LAN clients/i.test(error.message)) repoNote.textContent = 'Host browsing is disabled for this LAN client.';
     }
+  }
+
+  function acceptManualPath(value, reason) {
+    state.selectedPath = '';
+    setRepoState('received');
+    repoNote.textContent = reason;
+    showReceipt('Path received', 'neutral');
+    syncSelectedRows();
   }
 
   async function inspectPath(value, revision, { announce = true } = {}) {
@@ -176,9 +186,7 @@
       const info = await fetchJson(`/api/company/workspaces/inspect?path=${escapeQuery(value)}`);
       if (revision !== state.inputRevision) return;
       if (!info.exists || !info.isDirectory) {
-        setRepoState('empty');
-        repoNote.textContent = 'No host folder exists at this path yet.';
-        hideReceipt();
+        acceptManualPath(value, 'Path received. This folder was not found inside the browsable host root, so Work start will validate it.');
         return;
       }
 
@@ -194,6 +202,10 @@
       syncSelectedRows();
     } catch (error) {
       if (revision !== state.inputRevision) return;
+      if (/outside the allowed workspace root/i.test(error.message)) {
+        acceptManualPath(value, 'Path received. It sits outside the browsable host root, so Lucubro will validate it only when Work starts.');
+        return;
+      }
       setRepoState('error');
       repoNote.textContent = error.message;
       hideReceipt();
@@ -364,11 +376,9 @@
   }
 
   async function selectHostPath(displayPath, { source = 'tree' } = {}) {
-    state.selectingFromUi = true;
     input.value = displayPath;
     state.selectedPath = displayPath;
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    state.selectingFromUi = false;
     hideSuggestions();
     syncSelectedRows();
     const revision = state.inputRevision;
@@ -516,6 +526,11 @@
     if (!picker.contains(event.relatedTarget)) picker.dataset.dragActive = 'false';
   });
   picker.addEventListener('drop', handleDrop);
+
+  runSettings?.addEventListener('lucubro:execution-closing', () => {
+    hideSuggestions();
+    closeTree();
+  });
 
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
