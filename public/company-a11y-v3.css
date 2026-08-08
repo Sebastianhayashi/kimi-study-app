@@ -2,6 +2,28 @@
   --muted: #667184;
 }
 
+.composer textarea::placeholder,
+.settings-grid input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.primary-action:disabled {
+  border-color: var(--line-strong);
+  background: #dfe4ed;
+  color: var(--muted-strong);
+  opacity: 1;
+}
+
+.composer textarea:disabled,
+.settings-grid input:disabled,
+.settings-grid select:disabled {
+  background: var(--bg-elevated);
+  color: var(--muted-strong);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
 .skip-link {
   position: fixed;
   z-index: 80;
