@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/company.css">
   <link rel="stylesheet" href="/company-v3.css">
   <link rel="stylesheet" href="/company-durable.css">
+  <link rel="stylesheet" href="/company-kinetic.css">
   <link rel="stylesheet" href="/company-a11y-v3.css">
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" integrity="sha512-NcZdtrT77bJr4STcmsGAESr06BYGE8woZdSdEgqnpyqac7sugNO+Tr4bGwGF3MsnEkGKhU2KL2xh6Ec+BqsaHA==" crossorigin="anonymous" defer></script>
 </head>
@@ -122,15 +123,46 @@
               <span id="settings-summary-value" class="settings-summary-value">Checking local workspace…</span>
             </summary>
             <div class="settings-panel">
-              <p>Execution stays behind the Work. Change these only when the local target or runtime changes.</p>
-              <div class="settings-grid">
-                <label for="repo-dir">Repository path
-                  <input id="repo-dir" name="repoDir" placeholder="/path/to/repository" autocomplete="off" required>
-                </label>
-                <label for="runtime">Runtime
-                  <select id="runtime" name="runtime" required aria-describedby="runtime-note"></select>
-                </label>
+              <div class="execution-panel-header">
+                <div class="execution-panel-heading">
+                  <strong>Execution setup</strong>
+                  <span>Choose how this Work should run and where it should operate. Lucubro keeps these mechanics behind the Work once they are set.</span>
+                </div>
+                <button id="close-run-settings" class="execution-panel-close" type="button" aria-label="Close Execution setup">×</button>
               </div>
+
+              <div class="execution-fields">
+                <section class="execution-field runtime-field" aria-labelledby="runtime-choice-label">
+                  <div class="execution-field-head">
+                    <span id="runtime-choice-label" class="execution-field-label">Runtime</span>
+                    <span class="execution-field-hint">Choose an available execution engine</span>
+                  </div>
+                  <div id="runtime-choice" class="runtime-choice" role="radiogroup" aria-labelledby="runtime-choice-label" aria-describedby="runtime-note"></div>
+                  <select id="runtime" class="runtime-native-select" name="runtime" required aria-hidden="true" tabindex="-1"></select>
+                  <p id="runtime-selection-receipt" class="runtime-selection-receipt" role="status" hidden></p>
+                </section>
+
+                <section class="execution-field repo-field">
+                  <div class="execution-field-head">
+                    <label class="execution-field-label" for="repo-dir">Repository path</label>
+                    <span class="execution-field-hint">Local path</span>
+                  </div>
+                  <div id="repo-path-control" class="repo-path-control" data-state="empty">
+                    <div class="repo-path-input-row">
+                      <input id="repo-dir" name="repoDir" placeholder="Paste or type /path/to/repository" autocomplete="off" required aria-describedby="repo-path-note repo-path-receipt">
+                    </div>
+                    <div class="repo-path-line" aria-hidden="true">
+                      <span class="repo-path-line-active"></span>
+                      <span id="repo-path-scan" class="repo-path-scan"></span>
+                    </div>
+                    <div class="repo-path-feedback">
+                      <p id="repo-path-note" class="repo-path-note">Paste or type the local repository path.</p>
+                      <p id="repo-path-receipt" class="repo-path-receipt" role="status" hidden>Path received</p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
               <div class="runtime-line">
                 <span id="runtime-indicator" class="runtime-indicator" aria-hidden="true"></span>
                 <p id="runtime-note" class="runtime-note" role="status">Checking local workspace…</p>
@@ -154,5 +186,6 @@
   <script src="/company.js" defer></script>
   <script src="/company-durable.js" defer></script>
   <script src="/company-v3.js" defer></script>
+  <script src="/company-kinetic.js" defer></script>
 </body>
 </html>
