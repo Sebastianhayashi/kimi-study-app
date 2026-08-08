@@ -55,6 +55,7 @@ test('CEO request becomes durable Work, reaches review, and can be accepted', as
   await page.locator('#runtime').selectOption('mock');
   await page.locator('#work-brief').fill('Fix the session refresh bug');
   await page.getByRole('button', { name: 'Send to Alex' }).click();
+  await expect(page.locator('#run-settings')).not.toHaveAttribute('open', '');
   await expect(page.locator('.work-object-title strong')).toContainText('Fix the session refresh bug');
   await expect(page.getByText('Ben · Software Engineer')).toBeVisible();
   await expect(page.getByText('Ready for review')).toBeVisible();
