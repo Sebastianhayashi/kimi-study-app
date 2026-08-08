@@ -92,7 +92,7 @@ Elevation is functional:
 
 - Flat or near-flat for inline Work.
 - Medium shadow for disclosure panels.
-- Strongest shadow only for the fixed composer, because it floats over the conversation.
+- Strongest shadow only when the composer is docked over an active conversation.
 
 Avoid card-on-card nesting unless the nested block has a distinct interaction contract.
 
@@ -145,7 +145,7 @@ The panel must support:
 
 ### Composer
 
-The composer is the command surface, not the biggest card on the page. It remains fixed and immediately available, but its resting height is intentionally smaller than the previous version.
+The composer is the command surface, not the biggest card on the page. On an empty front door it stays in the normal content flow directly after the Working set, so the first screen feels intentional rather than hollow. Once Work exists in the current conversation, it becomes a fixed bottom dock so the CEO can issue the next instruction without losing the Work context.
 
 Execution setup remains a disclosure because repository and runtime details are implementation context, not CEO-level primary content.
 
@@ -191,7 +191,7 @@ Rules:
 - Needs You retains text plus count.
 - Working set occupies the full conversation width.
 - Work becomes full width.
-- Composer retains safe-area spacing and never causes horizontal overflow.
+- Empty-state composer follows the content flow; active-work composer docks with safe-area spacing.
 - Touch actions keep at least 40 to 44px practical target height where space permits.
 
 ## Checklist Design release gate
