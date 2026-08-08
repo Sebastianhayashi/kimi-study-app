@@ -9,6 +9,7 @@ const { createApprovalBroker } = require('./lib/company/approval-broker');
 const { createRunOrchestrator } = require('./lib/company/run-orchestrator');
 const { createWorktreeManager } = require('./lib/company/worktree-manager');
 const { createCompanyService } = require('./lib/company/company-service');
+const { createWorkspaceBrowser } = require('./lib/company/workspace-browser');
 const { createClaudeAgentSdkRuntime } = require('./lib/company/runtime/claude-agent-sdk');
 const { createCodexAppServerRuntime } = require('./lib/company/runtime/codex-app-server');
 const { createMockCompanyRuntime } = require('./lib/company/runtime/mock');
@@ -23,11 +24,17 @@ function testWorktreeManager() {
   };
 }
 
+function isLoopbackRequest(req) {
+  const address = String(req.socket && req.socket.remoteAddress || '');
+  return address === '127.0.0.1' || address === '::1' || address.startsWith('::ffff:127.');
+}
+
 function createCompanyServer({
   rootDir = ROOT,
   dataDir = process.env.LUCUBRO_COMPANY_DATA_DIR || path.join(rootDir, 'data', 'company'),
   runtimes = null,
   worktreeManager = null,
+  workspaceBrowser = null,
 } = {}) {
   fs.mkdirSync(dataDir, { recursive: true });
   const app = express();
@@ -51,9 +58,17 @@ function createCompanyServer({
   );
   const runOrchestrator = createRunOrchestrator({ runStore, approvalBroker, runtimeRegistry, worktreeManager: worktrees });
   const company = createCompanyService({ workStore, runStore, runOrchestrator });
+  const workspaces = workspaceBrowser || createWorkspaceBrowser();
+
+  function requireWorkspaceAccess(req, res, next) {
+    if (isLoopbackRequest(req) || process.env.LUCUBRO_ALLOW_LAN_WORKSPACE_BROWSER === '1') return next();
+    return res.status(403).json({
+      error: 'Host workspace browsing is disabled for LAN clients. Set LUCUBRO_ALLOW_LAN_WORKSPACE_BROWSER=1 only on a trusted network.',
+    });
+  }
 
   app.get('/api/company/health', (req, res) => res.json({ ok: true }));
-  app.get('/company', (req, res) => res.sendFile(path.join(rootDir, 'public', 'company.html')));
+  app.get(['/company', '/company/work', '/company/employees', '/company/settings'], (req, res) => res.sendFile(path.join(rootDir, 'public', 'company.html')));
 
   app.get('/api/company/bootstrap', async (req, res) => {
     const runtimeStates = [];
@@ -70,6 +85,46 @@ function createCompanyServer({
       works: company.listWorks(),
       needsYou: approvalBroker.listPending(),
     });
+  });
+
+  app.get('/api/company/workspaces/root', requireWorkspaceAccess, (req, res) => {
+    res.json({ root: workspaces.root });
+  });
+
+  app.get('/api/company/workspaces/list', requireWorkspaceAccess, (req, res) => {
+    try {
+      res.json(workspaces.list(req.query.path || '~'));
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/company/workspaces/suggest', requireWorkspaceAccess, (req, res) => {
+    try {
+      res.json(workspaces.suggest(req.query.q || ''));
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/company/workspaces/inspect', requireWorkspaceAccess, (req, res) => {
+    try {
+      res.json(workspaces.inspect(req.query.path || '~'));
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/company/workspaces/directories', requireWorkspaceAccess, (req, res) => {
+    try {
+      const directory = workspaces.createDirectory({
+        parentPath: req.body && req.body.parentPath,
+        name: req.body && req.body.name,
+      });
+      res.status(201).json({ directory });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
   });
 
   app.post('/api/company/works', async (req, res) => {
@@ -132,7 +187,7 @@ function createCompanyServer({
     }
   });
 
-  return { app, company, runStore, workStore, approvalBroker, runtimeRegistry };
+  return { app, company, runStore, workStore, approvalBroker, runtimeRegistry, workspaceBrowser: workspaces };
 }
 
 if (require.main === module) {
@@ -142,4 +197,4 @@ if (require.main === module) {
   app.listen(port, host, () => console.log(`[lucubro-company] http://${host}:${port}/company`));
 }
 
-module.exports = { createCompanyServer };
+module.exports = { createCompanyServer, isLoopbackRequest };
