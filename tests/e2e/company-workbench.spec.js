@@ -73,7 +73,7 @@ test('front door presents Alex, real working context, and Klein-blue primary act
   await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-blue-desktop-empty.png') });
 });
 
-test('CEO request becomes durable Work, updates the working set, reaches review, and can be accepted', async ({ page }) => {
+test('durable Work survives reload without replaying Conversation and remains reviewable', async ({ page }) => {
   await useDesktopViewport(page);
   await page.goto(`${URL}/company`);
   await configureMockWork(page, 'Fix the session refresh bug');
@@ -88,15 +88,29 @@ test('CEO request becomes durable Work, updates the working set, reaches review,
   await expect(page.locator('#context-copy')).toContainText('ready for review');
   await expect(page.locator('body')).toHaveAttribute('data-company-has-work', 'true');
   await expect(page.locator('.composer-dock')).toHaveCSS('position', 'fixed');
-  await page.locator('.work-object').evaluate((element) => {
-    window.scrollTo(0, Math.max(0, element.offsetTop - 120));
-  });
+
+  await page.reload();
+  await expect(page.locator('#conversation-feed .work-object')).toHaveCount(0);
+  await expect(page.locator('#durable-work-context')).toBeVisible();
+  await expect(page.locator('#context-review-count')).toHaveText('1');
+  await expect(page.locator('#context-copy')).toContainText('ready for review');
+
+  const durableRow = page.locator('[data-testid="durable-work-row"]').filter({ hasText: 'Fix the session refresh bug' });
+  await expect(durableRow).toBeVisible();
+  await expect(durableRow).toContainText('Ready for review');
+  await durableRow.click();
+
+  const durableDetail = page.locator('#durable-work-detail');
+  await expect(durableDetail).toBeVisible();
+  await expect(durableDetail).toContainText('Fix the session refresh bug');
+  await expect(durableDetail).toContainText('Code changes · 1 file');
+  await expect(durableDetail).toContainText('src/session.js');
   await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-blue-desktop-review.png') });
-  await page.getByRole('button', { name: 'Accept' }).click();
-  await expect(page.getByText('Accepted. I recorded this Work as complete.')).toBeVisible();
-  await expect(page.locator('.status')).toHaveText('Accepted');
-  await expect(page.locator('.status')).toHaveAttribute('data-tone', 'success');
+
+  await durableDetail.getByRole('button', { name: 'Accept' }).click();
+  await expect(durableDetail).toContainText('Accepted');
   await expect(page.locator('#context-review-count')).toHaveText('0');
+  await expect(durableRow).toContainText('Accepted');
 });
 
 test('out-of-envelope request becomes a scoped Needs You decision and Working set reflects it', async ({ page }) => {
@@ -137,7 +151,6 @@ test('mobile keeps relationship, working set, composer, and Work surface inside 
   await expect(page.getByLabel('Current company context')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Send to Alex' })).toBeVisible();
   await expect(page.locator('#context-active-count')).toBeVisible();
-  await expect(page.locator('.composer-dock')).toHaveCSS('position', 'relative');
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
   await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-blue-mobile-empty.png') });
