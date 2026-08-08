@@ -20,9 +20,11 @@ async function waitForServer() {
 }
 
 async function configureMockWork(page, brief) {
-  await page.locator('#run-settings').evaluate((element) => { element.open = true; });
+  const settings = page.locator('#run-settings');
+  if (!(await settings.getAttribute('open'))) await settings.locator('summary').click();
+  await page.locator('[data-runtime-id="mock"]').click();
   await page.locator('#repo-dir').fill('/tmp/lucubro-fixture-repo');
-  await page.locator('#runtime').selectOption('mock');
+  await expect(page.locator('#repo-path-control')).toHaveAttribute('data-state', 'received');
   await page.locator('#work-brief').fill(brief);
   await page.getByRole('button', { name: 'Send to Alex' }).click();
 }
@@ -71,6 +73,36 @@ test('front door presents Alex, real working context, and Klein-blue primary act
   expect(primary).toBe('#002fa7');
   await expect(page.locator('#send-work')).toHaveCSS('background-color', 'rgb(0, 47, 167)');
   await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-blue-desktop-empty.png') });
+});
+
+test('execution setup exposes kinetic runtime choices and a line-based repository receipt', async ({ page }) => {
+  await useDesktopViewport(page);
+  await page.goto(`${URL}/company`);
+  await page.locator('#run-settings > summary').click();
+
+  const choices = page.locator('#runtime-choice');
+  await expect(choices).toBeVisible();
+  await expect(choices).toHaveAttribute('role', 'radiogroup');
+  await expect(page.locator('[data-runtime-id="claude-code"]')).toBeVisible();
+  await expect(page.locator('[data-runtime-id="codex"]')).toBeVisible();
+  await expect(page.locator('[data-runtime-id="mock"]')).toBeVisible();
+  await expect(page.locator('[data-runtime-id="mock"]')).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('[data-runtime-id="mock"]')).toHaveAttribute('data-selected', 'true');
+
+  const repoControl = page.locator('#repo-path-control');
+  const repoInput = page.locator('#repo-dir');
+  await repoInput.focus();
+  await expect(repoControl).toHaveAttribute('data-state', 'focused');
+  await repoInput.fill('/tmp/lucubro-fixture-repo');
+  await expect(repoControl).toHaveAttribute('data-state', 'received');
+  await expect(page.locator('#repo-path-receipt')).toContainText('Path received');
+  await expect(page.locator('#repo-path-receipt')).toBeVisible();
+
+  await page.locator('#close-run-settings').click();
+  await expect(page.locator('#run-settings')).not.toHaveAttribute('open', '');
+  await expect(page.locator('#settings-summary-value')).toContainText('lucubro-fixture-repo');
+  await expect(page.locator('#settings-summary-value')).toContainText('mock');
+  await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-kinetic-execution.png') });
 });
 
 test('durable Work survives reload without replaying Conversation and remains reviewable', async ({ page }) => {
@@ -135,9 +167,9 @@ test('out-of-envelope request becomes a scoped Needs You decision and Working se
 
 test('keyboard shortcut submits Work without exposing runtime mechanics in the main thread', async ({ page }) => {
   await page.goto(`${URL}/company`);
-  await page.locator('#run-settings').evaluate((element) => { element.open = true; });
+  await page.locator('#run-settings > summary').click();
+  await page.locator('[data-runtime-id="mock"]').click();
   await page.locator('#repo-dir').fill('/tmp/lucubro-fixture-repo');
-  await page.locator('#runtime').selectOption('mock');
   await page.locator('#work-brief').fill('Fix keyboard submission');
   await page.locator('#work-brief').press(process.platform === 'darwin' ? 'Meta+Enter' : 'Control+Enter');
   await expect(page.locator('.work-object-title strong')).toContainText('Fix keyboard submission');
@@ -151,6 +183,8 @@ test('mobile keeps relationship, working set, composer, and Work surface inside 
   await expect(page.getByLabel('Current company context')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Send to Alex' })).toBeVisible();
   await expect(page.locator('#context-active-count')).toBeVisible();
+  await page.locator('#run-settings > summary').click();
+  await expect(page.locator('#runtime-choice')).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
   await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-blue-mobile-empty.png') });
@@ -173,4 +207,6 @@ test('reduced motion preserves the complete product state without GSAP dependenc
   expect(reduced).toBe(true);
   await expect(page.getByRole('button', { name: 'Send to Alex' })).toBeEnabled();
   await expect(page.locator('#company-context')).toHaveCSS('opacity', '1');
+  await page.locator('#run-settings > summary').click();
+  await expect(page.locator('#runtime-choice')).toBeVisible();
 });
