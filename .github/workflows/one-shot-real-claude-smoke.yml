@@ -1,0 +1,39 @@
+name: One-shot real Claude smoke
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - scripts/company-real-claude-smoke.js
+      - .github/workflows/one-shot-real-claude-smoke.yml
+
+permissions:
+  contents: read
+
+jobs:
+  real-claude-smoke:
+    runs-on: [self-hosted, lucubro-local]
+    timeout-minutes: 15
+    steps:
+      - name: Check out trusted main
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          clean: true
+          persist-credentials: false
+
+      - name: Install repository dependencies
+        run: npm ci
+
+      - name: Install Claude Agent SDK for smoke only
+        run: npm install --no-save --no-package-lock @anthropic-ai/claude-agent-sdk
+
+      - name: Run isolated real Claude smoke
+        env:
+          CI: "true"
+        run: node scripts/company-real-claude-smoke.js
+
+      - name: Verify repository remains clean
+        if: always()
+        run: git status --short
