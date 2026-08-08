@@ -4,13 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f6f7fb">
+  <meta name="description" content="Lucubro is a local-first AI company workbench for a single CEO, with durable Work, named Employees, review evidence, and scoped decisions.">
   <title>Lucubro · Company</title>
+  <link rel="icon" href="/assets/brand/lucubro-mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/vendor/geist/wght.css">
   <link rel="stylesheet" href="/company.css">
   <link rel="stylesheet" href="/company-v3.css">
+  <link rel="stylesheet" href="/company-a11y-v3.css">
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" integrity="sha512-NcZdtrT77bJr4STcmsGAESr06BYGE8woZdSdEgqnpyqac7sugNO+Tr4bGwGF3MsnEkGKhU2KL2xh6Ec+BqsaHA==" crossorigin="anonymous" defer></script>
 </head>
 <body>
+  <a class="skip-link" href="#company-conversation">Skip to manager conversation</a>
   <div class="app-shell" data-ui="company-v3">
     <header class="topbar" aria-label="Company workspace header">
       <a class="brand" href="/company" aria-label="Lucubro Company home">
@@ -34,7 +38,7 @@
     </header>
 
     <main class="workspace">
-      <section class="conversation" aria-label="Manager conversation">
+      <section id="company-conversation" class="conversation" aria-label="Manager conversation" tabindex="-1">
         <article class="message manager-message intro-message" data-animate="intro">
           <div class="message-avatar" aria-hidden="true">A</div>
           <div class="message-content">
