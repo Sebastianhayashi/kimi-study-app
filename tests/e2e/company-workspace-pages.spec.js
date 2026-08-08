@@ -1,0 +1,124 @@
+'use strict';
+
+const { test, expect } = require('@playwright/test');
+const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+
+const ROOT = path.resolve(__dirname, '..', '..');
+const PORT = 3111;
+const URL = `http://127.0.0.1:${PORT}`;
+const DATA_DIR = path.join(ROOT, 'tests', '.runtime', 'company-workspace-pages');
+const WORKSPACE_ROOT = path.join(ROOT, 'tests', '.runtime', 'workspace-host');
+const PROJECTS_DIR = path.join(WORKSPACE_ROOT, 'Projects');
+const FIXTURE_REPO = path.join(PROJECTS_DIR, 'lucubro-fixture-repo');
+let server;
+
+async function waitForServer() {
+  const deadline = Date.now() + 10_000;
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch(`${URL}/api/company/health`);
+      if (response.ok) return;
+    } catch {}
+    await new Promise((resolve) => setTimeout(resolve, 80));
+  }
+  throw new Error('company-server did not become ready');
+}
+
+test.beforeAll(async () => {
+  fs.rmSync(DATA_DIR, { recursive: true, force: true });
+  fs.rmSync(WORKSPACE_ROOT, { recursive: true, force: true });
+  fs.mkdirSync(path.join(FIXTURE_REPO, '.git'), { recursive: true });
+  fs.mkdirSync(path.join(PROJECTS_DIR, 'another-project'), { recursive: true });
+  fs.mkdirSync(path.join(WORKSPACE_ROOT, 'Documents'), { recursive: true });
+
+  server = spawn(process.execPath, [path.join(ROOT, 'company-server.js')], {
+    cwd: ROOT,
+    env: {
+      ...process.env,
+      NODE_ENV: 'test',
+      PORT: String(PORT),
+      LUCUBRO_COMPANY_PORT: String(PORT),
+      LUCUBRO_COMPANY_DATA_DIR: DATA_DIR,
+      LUCUBRO_COMPANY_MOCK_RUNTIME: '1',
+      LUCUBRO_WORKSPACE_ROOT: WORKSPACE_ROOT,
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  await waitForServer();
+});
+
+test.afterAll(async () => {
+  if (server && !server.killed) server.kill('SIGTERM');
+  fs.rmSync(DATA_DIR, { recursive: true, force: true });
+  fs.rmSync(WORKSPACE_ROOT, { recursive: true, force: true });
+});
+
+test('workspace picker expands a host tree, autocompletes paths, and creates folders', async ({ page }) => {
+  await page.setViewportSize({ width: 1100, height: 820 });
+  await page.goto(`${URL}/company`);
+  await page.locator('#run-settings > summary').click();
+  await expect(page.locator('#workspace-tree-toggle')).toBeVisible();
+
+  await page.locator('#workspace-tree-toggle').click();
+  await expect(page.locator('#workspace-tree-panel')).toBeVisible();
+  await expect(page.locator('#workspace-root-label')).toContainText('execution host');
+
+  const projectsName = page.locator('.workspace-node-name').filter({ hasText: 'Projects' }).first();
+  await expect(projectsName).toBeVisible();
+  const projectsRow = projectsName.locator('..');
+  await projectsRow.locator('.workspace-node-toggle').click();
+
+  const repoName = page.locator('.workspace-node-name').filter({ hasText: 'lucubro-fixture-repo' }).first();
+  await expect(repoName).toBeVisible();
+  await repoName.click();
+  await expect(page.locator('#repo-dir')).toHaveValue(FIXTURE_REPO);
+  await expect(page.locator('#repo-path-control')).toHaveAttribute('data-state', 'received');
+  await expect(page.locator('#repo-path-receipt')).toHaveText('Repository found');
+
+  const repoInput = page.locator('#repo-dir');
+  await repoInput.fill(path.join(WORKSPACE_ROOT, 'Pro'));
+  await expect(page.locator('#workspace-suggestions')).toBeVisible();
+  await expect(page.locator('.workspace-suggestion').first()).toContainText('Projects');
+  await page.locator('.workspace-suggestion').first().click();
+  await expect(repoInput).toHaveValue(PROJECTS_DIR);
+  await expect(page.locator('#repo-path-receipt')).toHaveText('Folder found');
+
+  await page.locator('#workspace-new-folder').click();
+  await page.locator('#workspace-create-name').fill('new-workspace');
+  await page.locator('#workspace-create-form').getByRole('button', { name: 'Create' }).click();
+  await expect(repoInput).toHaveValue(path.join(PROJECTS_DIR, 'new-workspace'));
+  await expect(page.locator('#repo-path-receipt')).toHaveText('Folder created');
+});
+
+test('company routes expose Manager, Work, Employees, and Settings as real product sections', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  await page.goto(`${URL}/company/work`);
+  await expect(page.getByRole('heading', { name: 'Work', exact: true })).toBeVisible();
+  await expect(page.locator('[data-company-nav="work"]')).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('.composer-dock')).toBeHidden();
+
+  await page.goto(`${URL}/company/employees`);
+  await expect(page.getByRole('heading', { name: 'Employees', exact: true })).toBeVisible();
+  await expect(page.locator('[data-company-nav="employees"]')).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('#employee-page-list')).toContainText('Alex');
+  await expect(page.locator('#employee-page-list')).toContainText('Ben');
+  await expect(page.locator('#employee-page-list')).toContainText('Primary Manager');
+
+  await page.goto(`${URL}/company/settings`);
+  await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
+  await expect(page.locator('[data-company-nav="settings"]')).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('#settings-runtime-list')).toContainText('mock');
+  await expect(page.locator('#settings-runtime-list')).toContainText('Available');
+  await expect(page.locator('#settings-workspace-root')).toHaveText(WORKSPACE_ROOT);
+
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
+
+  await page.locator('[data-company-nav="manager"]').click();
+  await expect(page).toHaveURL(`${URL}/company`);
+  await expect(page.getByRole('heading', { name: 'What should we move forward?' })).toBeVisible();
+  await expect(page.locator('.composer-dock')).toBeVisible();
+});
