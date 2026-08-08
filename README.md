@@ -3,7 +3,7 @@
 
 # Lucubro
 
-**A local-first AI company workbench for one person running a company.**
+**A local-first AI company workbench for a single CEO.**
 
 Talk to one Primary Manager. Keep the actual Work, evidence, decisions, and execution history durable underneath the conversation.
 
@@ -15,7 +15,7 @@ Talk to one Primary Manager. Keep the actual Work, evidence, decisions, and exec
 
 ## The product
 
-Lucubro is an operating workbench for a single CEO or owner-operator.
+Lucubro is an operating workbench for one person running a company.
 
 The front door is a conversation with **Alex, the Primary Manager**. The product underneath that conversation is not chat history. It is durable company state:
 
@@ -43,7 +43,7 @@ Lucubro keeps implementation mechanics quiet until they change a decision. Work,
 
 ## What works today
 
-The current Company Workbench includes a complete deterministic product slice:
+The current Company Workbench includes a deterministic product slice:
 
 ```text
 CEO request
@@ -57,22 +57,16 @@ CEO request
   → Accept or Rework
 ```
 
-The UI now has two complementary layers:
+The UI has two complementary layers:
 
 - **Manager Conversation** for intent, updates, and current Work.
-- **Durable Work Context** for Work that survives a page reload, including current status, Run metadata, Artifact evidence, and review actions.
+- **Durable Work Context** for Work that survives a page reload, including current status, latest Run metadata, Artifact evidence, and review actions.
 
-Reloading the page does **not** fabricate an old conversation. Instead, Lucubro restores the durable Work objects it can actually prove from stored state and events.
+Reloading the page does **not** fabricate an old conversation. Lucubro restores only durable Work state and evidence it can actually prove from stored state and events.
 
 ### Working set
 
-The front door projects three decision-bearing counts:
-
-- Active Work
-- Review
-- Needs you
-
-These are operational state, not productivity vanity metrics.
+The front door projects three decision-bearing counts: Active Work, Review, and Needs you. They are operational state, not productivity vanity metrics. A durable count is shown only when there is also an actionable Work path.
 
 ### Needs You
 
@@ -82,43 +76,64 @@ These are operational state, not productivity vanity metrics.
 
 A Work item reaches `Ready for review` only after evidence has crossed the Work boundary. Artifact evidence is available before completion is presented to the CEO.
 
+## Interaction character
+
+Lucubro follows a product interaction principle:
+
+> **Quiet surface, kinetic intelligence.**
+
+At rest, the interface is calm and visually restrained. When the user expresses intent, the interface becomes more active. Motion should make the system feel responsive and legible without turning the workbench into a spectacle.
+
+The preferred interaction rhythm is:
+
+```text
+Acknowledge
+  → Interpret / structure
+  → Receipt
+  → Settle and continue
+```
+
+Examples in the Company Workbench:
+
+- opening Execution setup reveals the runtime choices as one coordinated sequence;
+- Claude Code, Codex, Mock, and future runtimes appear as visible choices instead of being hidden behind a native select;
+- choosing a runtime produces an immediate selection receipt;
+- the repository path is a line-based control rather than a boxed form field;
+- focusing the path wakes the line, typing produces a short reading trace, and pausing produces `Path received`;
+- closing the setup returns to the compact composer with the chosen context summarized;
+- Work, Needs You, review, and evidence transitions use the same motion language as real product state advances.
+
+Motion may communicate **reception, local interpretation, selection, hierarchy, causality, or confirmed product state**. It must never invent work. A UI animation may say `Path received` because the browser received the text. It may not say `Repository validated`, `Agent working`, or `Completed` until the corresponding system or provider event actually exists.
+
+This distinction is deliberate: Lucubro should feel alive because it responds continuously to real state, not because it plays fake progress theatre.
+
 ## Design system
 
 The Company Workbench uses a Klein-blue-centered product system built around `#002FA7`.
 
 Klein blue is the brand axis, not a paint bucket. Most surfaces remain cool neutral; semantic colors are reserved for meaning:
 
-- blue: brand, primary action, review-ready structure;
+- blue: brand, primary action, selected runtime, review-ready structure;
 - amber: Needs You / authority boundary;
-- green: accepted / available;
+- green: accepted / available / confirmed receipt where appropriate;
 - red: failed / destructive error.
 
-The interface is intentionally **minimal, not empty**. Conversation remains primary, while Work, Artifact, review, and authority controls receive enough visual weight to be useful every day.
+The interface is intentionally **minimal, not empty**. Conversation remains primary, while Work, Artifact, review, runtime choice, and authority controls receive enough visual weight to be useful every day.
 
 UI work is reviewed against:
 
 - Checklist Design for typography, states, accessibility, responsiveness, loading, and component behavior;
 - the project design-taste audit rules for hierarchy, density, anti-template discipline, and redesign quality;
-- GSAP patterns for motivated motion, lifecycle cleanup, and reduced-motion behavior.
+- official GSAP patterns for timelines, transform/opacity motion, lifecycle cleanup, performance, and reduced-motion behavior.
 
 See [`docs/company-workbench/DESIGN-SYSTEM.md`](docs/company-workbench/DESIGN-SYSTEM.md).
 
 ## Run it locally
 
-Requirements:
-
-- Node.js 22+
-- npm
-
-Install dependencies:
+Requirements: Node.js 22+ and npm.
 
 ```bash
 npm ci
-```
-
-Start the Company Workbench with the deterministic mock runtime:
-
-```bash
 LUCUBRO_COMPANY_MOCK_RUNTIME=1 npm start
 ```
 
@@ -128,7 +143,7 @@ Open:
 http://127.0.0.1:3200/company
 ```
 
-The mock runtime is the recommended way to inspect the product and run browser tests. It does not require Claude, Codex, API keys, or model credentials.
+The deterministic mock runtime is the recommended way to inspect the product and run browser tests. It does not require Claude, Codex, API keys, or model credentials.
 
 ### Preview on your local network
 
@@ -143,7 +158,7 @@ npm start
 
 Then open `http://<your-lan-ip>:3217/company` from another device on the same network.
 
-This is a local preview mode, not a hosted deployment. There is no authentication layer yet. Do not expose this listener directly to the public internet. Your host firewall may also need to allow the chosen TCP port.
+This is a local preview mode, not a hosted deployment. There is no authentication layer yet. Do not expose this listener directly to the public internet. Your host firewall may need to allow the selected TCP port.
 
 ## What Lucubro owns
 
@@ -157,26 +172,13 @@ Lucubro is the product source of truth for:
 - CEO review decisions;
 - append-only product events.
 
-Runtime providers own execution-specific mechanics:
-
-- model/provider context;
-- provider session or thread IDs;
-- provider-specific tool calls;
-- protocol and wire details.
-
-A provider session can be referenced by a Lucubro Run. It never becomes the Employee or Work identity.
+Runtime providers own execution-specific mechanics such as model context, provider session/thread IDs, provider-specific tool calls, and protocol details. A provider session can be referenced by a Lucubro Run. It never becomes the Employee or Work identity.
 
 ## Permission model
 
 `Auto` means a bounded **Delegation Envelope**, not unrestricted authority.
 
-A coding Work may allow ordinary workspace read/write and local shell execution while keeping materially different authority separate, for example:
-
-- network access or package installation;
-- git push and remote mutation;
-- destructive filesystem operations;
-- permission expansion;
-- other external side effects.
+A coding Work may allow ordinary workspace read/write and local shell execution while keeping materially different authority separate, including network access, package installation, git push, destructive filesystem operations, permission expansion, and other external side effects.
 
 Out-of-envelope actions become `Needs You` instead of silently escalating execution authority.
 
@@ -188,9 +190,9 @@ Provider integrations exist behind runtime adapters:
 - Codex App Server adapter
 - deterministic mock adapter
 
-Real Claude/Codex execution is currently **paused as a product priority** while the Work Core and UI/UX are being completed. Real-provider smoke tests are not a release gate and the UI must not imply that a provider is ready merely because a binary is installed.
+Real Claude/Codex execution is currently **paused as a product priority** while the Work Core and UI/UX are being completed. Real-provider smoke tests are not a release gate, and the UI must not imply a provider is ready merely because a binary is installed.
 
-The current product and browser-test path uses the deterministic mock runtime.
+The runtime picker deliberately keeps unavailable providers visible. Availability is product state, not a reason to make a provider disappear from the mental model.
 
 ## Repository architecture
 
@@ -214,8 +216,10 @@ public/
   ├── company.js               current Work interaction
   ├── company-durable.js       reload-safe Work Context
   ├── company-v3.js            Working set + state motion
+  ├── company-kinetic.js       Execution setup interaction + motion
   ├── company-v3.css           Klein-blue product system
-  └── company-durable.css      durable Work surface
+  ├── company-durable.css      durable Work surface
+  └── company-kinetic.css      runtime rail + line-based path control
 
 docs/company-workbench/
   ├── SPEC.md                  V1 product contract
@@ -224,16 +228,9 @@ docs/company-workbench/
 
 ## Quality gates
 
-Run the static and Node gates:
-
 ```bash
 npm run check
 npm test
-```
-
-Run Chromium product journeys:
-
-```bash
 npx playwright test
 ```
 
@@ -246,6 +243,7 @@ Company Workbench coverage includes:
 - Artifact-before-completion ordering;
 - Work review decisions;
 - reload-safe Durable Work Context;
+- kinetic runtime selection and repository-path receipt;
 - keyboard and focus behavior;
 - mobile viewport containment;
 - reduced motion;
@@ -259,7 +257,8 @@ Company Workbench coverage includes:
 - Live state may advance; authorization advances only across explicitly accepted material deltas.
 - Auto delegates within an envelope; it does not erase the envelope.
 - UI may compress decisions, but authorization remains Work-granular.
-- Motion communicates hierarchy, state, causality, continuity, or focus. It is not decoration.
+- Quiet surface, kinetic intelligence.
+- Motion acknowledges and explains real state. It never fabricates AI progress.
 - A visible product state needs an actionable path. Lucubro should not show dead-end counts or decorative status.
 
 ## Current limits
@@ -267,7 +266,7 @@ Company Workbench coverage includes:
 Lucubro is under active development. Important unfinished areas include:
 
 - Primary Manager clarification, planning, and Work Proposal behavior is still minimal;
-- durable Work Context currently restores the active/latest Run rather than a complete multi-Run history browser;
+- Durable Work Context currently restores the latest attached Run rather than a complete multi-Run history browser;
 - Rework records the state transition but does not yet create the next Run automatically;
 - approval waits are still in-memory and are not restart-recoverable;
 - cancellation and full Run recovery are not complete;
@@ -277,13 +276,7 @@ Lucubro is under active development. Important unfinished areas include:
 
 ## Active vs. frozen code
 
-**Active product:** Company Workbench
-
-- `company-server.js`
-- `lib/company/`
-- `public/company*`
-- `docs/company-workbench/`
-- Company Workbench tests
+**Active product:** Company Workbench (`company-server.js`, `lib/company/`, `public/company*`, `docs/company-workbench/`, and Company Workbench tests).
 
 **Frozen legacy:** the previous AI learning workspace remains in the repository for implementation history and regression protection. It should not receive new feature work unless needed for safe migration, security, or repository integrity.
 
