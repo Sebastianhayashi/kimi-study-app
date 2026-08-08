@@ -300,6 +300,10 @@
       setLifecycle(settingsPanel, 'hidden');
     }
   });
+  runSettings.addEventListener('lucubro:close-execution', (event) => {
+    event.preventDefault();
+    closeExecutionSetup({ restoreFocus: event.detail?.restoreFocus !== false });
+  });
 
   settingsSummary.addEventListener('click', (event) => {
     if (!runSettings.open) return;
