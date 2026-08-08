@@ -285,6 +285,11 @@
 .repo-path-control #repo-dir::placeholder {
   color: var(--muted);
   opacity: 1;
+  transition: color 160ms ease;
+}
+
+.repo-path-control:focus-within #repo-dir::placeholder {
+  color: var(--muted-strong);
 }
 
 .repo-path-line {
@@ -302,12 +307,13 @@
   background: var(--brand-primary);
   transform: scaleX(0);
   transform-origin: left center;
-  transition: transform 190ms ease;
+  transition: transform 190ms cubic-bezier(0.2, 0.75, 0.25, 1);
+  will-change: transform;
 }
 
+.repo-path-control:focus-within .repo-path-line-active,
 .repo-path-control[data-state="focused"] .repo-path-line-active,
-.repo-path-control[data-state="reading"] .repo-path-line-active,
-.repo-path-control[data-state="received"] .repo-path-line-active {
+.repo-path-control[data-state="reading"] .repo-path-line-active {
   transform: scaleX(1);
 }
 
@@ -351,6 +357,10 @@
   color: var(--success);
   font-weight: 650;
   will-change: transform, opacity;
+}
+
+.repo-path-receipt[data-tone="neutral"] {
+  color: var(--brand-primary);
 }
 
 .repo-path-receipt::before {
@@ -418,14 +428,16 @@
   .runtime-check,
   .runtime-selection-receipt,
   .repo-path-receipt,
-  .repo-path-scan {
+  .repo-path-scan,
+  .repo-path-line-active {
     will-change: auto;
   }
 
   .runtime-choice-button,
   .runtime-choice-button::after,
   .runtime-check,
-  .repo-path-line-active {
+  .repo-path-line-active,
+  .repo-path-control #repo-dir::placeholder {
     transition: none !important;
   }
 }
