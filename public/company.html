@@ -12,11 +12,13 @@
   <link rel="stylesheet" href="/company-v3.css">
   <link rel="stylesheet" href="/company-durable.css">
   <link rel="stylesheet" href="/company-kinetic.css">
+  <link rel="stylesheet" href="/company-workspace.css">
+  <link rel="stylesheet" href="/company-pages.css">
   <link rel="stylesheet" href="/company-a11y-v3.css">
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" integrity="sha512-NcZdtrT77bJr4STcmsGAESr06BYGE8woZdSdEgqnpyqac7sugNO+Tr4bGwGF3MsnEkGKhU2KL2xh6Ec+BqsaHA==" crossorigin="anonymous" defer></script>
 </head>
-<body data-company-has-work="false">
-  <a class="skip-link" href="#company-conversation">Skip to manager conversation</a>
+<body data-company-has-work="false" data-company-view="manager">
+  <a class="skip-link" href="#company-main">Skip to company content</a>
   <div class="app-shell" data-ui="company-v3">
     <header class="topbar" aria-label="Company workspace header">
       <a class="brand" href="/company" aria-label="Lucubro Company home">
@@ -39,8 +41,17 @@
       </button>
     </header>
 
-    <main class="workspace">
-      <section id="company-conversation" class="conversation" aria-label="Manager conversation" tabindex="-1">
+    <nav class="company-section-nav" aria-label="Company sections">
+      <div class="company-section-nav-inner">
+        <a class="company-section-link" href="/company" data-company-nav="manager" aria-current="page">Manager</a>
+        <a class="company-section-link" href="/company/work" data-company-nav="work">Work</a>
+        <a class="company-section-link" href="/company/employees" data-company-nav="employees">Employees</a>
+        <a class="company-section-link" href="/company/settings" data-company-nav="settings">Settings</a>
+      </div>
+    </nav>
+
+    <main id="company-main" class="workspace" tabindex="-1">
+      <section id="company-conversation" class="conversation" aria-label="Manager conversation" data-company-view-panel="manager">
         <article class="message manager-message intro-message" data-animate="intro">
           <div class="message-avatar" aria-hidden="true">A</div>
           <div class="message-content">
@@ -90,6 +101,67 @@
         </section>
 
         <div id="conversation-feed" class="conversation-feed" aria-live="polite" aria-relevant="additions"></div>
+      </section>
+
+      <section id="company-work-page" class="product-page" data-company-view-panel="work" aria-labelledby="company-work-heading" hidden>
+        <header class="product-page-header">
+          <div class="product-page-heading">
+            <span class="context-kicker">Durable company state</span>
+            <h1 id="company-work-heading">Work</h1>
+            <p>Everything Alex has turned into durable Work. Open an item to return to its evidence and current decision state.</p>
+          </div>
+          <span id="work-page-summary" class="product-page-meta">Loading Work…</span>
+        </header>
+        <div id="work-page-list" class="product-page-body" aria-live="polite">
+          <div class="product-empty-state"><span>Loading durable Work…</span></div>
+        </div>
+      </section>
+
+      <section id="company-employees-page" class="product-page" data-company-view-panel="employees" aria-labelledby="company-employees-heading" hidden>
+        <header class="product-page-header">
+          <div class="product-page-heading">
+            <span class="context-kicker">Durable identities</span>
+            <h1 id="company-employees-heading">Employees</h1>
+            <p>Named company identities that keep their accountability across Work and Runs. This view only shows identities the current product actually knows.</p>
+          </div>
+          <span id="employee-page-summary" class="product-page-meta">Loading Employees…</span>
+        </header>
+        <div id="employee-page-list" class="product-page-body" aria-live="polite">
+          <div class="product-empty-state"><span>Loading Employee identities…</span></div>
+        </div>
+      </section>
+
+      <section id="company-settings-page" class="product-page" data-company-view-panel="settings" aria-labelledby="company-settings-heading" hidden>
+        <header class="product-page-header">
+          <div class="product-page-heading">
+            <span class="context-kicker">Local execution</span>
+            <h1 id="company-settings-heading">Settings</h1>
+            <p>Truthful local runtime and workspace state. Per-Work execution choices still live with the instruction that uses them.</p>
+          </div>
+          <span id="settings-page-summary" class="product-page-meta">Loading local state…</span>
+        </header>
+        <div class="product-page-body">
+          <section class="settings-section" aria-labelledby="settings-runtimes-heading">
+            <div class="settings-section-heading">
+              <h2 id="settings-runtimes-heading">Runtimes</h2>
+              <p>Availability is read from the local server. An installed binary is not presented as ready unless the adapter reports it ready.</p>
+            </div>
+            <div id="settings-runtime-list"></div>
+          </section>
+          <section class="settings-section" aria-labelledby="settings-workspace-heading">
+            <div class="settings-section-heading">
+              <h2 id="settings-workspace-heading">Host workspace root</h2>
+              <p>The Workspace picker can only browse and create folders inside this configured execution-host root.</p>
+            </div>
+            <div class="settings-index-row">
+              <span class="settings-index-copy">
+                <span class="settings-index-name">Execution host</span>
+                <span class="settings-index-meta">Used by the tree picker in Execution setup</span>
+              </span>
+              <span id="settings-workspace-root" class="settings-path">Loading…</span>
+            </div>
+          </section>
+        </div>
       </section>
     </main>
 
@@ -142,22 +214,55 @@
                   <p id="runtime-selection-receipt" class="runtime-selection-receipt" role="status" hidden></p>
                 </section>
 
-                <section class="execution-field repo-field">
+                <section class="execution-field repo-field" aria-labelledby="workspace-picker-label">
                   <div class="execution-field-head">
-                    <label class="execution-field-label" for="repo-dir">Repository path</label>
-                    <span class="execution-field-hint">Local path</span>
+                    <span id="workspace-picker-label" class="execution-field-label">Workspace</span>
+                    <span class="execution-field-hint">Execution host</span>
                   </div>
-                  <div id="repo-path-control" class="repo-path-control" data-state="empty">
-                    <div class="repo-path-input-row">
-                      <input id="repo-dir" name="repoDir" placeholder="Paste or type /path/to/repository" autocomplete="off" required aria-describedby="repo-path-note repo-path-receipt">
+                  <div id="workspace-picker" class="workspace-picker" data-drag-active="false">
+                    <div id="repo-path-control" class="repo-path-control" data-state="empty">
+                      <div class="workspace-path-row">
+                        <button id="workspace-tree-toggle" class="workspace-tree-toggle" type="button" aria-expanded="false" aria-controls="workspace-tree-panel" aria-label="Browse folders on execution host">
+                          <span class="workspace-tree-caret" aria-hidden="true">▸</span>
+                        </button>
+                        <div class="repo-path-input-row">
+                          <label class="sr-only" for="repo-dir">Repository or workspace path on execution host</label>
+                          <input id="repo-dir" name="repoDir" placeholder="~/Projects/lucubro" autocomplete="off" required aria-autocomplete="list" aria-controls="workspace-suggestions" aria-describedby="repo-path-note repo-path-receipt">
+                        </div>
+                      </div>
+                      <div class="repo-path-line" aria-hidden="true">
+                        <span class="repo-path-line-active"></span>
+                        <span id="repo-path-scan" class="repo-path-scan"></span>
+                      </div>
+                      <div class="repo-path-feedback">
+                        <p id="repo-path-note" class="repo-path-note">Type ~/… or browse folders on the execution host.</p>
+                        <p id="repo-path-receipt" class="repo-path-receipt" role="status" hidden>Repository found</p>
+                      </div>
+                      <div id="workspace-suggestions" class="workspace-suggestions" role="listbox" aria-label="Host path suggestions" hidden></div>
                     </div>
-                    <div class="repo-path-line" aria-hidden="true">
-                      <span class="repo-path-line-active"></span>
-                      <span id="repo-path-scan" class="repo-path-scan"></span>
+
+                    <div id="workspace-tree-panel" class="workspace-tree-panel" hidden>
+                      <div class="workspace-tree-header">
+                        <div class="workspace-tree-heading">
+                          <strong>Host folders</strong>
+                          <span id="workspace-root-label">Loading execution host…</span>
+                        </div>
+                        <button id="workspace-new-folder" class="workspace-new-folder-button" type="button">New folder</button>
+                      </div>
+                      <div class="workspace-tree-scroll">
+                        <div id="workspace-tree" class="workspace-tree-root" role="tree" aria-label="Execution host folders"></div>
+                      </div>
+                      <form id="workspace-create-form" class="workspace-create-form" hidden>
+                        <label class="sr-only" for="workspace-create-name">New folder name</label>
+                        <input id="workspace-create-name" placeholder="Folder name" autocomplete="off" required>
+                        <button class="workspace-create-submit" type="submit">Create</button>
+                        <button id="workspace-create-cancel" class="workspace-create-cancel" type="button">Cancel</button>
+                      </form>
                     </div>
-                    <div class="repo-path-feedback">
-                      <p id="repo-path-note" class="repo-path-note">Paste or type the local repository path.</p>
-                      <p id="repo-path-receipt" class="repo-path-receipt" role="status" hidden>Path received</p>
+
+                    <div id="workspace-drop-receipt" class="workspace-drop-receipt" role="status" hidden>
+                      <strong id="workspace-drop-receipt-title">Local folder detected</strong>
+                      <span id="workspace-drop-receipt-copy"></span>
                     </div>
                   </div>
                 </section>
@@ -186,6 +291,8 @@
   <script src="/company.js" defer></script>
   <script src="/company-durable.js" defer></script>
   <script src="/company-v3.js" defer></script>
+  <script src="/company-workspace.js" defer></script>
   <script src="/company-kinetic.js" defer></script>
+  <script src="/company-pages.js" defer></script>
 </body>
 </html>
