@@ -17,6 +17,8 @@ The previous learning-workspace product is frozen legacy. Do not add product fea
 ## Product invariants
 
 - Conversation first, not chat-only.
+- **Conversation drives the canvas.** The Manager surface is a live company canvas whose durable objects change in response to user intent and real product events.
+- Stable space, changing objects. Prefer updating a visible Work / Artifact / Decision object in place over replacing it with disconnected messages, toasts, or new pages.
 - Hide detail, not durable structure.
 - Lucubro owns Work, Run, authorization, Artifacts, decisions, and audit history.
 - Provider session/thread ids are execution references, never product identity.
@@ -26,6 +28,7 @@ The previous learning-workspace product is frozen legacy. Do not add product fea
 - Raw model reasoning is not a product event and must not be persisted or presented as operational truth.
 - A provider completion moves Work to review only after required evidence is available. CEO Accept/Rework is a separate durable decision.
 - A visible durable state must have an actionable path. Do not create dead-end counts or status surfaces.
+- A workspace path names the execution host. Never silently treat a browser-device folder as an execution-host path.
 
 ## UI/UX release checklist
 
@@ -48,17 +51,21 @@ At minimum verify:
 - reduced-motion behavior;
 - no permanent UI region unless it earns persistent attention;
 - no dashboard/card noise that competes with the Manager relationship;
-- no provider/runtime details in the default CEO surface unless they change the current decision.
+- no provider/runtime details in the default CEO surface unless they change the current decision;
+- live state updates mutate the object that owns the state instead of spraying disconnected notifications;
+- a real-time animation has a real product event or deterministic local state behind it.
 
 Document material checklist trade-offs in the PR when a rule is intentionally not applicable.
 
 ## Interaction character
 
-Lucubro's interaction principle is:
+Lucubro's interaction principles are:
 
 > **Quiet surface, kinetic intelligence.**
+>
+> **Conversation drives the canvas.**
 
-At rest, the product should be visually calm. When the user expresses intent, chooses context, enters a path, makes a decision, or receives new Work evidence, the interface should become more active and explain the transition through motion.
+At rest, the product should be visually calm. When the user expresses intent, chooses context, enters a path, makes a decision, or receives new Work evidence, the affected objects should become active and explain the transition through motion.
 
 Preferred interaction rhythm:
 
@@ -68,6 +75,18 @@ Preferred interaction rhythm:
 4. **Settle** back to a quiet stable surface with context preserved.
 
 Motion should reduce cognitive steps. Do not insert animation that makes a deterministic local interaction feel slower.
+
+### Live canvas event projection
+
+The Manager canvas should project real events onto stable visible objects.
+
+- User instructions enter as intent objects.
+- Successful Work creation transforms that intent into durable Work context rather than a separate wizard result.
+- `run.started`, normalized public employee updates, tool events, Artifact events, approvals, and terminal Run events update the same Work object.
+- Use one live textual region for incremental public updates. Do not append token-sized or event-sized chat bubbles.
+- Artifact evidence grows inside the Work object that owns it.
+- `Needs You` and Review may add decision surfaces, but the owning Work remains visually continuous.
+- Once an object reaches a stable state, animation stops.
 
 ### Interaction honesty
 
@@ -88,9 +107,11 @@ Execution setup remains progressive disclosure.
 - Unavailable runtimes remain visible but disabled so availability is legible.
 - A hidden native/select value may remain as an internal compatibility seam when existing form logic owns the canonical runtime value.
 - Runtime selection produces an immediate receipt and updates the compact summary.
-- Repository path uses a line-based input, not a large boxed field.
-- Path focus wakes the line; input settling may show a short reading trace; `Path received` confirms browser/UI receipt only.
-- Actual filesystem validation belongs to the Work/start boundary and must use real evidence.
+- Workspace path uses a line-based input with an optional execution-host tree, not a large boxed field.
+- Typing a partial host path may show real directory suggestions.
+- The tree may list directories and create directories only within the configured host root. Do not expose arbitrary file content through this picker.
+- Client-folder drag/drop must state the browser-device / execution-host boundary honestly until an explicit import/native bridge exists.
+- Actual filesystem validation belongs to real host inspection or the Work/start boundary and must use real evidence.
 
 ## Motion and GSAP
 
@@ -104,25 +125,27 @@ Install for a local agent with:
 npx skills add https://github.com/greensock/gsap-skills
 ```
 
-Detailed lifecycle choreography is specified in [`docs/company-workbench/MOTION-SYSTEM.md`](docs/company-workbench/MOTION-SYSTEM.md).
+Detailed lifecycle and canvas choreography is specified in [`docs/company-workbench/MOTION-SYSTEM.md`](docs/company-workbench/MOTION-SYSTEM.md).
 
 Prefer the relevant GSAP skill for the task (`gsap-core`, `gsap-timeline`, `gsap-performance`, framework-specific guidance, etc.).
 
 Motion rules:
 
 - Motion must communicate state, hierarchy, causality, continuity, focus, acknowledgement, or receipt.
+- Real-time canvas motion must be triggered by deterministic local state or normalized product events.
 - Visible components use a complete `mount → entering → active → exiting → unmount/hidden/replacement` lifecycle when that transition is user-visible.
 - Do not instantly replace a visible component set. Exit the old set, replace state/DOM, then enter the new set.
 - Exit choreography should normally be shorter than entrance choreography.
 - Prefer transforms and `autoAlpha`/opacity over layout properties.
 - Prefer timelines and position parameters for coordinated sequences over arbitrary delay chains.
 - Use stagger for related choices that enter as a group and reverse stagger when they leave as a group.
+- One-shot event pulses are allowed. Infinite ambient activity animation is not.
 - Use `will-change` only on elements that actually animate.
 - Clean up or kill GSAP timelines/tweens/listeners on lifecycle teardown.
 - Respect `prefers-reduced-motion` and land directly in meaningful end states.
 - Do not add ScrollTrigger or heavy motion to ordinary application scrolling unless the interaction truly depends on scroll position.
-- Do not add infinite ambient animation merely to make the product feel AI-powered.
 - Product state and interaction must remain understandable when animation or the GSAP CDN is unavailable.
+- Animation code reacts to domain state. It must not become the owner of domain state.
 
 ## Verification
 
@@ -142,6 +165,8 @@ For kinetic UI changes, verify at minimum:
 - deterministic receipts are truthful;
 - component entrance and exit have a defined lifecycle;
 - visible replacement does not jump directly between DOM states;
+- live canvas state is driven by real Work/Run events;
+- Artifact / Needs You / Review appears on the owning durable object;
 - mobile containment and touch reachability;
 - reduced-motion end states;
 - unavailable provider states remain legible;
