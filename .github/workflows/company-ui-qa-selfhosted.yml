@@ -8,6 +8,8 @@ on:
       - public/company.html
       - public/company.css
       - public/company.js
+      - lib/company/run-orchestrator.js
+      - test/company-workbench-v1.test.js
       - tests/e2e/company-workbench.spec.js
       - .github/workflows/company-ui-qa-selfhosted.yml
 
@@ -35,6 +37,9 @@ jobs:
 
       - name: Install repository dependencies
         run: npm ci
+
+      - name: Run Company Workbench behavior tests
+        run: node --test test/company-workbench-v1.test.js
 
       - name: Install Chromium
         run: npx playwright install chromium
