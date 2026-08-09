@@ -1,30 +1,17 @@
 'use strict';
 
 const { test, expect } = require('@playwright/test');
-const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { startCompanyTestServer, stopCompanyTestServer } = require('../support/company-test-server');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const PORT = 3111;
-const URL = `http://127.0.0.1:${PORT}`;
+let URL;
 const DATA_DIR = path.join(ROOT, 'tests', '.runtime', 'company-workspace-pages');
 const WORKSPACE_ROOT = path.join(ROOT, 'tests', '.runtime', 'workspace-host');
 const PROJECTS_DIR = path.join(WORKSPACE_ROOT, 'Projects');
 const FIXTURE_REPO = path.join(PROJECTS_DIR, 'lucubro-fixture-repo');
 let server;
-
-async function waitForServer() {
-  const deadline = Date.now() + 10_000;
-  while (Date.now() < deadline) {
-    try {
-      const response = await fetch(`${URL}/api/company/health`);
-      if (response.ok) return;
-    } catch {}
-    await new Promise((resolve) => setTimeout(resolve, 80));
-  }
-  throw new Error('company-server did not become ready');
-}
 
 async function openExecutionSetup(page) {
   const settings = page.locator('#run-settings');
@@ -46,24 +33,16 @@ test.beforeAll(async () => {
   fs.mkdirSync(path.join(PROJECTS_DIR, 'another-project'), { recursive: true });
   fs.mkdirSync(path.join(WORKSPACE_ROOT, 'Documents'), { recursive: true });
 
-  server = spawn(process.execPath, [path.join(ROOT, 'company-server.js')], {
-    cwd: ROOT,
-    env: {
-      ...process.env,
-      NODE_ENV: 'test',
-      PORT: String(PORT),
-      LUCUBRO_COMPANY_PORT: String(PORT),
-      LUCUBRO_COMPANY_DATA_DIR: DATA_DIR,
-      LUCUBRO_COMPANY_MOCK_RUNTIME: '1',
-      LUCUBRO_WORKSPACE_ROOT: WORKSPACE_ROOT,
-    },
-    stdio: ['ignore', 'pipe', 'pipe'],
+  server = await startCompanyTestServer({
+    rootDir: ROOT,
+    dataDir: DATA_DIR,
+    env: { LUCUBRO_WORKSPACE_ROOT: WORKSPACE_ROOT },
   });
-  await waitForServer();
+  URL = server.url;
 });
 
 test.afterAll(async () => {
-  if (server && !server.killed) server.kill('SIGTERM');
+  await stopCompanyTestServer(server);
   fs.rmSync(DATA_DIR, { recursive: true, force: true });
   fs.rmSync(WORKSPACE_ROOT, { recursive: true, force: true });
 });
