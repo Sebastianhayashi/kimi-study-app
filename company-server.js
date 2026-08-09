@@ -5,6 +5,7 @@ const express = require('express');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { createCanvasArtifactStore } = require('./lib/company/canvas-artifact-store');
 const { createEvidenceStore } = require('./lib/company/evidence-store');
 const { evidenceResponsePolicy } = require('./lib/company/evidence-response');
 const { createRunStore } = require('./lib/company/run-store');
@@ -49,6 +50,7 @@ function createCompanyServer({
   projectStore = null,
   projectDiscovery = discoverProjectSources,
   evidenceStore = null,
+  canvasArtifactStore = null,
   workerIdentity = null,
   workPlanner = null,
   skillMountBuilder = null,
@@ -64,6 +66,7 @@ function createCompanyServer({
   const projects = projectStore || createProjectStore({ rootDir: dataDir });
   const workers = workerStore || createWorkerStore({ rootDir: dataDir });
   const evidence = evidenceStore || createEvidenceStore({ rootDir: dataDir });
+  const canvasArtifacts = canvasArtifactStore || createCanvasArtifactStore({ rootDir: dataDir, evidenceStore: evidence });
   const existingWorker = workers.list()[0] || null;
   const requestedWorkerId = workerIdentity && workerIdentity.id || process.env.LUCUBRO_WORKER_ID || null;
   const localWorkerId = requestedWorkerId || existingWorker && existingWorker.id || `worker_${crypto.randomUUID()}`;
@@ -312,6 +315,16 @@ function createCompanyServer({
     res.json(work);
   });
 
+  app.get('/api/company/works/:workId/artifacts', (req, res) => {
+    const work = company.getWork(req.params.workId);
+    if (!work) return res.status(404).json({ error: 'Work not found' });
+    res.json({
+      workId: work.id,
+      artifacts: canvasArtifacts.listByWork(work.id),
+      evidence: evidence.listByWork(work.id),
+    });
+  });
+
   app.get('/api/company/runs/:runId', (req, res) => {
     const run = runStore.get(req.params.runId);
     if (!run) return res.status(404).json({ error: 'Run not found' });
@@ -368,6 +381,7 @@ function createCompanyServer({
     workStore,
     workerStore: workers,
     evidenceStore: evidence,
+    canvasArtifactStore: canvasArtifacts,
     localWorker,
     approvalBroker,
     runtimeRegistry,
