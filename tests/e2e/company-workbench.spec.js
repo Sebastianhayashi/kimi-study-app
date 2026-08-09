@@ -19,7 +19,12 @@ async function waitForServer() {
   throw new Error('company-server did not become ready');
 }
 
+async function waitForCompanyControllers(page) {
+  await expect(page.locator('#workspace-picker')).toHaveAttribute('data-controller', 'ready');
+}
+
 async function configureMockWork(page, brief) {
+  await waitForCompanyControllers(page);
   const settings = page.locator('#run-settings');
   if (!(await settings.getAttribute('open'))) await settings.locator('summary').click();
   await page.locator('[data-runtime-id="mock"]').click();
@@ -53,15 +58,15 @@ test.beforeAll(async () => {
 
 test.afterAll(async () => { if (server && !server.killed) server.kill('SIGTERM'); });
 
-test('front door presents Alex, real working context, and Klein-blue primary actions', async ({ page }) => {
+test('front door presents Alex and a quiet Manager canvas without dashboard noise', async ({ page }) => {
   await useDesktopViewport(page);
   await page.goto(`${URL}/company`);
+  await waitForCompanyControllers(page);
   await expect(page.getByRole('heading', { name: 'What should we move forward?' })).toBeVisible();
   await expect(page.getByLabel('Alex, Primary Manager')).toBeVisible();
-  await expect(page.getByLabel('Current company context')).toBeVisible();
-  await expect(page.locator('#context-active-count')).toHaveText('0');
-  await expect(page.locator('#context-review-count')).toHaveText('0');
-  await expect(page.locator('#context-decision-count')).toHaveText('0');
+  await expect(page.getByLabel('Company canvas focus')).toBeVisible();
+  await expect(page.locator('#canvas-lens-current')).toHaveText('Manager canvas');
+  await expect(page.getByLabel('Current company context')).toBeHidden();
   await expect(page.locator('#conversation-feed h1')).toHaveCount(0);
   await expect(page.locator('#run-settings')).not.toHaveAttribute('open', '');
   await expect(page.getByRole('button', { name: 'Send to Alex' })).toBeEnabled();
@@ -78,6 +83,7 @@ test('front door presents Alex, real working context, and Klein-blue primary act
 test('execution setup exposes kinetic runtime choices and a line-based repository receipt', async ({ page }) => {
   await useDesktopViewport(page);
   await page.goto(`${URL}/company`);
+  await waitForCompanyControllers(page);
   await page.locator('#run-settings > summary').click();
 
   const choices = page.locator('#runtime-choice');
@@ -115,17 +121,13 @@ test('durable Work survives reload without replaying Conversation and remains re
   await expect(page.locator('.status')).toHaveText('Ready for review');
   await expect(page.locator('.status')).toHaveAttribute('data-tone', 'review');
   await expect(page.getByText('Code changes · 1 file')).toBeVisible();
-  await expect(page.locator('#context-review-count')).toHaveText('1');
-  await expect(page.locator('#context-active-count')).toHaveText('0');
-  await expect(page.locator('#context-copy')).toContainText('ready for review');
   await expect(page.locator('body')).toHaveAttribute('data-company-has-work', 'true');
   await expect(page.locator('.composer-dock')).toHaveCSS('position', 'fixed');
 
   await page.reload();
   await expect(page.locator('#conversation-feed .work-object')).toHaveCount(0);
   await expect(page.locator('#durable-work-context')).toBeVisible();
-  await expect(page.locator('#context-review-count')).toHaveText('1');
-  await expect(page.locator('#context-copy')).toContainText('ready for review');
+  await expect(page.getByLabel('Current company context')).toBeHidden();
 
   const durableRow = page.locator('[data-testid="durable-work-row"]').filter({ hasText: 'Fix the session refresh bug' });
   await expect(durableRow).toBeVisible();
@@ -141,32 +143,32 @@ test('durable Work survives reload without replaying Conversation and remains re
 
   await durableDetail.getByRole('button', { name: 'Accept' }).click();
   await expect(durableDetail).toContainText('Accepted');
-  await expect(page.locator('#context-review-count')).toHaveText('0');
   await expect(durableRow).toContainText('Accepted');
 });
 
-test('out-of-envelope request becomes a scoped Needs You decision and Working set reflects it', async ({ page }) => {
+test('out-of-envelope request resolves on the owning Work instead of requiring a chat receipt', async ({ page }) => {
   await useDesktopViewport(page);
   await page.goto(`${URL}/company`);
   await configureMockWork(page, 'Fix auth needs-approval');
   await expect(page.locator('[data-testid="needs-you-card"]')).toBeVisible();
   await expect(page.getByText('network.access')).toBeVisible();
   await expect(page.locator('#needs-you-button')).toHaveAttribute('data-active', 'true');
-  await expect(page.locator('#context-decision-count')).toHaveText('1');
-  await expect(page.locator('#company-context')).toHaveAttribute('data-state', 'decision');
-  await expect(page.locator('#context-copy')).toContainText('authority decision');
+  await expect(page.locator('#needs-you-count')).toHaveText('1');
+  await expect(page.locator('body')).toHaveAttribute('data-canvas-state', 'decision');
   await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-blue-needs-you.png') });
   await page.keyboard.press('Escape');
   await expect(page.locator('#needs-you-panel')).toBeHidden();
   await page.locator('#needs-you-button').click();
   await page.locator('[data-testid="needs-you-card"] .primary-action').click();
-  await expect(page.getByText('Approved for that one decision. Ben can continue.')).toBeVisible();
-  await expect(page.locator('#context-decision-count')).toHaveText('0');
+  await expect(page.locator('#needs-you-count')).toHaveText('0');
+  await expect(page.locator('[data-testid="needs-you-card"]')).toHaveCount(0);
+  await expect(page.locator('.canvas-event-history')).toContainText('Decision received');
   await expect(page.locator('.status')).toHaveText('Ready for review');
 });
 
 test('keyboard shortcut submits Work without exposing runtime mechanics in the main thread', async ({ page }) => {
   await page.goto(`${URL}/company`);
+  await waitForCompanyControllers(page);
   await page.locator('#run-settings > summary').click();
   await page.locator('[data-runtime-id="mock"]').click();
   await page.locator('#repo-dir').fill('/tmp/lucubro-fixture-repo');
@@ -176,13 +178,14 @@ test('keyboard shortcut submits Work without exposing runtime mechanics in the m
   await expect(page.getByText('Runtime: mock')).toBeHidden();
 });
 
-test('mobile keeps relationship, working set, composer, and Work surface inside the viewport', async ({ page }) => {
+test('mobile keeps the Manager relationship, canvas focus, composer, and Work surface inside the viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${URL}/company`);
+  await waitForCompanyControllers(page);
   await expect(page.getByLabel('Alex, Primary Manager')).toBeVisible();
-  await expect(page.getByLabel('Current company context')).toBeVisible();
+  await expect(page.getByLabel('Company canvas focus')).toBeVisible();
+  await expect(page.getByLabel('Current company context')).toBeHidden();
   await expect(page.getByRole('button', { name: 'Send to Alex' })).toBeVisible();
-  await expect(page.locator('#context-active-count')).toBeVisible();
   await page.locator('#run-settings > summary').click();
   await expect(page.locator('#runtime-choice')).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
@@ -190,23 +193,24 @@ test('mobile keeps relationship, working set, composer, and Work surface inside 
   await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-blue-mobile-empty.png') });
 });
 
-test('skip navigation reaches the manager conversation for keyboard users', async ({ page }) => {
+test('skip navigation reaches the persistent Company Canvas content for keyboard users', async ({ page }) => {
   await page.goto(`${URL}/company`);
   await page.keyboard.press('Tab');
   await expect(page.locator('.skip-link')).toBeFocused();
   await page.keyboard.press('Enter');
-  await expect(page.locator('#company-conversation')).toBeFocused();
+  await expect(page.locator('#company-main')).toBeFocused();
 });
 
 test('reduced motion preserves the complete product state without GSAP dependency', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(`${URL}/company`);
+  await waitForCompanyControllers(page);
   await expect(page.getByRole('heading', { name: 'What should we move forward?' })).toBeVisible();
-  await expect(page.getByLabel('Current company context')).toBeVisible();
+  await expect(page.getByLabel('Company canvas focus')).toBeVisible();
+  await expect(page.getByLabel('Current company context')).toBeHidden();
   const reduced = await page.evaluate(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   expect(reduced).toBe(true);
   await expect(page.getByRole('button', { name: 'Send to Alex' })).toBeEnabled();
-  await expect(page.locator('#company-context')).toHaveCSS('opacity', '1');
   await page.locator('#run-settings > summary').click();
   await expect(page.locator('#runtime-choice')).toBeVisible();
 });
