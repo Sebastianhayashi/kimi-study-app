@@ -154,3 +154,24 @@ test('Project adoption cannot inspect a repository outside the configured worksp
     assert.match(body.error, /outside the allowed workspace root/i);
   });
 });
+
+test('Project adoption requires an explicit repository instead of defaulting to home', async (t) => {
+  const dataDir = tempRoot(t);
+  const allowedRoot = tempRoot(t, 'lucubro-project-explicit-');
+
+  await withServer({
+    dataDir,
+    runtimes: new Map(),
+    worktreeManager: {},
+    workspaceBrowser: workspaceBrowserFor(allowedRoot),
+  }, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/company/projects`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    assert.equal(response.status, 400);
+    const body = await response.json();
+    assert.match(body.error, /repoDir is required/i);
+  });
+});
