@@ -189,8 +189,9 @@
     runtimeRenderTimeline?.kill();
     const fragment = buildRuntimeChoices();
     const existing = [...runtimeChoice.querySelectorAll('.runtime-choice-button')];
-    if (!canAnimate() || !runSettings.open || !existing.length) {
-      mountRuntimeChoices(fragment, { animate: runSettings.open });
+    const panelOwnsEntrance = runSettings.open && settingsPanel.dataset.lifecycle !== 'active';
+    if (!canAnimate() || !runSettings.open || panelOwnsEntrance || !existing.length) {
+      mountRuntimeChoices(fragment, { animate: false });
       return;
     }
 
@@ -225,12 +226,14 @@
   }
 
   function animateSettingsOpen() {
+    if (!runSettings.open) return;
     closeTimeline?.kill();
     openTimeline?.kill();
+    runtimeRenderTimeline?.kill();
     setLifecycle(settingsPanel, 'entering');
+    setLifecycle(runtimeChoice, 'active');
     if (!canAnimate()) {
       setLifecycle(settingsPanel, 'active');
-      setLifecycle(runtimeChoice, 'active');
       return;
     }
 
@@ -259,6 +262,7 @@
     runSettings.dispatchEvent(new CustomEvent('lucubro:execution-closing'));
     openTimeline?.kill();
     closeTimeline?.kill();
+    runtimeRenderTimeline?.kill();
 
     const finish = () => {
       runSettings.open = false;
@@ -294,10 +298,15 @@
   runtime.addEventListener('change', () => syncRuntimeSelection());
   runSettings.addEventListener('toggle', () => {
     if (runSettings.open) {
-      scheduleRuntimeRender();
+      runtimeRenderTimeline?.kill();
+      mountRuntimeChoices(buildRuntimeChoices(), { animate: false });
       requestAnimationFrame(animateSettingsOpen);
     } else {
+      openTimeline?.kill();
+      runtimeRenderTimeline?.kill();
       setLifecycle(settingsPanel, 'hidden');
+      setLifecycle(runtimeChoice, 'active');
+      if (window.gsap) window.gsap.set(settingsPanel.querySelectorAll('*'), { clearProps: 'transform,opacity,visibility' });
     }
   });
   runSettings.addEventListener('lucubro:close-execution', (event) => {
