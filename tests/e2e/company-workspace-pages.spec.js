@@ -212,3 +212,29 @@ test('context lenses change focus without replacing the Company Canvas shell', a
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
 });
+
+test('persistent composer returns focus to Manager canvas when it creates new Work', async ({ page }) => {
+  await page.setViewportSize({ width: 1100, height: 820 });
+  await page.goto(`${URL}/company`);
+  await page.evaluate(() => { window.__lucubroCanvasShellProbe = 'alive'; });
+
+  await page.locator('#run-settings > summary').click();
+  await page.locator('[data-runtime-id="mock"]').click();
+  await page.locator('#repo-dir').fill(FIXTURE_REPO);
+  await expect(page.locator('#repo-path-control')).toHaveAttribute('data-state', 'received');
+  await page.locator('#run-settings > summary').click();
+
+  await page.locator('#canvas-lens-trigger').click();
+  await page.getByRole('menuitem', { name: /Work/i }).click();
+  await expect(page.locator('body')).toHaveAttribute('data-canvas-lens', 'work');
+
+  const instruction = 'Start new Work from a focused lens';
+  await page.locator('#work-brief').fill(instruction);
+  await page.getByRole('button', { name: 'Send to Alex' }).click();
+
+  await expect(page).toHaveURL(`${URL}/company`);
+  await expect(page.locator('body')).toHaveAttribute('data-canvas-lens', 'manager');
+  await expect(page.locator('[data-canvas-intent]').filter({ hasText: instruction })).toBeVisible();
+  await expect(page.locator('[data-canvas-object="work"]').filter({ hasText: instruction })).toBeVisible();
+  expect(await page.evaluate(() => window.__lucubroCanvasShellProbe)).toBe('alive');
+});
