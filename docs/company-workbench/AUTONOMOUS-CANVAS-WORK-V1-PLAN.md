@@ -7,217 +7,328 @@
 - Persistence dependency: `PROJECT-PERSISTENCE-V1-SPEC.md` / PR #27.
 - Work/Run boundary: `SPEC.md`.
 - Runtime boundary: `RUNTIME-POLICY.md`.
-- Canonical acceptance fixture: Coffee Roast Beginner Guide.
+- Generalization canaries: Coffee Roast Beginner Guide and Website Build.
+
+## Reconciliation note
+
+The initial plan incorrectly treated `research-lucubro` and `teach-canvas` as new standalone capability packages. That was the wrong abstraction. Those task-specific adapter Skills have been removed from PR #28.
+
+The corrected architecture is:
+
+```text
+approved whole Skill bundles
+        ↓
+managed versioned roots
+        ↓
+full metadata catalog
+        ↓
+Work planner / Skill resolver
+        ↓
+dependency + compatibility closure
+        ↓
+lazy Skill mounts with receipts
+        ↓
+Luna Manager / specialist subruns
+        ↓
+Evidence + Lucubro Artifact ingestion
+        ↓
+Company Canvas / export / persistence
+```
+
+Host adaptation is a separate compatibility/output layer. It should not duplicate upstream Skill methodology.
 
 ## Current facts
 
 - Project persistence backend foundations already exist on the stacked parent branch.
 - Real provider execution remains paused by default.
 - Current Codex adapter launches `codex app-server`, starts/resumes threads, starts turns, maps public events, and routes approvals.
-- Current adapter does not attest the exact approved Luna Max/default/Fast-disabled/full-access profile.
-- Current official Codex App Server protocol exposes useful machine-verifiable seams including `model/list`, `config/read`, `permissionProfile/list`, `skills/list`, thread permission/profile projections, and selected skill/capability roots.
-- `research-lucubro` and `teach-canvas` Skill packages now define Lucubro-native methodology/output contracts and have passed the Skill validator/package flow.
+- Current adapter does not yet attest the complete approved Luna Max/default/Fast-disabled/full-access profile.
+- Current Codex App Server exposes useful machine-verifiable seams including `model/list`, `config/read`, `permissionProfile/list`, `skills/list`, skill roots, and thread profile projections.
+- Matt Pocock's repository is distributed as a complete composable Skill set and contains routing/setup patterns over that set.
+- gstack ships a broad specialist workflow library and supports Codex as a host, while some individual Skill assumptions can still require host-specific compatibility handling.
+- Both initial upstream repositories are MIT licensed.
+- Task-specific `research-lucubro` / `teach-canvas` Skill packages have been removed from the feature branch.
 
 ## Assumptions
 
-- The exact provider model id corresponding to the operator label `Luna Max` must be learned/confirmed from the trusted runtime rather than guessed in product code.
-- Lucubro should fail closed when a requested profile property cannot be verified.
-- Skill discovery/mounting should use Codex App Server skill APIs/roots where supported rather than relying on prompt claims.
-- The Manager remains the orchestration owner; specialist roles are subruns unless durable Employee responsibility already exists for an independent reason.
+- The exact provider model id corresponding to the operator label `Luna Max` must be confirmed from the trusted runtime and never guessed in product code.
+- Lucubro fails closed when a required runtime property cannot be verified.
+- Complete approved Skill bundles are installed/materialized once, while individual Skill bodies/resources are loaded only when selected.
+- Upstream Skill content remains source-identifiable and pinned.
+- The Manager remains the orchestration owner; temporary specialist roles are subruns unless durable Employee responsibility independently exists.
+- Host compatibility overlays are smaller than the upstream Skill and record the bundle/Skill versions they apply to.
+- The planner may use an upstream router/meta-skill when useful, but Lucubro still records selected/mounted downstream capability evidence.
 
 ## Technical approach
 
-Deliver tracer-bullet slices. Each slice starts with a failing test at the highest stable boundary and ends with regression gates.
+Deliver tracer-bullet slices. Each slice starts with failing tests at the highest stable boundary and ends with regression gates.
 
 ### Slice 0: Luna Runtime Admission
 
-Purpose: make real Codex impossible to start unless the approved execution profile is proven.
+Purpose: make real Codex impossible to start unless the approved execution profile is proven and Lucubro authority remains effective.
 
-- Add a provider-neutral runtime admission result shape with requested profile, observed/attested profile, mismatches, and evidence/provenance.
-- Add a Codex-specific profile verifier for the operator policy: Luna Max, default mode, Fast disabled, full access.
-- Query/consume Codex App Server machine-readable state rather than trusting model prose:
-  - model catalog / selected model;
-  - runtime-effective config;
-  - permission profile catalog / active profile;
-  - service/speed tier state when available.
-- Treat any unknown required field as blocked until a deterministic preflight proves it by an approved alternate source.
-- Keep `LUCUBRO_ENABLE_REAL_RUNTIMES=1` necessary but no longer sufficient. Real runtime exposure additionally requires successful admission.
-- Preserve Delegation Envelope checks after provider admission.
+Existing completed work:
 
-Validation:
+- pure fail-closed Luna profile verifier;
+- runtime policy no longer treats `LUCUBRO_ENABLE_REAL_RUNTIMES=1` as sufficient;
+- non-Codex real providers remain blocked for this slice.
 
-- exact profile passes;
-- wrong model/profile blocks;
-- Fast/speed-tier mismatch blocks;
-- missing attestation blocks;
-- wrong permission profile blocks;
-- explicit real-runtime flag without admission still blocks;
-- mock runtime remains unaffected.
+Remaining:
 
-### Slice 1: Skill Registry + Mount Receipt
+- collect app-server machine state for model/config/permission/speed/default-mode evidence;
+- capture trusted Worker receipt for the exact Luna Max provider id;
+- prove product-layer Delegation Envelope enforcement under provider full access;
+- keep real execution closed until all admission/authority checks pass.
 
-Purpose: prove the model can select methodology and Lucubro can prove what was actually mounted.
+### Slice 1: Managed Skill Bundle Store
 
-- Add a Skill Registry over approved Lucubro skills with compact metadata and immutable content identity/hash.
-- Register `research-lucubro` and `teach-canvas`.
-- Expose compact metadata to the Work planning pass.
-- Integrate Codex `skills/list` / supported skill roots for actual runtime discovery.
-- Add a mount request/receipt containing skill name, source/root, version/content hash, Run/subrun id, and observed mount result.
-- Never treat model text such as “I loaded research” as mount evidence.
+Purpose: make broad existing Skill ecosystems available once instead of authoring capability one task at a time.
 
-Validation:
+Add a `SkillBundleStore` / managed bundle root abstraction with a manifest such as:
 
-- selection metadata can be listed without loading full bodies;
-- mounted skill hash matches registry source;
-- unknown/unapproved skill cannot be silently mounted;
-- receipt survives Run persistence;
-- Manager and subrun receipts remain distinguishable.
+```text
+bundleId
+sourceType
+sourceRepository
+pinnedRef
+resolvedCommit
+license
+hostVariant
+rootPath
+digest
+installedAt
+updatedAt
+status
+```
 
-### Slice 2: Work Planning Pass
+Initial providers:
 
-Purpose: convert user intent into inspectable execution structure without exposing chain-of-thought.
+- `mattpocock/skills`;
+- `garrytan/gstack` using its Codex-compatible materialization path;
+- optional local/built-in roots already approved by Lucubro.
 
-- Add a structured planning state above Run creation.
-- Inputs: user intent, related durable Work/Artifacts, Project context when present, skill metadata, authority/runtime availability.
-- Outputs: complexity, durability class, Project/Issue action, skill sequence, staffing/subrun shape, evidence needs, deliverable type, blocked capabilities.
-- Keep planning output compact/public and separate from private reasoning.
+Implementation rules:
 
-Coffee expected plan:
-
-- durability: saved Work;
-- Project: none;
-- Issue: none;
-- skills: research-lucubro -> teach-canvas;
-- staffing: Manager + one bounded research specialist subrun;
-- evidence: required;
-- deliverable: Canvas Artifact.
-
-### Slice 3: Manager + Specialist Subrun orchestration
-
-Purpose: make proportional multi-agent work real without manufacturing Employees.
-
-- Introduce specialist subrun records beneath the owning Work/Manager orchestration state.
-- Use the same Luna Runtime Admission for every subrun.
-- Give each subrun a bounded objective, skill mounts, context, and Delegation Envelope.
-- Return normalized public result/evidence to the Manager.
-- Parallelize only independent breadth work with an explicit planning justification.
+- materialize the complete approved bundle, not a Coffee-specific subset;
+- keep bundle files outside normal user project diffs;
+- pin exact source state for determinism;
+- retain license/source attribution;
+- support rollback to a prior bundle version;
+- do not silently update a bundle in the middle of a Work.
 
 Validation:
 
-- one simple research subrun does not create an Employee;
-- two independent research branches may run in parallel when the plan explicitly requests them;
-- tightly sequential research->teach remains sequential;
-- subrun failure/blocked authority is visible to Manager without fabricating completion.
+- full bundle root survives restart;
+- exact upstream/ref/digest is inspectable;
+- update changes the bundle version atomically;
+- previous version can be restored;
+- user repository remains clean.
 
-### Slice 4: Research Packet -> Evidence Graph
+### Slice 2: Full Skill Catalog + Dependency/Compatibility Graph
 
-Purpose: convert external investigation into durable, claim-addressable evidence.
+Purpose: make the entire bundle inventory routable without injecting all instructions into model context.
 
-- Validate `research-lucubro` packet shape.
-- Persist claims/evidence/media candidates as Lucubro-owned normalized state.
-- Add claim-to-evidence edges and uncertainty state.
-- Keep external locators/provenance inspectable.
-- Introduce media rights/embedding eligibility state without guessing permissions.
+Add:
 
-### Slice 5: Teach Canvas -> Semantic Artifact IR
+- catalog scanner for all eligible `SKILL.md` entrypoints under approved roots;
+- compact metadata rows containing bundle, name, description, entrypoint, hash, host variant, and capability/dependency metadata when known;
+- `SkillDependencyResolver` for referenced Skills/resources/scripts/capabilities;
+- `SkillCompatibilityRegistry` with `native`, `overlay-required`, and `blocked` states;
+- versioned overlays for real host incompatibilities.
 
-Purpose: convert source-backed findings into a renderer-neutral learning artifact.
+Compatibility overlays should solve categories such as:
 
-- Validate `teach-canvas` packet shape.
-- Introduce a canonical Canvas Artifact IR with stable Artifact id and stable block ids.
-- Initial block vocabulary: explanation, comparison, spectrum, sequence, annotated media, decision tree, checklist, retrieval check, callout, source panel, hero.
-- Require evidence refs for material factual blocks.
-- Keep interactions semantic and require a static fallback.
+- unsupported user-question mechanisms;
+- unavailable browser/tool capabilities;
+- host-specific file/output conventions;
+- provider-specific control instructions that conflict with Luna-only/runtime policy.
 
-### Slice 6: Live Canvas renderer
+Do not create a new Skill merely to adapt final output to the Lucubro Canvas.
 
-Purpose: deliver the magazine-like “show, don’t tell” experience inside the persistent Company Canvas.
+Validation:
 
-- Render Artifact blocks through owned Lucubro components, not Skill HTML/JSX.
-- Preserve Alex/composer/Needs You/context continuity.
-- Use real source-backed imagery only when provenance and embedding policy permit it.
-- Surface citations/evidence contextually rather than as a wall of URLs.
-- Keep motion event/state-driven and reduced-motion equivalent.
+- catalog count reflects the complete installed bundle inventory;
+- metadata can be queried without reading every body;
+- selected Skill body is loaded lazily;
+- dependency closure is deterministic;
+- blocked Skills cannot be selected as executable;
+- overlay provenance is explicit.
 
-### Slice 7: Markdown + PDF export
+### Slice 3: Work Planner + Skill Resolver + Mount Receipts
 
-Purpose: make the same canonical Artifact portable.
+Purpose: turn ordinary user intent into an inspectable Skill graph without making the user learn the ecosystem.
 
-- Build exporters from Artifact IR, not by scraping rendered DOM.
-- Preserve headings, comparisons, captions, stable references, and evidence/source appendix.
-- Replace live interactions with meaningful static states/instructions.
-- Apply media embedding policy consistently.
+Planner inputs:
 
-### Slice 8: Related Work + Reference Graph
+- user intent;
+- Related Work/Artifact history;
+- Project context when present;
+- full catalog metadata;
+- current runtime/authority/tool availability;
+- compatibility states.
 
-Purpose: preserve useful continuity below Project level and enable cross-Canvas reuse.
+Planner outputs:
 
-- Add stable Artifact/block reference semantics.
-- Allow new Work to reference old Artifact/block state with provenance.
-- Support a V1 snapshot/reference mode with explicit semantics.
-- Add retrieval/linking based on user intent and durable state; do not silently mutate old Artifacts.
+- durability class;
+- Project/Issue action;
+- selected Skill graph;
+- dependency closure;
+- staffing/subrun shape;
+- Evidence expectations;
+- deliverable/Artifact shape;
+- blocked capabilities.
 
-### Slice 9: Progressive Project promotion + Issue discipline
+Execution steps:
 
-Purpose: organize repeated continuing work only when structure pays for itself.
+1. resolve candidate Skills from metadata;
+2. optionally invoke an upstream router/meta-skill when that is the most appropriate capability;
+3. compute dependency and compatibility closure;
+4. mount exact selected roots/Skills through Codex skill APIs/roots;
+5. verify actual runtime visibility using `skills/list` or the strongest available machine seam;
+6. persist Skill Mount Receipts bound to Run/subrun id and exact bundle/Skill hashes.
 
-- Define promotion signals: repeated related Work, persistent objective, accumulating durable state, unresolved frontier, explicit user request.
-- A single saved Work or Artifact is never enough.
-- Promotion preserves Work/Artifact/Evidence identities.
-- Issue creation requires independently trackable unresolved Project frontier.
-- Promotion/auto-organization must be inspectable and reversible.
+Never treat model prose such as "I used office-hours" as mount evidence.
 
-### Slice 10: Coffee Canary full acceptance
+Coffee expected behavior:
 
-Run the canonical journey through the real product seam:
+- saved Work;
+- no Project/Issue;
+- research/browsing methodology selected from the installed ecosystem when external evidence is needed;
+- teaching/explanation methodology selected when useful;
+- no Coffee-specific Skill package.
 
-ordinary request -> admitted Luna Manager -> plan -> research skill selection/mount -> research subrun -> Evidence -> teach skill mount -> semantic Artifact -> live Canvas -> restart -> export -> later related request -> reference reuse -> eventual Project promotion threshold.
+Website expected behavior:
 
-The first real-provider Coffee Canary may run only after Slice 0 admission is verified on the trusted Codex host.
+- planner can discover relevant office-hours/product discovery, spec, design/prototype, implementation, code-review, browser/QA, and delivery capabilities from the same catalog;
+- exact stages depend on the Work and can be omitted when unnecessary;
+- no `website-lucubro` Skill is authored.
+
+### Slice 4: Manager + Specialist Subrun Orchestration
+
+Purpose: compose selected Skills proportionally while the Primary Manager retains the user-facing Work.
+
+- Each subrun uses the same Luna admission gate.
+- Each subrun receives a bounded objective, selected Skill closure, context, and Delegation Envelope.
+- Independent breadth may run in parallel.
+- Ordered dependencies remain sequential.
+- Specialist roles do not create durable Employees automatically.
+- Subrun results return normalized public state/Evidence to the Manager.
+
+Validation:
+
+- simple Coffee does not manufacture multiple Employees;
+- Website Build can use several specialist phases/subruns without user orchestration;
+- failure/block state is visible without fabricated completion.
+
+### Slice 5: Heterogeneous Skill Output -> Evidence + Artifact Ingestion
+
+Purpose: stop third-party host conventions from becoming Lucubro product architecture.
+
+Introduce a generic output ingestion layer that classifies outputs into:
+
+- Evidence/source/tool result;
+- Artifact semantic content candidate;
+- file/diff/repository mutation;
+- decision/request for user authority;
+- transient execution note;
+- unsupported/blocked host output.
+
+Rules:
+
+- preserve upstream-produced files when the Work genuinely requests those files;
+- do not make a Skill's HTML/Markdown file tree the canonical Canvas identity merely because its original host expects it;
+- attach source/tool provenance at claim/block level where relevant;
+- do not preserve raw chain-of-thought.
+
+### Slice 6: Canvas Artifact IR + Renderer + Export
+
+Purpose: make Lucubro's deliverable model independent from whichever Skill produced the content.
+
+- canonical Artifact id and stable block ids;
+- evidence/reference edges;
+- semantic interaction descriptions with static fallbacks;
+- Lucubro-owned renderers inside the persistent Company Canvas;
+- Markdown/PDF exporters from Artifact IR, never DOM scraping;
+- real/source-backed media with explicit provenance/embedding rights state.
+
+### Slice 7: Related Work + Reference Graph + Project Promotion
+
+Purpose: keep useful continuity below Project level and introduce structure only when it pays for itself.
+
+- stable Artifact/block references across Work/Canvas;
+- Related Work retrieval/reuse before Project;
+- progressive Project promotion based on continued objective/state/frontier;
+- identity-preserving promotion;
+- Issues only for independently trackable Project frontier.
+
+### Slice 8: Generalization Eval Suite
+
+#### Canary A: Coffee
+
+Validate:
+
+ordinary intent -> catalog routing -> existing research/teaching capabilities -> mount receipts -> Evidence -> Canvas Artifact -> restart/export/reuse -> no premature Project.
+
+#### Canary B: Website Build
+
+Validate:
+
+ordinary website outcome -> office-hours/discovery when appropriate -> spec/planning -> design/prototype -> implementation -> review/browser QA -> deliverables/Canvas -> persistence/Project behavior.
+
+The eval does not require one exact Skill chain. It requires the chain to be justified, mounted from existing bundles, compatible with the host, evidenced, and sufficient for the requested outcome.
+
+A new acceptance vertical must normally be testable by changing the request/fixture, not by creating another Skill first.
 
 ## Key decisions
 
-- **ACW-DEC-001:** `LUCUBRO_ENABLE_REAL_RUNTIMES=1` is an exposure switch, not proof of the approved profile.
-- **ACW-DEC-002:** Required runtime profile fields fail closed when unknown.
-- **ACW-DEC-003:** Skill selection and Skill mount are separate states. Mount requires Lucubro-observed evidence.
-- **ACW-DEC-004:** `research-lucubro` and `teach-canvas` are methodology adapters, not renderers.
-- **ACW-DEC-005:** Specialist subruns are not Employees.
-- **ACW-DEC-006:** Work may persist indefinitely without a Project.
-- **ACW-DEC-007:** Canvas Artifact IR is canonical; React/Markdown/PDF are projections.
-- **ACW-DEC-008:** Evidence edges attach at claim/block level.
-- **ACW-DEC-009:** Project promotion is progressive and identity-preserving.
-- **ACW-DEC-010:** Real Coffee Canary is gated behind runtime admission; earlier slices use deterministic/fake app-server tests.
+- **ACW-DEC-001:** `LUCUBRO_ENABLE_REAL_RUNTIMES=1` is an exposure switch, not runtime admission proof.
+- **ACW-DEC-002:** Required Luna profile fields fail closed when unknown.
+- **ACW-DEC-003:** Complete approved Skill ecosystems are installed as versioned bundles; individual Skills are lazily loaded/mounted.
+- **ACW-DEC-004:** Upstream Skills remain canonical methodology sources. Host adaptation is a separate compatibility/output layer.
+- **ACW-DEC-005:** Ordinary new task categories should be solved by routing existing capabilities, not by authoring one-off Skills.
+- **ACW-DEC-006:** Skill selection and Skill mount are separate states with separate receipts.
+- **ACW-DEC-007:** Specialist subruns are not Employees.
+- **ACW-DEC-008:** Work may persist indefinitely without a Project.
+- **ACW-DEC-009:** Canvas Artifact IR is canonical; React/Markdown/PDF are projections.
+- **ACW-DEC-010:** Evidence edges attach at claim/block/tool-result level where applicable.
+- **ACW-DEC-011:** Bundle updates are explicit, pinned, testable, and reversible.
+- **ACW-DEC-012:** Coffee and Website Build must both pass before the Skill orchestration architecture is considered general.
 
-## First TDD sequence
+## Corrected TDD sequence
 
-1. Add failing tests for a pure Codex profile verifier.
-2. Implement the minimal verifier until those tests pass.
-3. Add failing adapter tests proving `available()`/preflight blocks unless machine-readable profile evidence satisfies policy.
-4. Integrate runtime admission into policy exposure so real-runtime flag alone cannot bypass it.
-5. Run static + full Node suite.
-6. Only then implement Skill Registry/mount tests.
+1. Finish Luna Runtime Admission and independent authority enforcement.
+2. Add failing tests for complete bundle manifest/materialization and restart behavior.
+3. Add failing tests that scan an entire fixture bundle containing many Skills, not two hard-coded names.
+4. Implement full catalog indexing with lazy body loading.
+5. Add dependency/compatibility tests including native, overlay-required, and blocked Skills.
+6. Add fake Codex `skills/list` tests proving selected Skill roots and mount receipts.
+7. Add Work Planner tests for two unrelated fixtures: Coffee and Website Build.
+8. Only after the generic substrate works, implement Evidence/Artifact ingestion and Canvas delivery.
+9. Run full static, Node, Chromium, restart, and canary gates before claiming verification.
 
 ## Traceability
 
-- ACW-REQ-001..004,025 -> Slice 0 -> runtime admission/verifier/adapter/policy tests.
-- ACW-REQ-005..009 -> Slice 1 and Slice 4/5 -> skill registry, mount receipts, adapter contracts.
-- ACW-REQ-010..012 -> Slice 2/3 -> planning and subrun orchestration.
-- ACW-REQ-013..014,024 -> Slice 4 -> Evidence Graph.
-- ACW-REQ-015..018,028 -> Slice 5/6/7 -> Artifact IR/render/export.
-- ACW-REQ-019..023,026..027 -> Slice 8/9/10 -> persistence/reference/promotion/restart acceptance.
+- ACW-REQ-001..004,027 -> Slice 0.
+- ACW-REQ-005..011 -> Slice 1/2.
+- ACW-REQ-012..014,027,028 -> Slice 3.
+- ACW-REQ-015..016 -> Slice 4.
+- ACW-REQ-017..021 -> Slice 5/6.
+- ACW-REQ-022..026 -> Slice 7.
+- All requirements -> Slice 8 Coffee + Website generalization eval.
 
 ## Out-of-band evidence required before real Luna smoke
 
-Before enabling a real Coffee Canary on the trusted Worker, capture and persist an operator-verifiable receipt containing:
+Before any real canary on the trusted Worker, capture:
 
 - Codex CLI/app-server version;
-- exact runtime model/profile id corresponding to the operator-approved `Luna Max` label;
-- runtime-effective selected model/config;
-- active/default mode state;
+- exact machine-readable model id corresponding to the approved `Luna Max` label;
+- effective selected model/config;
+- default-mode state;
 - Fast/speed-tier state;
 - active permission profile/full-access state;
 - Lucubro Delegation Envelope used for the Work;
-- mounted skill identities/hashes;
+- exact installed bundle refs/digests;
+- exact selected/mounted Skill hashes and overlay identities;
 - exact Run/subrun ids.
 
-If the installed Codex version cannot expose one of these required properties through app-server/config/catalog state, add a deterministic trusted-host preflight source or keep real execution blocked. Do not infer the missing property from model output.
+If required runtime or Skill-mount evidence cannot be proved, keep real execution blocked.
