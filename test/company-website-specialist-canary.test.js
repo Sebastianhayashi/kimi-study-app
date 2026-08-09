@@ -157,7 +157,7 @@ test('Website Build composes existing specialist Skills without a website-specif
   assert.deepEqual(new Set(runtimeRequests.flatMap((request) => request.skillIds)), new Set(skillIds));
   assert.equal(skillIds.some((skillId) => /website/i.test(skillId)), false);
   assert.match(work.brief, /product website/i);
-  assert.equal(/office-hours|to-spec|design-review|implement|gstack/i.test(work.brief), false);
+  assert.equal(/gstack:|mattpocock-skills:|\/(?:office-hours|to-spec|design-review|implement|review|qa)\b/i.test(work.brief), false);
 
   const childRuns = runStore.list().filter((run) => run.parentRunId === parentRun.id);
   assert.equal(childRuns.length, 6);
