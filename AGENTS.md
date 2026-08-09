@@ -14,11 +14,27 @@ Active product code:
 
 The previous learning-workspace product is frozen legacy. Do not add product features to it. Change legacy code only when required for repository integrity, migration, security, or regression compatibility while the Company Workbench becomes the default product.
 
+## Product document hierarchy
+
+Use product documents in this order:
+
+1. `docs/company-workbench/PRODUCT-THESIS.md` — governing product direction.
+2. durable product/domain decisions and glossary.
+3. `DESIGN-SYSTEM.md` / `MOTION-SYSTEM.md` — interaction expression.
+4. `SPEC.md` — current executable V1 engineering slice, not complete product IA.
+5. implementation code/tests — current realization.
+
+If a lower layer conflicts with a higher layer, correct the lower layer. Do not infer product strategy from a temporary screen or current navigation implementation.
+
 ## Product invariants
 
+- Multica is an operational backbone, not a screen template.
 - Conversation first, not chat-only.
 - **Conversation drives the canvas.** The Manager surface is a live company canvas whose durable objects change in response to user intent and real product events.
+- **Quiet surface, kinetic intelligence.** Stable state is calm; real intent/state changes become perceptible through motivated motion.
 - Stable space, changing objects. Prefer updating a visible Work / Artifact / Decision object in place over replacing it with disconnected messages, toasts, or new pages.
+- One Workspace-level Primary Manager remains the default CEO-facing relationship across Work Context changes.
+- Default Home is Work-first across Project and lightweight work.
 - Hide detail, not durable structure.
 - Lucubro owns Work, Run, authorization, Artifacts, decisions, and audit history.
 - Provider session/thread ids are execution references, never product identity.
@@ -29,6 +45,24 @@ The previous learning-workspace product is frozen legacy. Do not add product fea
 - A provider completion moves Work to review only after required evidence is available. CEO Accept/Rework is a separate durable decision.
 - A visible durable state must have an actionable path. Do not create dead-end counts or status surfaces.
 - A workspace path names the execution host. Never silently treat a browser-device folder as an execution-host path.
+
+## Surface taxonomy gate
+
+Before adding navigation or a permanent surface, classify the concept:
+
+- **Domain object** — durable product truth such as Work, Project, Issue, Employee, Run, Artifact, Decision.
+- **Canvas object** — a visible projection of domain state in the active scene.
+- **Lens** — a focused structured view over domain objects inside the persistent Company Canvas Shell.
+- **Transient interaction** — local acknowledgement, suggestion, loading/reconciliation, receipt, or focus state.
+- **Configuration surface** — infrastructure/policy controls such as provider/account/runtime/workspace/permissions.
+
+Hard rule:
+
+> **A domain object does not automatically earn a top-level page or navigation item.**
+
+Project, Knowledge, Usage, Account, Employees, Artifacts, and future nouns must be integrated according to their role and actual workflow. Do not create independent apps simply to prove that a capability exists.
+
+Normal lens changes must preserve the Company Canvas Shell: Lucubro identity, Alex relationship, composer, Needs You, and browser/deep-link continuity. Deep URLs are allowed; page-centric interaction is not required.
 
 ## UI/UX release checklist
 
@@ -53,7 +87,9 @@ At minimum verify:
 - no dashboard/card noise that competes with the Manager relationship;
 - no provider/runtime details in the default CEO surface unless they change the current decision;
 - live state updates mutate the object that owns the state instead of spraying disconnected notifications;
-- a real-time animation has a real product event or deterministic local state behind it.
+- a real-time animation has a real product event or deterministic local state behind it;
+- lens changes preserve shell continuity and browser history;
+- adding a domain concept does not automatically expand top-level navigation.
 
 Document material checklist trade-offs in the PR when a rule is intentionally not applicable.
 
@@ -88,12 +124,23 @@ The Manager canvas should project real events onto stable visible objects.
 - `Needs You` and Review may add decision surfaces, but the owning Work remains visually continuous.
 - Once an object reaches a stable state, animation stops.
 
+### Scene/lens continuity
+
+Normal context inspection uses scene focus, not product-page replacement.
+
+- current supporting content yields;
+- target lens enters the same canvas region;
+- History API records the deep route;
+- Alex/composer/Needs You remain stable shell anchors;
+- browser back/forward restores the semantic lens through the same controller;
+- a hard reload is reserved for direct navigation/reload, not ordinary in-product lens switching.
+
 ### Interaction honesty
 
 Animation is not permission to invent AI work.
 
-- Local input can animate `received`, `selected`, `reading input`, or another deterministic UI state.
-- `validated`, `connected`, `running`, `review-ready`, `completed`, or similar claims must be bound to the real API/domain/provider state that proves them.
+- Local input can animate `received`, `selected`, `reading input`, focus, or another deterministic UI state.
+- `validated`, `connected`, `running`, `review-ready`, `completed`, or similar claims must be bound to real API/domain/provider state that proves them.
 - Never create fake percentages, staged loading steps, thinking indicators, or ambient activity solely to imply that an AI is busy.
 - Do not expose raw model reasoning in an attempt to make the interface feel more alive.
 - The product should feel intelligent because it continuously responds to real state and compresses decisions, not because it performs fake progress theatre.
@@ -108,6 +155,7 @@ Execution setup remains progressive disclosure.
 - A hidden native/select value may remain as an internal compatibility seam when existing form logic owns the canonical runtime value.
 - Runtime selection produces an immediate receipt and updates the compact summary.
 - Workspace path uses a line-based input with an optional execution-host tree, not a large boxed field.
+- Workspace path is neutral at rest and must wake to Klein blue whenever the input has focus, regardless of whether the path already has a receipt state.
 - Typing a partial host path may show real directory suggestions.
 - The tree may list directories and create directories only within the configured host root. Do not expose arbitrary file content through this picker.
 - Client-folder drag/drop must state the browser-device / execution-host boundary honestly until an explicit import/native bridge exists.
@@ -134,6 +182,7 @@ Motion rules:
 - Motion must communicate state, hierarchy, causality, continuity, focus, acknowledgement, or receipt.
 - Real-time canvas motion must be triggered by deterministic local state or normalized product events.
 - Visible components use a complete `mount → entering → active → exiting → unmount/hidden/replacement` lifecycle when that transition is user-visible.
+- Scene/lens motion preserves shell anchors and changes focus instead of staging a fake page load.
 - Do not instantly replace a visible component set. Exit the old set, replace state/DOM, then enter the new set.
 - Exit choreography should normally be shorter than entrance choreography.
 - Prefer transforms and `autoAlpha`/opacity over layout properties.
@@ -167,9 +216,10 @@ For kinetic UI changes, verify at minimum:
 - visible replacement does not jump directly between DOM states;
 - live canvas state is driven by real Work/Run events;
 - Artifact / Needs You / Review appears on the owning durable object;
+- scene/lens changes preserve shell, URL, browser history, and composer access;
 - mobile containment and touch reachability;
 - reduced-motion end states;
 - unavailable provider states remain legible;
 - animation is not required for the underlying action to work.
 
-Real-provider behavior should additionally be exercised on a trusted local device through the manual self-hosted runner workflow when that work is intentionally resumed. Never let untrusted pull requests target a personal self-hosted runner.
+Real-provider behavior should additionally be exercised on a trusted local device through the manual self-hosted runner workflow only when that work is intentionally resumed. Never let untrusted pull requests target a personal self-hosted runner.
