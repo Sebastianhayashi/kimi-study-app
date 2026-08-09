@@ -23,6 +23,20 @@ async function waitForServer() {
   throw new Error('company-server did not become ready');
 }
 
+async function stopServer() {
+  if (!server || server.exitCode !== null) return;
+  await new Promise((resolve) => {
+    const forceTimer = setTimeout(() => {
+      if (server.exitCode === null) server.kill('SIGKILL');
+    }, 2_000);
+    server.once('exit', () => {
+      clearTimeout(forceTimer);
+      resolve();
+    });
+    server.kill('SIGTERM');
+  });
+}
+
 test.beforeAll(async () => {
   fs.rmSync(DATA_DIR, { recursive: true, force: true });
   server = spawn(process.execPath, [path.join(ROOT, 'company-server.js')], {
@@ -43,7 +57,7 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
-  if (server && !server.killed) server.kill('SIGTERM');
+  await stopServer();
   fs.rmSync(DATA_DIR, { recursive: true, force: true });
 });
 
