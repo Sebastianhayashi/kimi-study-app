@@ -77,6 +77,7 @@ test('literal Markdown escaping and code fences preserve semantics without openi
   assert.equal(markdownLiteral('- list\n# heading\n1. ordered'), '\\- list\n\\# heading\n1\\. ordered');
   assert.equal(markdownLiteral('![image](path)'), '\\!\\[image\\](path)');
   assert.equal(markdownLiteral('<img>&'), '&lt;img&gt;&amp;');
+  assert.equal(markdownLiteral('*em* _under_ `code` ~sub~ ^sup^'), '\\*em\\* \\_under\\_ \\`code\\` \\~sub\\~ \\^sup\\^');
   assert.equal(codeFence('before ````` after'), '``````');
   assert.equal(codeFence('plain code'), '```');
 });
