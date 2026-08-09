@@ -16,7 +16,25 @@ const { createSkillBundleStore } = require('../lib/company/skill-bundle-store');
 const { createSkillBundleMaterializer } = require('../lib/company/skill-bundle-materializer');
 const { APPROVED_SKILL_BUNDLE_MANIFESTS } = require('../lib/company/skill-bundle-providers');
 
-function fakeAppServer() {
+const DEFAULT_MODELS = [
+  {
+    id: 'luna-real-id',
+    model: 'luna-provider-slug',
+    displayName: 'Luna Max',
+    isDefault: false,
+    defaultServiceTier: null,
+    additionalSpeedTiers: ['fast'],
+    serviceTiers: [{ id: 'fast', name: 'Fast' }],
+  },
+  {
+    id: 'other-id',
+    model: 'other-provider-slug',
+    displayName: 'Other Model',
+    isDefault: true,
+  },
+];
+
+function fakeAppServer({ models = DEFAULT_MODELS } = {}) {
   const calls = [];
   const process = new EventEmitter();
   process.stdout = new PassThrough();
@@ -41,25 +59,7 @@ function fakeAppServer() {
             platformOs: 'linux',
           };
         } else if (message.method === 'model/list') {
-          result = {
-            data: [
-              {
-                id: 'luna-real-id',
-                model: 'luna-provider-slug',
-                displayName: 'Luna Max',
-                isDefault: false,
-                defaultServiceTier: null,
-                additionalSpeedTiers: ['fast'],
-                serviceTiers: [{ id: 'fast', name: 'Fast' }],
-              },
-              {
-                id: 'other-id',
-                model: 'other-provider-slug',
-                displayName: 'Other Model',
-                isDefault: true,
-              },
-            ],
-          };
+          result = { data: models };
         } else if (message.method === 'config/read') {
           result = {
             config: {
@@ -142,36 +142,23 @@ test('host diagnostic discovers Luna/config/permission profiles without starting
 });
 
 test('host diagnostic refuses to invent a Luna model id when catalog match is ambiguous', async () => {
-  const fake = fakeAppServer();
-  const originalSpawn = fake.spawnImpl;
+  const fake = fakeAppServer({
+    models: [
+      { id: 'luna-a', model: 'luna-a', displayName: 'Luna Max' },
+      { id: 'luna-b', model: 'luna-b', displayName: 'Luna Max' },
+    ],
+  });
   const result = await inspectCodexHost({
     cwd: '/work/lucubro',
+    spawnImpl: fake.spawnImpl,
     now: () => '2026-08-09T14:00:00.000Z',
-    spawnImpl(command, args, options) {
-      const child = originalSpawn(command, args, options);
-      const originalWrite = child.stdin._write.bind(child.stdin);
-      child.stdin._write = function patchedWrite(chunk, encoding, callback) {
-        const message = JSON.parse(String(chunk).trim());
-        if (message.method !== 'model/list') return originalWrite(chunk, encoding, callback);
-        fake.calls.push(message);
-        child.stdout.write(`${JSON.stringify({
-          id: message.id,
-          result: {
-            data: [
-              { id: 'luna-a', model: 'luna-a', displayName: 'Luna Max' },
-              { id: 'luna-b', model: 'luna-b', displayName: 'Luna Max' },
-            ],
-          },
-        })}\n`);
-        callback();
-      };
-      return child;
-    },
   });
 
   assert.equal(result.lunaMax.uniqueMatch, false);
   assert.equal(result.lunaMax.modelId, null);
   assert.deepEqual(result.lunaMax.matches.map((match) => match.id), ['luna-a', 'luna-b']);
+  assert.equal(fake.calls.some((call) => call.method === 'thread/start'), false);
+  assert.equal(fake.calls.some((call) => call.method === 'turn/start'), false);
 });
 
 test('bundle diagnostic recomputes real materialized digests and verifies pinned manifests', () => {
