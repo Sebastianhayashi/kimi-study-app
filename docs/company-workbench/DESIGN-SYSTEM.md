@@ -1,79 +1,165 @@
 # Lucubro Company Workbench design system
 
-This document defines the visual and interaction system for the Company Workbench. It is product-specific. Alex remains the primary interface, while durable Work, Employees, evidence, decisions, execution controls, and motion become visible when they carry operational value.
+This document translates [`PRODUCT-THESIS.md`](PRODUCT-THESIS.md) into visual and interaction rules.
+
+It does not define product strategy by inventing navigation. Domain objects, lenses, and configuration surfaces must follow the product thesis and durable domain decisions first.
 
 ## Design read
 
 - Product: single-person company AI operating workbench.
 - Primary user: CEO / owner-operator.
+- Core metaphor: one persistent AI company canvas, not a collection of SaaS pages.
 - Language: calm, technical, decisive, minimal without feeling empty.
 - Foundation: Geist typography, native CSS, current product DOM, GSAP for motivated motion.
+- Brand axis: Klein blue around `#002FA7`.
 - Design variance: 6/10.
 - Motion intensity: 7/10.
 - Visual density: 6/10.
 
 The interface should feel quieter than a dashboard but more alive than a chat window.
 
+## Product inheritance
+
+Multica is an operational backbone, not the UI template.
+
+Lucubro preserves:
+
+- durable Work/Issue state separate from Runs;
+- evidence-first and decision-bearing structure;
+- structured live activity instead of raw output;
+- progressive disclosure;
+- explicit authority and inspectability;
+- low-noise, high-information-density surfaces;
+- semantic status color;
+- truthful unknown/loading/error states.
+
+Lucubro departs from rigid screen-first interaction by allowing durable structure to materialize, update, focus, and recede around the current Work.
+
 ## Core interaction model
 
-Lucubro has two linked interaction principles:
+Two principles govern the product:
 
 > **Quiet surface, kinetic intelligence.**
 >
 > **Conversation drives the canvas.**
 
-The Manager surface is a live company canvas. Conversation is the input protocol that creates and mutates durable product objects.
+Conversation is one input protocol for durable company state. It is not a disposable chat transcript and not a sidebar attached to a separate project-management application.
 
-The canvas is not a freeform diagram editor. Spatial anchors remain predictable while Work, Employee assignment, Run state, Artifact evidence, and decisions change in place.
+The Company Canvas is semantic, not a freeform diagram editor. Spatial anchors remain predictable while Work, responsibility, Project context, evidence, decisions, and execution state change in place.
 
-A normal sequence is:
+A normal causal sequence is:
 
 ```text
 Intent
-  → Work formed
-  → Employee / Run attached
-  → live normalized events
-  → Artifact / Needs You / Review
-  → stable state
+  → durable Work forms
+  → responsibility becomes visible
+  → normalized live events update that Work
+  → evidence grows inside the Work
+  → Project context grows when warranted
+  → Needs You / Review changes the same object
+  → stable state settles
 ```
 
 When the user or system is not changing state, motion stops.
 
 ### Interaction rhythm
 
-1. **Acknowledge**: immediately show that input or selection was received.
-2. **Interpret / structure**: reveal the affected structure in a short coordinated sequence.
-3. **Receipt**: confirm only state Lucubro actually owns or has evidence for.
-4. **Settle**: return the surface to a quiet stable state with context preserved.
+1. **Acknowledge** — immediately show that an input or selection was received.
+2. **Interpret / structure** — reveal the affected structure in a coordinated sequence.
+3. **Receipt** — confirm only state Lucubro actually owns or can substantiate.
+4. **Settle** — return the surface to a quiet stable state while context remains visible.
 
 Animation should reduce uncertainty, not add ceremony.
 
-### Honesty boundary
+## Surface taxonomy
 
-Allowed examples:
+Every visible concept must be classified before it receives navigation or permanent screen real estate.
 
-- `Intent received` after the submission begins.
-- `Work formed` after the Work API returns durable Work.
-- `Repository found` after the host workspace API inspects the directory.
-- a runtime selection receipt after the user chooses a runtime.
-- `Ready for review` only after canonical Run completion and Artifact evidence.
-- Needs You only after a real approval request.
+### Domain object
 
-Disallowed examples:
+Durable product truth: Work, Project, Issue, Employee, Run, Artifact, Decision.
 
-- fake thinking;
-- fake token streams;
-- fake percentages;
-- staged AI progress unsupported by product events;
-- `Repository found` when the browser merely received path text;
-- `Agent working` because a button was pressed;
-- raw chain-of-thought.
+A domain object does **not** automatically receive a top-level page.
 
-Lucubro should feel alive because it responds to real state, not because it performs fake AI theatre.
+### Canvas object
+
+A visible projection of durable state in the active scene, for example an active Work object or Artifact evidence mounted inside it.
+
+### Lens
+
+A focused structured view over domain objects while the persistent Company Canvas Shell remains present.
+
+Examples:
+
+- durable Work index;
+- Project Issues / Map / Activity;
+- Employee responsibility/capability inspector;
+- execution evidence or runtime state.
+
+A lens can have a deep URL without becoming a separate application page.
+
+### Transient interaction
+
+Short-lived state such as an intent acknowledgement, path suggestions, selection receipt, loading/reconciliation state, or focus feedback.
+
+Transient state must not be presented as durable truth.
+
+### Configuration surface
+
+Infrastructure or policy controls such as provider/account state, runtime configuration, workspace root, permissions, or advanced workforce configuration.
+
+These surfaces appear when relevant and normally stay secondary to CEO work.
+
+## Persistent Company Canvas Shell
+
+The shell owns the stable relationship and input layer:
+
+- Lucubro identity;
+- Alex, the Workspace-level Primary Manager;
+- command composer;
+- Needs You attention;
+- current Work Context;
+- current canvas lens/focus;
+- browser history / deep-link state.
+
+Normal lens changes should update the scene inside this shell through History API rather than hard-reloading the product.
+
+The shell must not disappear when the user focuses durable Work, an Employee, evidence, or execution settings.
+
+### Canvas focus control
+
+The current implementation uses one compact `Focus` control instead of a permanent row of product tabs.
+
+It exists to change the current lens, not to advertise every domain noun in the system.
+
+Current implementation lenses may include:
+
+- Manager canvas;
+- Work;
+- Employees / responsibility;
+- advanced execution settings.
+
+This list is **not** the canonical product IA. Project, Knowledge, Usage, Account, Artifact, and future concepts must not be appended automatically. They become lenses or contextual surfaces only when a real workflow earns them.
+
+## Information hierarchy
+
+The CEO should normally perceive this order:
+
+1. relationship / current company context;
+2. current Work and responsibility;
+3. live meaningful change;
+4. blocker / risk / Needs You;
+5. evidence / Artifact / Review;
+6. project or execution detail when relevant;
+7. infrastructure details only when they affect the decision.
+
+Mechanisms should not visually outrank outcomes.
 
 ## Color system
 
-Klein blue is the brand axis, not the paint bucket. Brand blue is used for identity, primary actions, active structure, selection, live canvas state, focus, and review-ready structure. Neutral surfaces carry most of the application. Semantic colors are reserved for meaning.
+Klein blue is the brand axis, not the paint bucket.
+
+Brand blue is used for identity, primary action, focus, selection, active structure, and review-ready structure. Neutral surfaces carry most of the application. Semantic colors remain reserved for meaning.
 
 ### Brand blue scale
 
@@ -102,7 +188,7 @@ Klein blue is the brand axis, not the paint bucket. Brand blue is used for ident
 - Border: `#e1e6ef`
 - Strong border: `#cbd3e1`
 
-The neutral family stays cool so Klein blue reads as intentional rather than pasted on top.
+Muted metadata used at small sizes must maintain readable contrast. Do not lighten text merely to make the interface look more delicate.
 
 ### Semantic colors
 
@@ -110,314 +196,297 @@ The neutral family stays cool so Klein blue reads as intentional rather than pas
 - Accepted / available / evidence-ready: green `#176a4d`
 - Failed / destructive error: red `#a23f37`
 
-Semantic colors never compete with the brand for general CTA ownership.
+Semantic colors never compete with Klein blue for general CTA ownership.
 
 ## Typography
 
-Geist remains the only product type family.
+Geist remains the product type family.
 
-- Display: 630 weight, tight tracking, balanced wrapping.
-- Product headings: 620 to 660.
-- Body: 400 to 500 with roughly 60 to 70 character measure.
-- Metadata: 560 to 650, never rely on low-contrast 400-weight microcopy.
+- Display: roughly 630 weight, tight tracking, balanced wrapping.
+- Product headings: 620–660.
+- Body: 400–500 with roughly 60–70 character measure.
+- Metadata: 560–650, especially at 10–12px sizes.
 - Numeric state: tabular figures.
 
-Hierarchy is created through size, weight, line height, spacing, and structure before color.
+Hierarchy comes from size, weight, line-height, spacing, and structure before color.
 
 ## Spacing and rhythm
 
 Use a 4px base rhythm with common steps of 8, 12, 16, 20, 24, 32, 40, and 56px.
 
-Whitespace must connect related content. Large empty areas are not a feature. The Manager front door contains:
+Whitespace must connect related content. Large empty acreage is not a feature.
 
-1. Manager relationship.
-2. Outcome prompt.
-3. Manager operating model.
-4. Working set.
-5. Durable Work Context when stored Work exists.
-6. Live canvas objects produced by current intent and real events.
-7. Composer.
+The Manager canvas can contain:
 
-When live Work appears, the intro may visually compact so active company state becomes the center of gravity without removing the Manager relationship.
+1. Manager relationship;
+2. outcome prompt;
+3. Working set;
+4. Durable Work Context when stored Work exists;
+5. live Intent / Work objects;
+6. contextual evidence and decisions;
+7. command composer.
+
+When live Work appears, intro content may compact so active state becomes the center of gravity without erasing the Manager relationship.
 
 ## Radius and elevation
 
-- Controls: 10px.
-- Work / context objects: 14 to 17px.
-- Popovers / composer: 18px.
+- Controls: around 10px.
+- Work/context objects: around 14–17px.
+- Popovers/composer: around 18px.
 
-Elevation is functional. Inline Work stays relatively flat. Disclosure panels use medium elevation. The docked composer can use the strongest shadow because it floats over active Work.
+Elevation is functional. Inline Work remains relatively flat. Temporary menus/disclosures use moderate elevation. The docked composer may use the strongest shadow because it floats over active state.
 
 Avoid card-on-card nesting unless the nested block has a distinct interaction contract.
 
-## Product information architecture
-
-The Company shell exposes four sections without a permanent sidebar:
-
-- **Manager**: live canvas and command front door.
-- **Work**: durable Work index.
-- **Employees**: durable identities and real assignment counts.
-- **Settings**: runtime availability and host workspace state.
-
-The section navigation is compact and horizontal. It must not compete with Alex as the product relationship layer.
-
-## Core product surfaces
+## Core canvas objects
 
 ### Manager relationship
 
-Alex is visible in the top bar and opening prompt. Presence uses semantic green only for availability. Avatar and product identity use Lucubro blue.
+Alex remains visible as the CEO-facing Primary Manager identity. Changing Work Context or lens must not silently imply a different default Manager relationship.
 
 ### Working set
 
-The Working set is not a dashboard. It is a compact projection of actionable current and durable Work.
+The Working set is a compact projection, not a dashboard.
 
-It shows:
+It may expose:
 
-- Active Work.
-- Review-ready Work.
+- Active Work;
+- Review-ready Work;
 - Needs You decisions.
 
-Counts come from real product state. Do not invent productivity metrics. A durable count is allowed only when the corresponding Work can be opened and acted on.
+Counts come from real product state and require an actionable path. Do not invent productivity metrics.
 
-### Live canvas intent
+### Intent object
 
-A submitted instruction enters the Manager canvas as an **Intent object**, not a conventional chat bubble.
+A submitted instruction enters the canvas as an Intent object rather than a conventional chat bubble.
 
 States:
 
-- `receiving`: the request is being sent/structured into Work;
-- `formed`: the Work API has returned durable Work and Employee assignment;
-- `failed`: durable Work could not be formed.
+- `receiving` — submission is being converted into durable Work;
+- `formed` — Work creation succeeded;
+- `failed` — Work could not be formed.
 
-The receipt text changes in place. Do not append several manager bubbles to explain one causal transition.
+The receipt changes in place. Do not append several manager messages to explain one causal transition.
 
 ### Live Work object
 
-A current Work object is the primary real-time surface.
+The Work object is the primary real-time surface.
 
-It contains:
+It can contain:
 
-- durable Work identity and Employee;
-- semantic Work status;
-- one live state region for the newest normalized public Run state;
-- a compact recent-event trace;
-- Artifact evidence when it exists;
-- Execution details as secondary disclosure;
+- durable Work identity;
+- responsible Employee;
+- semantic Work state;
+- one live state region for newest normalized public execution state;
+- compact recent-event trace;
+- Artifact evidence;
+- execution detail as secondary disclosure;
 - Needs You or Review actions when required.
 
-Public incremental runtime updates replace the live state region. They do not create one bubble per token/event.
-
-The object should visually retain identity while its left signal rail and live state adopt neutral, authority, evidence-ready, or error semantics.
+Public incremental runtime updates replace the live state region. They do not create one bubble per token or tool event.
 
 ### Durable Work Context
 
-Durable Work Context bridges the current canvas and persistent company state. It appears only when stored Work exists and stays inline below the Working set.
+Reload restores durable Work and evidence, not fabricated historical conversation.
 
-The contract is:
+The context can expose title, responsibility, updated time, semantic state, latest attached Run, recent meaningful activity, Artifact evidence, and review actions.
 
-- reload restores Work objects, not fabricated historical chat;
-- each row exposes title, Employee, updated time, and semantic status;
-- selecting a Work reveals the latest attached Run, recent activity, Artifact evidence, and execution metadata;
-- review-ready Work exposes Accept / Rework directly;
-- accepted and terminal Work remain inspectable without pretending to be active;
-- loading copy says what is being recovered;
-- evidence-load failure preserves the Work row and reports unavailable evidence rather than hiding the Work.
+Evidence-load failure preserves the Work object and reports unavailable evidence rather than making the Work disappear.
 
-### Work index
+### Project context
 
-The Work section is a list of durable Work, not a dashboard of metrics. Rows expose title, Employee/time context, semantic status, and an actionable return path to Work Context.
+Project is a durable Work Context for long-running, multi-part work. It is not mandatory setup before the CEO can express intent.
 
-### Employees
+When implemented, Project can grow around Work and expose Issues / Map / Activity / Decisions / dependencies / Artifact history as lenses inside the persistent shell.
 
-Employees are durable identities. The Employees section shows only identities returned by product state. Do not fabricate departments, headcount, roles, or performance metrics to fill the page.
+Do not create an empty Projects app merely to prove that Project exists.
+
+### Employee responsibility
+
+Employees are durable identities. Employee information appears where responsibility matters and can open a contextual inspector for role/capability details.
+
+Do not fabricate departments, headcount, performance metrics, or an org-chart dashboard to fill space.
+
+### Knowledge
+
+Knowledge should first appear as context/source/memory/evidence used by Work/Project. A global library is permitted only when a real search/archive workflow justifies it.
+
+### Usage and account state
+
+Usage/cost appears with the Work/Run/runtime that incurred it or when a budget boundary affects a decision.
+
+Provider/account state is infrastructure and normally remains Advanced/Settings unless it blocks current Work.
 
 ### Artifact
 
-Artifacts remain inside the Work that owns them. Summaries say what evidence exists, for example `Code changes · 1 file`, rather than generic `Details` copy.
-
-Artifact mount/update motion is event-driven. Evidence does not appear before the corresponding Artifact event.
+Artifacts stay attached to owning Work. Summary copy should say what evidence exists, such as `Code changes · 1 file`, rather than generic `Details`.
 
 ### Needs You
 
-Needs You is the interruptive decision surface. Amber communicates authority change while approve actions remain brand blue.
+Needs You is the interruptive authority surface.
 
-The panel must support keyboard focus, Escape dismissal, click-away dismissal, empty state, multiple decision cards, and explicit approval / denial wording.
-
-The owning Work remains visible and moves into the same authority tone while the decision is pending.
+Amber communicates the authority boundary while approve actions remain Klein blue. The owning Work remains visible and continuous while the decision is pending.
 
 ### Composer
 
-The composer is the command surface, not the biggest card on the page. On a truly empty front door it follows the Working set in normal flow. Once current or durable Work exists, it becomes a fixed bottom dock so the CEO can issue the next instruction without losing Work context.
+The composer is the persistent command surface, not the biggest card in the product.
 
-Submission should visually connect the input action to the new Intent object and use the normal Execution setup exit lifecycle rather than instantly hiding the disclosure.
+On an empty Manager scene it may follow content in normal flow. With active Work or a focused non-Manager lens it can dock so the CEO can redirect work without leaving current context.
 
 ### Execution setup
 
-Execution setup is progressive disclosure. Workspace and runtime details are implementation context, not the default CEO surface.
-
-When opened, however, it should feel unusually direct and responsive.
+Execution setup remains progressive disclosure. Runtime/workspace mechanics are not the default CEO surface, but when opened they should feel unusually direct and responsive.
 
 #### Runtime choice
 
-- Do not hide execution engines inside a native select in the primary interaction.
-- Present available and unavailable runtimes together as a compact horizontal / grid choice surface.
-- Claude Code, Codex, Mock, and future adapters use the same runtime-choice contract.
-- Each choice has a compact mark, name, and availability state.
-- Unavailable runtimes stay visible but disabled.
-- Selection gives an immediate receipt and updates the compact summary.
-- Keyboard semantics use a radiogroup / radio model.
-
-The native runtime value may remain hidden underneath as an implementation seam.
+- visible runtime rail instead of a native select as the primary UI;
+- available and unavailable runtimes share one contract;
+- unavailable choices stay visible but disabled;
+- selection gives immediate truthful receipt;
+- keyboard semantics follow radio-group behavior.
 
 #### Host Workspace picker
 
 Workspace is an execution-host concept.
 
-The default visual control remains one quiet line, but it can expand into real navigation when needed.
+The default control is one quiet line that becomes active only when needed.
 
 Capabilities:
 
-- disclosure triangle opens an inline execution-host directory tree;
-- tree nodes expand/collapse on demand;
-- typed path prefixes show real host directory suggestions;
-- selecting a path triggers real host inspection;
-- host inspection may truthfully return `Repository found` or `Folder found`;
-- a `New folder` action creates a real directory inside the configured root;
-- manually entered paths outside the browsable root remain allowed as unverified input and are validated later at the Work boundary;
-- normal tree listing omits hidden directories;
-- the picker does not expose arbitrary file-content reads.
+- disclosure triangle opens execution-host directory tree;
+- nodes expand/collapse on demand;
+- typed prefixes show real host directory suggestions;
+- selected path receives real host inspection;
+- `Repository found` / `Folder found` only after inspection evidence;
+- `New folder` creates a directory inside configured root;
+- hidden directories omitted from normal listing;
+- no arbitrary file-content read API.
 
-States:
+Visual states:
 
-- `empty`: quiet neutral line;
-- `focused`: Klein-blue line wakes;
-- `reading`: one-shot trace while host suggestion/inspection is resolving;
-- `received`: manual path received but not host-verified;
-- `folder-found`: real host directory evidence;
-- `repository-found`: real host Git evidence;
-- error: failed host access or invalid operation.
+- `empty` — neutral gray line;
+- `focused` — Klein-blue line wakes;
+- `reading` — blue line + one-shot reading trace;
+- `received` — manual path received, not necessarily verified;
+- host-found repository/folder — verified receipt;
+- error — failed host access or invalid operation.
+
+Focus is orthogonal to receipt state: a previously received path must still wake to Klein blue whenever the user focuses the input.
 
 #### Client folder drag
 
-A browser on another machine cannot turn a client folder into an execution-host path merely by dragging it into the page.
+A client-side folder dragged from another machine is not an execution-host path.
 
-If a client-side directory is dropped while the execution host is remote:
-
-- acknowledge the folder was detected;
-- explain that it belongs to the browser device;
-- do not overwrite the host workspace path;
-- do not claim it is runnable;
-- future support must use an explicit copy/import flow or native same-host bridge.
+Detect and acknowledge it, explain the boundary, and require future explicit import/copy or native same-host bridging. Never overwrite host path state or claim it is runnable without evidence.
 
 ## Motion system
 
 Motion communicates hierarchy, feedback, causality, continuity, focus, and state ownership.
 
-GSAP owns coordinated product sequences including:
+Three scales are used:
+
+- **micro** — focus, selection, receipt, disclosure, suggestions/tree;
+- **object** — Intent/Work/Artifact/Decision mount/update/settle;
+- **scene** — lens/focus changes while the shell remains continuous.
+
+GSAP can coordinate:
 
 1. shell / Working set entrance;
 2. state-count changes;
 3. Intent mount and receipt replacement;
-4. Work-object formation;
-5. live Run event replacement inside the Work object;
+4. Work formation;
+5. live event replacement inside Work;
 6. Artifact mount/update;
-7. Work transitions into Needs You, Review, Accepted, or Failed;
-8. Durable Work entrance and selected detail;
-9. Execution setup entrance / exit;
-10. runtime-choice mount/replacement/selection;
-11. workspace tree, suggestions, inspection receipts, and create-folder feedback.
+7. Needs You / Review / Accepted / Failed transitions;
+8. Durable Work selection/detail;
+9. lens menu and scene focus transitions;
+10. Execution setup lifecycle;
+11. runtime-choice lifecycle;
+12. workspace focus/tree/suggestion/receipt/create-folder feedback.
 
-### Timing grammar
+Typical timing grammar:
 
-- acknowledgement: roughly 80 to 160ms;
-- small exit: roughly 100 to 160ms;
-- selection / local receipt: roughly 180 to 280ms;
-- real-time event replacement: roughly 120 to 240ms;
-- evidence-region entrance: roughly 180 to 300ms;
-- coordinated reveal: roughly 220 to 420ms.
+- acknowledgement: 80–160ms;
+- small exit: 100–160ms;
+- local selection/receipt: 180–280ms;
+- live event replacement: 120–240ms;
+- evidence entrance: 180–300ms;
+- scene/lens transition: roughly 180–360ms;
+- coordinated disclosure reveal: 220–420ms.
 
-No deliberate delay should make a deterministic action or real incoming event feel slower than it is.
+No deliberate delay should make deterministic actions or real events feel slower than they are.
 
-### Implementation rules
-
-- Prefer GSAP timelines for coordinated sequences instead of arbitrary delay chains.
-- Prefer transforms and `autoAlpha` / opacity over layout properties.
-- Use stagger for related choices that enter as one group and reverse stagger on exit.
-- Use one-shot event pulses, never infinite ambient AI animation.
-- Do not animate width, height, top, left, margin, or padding when a transform can communicate the same transition.
-- Kill or revert animations on lifecycle teardown.
-- Use `will-change` only on elements that actually animate.
-- `prefers-reduced-motion: reduce` skips non-essential movement and lands directly in the same semantic state.
-- Product state remains understandable when GSAP fails to load.
-- No ScrollTrigger on ordinary application scrolling.
-- Animation reacts to product/domain state. It never becomes the source of truth for that state.
-
-See [`MOTION-SYSTEM.md`](MOTION-SYSTEM.md) for the complete lifecycle and event choreography.
+See [`MOTION-SYSTEM.md`](MOTION-SYSTEM.md).
 
 ## Responsive contract
 
-### Desktop, 861px and above
+### Desktop
 
-- roughly 980 to 1060px maximum Manager canvas.
-- Manager relationship remains centered in the top bar.
-- Working set uses one description column and three compact numeric columns.
-- Live Work objects keep a stable left canvas spine and readable evidence width.
-- Durable Work expands inline.
-- Runtime choices use a compact multi-column rail.
-- Workspace tree remains inline inside Execution setup.
+- roughly 980–1060px maximum primary canvas width;
+- Manager relationship remains legible in top bar;
+- lens focus control is compact, not a permanent tab row;
+- live Work retains stable signal gutter;
+- contextual lenses preserve composer access;
+- runtime choices use compact columns/rail;
+- workspace tree stays inline in Execution setup.
 
-### Tablet, 561 to 860px
+### Tablet
 
-- Working set stacks description above metrics.
-- Work stays aligned to the canvas gutter where space allows.
-- Durable Work remains inline without horizontal page scrolling.
-- Runtime choices compress but keep names and availability readable.
-- Workspace tree uses bounded vertical scrolling.
+- Working set can stack description above metrics;
+- Work and lens content retain canvas alignment;
+- runtime choices compress while names and availability remain readable;
+- workspace tree uses bounded vertical scrolling.
 
-### Mobile, 560px and below
+### Mobile
 
-- Brand wordmark may collapse to the mark.
-- Manager remains identifiable.
-- Needs You retains text plus count.
-- Top-level Company navigation scrolls horizontally without page overflow.
-- Working set occupies full canvas width.
-- Canvas spine moves to the smallest useful gutter.
-- Intent and Work become full width.
-- Live state wraps its descriptive copy instead of truncating it.
-- Runtime choices become a contained horizontal scroll rail.
-- Workspace remains a full-width line control; the tree is vertically bounded.
-- Empty-state composer follows content flow; active Work composer docks with safe-area spacing.
-- Touch actions keep at least 40 to 44px practical target height where space permits.
+- brand wordmark may collapse to mark;
+- Alex remains identifiable;
+- Needs You retains text + count;
+- lens selector becomes a contained popover rather than horizontal product navigation;
+- Work/Intent use full useful width;
+- live state wraps instead of truncating essential copy;
+- runtime choices can become horizontal scroll rail;
+- workspace tree is vertically bounded;
+- composer remains reachable with safe-area spacing;
+- practical touch targets are about 40–44px where space allows;
+- no lens/menu/tree motion may create horizontal page overflow.
 
 ## Checklist Design release gate
 
-Every Company UI change should verify:
+Every Company UI change is reviewed against Checklist Design for:
 
-### Design system
+### System
 
-- Typography hierarchy, weight, leading, and usage are consistent.
-- Brand colors have documented roles, not only hex values.
-- Spacing, radius, and elevation follow shared tokens.
+- typography hierarchy and readable measure;
+- spacing rhythm/alignment;
+- semantic color and contrast;
+- shared radius/elevation roles.
 
-### Components and states
+### Component states
 
-- Buttons: default, hover, active, focus-visible, disabled, loading.
-- Inputs: label, placeholder, focus, invalid/error, disabled.
-- Runtime choice: available, unavailable, selected, keyboard focus, receipt.
-- Workspace path: empty, focused, reading, received, host-found, error, disabled.
-- Workspace tree: collapsed, loading, expanded, empty, error, selected, new-folder creation.
-- Disclosure: collapsed, expanded, hover, focus, close/exit.
-- Intent: receiving, formed, failed.
-- Live Work: forming, running, update, tool state, evidence, Needs You, review, accepted, failed, reconnecting.
-- Needs You: empty, decision present, approve, deny, dismiss.
-- Durable Work: empty, list, selected, evidence loading, evidence error, review decision, terminal state.
-- Loading copy describes the actual action instead of using a generic `Loading` label.
+- default / hover / active / focus-visible / disabled / loading / success / empty / error;
+- inputs keep clear label/focus/error semantics;
+- Runtime choice handles available/unavailable/selected/keyboard/receipt;
+- Workspace path handles neutral/focus/reading/received/verified/error;
+- Workspace tree handles collapsed/loading/expanded/empty/error/selected/create-folder;
+- lens menu handles closed/open/current/focus/Escape/click-away;
+- Intent handles receiving/formed/failed;
+- Work handles forming/running/update/evidence/Needs You/review/accepted/failed/reconnecting;
+- loading copy says what is actually happening instead of generic `Loading`.
+
+### Accessibility
+
+- keyboard navigation and focus restoration;
+- semantic names/roles;
+- skip navigation;
+- touch target sizing;
+- reduced motion lands on identical semantic state;
+- GSAP failure does not remove functionality.
 
 ### Responsiveness
 
-- Fluid layout.
-- Explicit mobile / tablet / desktop behavior.
-- Responsive type sizes.
-- Touch target sizing.
-- Information hierarchy remains intact after collapse.
-- Motion and tree expansion do not create horizontal page overflow.
+- fluid layout;
+- explicit desktop/tablet/mobile behavior;
+- information hierarchy survives collapse;
+- no horizontal page overflow;
+- fixed/sticky surfaces are reviewed using real viewport geometry.
