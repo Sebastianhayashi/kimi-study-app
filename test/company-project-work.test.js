@@ -51,7 +51,8 @@ test('Project-bound Work inherits the durable Project repository', async (t) => 
     runStore,
     runOrchestrator,
     projectStore,
-    projectDiscovery: () => { throw new Error('not used'); },
+    projectDiscovery: ({ repoDir }) => ({ repoDir, isGitRepository: true, sources: [] }),
+    projectContextCompiler: () => ({ text: '# Fixture continuation', byteLength: 22, includedSources: [] }),
     defaultWorkerId: 'worker_local',
     createWorkId: () => 'work_project_fixture',
   });
@@ -65,6 +66,7 @@ test('Project-bound Work inherits the durable Project repository', async (t) => 
   assert.equal(result.work.projectId, project.id);
   assert.equal(result.work.repoDir, project.repoDir);
   assert.equal(startedRequest.repoDir, project.repoDir);
+  assert.match(startedRequest.prompt, /Fixture continuation/);
   assert.equal(runStore.get(result.run.id).workId, result.work.id);
 });
 
@@ -78,7 +80,7 @@ test('Unknown Project cannot create Project-bound Work', async (t) => {
     runStore,
     runOrchestrator: { start() { throw new Error('must not start'); } },
     projectStore,
-    projectDiscovery: () => { throw new Error('not used'); },
+    projectDiscovery: () => { throw new Error('must not discover'); },
     defaultWorkerId: 'worker_local',
   });
 
