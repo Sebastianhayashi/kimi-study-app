@@ -132,6 +132,9 @@ test('durable Work appears under its Employee, survives reload, and opens eviden
   await expect(page.getByText('Code changes · 1 file')).toBeVisible();
   await expect(page.locator('body')).toHaveAttribute('data-company-has-work', 'true');
   await expect(page.locator('.composer-dock')).toHaveCSS('position', 'fixed');
+  await expect(page.locator('#work-brief')).toHaveCSS('min-height', '52px');
+  await page.locator('#work-brief').focus();
+  await expect(page.locator('#work-brief')).toHaveCSS('min-height', '68px');
 
   const employeeRow = page.getByTestId('operating-employee-row').filter({ hasText: 'Ben' });
   const mapNode = employeeRow.getByTestId('operating-work-node').filter({ hasText: 'Fix the session refresh bug' });
@@ -155,6 +158,7 @@ test('durable Work appears under its Employee, survives reload, and opens eviden
   await expect(durableDetail).toContainText('Fix the session refresh bug');
   await expect(durableDetail).toContainText('Code changes · 1 file');
   await expect(durableDetail).toContainText('src/session.js');
+  await expect(page.locator('#work-brief')).toHaveCSS('min-height', '52px');
   await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-blue-desktop-review.png') });
 
   await durableDetail.getByRole('button', { name: 'Accept' }).click();
