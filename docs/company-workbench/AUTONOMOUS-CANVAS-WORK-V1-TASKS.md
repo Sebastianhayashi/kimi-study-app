@@ -31,8 +31,10 @@ The corrected task map treats complete approved Matt/gstack-style bundles as the
 - ACW-T501..T503: candidate complete with targeted/shadow coverage. Skill output is normalized into Evidence, proposed semantic Artifact content, workspace mutation, authority request, transient note, or sanitized unsupported output; material claims require real same-Work Evidence.
 - ACW-T504: candidate complete at the contract/Run seam. Only explicitly requested relative paths can become file deliverables; produced bytes are durably Evidence-backed and the file receipt does not create Artifact/Canvas identity. Targeted Node contract coverage is green; whole-repository CI is pending.
 - ACW-T601: candidate complete with targeted coverage. Renderer-owned HTML/React/Markdown-style state is rejected from canonical Canvas Artifact identity and stable block/reference semantics are tested.
-- ACW-T602: candidate complete at the canonical IR/store seam. Canvas Artifacts persist stable Artifact/block ids, same-Work Evidence edges, snapshot references, semantic interactions with required static fallbacks, and requested-file references. The proposal-to-canonical assembler and browser projection remain pending in T603+.
-- ACW-T603 onward: pending.
+- ACW-T602: candidate complete at the canonical IR/store seam. Canvas Artifacts persist stable Artifact/block ids, same-Work Evidence edges, snapshot references, semantic interactions with required static fallbacks, and requested-file references. A shared proposal normalizer and assembler now connect accepted Skill output/file receipts to canonical Artifact state without promoting blocked/unsupported output.
+- ACW-T603: browser candidate landed. Coffee canonical Artifacts are exposed through a Work-owned read API and projected inside Durable Work as editorial mixed visual/text/interactive content with a source drawer. The Playwright acceptance test is authored but not verified on the current head because this environment lacks Playwright/Express and no PR Actions run exists yet.
+- ACW-T604: browser generalization candidate landed with no vertical-specific product code. Website delivery uses the same canonical IR, Work Artifact API, renderer, code/file-reference/media/source blocks, and hides Skill plumbing by default. The second Playwright acceptance test is likewise pending a real Chromium gate.
+- ACW-T605 onward: pending.
 - Real Codex remains blocked. Current targeted tests and shadow integration harnesses are not a substitute for full repository CI.
 
 ## Slice 0: Luna Runtime Admission
