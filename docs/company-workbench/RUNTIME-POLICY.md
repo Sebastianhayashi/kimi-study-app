@@ -21,7 +21,11 @@ Lucubro must not silently fall back to another model/profile, enable fast mode, 
 
 Real Claude/Codex execution remains paused as a product-development priority while the Company Canvas, Worker, Evidence, authorization, and routing boundaries are stabilized. Installation/authentication readiness does not by itself authorize a real Run.
 
-The deterministic mock runtime remains the default path for UI and Evidence development until real-provider execution is explicitly resumed.
+Default `company-server.js` runtime registration therefore wraps real provider adapters in a paused policy. They remain visible as unavailable execution options even if the host binary and credentials are ready. The deterministic mock runtime remains the default path for UI and Evidence development.
+
+`LUCUBRO_ENABLE_REAL_RUNTIMES=1` is the explicit server-level escape hatch. **Keep it unset until the approved Codex profile above is enforced and verified by the adapter/smoke-test path.** The environment flag is authorization to expose real adapters; it is not itself model/mode/permission enforcement.
+
+Injected runtime registries used by tests or explicit embeddings remain the caller's responsibility and are not silently wrapped by the default server policy.
 
 ## Product boundary
 
