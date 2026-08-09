@@ -112,3 +112,49 @@ test('Continuation rechecks the current workspace boundary after server recreati
     assert.match(body.error, /outside the allowed workspace root/i);
   });
 });
+
+test('Project-bound Work rechecks the workspace boundary before compiling canonical source context', async (t) => {
+  const dataDir = tempRoot(t, 'lucubro-project-work-rebound-data-');
+  const originalRoot = tempRoot(t, 'lucubro-project-work-original-');
+  const restrictedRoot = tempRoot(t, 'lucubro-project-work-restricted-');
+  const repoDir = path.join(originalRoot, 'repo');
+  fs.mkdirSync(repoDir);
+  fs.mkdirSync(path.join(repoDir, '.git'));
+  fs.writeFileSync(path.join(repoDir, 'CONTEXT.md'), '# Context\n');
+
+  let projectId;
+  await withServer({
+    dataDir,
+    runtimes: new Map(),
+    worktreeManager: {},
+    workspaceBrowser: createWorkspaceBrowser({ rootDir: originalRoot, homeDir: originalRoot, showHidden: true }),
+  }, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/company/projects`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ repoDir }),
+    });
+    const body = await response.json();
+    projectId = body.project.id;
+  });
+
+  await withServer({
+    dataDir,
+    runtimes: new Map(),
+    worktreeManager: {},
+    workspaceBrowser: createWorkspaceBrowser({ rootDir: restrictedRoot, homeDir: restrictedRoot, showHidden: true }),
+  }, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/company/works`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        brief: 'Continue the project',
+        projectId,
+        runtime: 'mock',
+      }),
+    });
+    assert.equal(response.status, 400);
+    const body = await response.json();
+    assert.match(body.error, /outside the allowed workspace root/i);
+  });
+});
