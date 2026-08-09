@@ -234,6 +234,57 @@ body[data-canvas-lens]:not([data-canvas-lens="manager"]) .composer {
   box-shadow: 0 22px 58px rgba(18, 32, 71, 0.13), inset 0 2px 0 rgba(0, 47, 167, 0.72);
 }
 
+body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 54px;
+  border-radius: 15px;
+  box-shadow: 0 14px 42px rgba(18, 32, 71, 0.12), inset 0 2px 0 rgba(0, 47, 167, 0.72);
+}
+
+body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) .composer-main {
+  min-width: 0;
+  padding: 0;
+}
+
+body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) textarea {
+  height: 52px;
+  min-height: 52px;
+  max-height: 52px;
+  resize: none;
+  padding: 14px 14px 10px;
+  border-radius: 14px 0 0 14px;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) .composer-toolbar {
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px 5px 0;
+  border-top: 0;
+}
+
+body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) .run-settings > summary {
+  min-height: 38px;
+  padding: 0 7px;
+}
+
+body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) .settings-summary-value,
+body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) .composer-help {
+  display: none;
+}
+
+body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) .primary-action {
+  min-height: 38px;
+  padding-inline: 13px;
+}
+
+body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) .composer-error {
+  grid-column: 1 / -1;
+}
+
 body[data-canvas-lens]:not([data-canvas-lens="manager"]) .product-page-header {
   position: relative;
 }
@@ -319,6 +370,20 @@ body[data-canvas-lens]:not([data-canvas-lens="manager"]) .product-page-header::b
     width: calc(100% - 16px);
     margin: 0;
     transform: translateX(-50%);
+  }
+
+  body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) textarea {
+    padding-left: 12px;
+    padding-right: 10px;
+    font-size: 13px;
+  }
+
+  body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) .settings-summary-label {
+    display: none;
   }
 }
 
