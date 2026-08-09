@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="/company-pages.css">
   <link rel="stylesheet" href="/company-a11y-v3.css">
   <link rel="stylesheet" href="/company-canvas-shell.css">
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" integrity="sha512-NcZdtrT77bJr4STcmsGAESr06BYGE8woZdSdEgqnpyqac7sugNO+Tr4bGwGF3MsnEkGKhU2KL2xh6Ec+BqsaHA==" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" integrity="sha512-oJ8QbaQThQoJZ7oEv+29jfPM6CcP+zUxh3PKJs1vyOhx0UraUrE7PQgeItu3dOuCJyrzWpoYMsVjkkPEBzbUqw==" crossorigin="anonymous" defer></script>
 </head>
 <body data-company-has-work="false" data-company-view="manager" data-canvas-lens="manager">
   <a class="skip-link" href="#company-main">Skip to company content</a>
@@ -292,12 +292,12 @@
                       <div class="workspace-tree-scroll">
                         <div id="workspace-tree" class="workspace-tree-root" role="tree" aria-label="Execution host folders"></div>
                       </div>
-                      <form id="workspace-create-form" class="workspace-create-form" hidden>
+                      <div id="workspace-create-form" class="workspace-create-form" role="group" aria-label="Create folder on execution host" hidden>
                         <label class="sr-only" for="workspace-create-name">New folder name</label>
-                        <input id="workspace-create-name" placeholder="Folder name" autocomplete="off" required>
-                        <button class="workspace-create-submit" type="submit">Create</button>
+                        <input id="workspace-create-name" placeholder="Folder name" autocomplete="off">
+                        <button class="workspace-create-submit" type="button">Create</button>
                         <button id="workspace-create-cancel" class="workspace-create-cancel" type="button">Cancel</button>
-                      </form>
+                      </div>
                     </div>
 
                     <div id="workspace-drop-receipt" class="workspace-drop-receipt" role="status" hidden>
