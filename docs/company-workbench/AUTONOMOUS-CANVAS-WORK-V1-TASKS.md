@@ -11,11 +11,17 @@ The corrected task map treats complete approved Matt/gstack-style bundles as the
 
 ## Progress
 
-- ACW-T001: complete, red/green targeted test recorded.
-- ACW-T002: complete, fail-closed Luna profile verifier implemented.
-- ACW-T003: complete, red/green runtime-policy test recorded.
-- ACW-T004: complete, real-runtime flag no longer bypasses Luna admission and non-Codex real providers remain blocked.
-- ACW-T005 onward: pending. Real Codex remains blocked.
+- ACW-T001..T004: complete with targeted red/green coverage. Luna profile verification and runtime-policy admission fail closed.
+- ACW-T005: complete. Fake App Server tests cover `model/list`, effective `config/read`, `permissionProfile/list`, experimental API opt-in, and unknown-state reporting.
+- ACW-T006: complete at the preflight seam. `createCodexAppServerRuntime().preflight()` collects machine state but intentionally does not claim admission. Actual thread-start attestation remains part of the trusted-Worker gate.
+- ACW-T007: pending. Exact trusted-Worker Luna model/profile/mode/Fast receipt has not been captured.
+- ACW-T008: complete with targeted red/green coverage. Codex Run cannot bypass a Lucubro-owned authority boundary.
+- ACW-T009: partial. The fail-closed authority-boundary contract is wired before Codex Run spawn; a concrete trusted-Worker sandbox implementation and attestation are still required before real execution.
+- ACW-T101..T104: complete with targeted red/green coverage for durable manifests, full-tree materialization, atomic activation/rollback, and restart persistence.
+- ACW-T105: partial. Matt Pocock and gstack manifests are pinned to exact upstream commits and MIT provenance; their complete real bundles have not yet been materialized on the trusted Worker and recorded with root digests.
+- ACW-T201..T207: complete with targeted red/green coverage for recursive full-catalog indexing, lazy bodies, dependency closure, path containment, compatibility overlays, and exact-commit overlay invalidation.
+- ACW-T301 onward: pending.
+- Real Codex remains blocked. Current targeted tests are not a substitute for full repository CI.
 
 ## Slice 0: Luna Runtime Admission
 
