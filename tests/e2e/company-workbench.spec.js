@@ -136,7 +136,8 @@ test('durable Work appears under its Employee, survives reload, and opens eviden
   const mapNode = employeeRow.getByTestId('operating-work-node').filter({ hasText: 'Fix the session refresh bug' });
   await expect(mapNode).toBeVisible();
   await expect(mapNode).toContainText('Ready for review');
-  await expect(mapNode).toContainText('mock');
+  await expect(mapNode).toContainText('Run ');
+  await expect(mapNode).not.toContainText('Runtime mock');
 
   await page.reload();
   await waitForCompanyControllers(page);
