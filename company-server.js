@@ -2,9 +2,11 @@
 
 const express = require('express');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { createRunStore } = require('./lib/company/run-store');
 const { createWorkStore } = require('./lib/company/work-store');
+const { createWorkerStore } = require('./lib/company/worker-store');
 const { createApprovalBroker } = require('./lib/company/approval-broker');
 const { createRunOrchestrator } = require('./lib/company/run-orchestrator');
 const { createWorktreeManager } = require('./lib/company/worktree-manager');
@@ -35,6 +37,8 @@ function createCompanyServer({
   runtimes = null,
   worktreeManager = null,
   workspaceBrowser = null,
+  workerStore = null,
+  workerIdentity = null,
 } = {}) {
   fs.mkdirSync(dataDir, { recursive: true });
   const app = express();
@@ -44,6 +48,12 @@ function createCompanyServer({
 
   const runStore = createRunStore({ rootDir: dataDir });
   const workStore = createWorkStore({ rootDir: dataDir });
+  const workers = workerStore || createWorkerStore({ rootDir: dataDir });
+  const localWorker = workers.upsert({
+    id: workerIdentity && workerIdentity.id || process.env.LUCUBRO_WORKER_ID || 'worker_local',
+    name: workerIdentity && workerIdentity.name || process.env.LUCUBRO_WORKER_NAME || os.hostname() || 'Local Worker',
+    kind: workerIdentity && workerIdentity.kind || 'self-hosted',
+  });
   const approvalBroker = createApprovalBroker({ runStore });
   const runtimeRegistry = runtimes || new Map([
     ['claude-code', createClaudeAgentSdkRuntime()],
@@ -57,7 +67,7 @@ function createCompanyServer({
       : createWorktreeManager()
   );
   const runOrchestrator = createRunOrchestrator({ runStore, approvalBroker, runtimeRegistry, worktreeManager: worktrees });
-  const company = createCompanyService({ workStore, runStore, runOrchestrator });
+  const company = createCompanyService({ workStore, runStore, runOrchestrator, defaultWorkerId: localWorker.id });
   const workspaces = workspaceBrowser || createWorkspaceBrowser();
 
   function requireWorkspaceAccess(req, res, next) {
@@ -67,10 +77,7 @@ function createCompanyServer({
     });
   }
 
-  app.get('/api/company/health', (req, res) => res.json({ ok: true }));
-  app.get(['/company', '/company/work', '/company/employees', '/company/settings'], (req, res) => res.sendFile(path.join(rootDir, 'public', 'company.html')));
-
-  app.get('/api/company/bootstrap', async (req, res) => {
+  async function readRuntimeStates() {
     const runtimeStates = [];
     for (const [id, runtime] of runtimeRegistry.entries()) {
       let availability;
@@ -78,10 +85,44 @@ function createCompanyServer({
       catch (error) { availability = { available: false, reason: error.message }; }
       runtimeStates.push({ id, ...availability });
     }
+    return runtimeStates;
+  }
+
+  function publicWorkerState(identity, runtimeStates) {
+    return {
+      ...identity,
+      status: 'online',
+      transport: 'in-process',
+      platform: process.platform,
+      arch: process.arch,
+      capabilities: {
+        workspace: true,
+        runtimes: runtimeStates.filter((runtime) => runtime.available).map((runtime) => runtime.id),
+      },
+    };
+  }
+
+  function publicRunSummary(run) {
+    return {
+      id: run.id,
+      workId: run.workId,
+      employeeId: run.employeeId,
+      workerId: run.workerId || null,
+      status: run.status,
+    };
+  }
+
+  app.get('/api/company/health', (req, res) => res.json({ ok: true }));
+  app.get(['/company', '/company/work', '/company/employees', '/company/settings'], (req, res) => res.sendFile(path.join(rootDir, 'public', 'company.html')));
+
+  app.get('/api/company/bootstrap', async (req, res) => {
+    const runtimeStates = await readRuntimeStates();
     res.json({
       manager: { id: 'alex', name: 'Alex', position: 'Primary Manager' },
       employees: [{ id: 'ben', name: 'Ben', position: 'Software Engineer' }],
+      workers: [publicWorkerState(localWorker, runtimeStates)],
       runtimes: runtimeStates,
+      runs: runStore.list().map(publicRunSummary),
       works: company.listWorks(),
       needsYou: approvalBroker.listPending(),
     });
@@ -135,6 +176,7 @@ function createCompanyServer({
         repoDir: body.repoDir,
         runtime: body.runtime,
         employeeId: body.employeeId || 'ben',
+        workerId: localWorker.id,
         model: body.model || null,
         delegationEnvelope: body.delegationEnvelope || {
           allow: ['workspace.read', 'workspace.write', 'shell.execute'],
@@ -165,7 +207,12 @@ function createCompanyServer({
   app.get('/api/company/runs/:runId', (req, res) => {
     const run = runStore.get(req.params.runId);
     if (!run) return res.status(404).json({ error: 'Run not found' });
-    res.json({ run, events: runStore.readEvents(run.id), needsYou: approvalBroker.listPending(run.id) });
+    res.json({
+      run,
+      worker: run.workerId ? workers.get(run.workerId) : null,
+      events: runStore.readEvents(run.id),
+      needsYou: approvalBroker.listPending(run.id),
+    });
   });
 
   app.get('/api/company/runs/:runId/stream', (req, res) => {
@@ -187,7 +234,17 @@ function createCompanyServer({
     }
   });
 
-  return { app, company, runStore, workStore, approvalBroker, runtimeRegistry, workspaceBrowser: workspaces };
+  return {
+    app,
+    company,
+    runStore,
+    workStore,
+    workerStore: workers,
+    localWorker,
+    approvalBroker,
+    runtimeRegistry,
+    workspaceBrowser: workspaces,
+  };
 }
 
 if (require.main === module) {
