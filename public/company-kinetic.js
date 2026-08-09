@@ -314,11 +314,6 @@
     closeExecutionSetup({ restoreFocus: event.detail?.restoreFocus !== false });
   });
 
-  settingsSummary.addEventListener('click', (event) => {
-    if (!runSettings.open) return;
-    event.preventDefault();
-    closeExecutionSetup();
-  });
   closeSettings.addEventListener('click', () => closeExecutionSetup());
 
   document.addEventListener('keydown', (event) => {
