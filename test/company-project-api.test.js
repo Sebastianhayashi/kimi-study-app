@@ -14,7 +14,7 @@ function tempRoot(t, prefix = 'lucubro-project-api-') {
 }
 
 async function withServer(t, options, run) {
-  const app = createCompanyServer(options);
+  const { app } = createCompanyServer(options);
   const server = app.listen(0, '127.0.0.1');
   t.after(() => new Promise((resolve) => server.close(resolve)));
   await new Promise((resolve) => server.once('listening', resolve));
@@ -67,12 +67,14 @@ test('Project adoption is durable across Company server recreation', async (t) =
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ repoDir }),
     });
+    assert.equal(response.status, 201);
     const body = await response.json();
     projectId = body.project.id;
   });
 
   await withServer(t, { dataDir, runtimes: new Map(), worktreeManager: {}, workspaceBrowser: { root: {}, list() {}, suggest() {}, inspect() {}, createDirectory() {} } }, async (baseUrl) => {
     const response = await fetch(`${baseUrl}/api/company/bootstrap`);
+    assert.equal(response.status, 200);
     const bootstrap = await response.json();
     assert.equal(bootstrap.projects.length, 1);
     assert.equal(bootstrap.projects[0].id, projectId);
