@@ -128,3 +128,31 @@ test('browser-style Work returns durable typed evidence that survives reload', a
   await expect(image).toBeVisible();
   await expect.poll(() => image.evaluate((node) => node.naturalWidth)).toBeGreaterThan(0);
 });
+
+test('Run evidence materializes inside the live Work object as the event arrives', async ({ page }) => {
+  await page.setViewportSize({ width: 1100, height: 820 });
+  await page.goto(`${URL}/company`);
+  await expect(page.locator('#workspace-picker')).toHaveAttribute('data-controller', 'ready');
+  await expect(page.locator('#company-operating-map')).toHaveAttribute('data-controller', 'ready');
+
+  await page.locator('#run-settings > summary').click();
+  await page.locator('[data-runtime-id="mock"]').click();
+  await page.locator('#repo-dir').fill('/tmp/lucubro-live-evidence-fixture');
+  await expect(page.locator('#repo-path-control')).toHaveAttribute('data-state', 'received');
+
+  const brief = 'Preview the latest browser UI and capture a screenshot for review';
+  await page.locator('#work-brief').fill(brief);
+  await page.getByRole('button', { name: 'Send to Alex' }).click();
+
+  const work = page.locator('[data-canvas-object="work"]').filter({ hasText: brief });
+  await expect(work).toBeVisible();
+  const shelf = work.locator('[data-testid="run-evidence"]');
+  await expect(shelf).toContainText('Deterministic browser screenshot');
+  await expect(work.locator('.canvas-event-history')).toContainText('Evidence captured');
+  const image = shelf.locator('img').first();
+  await expect(image).toBeVisible();
+  await expect.poll(() => image.evaluate((node) => node.naturalWidth)).toBeGreaterThan(0);
+  await expect(work.locator('.status')).toHaveText('Ready for review');
+
+  await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-evidence-live.png') });
+});
