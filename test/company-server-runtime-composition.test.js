@@ -29,7 +29,7 @@ function runtime(kind) {
   };
 }
 
-test('default Company server composition binds exact admission receipt and concrete systemd boundary to Luna-only registry', (t) => {
+test('default Company server composition binds exact admission receipt and concrete systemd boundary to gpt-5.6-luna max-effort registry', (t) => {
   const dataDir = tempRoot(t);
   const boundary = {
     async attest() { return { enforced: true, boundaryId: 'systemd-user-codex-v1' }; },
@@ -67,8 +67,11 @@ test('default Company server composition binds exact admission receipt and concr
         registry,
         admission: {
           admitted: true,
-          profileName: 'Luna Max',
           modelId: 'gpt-5.6-luna',
+          reasoningEffort: 'max',
+          mode: 'default',
+          fast: false,
+          permissionProfile: 'full-access',
           providerPermissionProfileId: ':danger-full-access',
         },
       };
@@ -93,6 +96,7 @@ test('default Company server composition binds exact admission receipt and concr
   assert.equal(instance.runtimeRegistry, registry);
   assert.equal(instance.codexAdmission.admitted, true);
   assert.equal(instance.codexAdmission.modelId, 'gpt-5.6-luna');
+  assert.equal(instance.codexAdmission.reasoningEffort, 'max');
 });
 
 test('real runtime exposure stays disabled when concrete authority machine configuration is incomplete', (t) => {
@@ -107,7 +111,6 @@ test('real runtime exposure stays disabled when concrete authority machine confi
     LUCUBRO_SYSTEMD_RUN_BINARY: '/run/current-system/sw/bin/systemd-run',
     LUCUBRO_CODEX_EXECUTABLE: '/home/yuyu/.local/share/npm-global/bin/codex',
     LUCUBRO_CODEX_INSTALL_ROOT: '/home/yuyu/.local/share/npm-global',
-    // LUCUBRO_CODEX_HOME_SOURCE is intentionally absent.
     PATH: '/run/current-system/sw/bin:/home/yuyu/.local/share/npm-global/bin',
   };
 
@@ -123,7 +126,7 @@ test('real runtime exposure stays disabled when concrete authority machine confi
       registryCalls.push(input);
       return {
         registry: new Map(),
-        admission: { admitted: false, profileName: 'Luna Max' },
+        admission: { admitted: false },
       };
     },
   });
