@@ -1,0 +1,55 @@
+name: Canvas E2E diagnostic
+
+on:
+  push:
+    branches:
+      - design/klein-blue-company-v3
+    paths:
+      - .github/workflows/canvas-e2e-diagnostic.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  canvas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Run Company Canvas browser contract
+        id: canvas
+        shell: bash
+        run: |
+          set +e
+          npx playwright test tests/e2e/company-workspace-pages.spec.js --workers=1 > canvas-e2e.log 2>&1
+          code=$?
+          set -e
+          cat canvas-e2e.log
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+      - name: Report result
+        uses: actions/github-script@v7
+        env:
+          CANVAS_EXIT: ${{ steps.canvas.outputs.exit_code }}
+        with:
+          script: |
+            const fs = require('fs');
+            const log = fs.readFileSync('canvas-e2e.log', 'utf8');
+            const tail = log.length > 24000 ? log.slice(-24000) : log;
+            const exitCode = process.env.CANVAS_EXIT || 'unknown';
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[canvas-diagnostic] ${context.sha.slice(0, 7)} exit ${exitCode}`,
+              body: `Temporary Company Canvas E2E diagnostic.\n\nCommit: \`${context.sha}\`\nExit: \`${exitCode}\`\n\n\`\`\`text\n${tail}\n\`\`\``,
+            });
+      - name: Fail after report
+        if: steps.canvas.outputs.exit_code != '0'
+        shell: bash
+        run: exit "${{ steps.canvas.outputs.exit_code }}"
