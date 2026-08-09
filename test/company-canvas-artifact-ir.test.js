@@ -123,14 +123,15 @@ test('Canvas Artifact persists stable semantic block identity, Evidence edges, r
   assert.deepEqual(restarted.get(created.id), created);
 });
 
-test('Canvas Artifact rejects renderer-owned state and interaction blocks without a static fallback', (t) => {
+test('Canvas Artifact rejects renderer-owned state, unknown block types, and interactions without static fallback', (t) => {
   const root = tempRoot(t);
   const evidence = evidenceFixture(root);
+  let artifactCounter = 0;
   const store = createCanvasArtifactStore({
     rootDir: root,
     evidenceStore: evidence.store,
-    createArtifactId: () => 'artifact_reject_renderer',
-    createBlockId: () => 'block_reject_renderer',
+    createArtifactId: () => `artifact_reject_${++artifactCounter}`,
+    createBlockId: () => `block_reject_${artifactCounter}`,
   });
 
   assert.throws(() => store.create({
@@ -142,8 +143,14 @@ test('Canvas Artifact rejects renderer-owned state and interaction blocks withou
 
   assert.throws(() => store.create({
     workId: 'work_coffee',
-    title: 'Bad block',
+    title: 'Bad renderer block',
     blocks: [{ type: 'html', content: { html: '<p>vendor report</p>' } }],
+  }), /renderer-owned field/i);
+
+  assert.throws(() => store.create({
+    workId: 'work_coffee',
+    title: 'Unknown semantic block',
+    blocks: [{ type: 'vendor-report', content: { text: 'opaque vendor shape' } }],
   }), /semantic block type/i);
 
   assert.throws(() => store.create({
