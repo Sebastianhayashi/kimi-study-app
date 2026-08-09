@@ -18,13 +18,14 @@ const { APPROVED_SKILL_BUNDLE_MANIFESTS } = require('../lib/company/skill-bundle
 
 const DEFAULT_MODELS = [
   {
-    id: 'luna-real-id',
-    model: 'luna-provider-slug',
-    displayName: 'Luna Max',
+    id: 'gpt-5.6-luna',
+    model: 'gpt-5.6-luna',
+    displayName: 'GPT-5.6-Luna',
     isDefault: false,
-    defaultServiceTier: null,
+    supportedReasoningEfforts: ['low', 'medium', 'high', 'xhigh', 'max'],
+    defaultServiceTier: 'priority',
     additionalSpeedTiers: ['fast'],
-    serviceTiers: [{ id: 'fast', name: 'Fast' }],
+    serviceTiers: [{ id: 'priority', name: 'Priority' }],
   },
   {
     id: 'other-id',
@@ -63,7 +64,7 @@ function fakeAppServer({ models = DEFAULT_MODELS } = {}) {
         } else if (message.method === 'config/read') {
           result = {
             config: {
-              model: 'luna-real-id',
+              model: 'gpt-5.6-luna',
               model_provider: 'openai',
               service_tier: null,
               api_key: 'must-not-leak',
@@ -95,7 +96,7 @@ function fakeAppServer({ models = DEFAULT_MODELS } = {}) {
   };
 }
 
-test('host diagnostic discovers Luna/config/permission profiles without starting any thread or model turn', async () => {
+test('host diagnostic binds the approved profile to exact gpt-5.6-luna and proves max is advertised without starting a turn', async () => {
   const fake = fakeAppServer();
   const result = await inspectCodexHost({
     cwd: '/work/lucubro',
@@ -110,18 +111,21 @@ test('host diagnostic discovers Luna/config/permission profiles without starting
     platformFamily: 'unix',
     platformOs: 'linux',
   });
-  assert.deepEqual(result.lunaMax, {
+  assert.deepEqual(result.approvedModel, {
+    expectedModelId: 'gpt-5.6-luna',
     uniqueMatch: true,
-    modelId: 'luna-real-id',
-    model: 'luna-provider-slug',
-    displayName: 'Luna Max',
+    modelId: 'gpt-5.6-luna',
+    model: 'gpt-5.6-luna',
+    displayName: 'GPT-5.6-Luna',
     isDefault: false,
-    defaultServiceTier: null,
+    supportedReasoningEfforts: ['low', 'medium', 'high', 'xhigh', 'max'],
+    maxReasoningEffortSupported: true,
+    defaultServiceTier: 'priority',
     additionalSpeedTiers: ['fast'],
-    serviceTierIds: ['fast'],
+    serviceTierIds: ['priority'],
   });
   assert.deepEqual(result.effectiveConfig, {
-    modelId: 'luna-real-id',
+    modelId: 'gpt-5.6-luna',
     modelProvider: 'openai',
     serviceTier: null,
   });
@@ -141,19 +145,16 @@ test('host diagnostic discovers Luna/config/permission profiles without starting
   assert.equal(fake.calls.some((call) => call.method === 'turn/start'), false);
 });
 
-test('host diagnostic binds the Luna Max operator profile to the exact trusted provider model id, not provider display text', async () => {
+test('provider display text is diagnostic only; exact provider model id controls the match', async () => {
   const fake = fakeAppServer({
     models: [
       {
         id: 'gpt-5.6-luna',
         model: 'gpt-5.6-luna',
-        displayName: 'GPT-5.6-Luna',
-        isDefault: false,
-        defaultServiceTier: 'priority',
-        additionalSpeedTiers: ['fast'],
-        serviceTiers: [{ id: 'priority', name: 'Priority' }],
+        displayName: 'A Future Display Label',
+        supportedReasoningEfforts: [{ effort: 'high' }, { effort: 'max' }],
       },
-      { id: 'other-id', model: 'other-id', displayName: 'Other Model' },
+      { id: 'other-id', model: 'other-id', displayName: 'GPT-5.6-Luna' },
     ],
   });
   const result = await inspectCodexHost({
@@ -163,36 +164,30 @@ test('host diagnostic binds the Luna Max operator profile to the exact trusted p
     now: () => '2026-08-09T14:00:00.000Z',
   });
 
-  assert.deepEqual(result.lunaMax, {
-    uniqueMatch: true,
-    modelId: 'gpt-5.6-luna',
-    model: 'gpt-5.6-luna',
-    displayName: 'GPT-5.6-Luna',
-    isDefault: false,
-    defaultServiceTier: 'priority',
-    additionalSpeedTiers: ['fast'],
-    serviceTierIds: ['priority'],
-  });
+  assert.equal(result.approvedModel.uniqueMatch, true);
+  assert.equal(result.approvedModel.modelId, 'gpt-5.6-luna');
+  assert.equal(result.approvedModel.displayName, 'A Future Display Label');
+  assert.deepEqual(result.approvedModel.supportedReasoningEfforts, ['high', 'max']);
+  assert.equal(result.approvedModel.maxReasoningEffortSupported, true);
 });
 
-test('host diagnostic refuses to invent a Luna model id when catalog match is ambiguous', async () => {
-  const fake = fakeAppServer({
-    models: [
-      { id: 'luna-a', model: 'luna-a', displayName: 'Luna Max' },
-      { id: 'luna-b', model: 'luna-b', displayName: 'Luna Max' },
-    ],
-  });
-  const result = await inspectCodexHost({
-    cwd: '/work/lucubro',
-    spawnImpl: fake.spawnImpl,
-    now: () => '2026-08-09T14:00:00.000Z',
-  });
+test('host diagnostic fails closed when the exact model id is absent or does not advertise max effort', async () => {
+  const absent = fakeAppServer({ models: [{ id: 'other', model: 'other', displayName: 'GPT-5.6-Luna' }] });
+  const absentResult = await inspectCodexHost({ cwd: '/work/lucubro', spawnImpl: absent.spawnImpl });
+  assert.equal(absentResult.approvedModel.uniqueMatch, false);
+  assert.equal(absentResult.approvedModel.modelId, null);
 
-  assert.equal(result.lunaMax.uniqueMatch, false);
-  assert.equal(result.lunaMax.modelId, null);
-  assert.deepEqual(result.lunaMax.matches.map((match) => match.id), ['luna-a', 'luna-b']);
-  assert.equal(fake.calls.some((call) => call.method === 'thread/start'), false);
-  assert.equal(fake.calls.some((call) => call.method === 'turn/start'), false);
+  const noMax = fakeAppServer({
+    models: [{
+      id: 'gpt-5.6-luna',
+      model: 'gpt-5.6-luna',
+      displayName: 'GPT-5.6-Luna',
+      supportedReasoningEfforts: ['high'],
+    }],
+  });
+  const noMaxResult = await inspectCodexHost({ cwd: '/work/lucubro', spawnImpl: noMax.spawnImpl });
+  assert.equal(noMaxResult.approvedModel.uniqueMatch, true);
+  assert.equal(noMaxResult.approvedModel.maxReasoningEffortSupported, false);
 });
 
 test('bundle diagnostic recomputes real materialized digests and verifies pinned manifests', () => {
