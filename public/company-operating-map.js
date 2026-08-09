@@ -76,8 +76,11 @@
     return 'Durable Work';
   }
 
-  function runtimeCopy(work) {
-    return work.runtime ? `Runtime ${work.runtime}` : 'Runtime not set';
+  function runCopy(work) {
+    if (!work.activeRunId) return 'No active Run';
+    const id = String(work.activeRunId);
+    const compact = id.length > 11 ? id.slice(-8) : id;
+    return `Run ${compact}`;
   }
 
   function animateMount(node) {
@@ -158,8 +161,8 @@
     const meta = el('span', 'operating-work-meta');
     const footer = el('span', 'operating-work-footer');
     const execution = el('span', 'operating-work-execution');
-    const runtime = el('span', 'operating-work-runtime');
-    footer.append(execution, runtime);
+    const run = el('span', 'operating-work-run');
+    footer.append(execution, run);
     button.append(head, title, meta, footer);
 
     button.addEventListener('click', () => {
@@ -182,14 +185,14 @@
     const button = record.button;
     button.dataset.status = work.status || 'unknown';
     button.dataset.tone = tone;
-    button.setAttribute('aria-label', `${workTitle(work)}. ${label}. ${runtimeCopy(work)}.`);
+    button.setAttribute('aria-label', `${workTitle(work)}. ${label}. ${runCopy(work)}.`);
     button.querySelector('.operating-work-status').textContent = label;
     button.querySelector('.operating-work-title').textContent = workTitle(work);
     button.querySelector('.operating-work-meta').textContent = work.brief && work.brief !== workTitle(work)
       ? work.brief
       : 'Durable company Work';
     button.querySelector('.operating-work-execution').textContent = workExecutionCopy(work);
-    button.querySelector('.operating-work-runtime').textContent = runtimeCopy(work);
+    button.querySelector('.operating-work-run').textContent = runCopy(work);
     record.work = work;
     if (previousStatus && previousStatus !== work.status) animateState(button);
   }
@@ -266,11 +269,9 @@
       }
     }
 
-    const active = works.filter((work) => ['starting', 'in-progress', 'needs-you', 'needs-rework'].includes(work.status)).length;
-    const review = works.filter((work) => work.status === 'review').length;
-    const decisions = Number.parseInt(needsCount.textContent, 10) || 0;
     if (!works.length) mapSummary.textContent = 'No durable Work yet';
-    else mapSummary.textContent = `${active} moving · ${review} review · ${decisions} needs you`;
+    else if (works.length > shownWorks.length) mapSummary.textContent = `Showing ${shownWorks.length} of ${works.length} durable Work items`;
+    else mapSummary.textContent = `${works.length} durable Work item${works.length === 1 ? '' : 's'} on the company map`;
 
     map.dataset.controller = 'ready';
     map.dataset.workCount = String(works.length);
@@ -334,6 +335,10 @@
     disposed = true;
     clearTimeout(refreshTimer);
     for (const observer of observers) observer.disconnect();
-    if (window.gsap) window.gsap.killTweensOf([...workNodes.values()].map((record) => record.button));
+    if (window.gsap) {
+      window.gsap.killTweensOf([
+        ...workNodes.values()].map((record) => record.button));
+      window.gsap.killTweensOf([...rowNodes.values()].map((record) => record.row));
+    }
   }, { once: true });
 })();
