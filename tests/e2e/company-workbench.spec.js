@@ -64,7 +64,7 @@ test('front door explains the company operating model before asking for another 
   await page.goto(`${URL}/company`);
   await waitForCompanyControllers(page);
 
-  const map = page.getByLabel('Company operating map');
+  const map = page.locator('#company-operating-map');
   await expect(map).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Your company, in motion.' })).toBeVisible();
   await expect(map).toContainText('Durable Work across AI Employees, Runs, evidence, and decisions.');
@@ -106,6 +106,7 @@ test('execution setup exposes kinetic runtime choices and a line-based repositor
   const repoControl = page.locator('#repo-path-control');
   const repoInput = page.locator('#repo-dir');
   await repoInput.focus();
+  await expect(repoInput).toBeFocused();
   await expect(repoControl).toHaveAttribute('data-state', 'focused');
   await repoInput.fill('/tmp/lucubro-fixture-repo');
   await expect(repoControl).toHaveAttribute('data-state', 'received');
@@ -202,7 +203,7 @@ test('mobile keeps the operating map, Manager relationship, composer, and Work s
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${URL}/company`);
   await waitForCompanyControllers(page);
-  await expect(page.getByLabel('Company operating map')).toBeVisible();
+  await expect(page.locator('#company-operating-map')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Your company, in motion.' })).toBeVisible();
   await expect(page.getByLabel('Alex, Primary Manager')).toBeVisible();
   await expect(page.getByLabel('Company canvas focus')).toBeVisible();
@@ -226,7 +227,7 @@ test('reduced motion preserves the operating map and semantic Company state', as
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(`${URL}/company`);
   await waitForCompanyControllers(page);
-  const map = page.getByLabel('Company operating map');
+  const map = page.locator('#company-operating-map');
   await expect(map).toBeVisible();
   await expect(map).toHaveCSS('opacity', '1');
   await expect(page.getByRole('heading', { name: 'Your company, in motion.' })).toBeVisible();
