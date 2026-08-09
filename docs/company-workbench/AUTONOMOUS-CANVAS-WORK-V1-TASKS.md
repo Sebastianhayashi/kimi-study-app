@@ -19,9 +19,16 @@ The corrected task map treats complete approved Matt/gstack-style bundles as the
 - ACW-T009: partial. The fail-closed authority-boundary contract is wired before Codex Run spawn; a concrete trusted-Worker sandbox implementation and attestation are still required before real execution.
 - ACW-T101..T104: complete with targeted red/green coverage for durable manifests, full-tree materialization, atomic activation/rollback, and restart persistence.
 - ACW-T105: partial. Matt Pocock and gstack manifests are pinned to exact upstream commits and MIT provenance; their complete real bundles have not yet been materialized on the trusted Worker and recorded with root digests.
-- ACW-T201..T207: complete with targeted red/green coverage for recursive full-catalog indexing, lazy bodies, dependency closure, path containment, compatibility overlays, and exact-commit overlay invalidation.
-- ACW-T301 onward: pending.
-- Real Codex remains blocked. Current targeted tests are not a substitute for full repository CI.
+- ACW-T201..T207: complete with targeted red/green coverage for recursive full-catalog indexing, routing metadata, invocation policy, lazy bodies, dependency closure, path containment, compatibility overlays, and exact-commit overlay invalidation.
+- ACW-T301: complete at the planner-validation seam. Coffee sees the full catalog and selects existing `research` plus user-intent-authorized `teach`; no Coffee-specific Skill is introduced.
+- ACW-T302: complete at the planner-validation seam. Website Build composes existing discovery/spec/design/implementation/review/QA capabilities from the same catalog; no Website-specific Skill is introduced.
+- ACW-T303: partial. `WorkPlanner` now returns validated public planning state, but CompanyService/Work persistence integration is not implemented yet.
+- ACW-T304: complete. Planner proposals cannot fabricate runtime or Skill mount attestation and cannot persist raw reasoning fields.
+- ACW-T305: complete with targeted red/green coverage. Same-process Codex mount verification uses `skills/extraRoots/set` plus forced `skills/list`, rejects unexpected/disabled/drifted Skills, and does not treat system Skills outside the mount root as selected.
+- ACW-T306: implementation landed through the runtime/orchestrator seam. Verified mount receipts are bound to Run/Subrun and persisted as Run events; full repository CI is still pending.
+- ACW-T307: complete with targeted red/green coverage. Run-scoped mount views copy complete selected Skill directories while excluding unselected Skill bodies from the runtime-visible root.
+- ACW-T401 onward: pending.
+- Real Codex remains blocked. Current targeted tests and shadow integration harnesses are not a substitute for full repository CI.
 
 ## Slice 0: Luna Runtime Admission
 
