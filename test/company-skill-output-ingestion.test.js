@@ -73,6 +73,19 @@ test('source Evidence is persisted with Run/Work/Skill provenance', async (t) =>
 
 test('semantic Artifact content remains a renderer-independent proposal event', async (t) => {
   const fixture = setup(t);
+  await fixture.ingestor.ingest({
+    ...fixture.context,
+    output: {
+      type: 'evidence',
+      evidence: {
+        kind: 'source-page',
+        label: 'Roast acidity source',
+        mimeType: 'text/plain',
+        source: 'web',
+        content: 'Primary source supporting the material roast claim.',
+      },
+    },
+  });
   const result = await fixture.ingestor.ingest({
     ...fixture.context,
     output: {
