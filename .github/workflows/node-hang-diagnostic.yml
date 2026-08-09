@@ -1,0 +1,39 @@
+name: Node hang diagnostic
+
+on:
+  push:
+    branches:
+      - design/klein-blue-company-v3
+    paths:
+      - .github/workflows/node-hang-diagnostic.yml
+
+permissions:
+  contents: read
+
+jobs:
+  isolate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Run Node test files independently
+        shell: bash
+        run: |
+          set -u
+          for file in test/*.test.js; do
+            echo "=== START $file ==="
+            set +e
+            timeout 45s node --test "$file"
+            code=$?
+            set -e
+            echo "=== END $file exit=$code ==="
+            if [ "$code" -ne 0 ]; then
+              echo "DIAGNOSTIC_FAILURE file=$file exit=$code"
+              exit "$code"
+            fi
+          done
