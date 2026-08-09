@@ -67,7 +67,8 @@ test('semantic Artifact text cannot become Markdown images, raw HTML, raw TeX, c
 
   assert.match(markdown, /\\!\\\[secret\\\]/);
   assert.match(markdown, /\\\\input\\\{/);
-  assert.match(markdown, /\\<img src=/);
+  assert.match(markdown, /&lt;img src=/);
+  assert.match(markdown, /&lt;script&gt;/);
   assert.match(markdown, /\\\$HOME\\\$/);
   assert.match(markdown, /\\@secrets/);
 });
@@ -75,6 +76,7 @@ test('semantic Artifact text cannot become Markdown images, raw HTML, raw TeX, c
 test('literal Markdown escaping and code fences preserve semantics without opening a fence', () => {
   assert.equal(markdownLiteral('- list\n# heading\n1. ordered'), '\\- list\n\\# heading\n1\\. ordered');
   assert.equal(markdownLiteral('![image](path)'), '\\!\\[image\\](path)');
+  assert.equal(markdownLiteral('<img>&'), '&lt;img&gt;&amp;');
   assert.equal(codeFence('before ````` after'), '``````');
   assert.equal(codeFence('plain code'), '```');
 });
