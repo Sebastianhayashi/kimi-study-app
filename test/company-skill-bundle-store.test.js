@@ -16,6 +16,8 @@ function tempRoot(t, prefix = 'lucubro-skill-bundles-') {
 
 const MATT_COMMIT = '84fdeffd12f2ee307994d1eb6feb48173b6e0502';
 const GSTACK_COMMIT = '94993f74012782fd94416dd44b8314f6363a13a4';
+const MATT_DIGEST = `sha256:${'a'.repeat(64)}`;
+const GSTACK_DIGEST = `sha256:${'b'.repeat(64)}`;
 
 function manifest(overrides = {}) {
   return {
@@ -31,7 +33,7 @@ function manifest(overrides = {}) {
       sourcePath: 'LICENSE',
     },
     hostVariant: 'codex',
-    rootDigest: 'sha256:matt-fixture',
+    rootDigest: MATT_DIGEST,
     installationState: 'active',
     ...overrides,
   };
@@ -54,7 +56,7 @@ test('managed Skill bundle manifest survives store recreation with immutable pro
   assert.equal(created.pinnedCommit, MATT_COMMIT);
   assert.deepEqual(created.license, { spdx: 'MIT', sourcePath: 'LICENSE' });
   assert.equal(created.hostVariant, 'codex');
-  assert.equal(created.rootDigest, 'sha256:matt-fixture');
+  assert.equal(created.rootDigest, MATT_DIGEST);
   assert.equal(created.installationState, 'active');
   assert.equal(
     created.materializedRoot,
@@ -88,7 +90,7 @@ test('bundle inventory stores multiple complete upstream bundles without task-sp
     },
     pinnedRef: GSTACK_COMMIT,
     pinnedCommit: GSTACK_COMMIT,
-    rootDigest: 'sha256:gstack-fixture',
+    rootDigest: GSTACK_DIGEST,
   }));
 
   assert.deepEqual(
