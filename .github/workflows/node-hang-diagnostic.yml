@@ -6,6 +6,7 @@ on:
       - design/klein-blue-company-v3
     paths:
       - .github/workflows/node-hang-diagnostic.yml
+      - test/pol-v2-api.test.js
 
 permissions:
   contents: read
