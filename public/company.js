@@ -71,8 +71,7 @@
     mm.add('(prefers-reduced-motion: no-preference)', () => {
       const tl = window.gsap.timeline({ defaults: { ease: 'power2.out' } });
       tl.from('[data-animate="intro"] .message-avatar', { autoAlpha: 0, y: 6, duration: 0.28 })
-        .from('[data-animate="intro"] .message-content', { autoAlpha: 0, y: 8, duration: 0.38 }, '-=0.14')
-        .from('[data-animate="composer"]', { autoAlpha: 0, y: 10, duration: 0.36 }, '-=0.12');
+        .from('[data-animate="intro"] .message-content', { autoAlpha: 0, y: 8, duration: 0.38 }, '-=0.14');
       return () => tl.kill();
     });
   }
