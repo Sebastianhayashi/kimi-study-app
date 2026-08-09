@@ -365,5 +365,12 @@
     }
   }
 
+  window.addEventListener('lucubro:open-work', (event) => {
+    const workId = event.detail?.workId;
+    if (!workId || !state.works.some((work) => work.id === workId)) return;
+    section.hidden = false;
+    openWork(workId).catch(() => {});
+  });
+
   bootstrapDurableWork();
 })();
