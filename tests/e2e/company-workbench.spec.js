@@ -26,7 +26,7 @@ async function waitForCompanyControllers(page) {
 
 async function openExecutionSetup(page) {
   const settings = page.locator('#run-settings');
-  if (!(await settings.getAttribute('open'))) await settings.locator('summary').click();
+  if ((await settings.getAttribute('open')) === null) await settings.locator('summary').click();
   await expect(settings).toHaveAttribute('open', '');
   return settings;
 }
