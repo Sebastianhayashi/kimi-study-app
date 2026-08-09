@@ -54,7 +54,9 @@
     return work.title || work.brief || 'Untitled Work';
   }
 
-  function workExecutionCopy(work) {
+  function workExecutionCopy(work, run) {
+    const evidenceCount = Number(run && run.evidenceCount || 0);
+    if (evidenceCount > 0) return `${evidenceCount} evidence${evidenceCount === 1 ? '' : ' items'}`;
     if (work.status === 'needs-you') return 'Decision boundary';
     if (work.status === 'review') return 'Evidence ready';
     if (work.status === 'accepted') return 'Evidence accepted';
@@ -188,7 +190,7 @@
     button.querySelector('.operating-work-meta').textContent = work.brief && work.brief !== workTitle(work)
       ? work.brief
       : 'Durable company Work';
-    button.querySelector('.operating-work-execution').textContent = workExecutionCopy(work);
+    button.querySelector('.operating-work-execution').textContent = workExecutionCopy(work, run);
     button.querySelector('.operating-work-runtime').textContent = executionLabel;
     record.work = work;
     if (previousStatus && previousStatus !== work.status) animateState(button);
