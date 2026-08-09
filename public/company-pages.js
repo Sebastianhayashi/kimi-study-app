@@ -8,21 +8,18 @@
     ['/company/employees', 'employees'],
     ['/company/settings', 'settings'],
   ]);
-
   const lensToRoute = new Map([
     ['manager', '/company'],
     ['work', '/company/work'],
     ['employees', '/company/employees'],
     ['settings', '/company/settings'],
   ]);
-
   const lensLabels = {
     manager: 'Manager canvas',
     work: 'Work',
     employees: 'Employees',
     settings: 'Execution settings',
   };
-
   const titles = {
     manager: 'Lucubro · Company',
     work: 'Work · Lucubro',
@@ -186,9 +183,9 @@
           el('span', 'settings-index-name', runtime.id),
           el('span', 'settings-index-meta', runtime.available ? 'Available to the Company Workbench' : (runtime.reason || 'Not available on this host')),
         );
-        const status = el('span', 'settings-state', runtime.available ? 'Available' : 'Not ready');
-        status.dataset.tone = runtime.available ? 'success' : 'error';
-        row.append(copy, status);
+        const state = el('span', 'settings-state', runtime.available ? 'Available' : 'Not ready');
+        state.dataset.tone = runtime.available ? 'success' : 'error';
+        row.append(copy, state);
         runtimeList.append(row);
       }
     }
@@ -308,9 +305,7 @@
     }
 
     menuClosing = true;
-    const timeline = window.gsap.timeline({
-      onComplete: () => finishMenuClose({ restoreFocus }),
-    });
+    const timeline = window.gsap.timeline({ onComplete: () => finishMenuClose({ restoreFocus }) });
     timeline.to(menuItems, {
       autoAlpha: 0,
       y: -3,
@@ -404,10 +399,11 @@
   });
 
   for (const item of menuItems) {
-    item.addEventListener('click', (event) => {
+    item.addEventListener('click', async (event) => {
       if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       event.preventDefault();
-      switchLens(item.dataset.canvasLensTarget, { historyMode: 'push' });
+      await switchLens(item.dataset.canvasLensTarget, { historyMode: 'push' });
+      trigger?.focus({ preventScroll: true });
     });
   }
 
