@@ -4,28 +4,57 @@ This document records operator-approved runtime constraints for the active Lucub
 
 ## Trusted NixOS self-hosted runner
 
-The trusted GitHub Actions self-hosted NixOS machine currently has Codex installed and authenticated.
+The trusted GitHub Actions self-hosted NixOS machine has Codex installed and authenticated.
 
-Approved Codex execution profile:
+Approved Codex execution contract:
 
-- model/profile: **Luna Max**
-- mode: **default**
-- fast mode: **disabled**
-- permissions: **full access**
+- provider: **OpenAI Codex**
+- model id: **`gpt-5.6-luna`**
+- reasoning effort: **`max`**
+- collaboration mode: **`default`**
+- Fast mode: **disabled**
+- provider permission profile: **full access**
+- provider model fallback: **disabled**
 
-When real Codex execution is explicitly resumed, Lucubro development and smoke tests on this Worker must use this approved profile unless the operator changes the policy.
+`max` is a reasoning-effort setting. It is not part of the provider model name and must not be encoded as a synthetic model/profile label such as `Luna Max`.
 
-Lucubro must not silently fall back to another model/profile, enable fast mode, or reduce/expand this permission profile while claiming to be using the approved configuration. A mismatch should be treated as unavailable or blocked, not as an automatic substitution.
+The provider catalog display name, currently observed as `GPT-5.6-Luna`, is diagnostic metadata only. Lucubro admission binds model identity to the exact provider model id `gpt-5.6-luna`, not to display text.
 
-`full access` describes the approved Codex/provider host-access profile. It does **not** erase Lucubro's product-level Delegation Envelope. When real Codex resumes, the adapter/execution boundary must still preserve Lucubro authority semantics such as `Needs You` for actions outside the current Work envelope. Provider freedom and product authorization are separate layers; both requirements must hold at the same time.
+When real Codex execution is explicitly resumed, every Lucubro development Run/subrun on this Worker must satisfy the exact contract above unless the operator changes this policy.
+
+Lucubro must not silently fall back to another model, reduce reasoning effort below `max`, change collaboration mode, enable Fast, or alter the required provider permission profile while claiming to satisfy this contract. Unknown or mismatched required state is blocked, not substituted.
+
+`full access` describes the approved Codex/provider permission profile. It does **not** erase Lucubro's product-level Delegation Envelope. The adapter/execution boundary must preserve Lucubro authority semantics such as `Needs You` for actions outside the current Work envelope. Provider freedom and product authorization are separate layers; both requirements must hold at the same time.
+
+## Machine evidence
+
+Admission must be based on machine-readable evidence, not model prose. The trusted-host path must establish at least:
+
+- exact model id `gpt-5.6-luna` from provider catalog/thread state;
+- provider catalog capability for reasoning effort `max`;
+- Lucubro runtime enforcement that every admitted `turn/start` requests `reasoningEffort: "max"`;
+- default collaboration mode;
+- non-Fast/default service-tier execution state;
+- active full-access provider permission profile;
+- provider fallback disabled;
+- fresh ephemeral provider thread semantics;
+- concrete Lucubro-owned authority boundary and its side-effect probes;
+- exact approved Skill-bundle commits/root digests when Skill execution is involved.
+
+A provider display label is never sufficient evidence of model identity.
 
 ## Current product gate
 
-Real Claude/Codex execution remains paused as a product-development priority while the Company Canvas, Worker, Evidence, authorization, and routing boundaries are stabilized. Installation/authentication readiness does not by itself authorize a real Run.
+Real Codex exposure is fail-closed. Installation/authentication readiness or `LUCUBRO_ENABLE_REAL_RUNTIMES=1` alone does not authorize a Run.
 
-Default `company-server.js` runtime registration therefore wraps real provider adapters in a paused policy. They remain visible as unavailable execution options even if the host binary and credentials are ready. The deterministic mock runtime remains the default path for UI and Evidence development.
+The default Company server may expose the real Codex adapter only when all of the following are present for the exact deployed Lucubro commit:
 
-`LUCUBRO_ENABLE_REAL_RUNTIMES=1` is the explicit server-level escape hatch. **Keep it unset until the approved Codex profile above is enforced and verified by the adapter/smoke-test path.** The environment flag is authorization to expose real adapters; it is not itself model/mode/permission enforcement.
+1. explicit real-runtime exposure is requested;
+2. a verified admission receipt satisfies the execution contract above;
+3. a concrete Lucubro-owned systemd authority boundary is configured;
+4. the runtime registry re-verifies the admitted execution fields before exposing Codex.
+
+Other real providers remain blocked. The deterministic mock runtime remains available for product tests that do not require a real provider.
 
 Injected runtime registries used by tests or explicit embeddings remain the caller's responsibility and are not silently wrapped by the default server policy.
 
