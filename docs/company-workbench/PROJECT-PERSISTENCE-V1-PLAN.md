@@ -6,6 +6,17 @@
 - Related requirements: REQ-001 through REQ-020.
 - Governing product direction: issue #19 and `PRODUCT-THESIS.md`.
 
+## Implementation status
+
+As of 2026-08-09 on PR #27:
+
+- Slice 1 foundation is implemented: durable Project identity, Project -> Work association, read-only Matt-style source discovery, Project adoption/bootstrap API, restart persistence, and workspace-boundary checks.
+- Slice 2 foundation is implemented: canonical-source SHA-256 fingerprints, compact checkpoint source snapshots, and explicit fresh/stale reconciliation without rewriting the checkpoint during inspection.
+- Slice 3 foundation is implemented: Project-bound Work compiles current canonical sources, checkpoint freshness, objective, and Delegation Envelope into a bounded provider-neutral continuation context before starting a Run. A stale checkpoint next action is withheld from execution context.
+- Slice 4 Project canvas lens is not implemented.
+- Slice 5 end-to-end restart/new-session browser acceptance journey is not implemented.
+- Real Claude/Codex remains paused under the existing runtime policy.
+
 ## Technical approach
 
 Deliver Project Persistence in tracer-bullet slices while preserving the existing Work -> Run -> Evidence contract.
