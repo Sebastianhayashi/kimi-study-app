@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const routeToView = new Map([
+  const routeToLens = new Map([
     ['/company', 'manager'],
     ['/company/', 'manager'],
     ['/company/work', 'work'],
@@ -9,9 +9,34 @@
     ['/company/settings', 'settings'],
   ]);
 
-  const view = routeToView.get(window.location.pathname) || 'manager';
-  const views = [...document.querySelectorAll('[data-company-view-panel]')];
-  const links = [...document.querySelectorAll('[data-company-nav]')];
+  const lensToRoute = new Map([
+    ['manager', '/company'],
+    ['work', '/company/work'],
+    ['employees', '/company/employees'],
+    ['settings', '/company/settings'],
+  ]);
+
+  const lensLabels = {
+    manager: 'Manager canvas',
+    work: 'Work',
+    employees: 'Employees',
+    settings: 'Execution settings',
+  };
+
+  const titles = {
+    manager: 'Lucubro · Company',
+    work: 'Work · Lucubro',
+    employees: 'Employees · Lucubro',
+    settings: 'Execution settings · Lucubro',
+  };
+
+  const panels = [...document.querySelectorAll('[data-canvas-lens-panel]')];
+  const trigger = document.querySelector('#canvas-lens-trigger');
+  const triggerLabel = trigger?.querySelector('.canvas-lens-trigger-copy strong');
+  const currentLabel = document.querySelector('#canvas-lens-current');
+  const menu = document.querySelector('#canvas-lens-menu');
+  const menuItems = [...document.querySelectorAll('[data-canvas-lens-target]')];
+  const brand = document.querySelector('.brand');
   const composer = document.querySelector('.composer-dock');
   const workList = document.querySelector('#work-page-list');
   const workSummary = document.querySelector('#work-page-summary');
@@ -20,38 +45,13 @@
   const runtimeList = document.querySelector('#settings-runtime-list');
   const workspaceRoot = document.querySelector('#settings-workspace-root');
   const settingsSummary = document.querySelector('#settings-page-summary');
-
-  document.body.dataset.companyView = view;
-  for (const panel of views) panel.hidden = panel.dataset.companyViewPanel !== view;
-  for (const link of links) {
-    if (link.dataset.companyNav === view) link.setAttribute('aria-current', 'page');
-    else link.removeAttribute('aria-current');
-  }
-  if (composer) composer.hidden = view !== 'manager';
-
-  const titles = {
-    manager: 'Lucubro · Company',
-    work: 'Work · Lucubro',
-    employees: 'Employees · Lucubro',
-    settings: 'Settings · Lucubro',
-  };
-  document.title = titles[view] || titles.manager;
-
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const canAnimate = () => Boolean(window.gsap && !reducedMotion.matches);
 
-  function animatePage(node) {
-    if (!node || !canAnimate()) return;
-    const targets = node.querySelectorAll('.product-page-header, .product-page-body > *');
-    window.gsap.fromTo(targets, { autoAlpha: 0, y: 7 }, {
-      autoAlpha: 1,
-      y: 0,
-      duration: 0.28,
-      stagger: 0.035,
-      ease: 'power2.out',
-      clearProps: 'transform,opacity,visibility',
-    });
-  }
+  let currentLens = routeToLens.get(window.location.pathname) || 'manager';
+  let transitionSerial = 0;
+  let menuClosing = false;
+
+  const canAnimate = () => Boolean(window.gsap && !reducedMotion.matches);
 
   function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -105,11 +105,11 @@
     host.replaceChildren();
     const failure = el('div', 'product-load-error');
     failure.setAttribute('role', 'alert');
-    failure.append(el('strong', '', 'This view could not be loaded.'), el('span', '', error.message));
+    failure.append(el('strong', '', 'This lens could not be loaded.'), el('span', '', error.message));
     host.append(failure);
   }
 
-  function renderWorkPage(data) {
+  function renderWorkLens(data) {
     if (!workList || !workSummary) return;
     const works = Array.isArray(data.works) ? data.works : [];
     workSummary.textContent = `${works.length} durable Work item${works.length === 1 ? '' : 's'}`;
@@ -134,7 +134,7 @@
     }
   }
 
-  function renderEmployeesPage(data) {
+  function renderEmployeesLens(data) {
     if (!employeeList || !employeeSummary) return;
     const manager = data.manager ? [data.manager] : [];
     const employees = Array.isArray(data.employees) ? data.employees : [];
@@ -148,7 +148,9 @@
     const works = Array.isArray(data.works) ? data.works : [];
     employeeList.replaceChildren();
     for (const person of people) {
-      const assigned = person.id === 'alex' ? 0 : works.filter((work) => work.employeeId === person.id).length;
+      const assigned = person.id === 'alex'
+        ? 0
+        : works.filter((work) => (work.assignedEmployeeId || work.employeeId) === person.id).length;
       const row = el('div', 'employee-index-row');
       const avatar = el('span', 'employee-index-avatar', (person.name || '?').slice(0, 1).toUpperCase());
       avatar.setAttribute('aria-hidden', 'true');
@@ -160,14 +162,14 @@
       const assignment = el(
         'span',
         'employee-index-assignment',
-        person.id === 'alex' ? 'Primary company interface' : `${assigned} Work assignment${assigned === 1 ? '' : 's'}`,
+        person.id === 'alex' ? 'Primary company relationship' : `${assigned} Work assignment${assigned === 1 ? '' : 's'}`,
       );
       row.append(avatar, copy, assignment);
       employeeList.append(row);
     }
   }
 
-  async function renderSettingsPage(data) {
+  async function renderSettingsLens(data) {
     if (!runtimeList || !workspaceRoot || !settingsSummary) return;
     const runtimes = Array.isArray(data.runtimes) ? data.runtimes : [];
     settingsSummary.textContent = `${runtimes.filter((runtime) => runtime.available).length}/${runtimes.length} runtimes available`;
@@ -202,26 +204,247 @@
     }
   }
 
-  async function bootstrapPage() {
-    if (view === 'manager') {
-      animatePage(document.querySelector('[data-company-view-panel="manager"]'));
-      return;
-    }
-
-    const panel = document.querySelector(`[data-company-view-panel="${CSS.escape(view)}"]`);
+  async function loadLens(lens) {
+    if (lens === 'manager') return;
+    const host = lens === 'work' ? workList : lens === 'employees' ? employeeList : runtimeList;
     try {
       const response = await fetch('/api/company/bootstrap');
       if (!response.ok) throw new Error(`Bootstrap failed (${response.status})`);
       const data = await response.json();
-      if (view === 'work') renderWorkPage(data);
-      if (view === 'employees') renderEmployeesPage(data);
-      if (view === 'settings') await renderSettingsPage(data);
-      animatePage(panel);
+      if (lens === 'work') renderWorkLens(data);
+      if (lens === 'employees') renderEmployeesLens(data);
+      if (lens === 'settings') await renderSettingsLens(data);
     } catch (error) {
-      const host = view === 'work' ? workList : view === 'employees' ? employeeList : runtimeList;
       if (host) renderFailure(host, error);
     }
   }
 
-  bootstrapPage();
+  function panelFor(lens) {
+    return document.querySelector(`[data-canvas-lens-panel="${CSS.escape(lens)}"]`);
+  }
+
+  function setShellState(lens) {
+    document.body.dataset.companyView = lens;
+    document.body.dataset.canvasLens = lens;
+    document.title = titles[lens] || titles.manager;
+    const label = lensLabels[lens] || lensLabels.manager;
+    if (currentLabel) currentLabel.textContent = label;
+    if (triggerLabel) triggerLabel.textContent = label;
+    if (trigger) trigger.setAttribute('aria-label', `Change canvas focus. Current: ${label}`);
+    if (composer) composer.hidden = false;
+
+    for (const item of menuItems) {
+      if (item.dataset.canvasLensTarget === lens) item.setAttribute('aria-current', 'page');
+      else item.removeAttribute('aria-current');
+    }
+  }
+
+  function clearMotion(node) {
+    if (window.gsap && node) window.gsap.set(node, { clearProps: 'transform,opacity,visibility' });
+  }
+
+  function animatePanelOut(panel) {
+    if (!panel || !canAnimate()) return Promise.resolve();
+    return new Promise((resolve) => {
+      window.gsap.killTweensOf(panel);
+      window.gsap.to(panel, {
+        autoAlpha: 0,
+        y: -6,
+        scale: 0.995,
+        duration: 0.15,
+        ease: 'power1.in',
+        onComplete: () => {
+          clearMotion(panel);
+          resolve();
+        },
+      });
+    });
+  }
+
+  function animatePanelIn(panel) {
+    if (!panel || !canAnimate()) return;
+    const detailTargets = panel.querySelectorAll('.product-page-header, .product-page-body > *, .intro-message, .company-context, .durable-work-context, .conversation-feed > *');
+    window.gsap.killTweensOf([panel, ...detailTargets]);
+    const timeline = window.gsap.timeline({ defaults: { ease: 'power2.out' } });
+    timeline.fromTo(panel, { autoAlpha: 0, y: 7, scale: 0.997 }, {
+      autoAlpha: 1,
+      y: 0,
+      scale: 1,
+      duration: 0.23,
+      clearProps: 'transform,opacity,visibility',
+    });
+    if (detailTargets.length) {
+      timeline.fromTo(detailTargets, { autoAlpha: 0, y: 5 }, {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.2,
+        stagger: 0.025,
+        clearProps: 'transform,opacity,visibility',
+      }, '-=0.13');
+    }
+  }
+
+  function finishMenuClose({ restoreFocus = false } = {}) {
+    if (!menu || !trigger) return;
+    menu.hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+    menuClosing = false;
+    clearMotion(menu);
+    for (const item of menuItems) clearMotion(item);
+    if (restoreFocus) trigger.focus({ preventScroll: true });
+  }
+
+  function closeMenu({ restoreFocus = false, immediate = false } = {}) {
+    if (!menu || !trigger || menu.hidden) return;
+    if (menuClosing) return;
+    if (immediate || !canAnimate()) {
+      finishMenuClose({ restoreFocus });
+      return;
+    }
+
+    menuClosing = true;
+    const timeline = window.gsap.timeline({
+      onComplete: () => finishMenuClose({ restoreFocus }),
+    });
+    timeline.to(menuItems, {
+      autoAlpha: 0,
+      y: -3,
+      duration: 0.1,
+      stagger: { each: 0.015, from: 'end' },
+      ease: 'power1.in',
+    });
+    timeline.to(menu, {
+      autoAlpha: 0,
+      y: -4,
+      scale: 0.985,
+      duration: 0.11,
+      ease: 'power1.in',
+    }, '-=0.06');
+  }
+
+  function openMenu() {
+    if (!menu || !trigger || !menu.hidden) return;
+    menu.hidden = false;
+    trigger.setAttribute('aria-expanded', 'true');
+    if (canAnimate()) {
+      window.gsap.killTweensOf([menu, ...menuItems]);
+      const timeline = window.gsap.timeline({ defaults: { ease: 'power2.out' } });
+      timeline.fromTo(menu, { autoAlpha: 0, y: -5, scale: 0.985 }, {
+        autoAlpha: 1,
+        y: 0,
+        scale: 1,
+        duration: 0.18,
+        clearProps: 'transform,opacity,visibility',
+      });
+      timeline.fromTo(menuItems, { autoAlpha: 0, y: -4 }, {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.17,
+        stagger: 0.025,
+        clearProps: 'transform,opacity,visibility',
+      }, '-=0.09');
+    }
+    const currentItem = menuItems.find((item) => item.dataset.canvasLensTarget === currentLens) || menuItems[0];
+    currentItem?.focus({ preventScroll: true });
+  }
+
+  async function switchLens(nextLens, { historyMode = 'push', initial = false } = {}) {
+    if (!lensToRoute.has(nextLens)) nextLens = 'manager';
+    const serial = ++transitionSerial;
+    const previousLens = currentLens;
+    const previousPanel = panelFor(previousLens);
+    const nextPanel = panelFor(nextLens);
+
+    closeMenu({ immediate: true });
+
+    if (!initial && previousLens === nextLens) {
+      setShellState(nextLens);
+      return;
+    }
+
+    if (!initial && previousPanel && !previousPanel.hidden) await animatePanelOut(previousPanel);
+    if (serial !== transitionSerial) return;
+
+    for (const panel of panels) panel.hidden = panel !== nextPanel;
+    if (nextPanel) nextPanel.hidden = false;
+    currentLens = nextLens;
+    setShellState(nextLens);
+
+    if (historyMode === 'push') {
+      const route = lensToRoute.get(nextLens);
+      if (window.location.pathname !== route || window.location.search) history.pushState({ lucubroLens: nextLens }, '', route);
+    } else if (historyMode === 'replace') {
+      history.replaceState({ lucubroLens: nextLens }, '', window.location.href);
+    }
+
+    await loadLens(nextLens);
+    if (serial !== transitionSerial) return;
+    animatePanelIn(nextPanel);
+  }
+
+  function moveMenuFocus(delta) {
+    if (!menuItems.length) return;
+    const index = Math.max(0, menuItems.indexOf(document.activeElement));
+    const next = (index + delta + menuItems.length) % menuItems.length;
+    menuItems[next].focus({ preventScroll: true });
+  }
+
+  trigger?.addEventListener('click', () => {
+    if (menu?.hidden) openMenu();
+    else closeMenu({ restoreFocus: true });
+  });
+
+  for (const item of menuItems) {
+    item.addEventListener('click', (event) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      switchLens(item.dataset.canvasLensTarget, { historyMode: 'push' });
+    });
+  }
+
+  menu?.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      moveMenuFocus(1);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      moveMenuFocus(-1);
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      menuItems[0]?.focus({ preventScroll: true });
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      menuItems.at(-1)?.focus({ preventScroll: true });
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      closeMenu({ restoreFocus: true });
+    }
+  });
+
+  document.addEventListener('pointerdown', (event) => {
+    if (!menu || menu.hidden || !trigger) return;
+    if (menu.contains(event.target) || trigger.contains(event.target)) return;
+    closeMenu();
+  });
+
+  brand?.addEventListener('click', (event) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    switchLens('manager', { historyMode: 'push' });
+  });
+
+  window.addEventListener('popstate', () => {
+    const lens = routeToLens.get(window.location.pathname) || 'manager';
+    switchLens(lens, { historyMode: 'none' });
+  });
+
+  window.addEventListener('pagehide', () => {
+    if (!window.gsap) return;
+    window.gsap.killTweensOf([menu, ...menuItems, ...panels]);
+  }, { once: true });
+
+  for (const panel of panels) panel.hidden = panel.dataset.canvasLensPanel !== currentLens;
+  setShellState(currentLens);
+  history.replaceState({ lucubroLens: currentLens }, '', window.location.href);
+  loadLens(currentLens).then(() => animatePanelIn(panelFor(currentLens)));
 })();
