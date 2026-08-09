@@ -26,13 +26,16 @@ function workspaceBrowserFor(workspaceRoot) {
   return createWorkspaceBrowser({ rootDir: workspaceRoot, homeDir: workspaceRoot, showHidden: true });
 }
 
-async function withServer(t, options, run) {
+async function withServer(options, run) {
   const { app } = createCompanyServer(options);
   const server = app.listen(0, '127.0.0.1');
-  t.after(() => new Promise((resolve) => server.close(resolve)));
   await new Promise((resolve) => server.once('listening', resolve));
   const address = server.address();
-  return run(`http://127.0.0.1:${address.port}`);
+  try {
+    return await run(`http://127.0.0.1:${address.port}`);
+  } finally {
+    await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  }
 }
 
 test('Company bootstrap exposes durable Projects and source provenance', async (t) => {
@@ -41,7 +44,7 @@ test('Company bootstrap exposes durable Projects and source provenance', async (
   fs.writeFileSync(path.join(repoDir, 'AGENTS.md'), '# Instructions\n');
   fs.writeFileSync(path.join(repoDir, 'CONTEXT.md'), '# Context\n');
 
-  await withServer(t, {
+  await withServer({
     dataDir,
     runtimes: new Map(),
     worktreeManager: {},
@@ -74,7 +77,7 @@ test('Project adoption is durable across Company server recreation', async (t) =
   const workspaceBrowser = workspaceBrowserFor(workspaceRoot);
 
   let projectId;
-  await withServer(t, { dataDir, runtimes: new Map(), worktreeManager: {}, workspaceBrowser }, async (baseUrl) => {
+  await withServer({ dataDir, runtimes: new Map(), worktreeManager: {}, workspaceBrowser }, async (baseUrl) => {
     const response = await fetch(`${baseUrl}/api/company/projects`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -85,7 +88,7 @@ test('Project adoption is durable across Company server recreation', async (t) =
     projectId = body.project.id;
   });
 
-  await withServer(t, { dataDir, runtimes: new Map(), worktreeManager: {}, workspaceBrowser }, async (baseUrl) => {
+  await withServer({ dataDir, runtimes: new Map(), worktreeManager: {}, workspaceBrowser }, async (baseUrl) => {
     const response = await fetch(`${baseUrl}/api/company/bootstrap`);
     assert.equal(response.status, 200);
     const bootstrap = await response.json();
@@ -101,7 +104,7 @@ test('Project adoption cannot inspect a repository outside the configured worksp
   fs.mkdirSync(path.join(outsideRoot, '.git'));
   fs.writeFileSync(path.join(outsideRoot, 'CONTEXT.md'), '# Outside\n');
 
-  await withServer(t, {
+  await withServer({
     dataDir,
     runtimes: new Map(),
     worktreeManager: {},
