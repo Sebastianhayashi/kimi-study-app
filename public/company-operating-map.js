@@ -161,7 +161,7 @@
     const meta = el('span', 'operating-work-meta');
     const footer = el('span', 'operating-work-footer');
     const execution = el('span', 'operating-work-execution');
-    const run = el('span', 'operating-work-run');
+    const run = el('span', 'operating-work-runtime');
     footer.append(execution, run);
     button.append(head, title, meta, footer);
 
@@ -192,7 +192,7 @@
       ? work.brief
       : 'Durable company Work';
     button.querySelector('.operating-work-execution').textContent = workExecutionCopy(work);
-    button.querySelector('.operating-work-run').textContent = runCopy(work);
+    button.querySelector('.operating-work-runtime').textContent = runCopy(work);
     record.work = work;
     if (previousStatus && previousStatus !== work.status) animateState(button);
   }
@@ -336,8 +336,7 @@
     clearTimeout(refreshTimer);
     for (const observer of observers) observer.disconnect();
     if (window.gsap) {
-      window.gsap.killTweensOf([
-        ...workNodes.values()].map((record) => record.button));
+      window.gsap.killTweensOf([...workNodes.values()].map((record) => record.button));
       window.gsap.killTweensOf([...rowNodes.values()].map((record) => record.row));
     }
   }, { once: true });
