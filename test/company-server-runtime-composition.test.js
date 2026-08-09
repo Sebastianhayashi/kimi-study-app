@@ -95,6 +95,45 @@ test('default Company server composition binds exact admission receipt and concr
   assert.equal(instance.codexAdmission.modelId, 'gpt-5.6-luna');
 });
 
+test('real runtime exposure stays disabled when concrete authority machine configuration is incomplete', (t) => {
+  const dataDir = tempRoot(t);
+  const registryCalls = [];
+  let authorityCalls = 0;
+  const environment = {
+    LUCUBRO_ENABLE_REAL_RUNTIMES: '1',
+    LUCUBRO_CODEX_ADMISSION_FILE: '/home/yuyu/.wrp/lucubro/codex-admission.json',
+    LUCUBRO_BUILD_REPO: 'Sebastianhayashi/lucubro',
+    LUCUBRO_BUILD_COMMIT: '0123456789abcdef0123456789abcdef01234567',
+    LUCUBRO_SYSTEMD_RUN_BINARY: '/run/current-system/sw/bin/systemd-run',
+    LUCUBRO_CODEX_EXECUTABLE: '/home/yuyu/.local/share/npm-global/bin/codex',
+    LUCUBRO_CODEX_INSTALL_ROOT: '/home/yuyu/.local/share/npm-global',
+    // LUCUBRO_CODEX_HOME_SOURCE is intentionally absent.
+    PATH: '/run/current-system/sw/bin:/home/yuyu/.local/share/npm-global/bin',
+  };
+
+  createCompanyServer({
+    dataDir,
+    environment,
+    canvasPdfRenderer: pdfRenderer(),
+    createSystemdAuthorityBoundary() {
+      authorityCalls += 1;
+      throw new Error('must not construct an incomplete authority boundary');
+    },
+    createDefaultRuntimeRegistry(input) {
+      registryCalls.push(input);
+      return {
+        registry: new Map(),
+        admission: { admitted: false, profileName: 'Luna Max' },
+      };
+    },
+  });
+
+  assert.equal(authorityCalls, 0);
+  assert.equal(registryCalls.length, 1);
+  assert.equal(registryCalls[0].enableRealRuntimes, false);
+  assert.equal(registryCalls[0].codexAuthorityBoundary, null);
+});
+
 test('explicit runtime injection remains a test/product seam and bypasses default real-runtime composition', (t) => {
   const dataDir = tempRoot(t);
   const injected = new Map([['mock', runtime('mock')]]);
