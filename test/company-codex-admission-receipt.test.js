@@ -20,15 +20,27 @@ function digest(char) {
   return `sha256:${char.repeat(64)}`;
 }
 
+function bundleObservation({ id, pinnedCommit, rootDigest }) {
+  return {
+    id,
+    pinnedCommit,
+    rootDigest,
+    installationState: 'active',
+    active: true,
+    rootExists: true,
+    pinnedCommitMatchesApproved: true,
+    manifestRootDigest: rootDigest,
+    observedRootDigest: rootDigest,
+    digestMatchesManifest: true,
+  };
+}
+
 function validReceipt() {
   return {
     kind: 'lucubro-codex-admission',
     schemaVersion: 1,
     observedAt: '2026-08-09T14:10:00.000Z',
-    source: {
-      repo: EXPECTED_REPO,
-      commit: EXPECTED_COMMIT,
-    },
+    source: { repo: EXPECTED_REPO, commit: EXPECTED_COMMIT },
     appServer: {
       userAgent: 'lucubro/0.1.0 (codex-app-server; 0.147.0)',
       platformFamily: 'unix',
@@ -76,16 +88,16 @@ function validReceipt() {
       },
     },
     bundles: [
-      {
+      bundleObservation({
         id: 'gstack',
         pinnedCommit: '94993f74012782fd94416dd44b8314f6363a13a4',
         rootDigest: digest('a'),
-      },
-      {
+      }),
+      bundleObservation({
         id: 'mattpocock-skills',
         pinnedCommit: '84fdeffd12f2ee307994d1eb6feb48173b6e0502',
         rootDigest: digest('b'),
-      },
+      }),
     ],
   };
 }
@@ -95,7 +107,6 @@ test('exact machine receipt admits gpt-5.6-luna with max effort independent of p
     expectedRepo: EXPECTED_REPO,
     expectedCommit: EXPECTED_COMMIT,
   });
-
   assert.equal(result.admitted, true);
   assert.equal(result.modelId, LUNA_MODEL_ID);
   assert.equal(result.reasoningEffort, 'max');
@@ -255,7 +266,7 @@ test('receipt accepts both null and explicit default service-tier observations b
   }).admitted, false);
 });
 
-test('receipt requires complete pinned Matt/gstack roots with real sha256 digests', () => {
+test('receipt requires complete active pinned Matt/gstack roots with matching observed sha256 digests', () => {
   const missingBundle = validReceipt();
   missingBundle.bundles = missingBundle.bundles.filter((bundle) => bundle.id !== 'gstack');
   const missingResult = verifyCodexAdmissionReceipt(missingBundle, {
@@ -265,14 +276,43 @@ test('receipt requires complete pinned Matt/gstack roots with real sha256 digest
   assert.equal(missingResult.admitted, false);
   assert.ok(missingResult.unknown.includes('bundles.gstack'));
 
-  const drifted = validReceipt();
-  drifted.bundles[0].pinnedCommit = '1111111111111111111111111111111111111111';
-  const driftedResult = verifyCodexAdmissionReceipt(drifted, {
+  const driftedCommit = validReceipt();
+  driftedCommit.bundles[0].pinnedCommit = '1111111111111111111111111111111111111111';
+  const commitResult = verifyCodexAdmissionReceipt(driftedCommit, {
     expectedRepo: EXPECTED_REPO,
     expectedCommit: EXPECTED_COMMIT,
   });
-  assert.equal(driftedResult.admitted, false);
-  assert.ok(driftedResult.mismatches.some((entry) => entry.field === 'bundles.gstack.pinnedCommit'));
+  assert.equal(commitResult.admitted, false);
+  assert.ok(commitResult.mismatches.some((entry) => entry.field === 'bundles.gstack.pinnedCommit'));
+
+  const inactive = validReceipt();
+  inactive.bundles[0].installationState = 'materialized';
+  inactive.bundles[0].active = false;
+  const inactiveResult = verifyCodexAdmissionReceipt(inactive, {
+    expectedRepo: EXPECTED_REPO,
+    expectedCommit: EXPECTED_COMMIT,
+  });
+  assert.equal(inactiveResult.admitted, false);
+  assert.ok(inactiveResult.mismatches.some((entry) => entry.field === 'bundles.gstack.installationState'));
+  assert.ok(inactiveResult.mismatches.some((entry) => entry.field === 'bundles.gstack.active'));
+
+  const missingRoot = validReceipt();
+  missingRoot.bundles[0].rootExists = false;
+  const rootResult = verifyCodexAdmissionReceipt(missingRoot, {
+    expectedRepo: EXPECTED_REPO,
+    expectedCommit: EXPECTED_COMMIT,
+  });
+  assert.equal(rootResult.admitted, false);
+  assert.ok(rootResult.mismatches.some((entry) => entry.field === 'bundles.gstack.rootExists'));
+
+  const unverifiedCommit = validReceipt();
+  unverifiedCommit.bundles[0].pinnedCommitMatchesApproved = false;
+  const verifiedCommitResult = verifyCodexAdmissionReceipt(unverifiedCommit, {
+    expectedRepo: EXPECTED_REPO,
+    expectedCommit: EXPECTED_COMMIT,
+  });
+  assert.equal(verifiedCommitResult.admitted, false);
+  assert.ok(verifiedCommitResult.mismatches.some((entry) => entry.field === 'bundles.gstack.pinnedCommitMatchesApproved'));
 
   const badDigest = validReceipt();
   badDigest.bundles[1].rootDigest = 'sha256:not-a-digest';
@@ -282,6 +322,17 @@ test('receipt requires complete pinned Matt/gstack roots with real sha256 digest
   });
   assert.equal(digestResult.admitted, false);
   assert.ok(digestResult.unknown.includes('bundles.mattpocock-skills.rootDigest'));
+
+  const driftedDigest = validReceipt();
+  driftedDigest.bundles[1].observedRootDigest = digest('c');
+  driftedDigest.bundles[1].digestMatchesManifest = false;
+  const driftedDigestResult = verifyCodexAdmissionReceipt(driftedDigest, {
+    expectedRepo: EXPECTED_REPO,
+    expectedCommit: EXPECTED_COMMIT,
+  });
+  assert.equal(driftedDigestResult.admitted, false);
+  assert.ok(driftedDigestResult.mismatches.some((entry) => entry.field === 'bundles.mattpocock-skills.digestMatchesManifest'));
+  assert.ok(driftedDigestResult.mismatches.some((entry) => entry.field === 'bundles.mattpocock-skills.observedRootDigest'));
 });
 
 test('file loader never treats the enable flag or an unreadable/invalid receipt as admission', () => {
