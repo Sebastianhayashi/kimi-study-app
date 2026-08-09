@@ -49,20 +49,21 @@ function fakeAppServer({ models = [], config = {}, permissionProfiles = [] } = {
   return { spawnImpl, calls };
 }
 
-test('Codex admission preflight collects machine-readable model/config/permission evidence without claiming admission', async () => {
+test('Codex admission preflight collects machine-readable exact model/config/permission evidence without claiming admission', async () => {
   const fake = fakeAppServer({
     models: [{
-      id: 'luna-runtime-id',
-      model: 'luna-runtime-id',
-      displayName: 'Luna Max',
+      id: 'gpt-5.6-luna',
+      model: 'gpt-5.6-luna',
+      displayName: 'GPT-5.6-Luna',
       hidden: false,
-      isDefault: true,
-      defaultServiceTier: null,
+      isDefault: false,
+      supportedReasoningEfforts: ['high', 'max'],
+      defaultServiceTier: 'priority',
       additionalSpeedTiers: ['fast'],
-      serviceTiers: [{ id: 'fast', name: 'Fast', description: 'Faster tier' }],
+      serviceTiers: [{ id: 'priority', name: 'Priority', description: 'Priority tier' }],
     }],
     config: {
-      model: 'luna-runtime-id',
+      model: 'gpt-5.6-luna',
       model_provider: 'openai',
       service_tier: null,
     },
@@ -75,23 +76,23 @@ test('Codex admission preflight collects machine-readable model/config/permissio
 
   const preflight = await runtime.preflight({
     cwd: '/work/lucubro',
-    requestedModelId: 'luna-runtime-id',
+    requestedModelId: 'gpt-5.6-luna',
     requestedPermissionProfileId: ':full-access',
   });
 
   assert.equal(preflight.kind, 'codex-app-server-preflight');
   assert.equal(preflight.admitted, undefined);
   assert.deepEqual(preflight.model, {
-    requestedId: 'luna-runtime-id',
+    requestedId: 'gpt-5.6-luna',
     catalogMatch: true,
-    displayName: 'Luna Max',
-    isDefault: true,
-    defaultServiceTier: null,
+    displayName: 'GPT-5.6-Luna',
+    isDefault: false,
+    defaultServiceTier: 'priority',
     additionalSpeedTiers: ['fast'],
-    serviceTierIds: ['fast'],
+    serviceTierIds: ['priority'],
   });
   assert.deepEqual(preflight.effectiveConfig, {
-    modelId: 'luna-runtime-id',
+    modelId: 'gpt-5.6-luna',
     modelProvider: 'openai',
     serviceTier: null,
   });
@@ -126,7 +127,7 @@ test('Codex admission preflight reports unknown/missing machine state instead of
 
   const preflight = await runtime.preflight({
     cwd: '/work/lucubro',
-    requestedModelId: 'luna-runtime-id',
+    requestedModelId: 'gpt-5.6-luna',
     requestedPermissionProfileId: ':full-access',
   });
 
