@@ -7,8 +7,9 @@
   const tree = document.querySelector('#workspace-tree');
   const rootLabel = document.querySelector('#workspace-root-label');
   const newFolderButton = document.querySelector('#workspace-new-folder');
-  const createForm = document.querySelector('#workspace-create-form');
+  const createRegion = document.querySelector('#workspace-create-form');
   const createInput = document.querySelector('#workspace-create-name');
+  const createSubmit = document.querySelector('.workspace-create-submit');
   const createCancel = document.querySelector('#workspace-create-cancel');
   const input = document.querySelector('#repo-dir');
   const suggestions = document.querySelector('#workspace-suggestions');
@@ -21,7 +22,31 @@
   const dropReceiptCopy = document.querySelector('#workspace-drop-receipt-copy');
   const runSettings = document.querySelector('#run-settings');
 
-  if (!picker || !toggle || !panel || !tree || !rootLabel || !newFolderButton || !createForm || !createInput || !createCancel || !input || !suggestions || !repoControl || !repoNote || !repoReceipt || !repoScan || !dropReceipt || !dropReceiptTitle || !dropReceiptCopy) return;
+  const required = {
+    picker,
+    toggle,
+    panel,
+    tree,
+    rootLabel,
+    newFolderButton,
+    createRegion,
+    createInput,
+    createSubmit,
+    createCancel,
+    input,
+    suggestions,
+    repoControl,
+    repoNote,
+    repoReceipt,
+    repoScan,
+  };
+  const missing = Object.entries(required).filter(([, node]) => !node).map(([name]) => name);
+  if (missing.length) {
+    document.documentElement.dataset.workspaceControllerError = missing.join(',');
+    return;
+  }
+
+  picker.dataset.controller = 'ready';
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const state = {
@@ -53,13 +78,24 @@
     return payload;
   }
 
+  function clearMotion(target) {
+    if (window.gsap && target) window.gsap.set(target, { clearProps: 'all' });
+  }
+
   function animateEnter(target, { y = 5, duration = 0.22, stagger = 0 } = {}) {
     if (!canAnimate()) return;
     window.gsap.killTweensOf(target);
     window.gsap.fromTo(
       target,
       { autoAlpha: 0, y },
-      { autoAlpha: 1, y: 0, duration, stagger, ease: 'power2.out', clearProps: 'transform,opacity,visibility' },
+      {
+        autoAlpha: 1,
+        y: 0,
+        duration,
+        stagger,
+        ease: 'power2.out',
+        clearProps: 'transform,opacity,visibility',
+      },
     );
   }
 
@@ -84,7 +120,14 @@
     window.gsap.fromTo(
       repoScan,
       { autoAlpha: 0, xPercent: -110, scaleX: 0.5 },
-      { autoAlpha: 0.86, xPercent: 410, scaleX: 1, duration: 0.46, ease: 'power2.out', clearProps: 'transform,opacity,visibility' },
+      {
+        autoAlpha: 0.86,
+        xPercent: 410,
+        scaleX: 1,
+        duration: 0.46,
+        ease: 'power2.out',
+        clearProps: 'transform,opacity,visibility',
+      },
     );
   }
 
@@ -92,7 +135,7 @@
     if (repoReceipt.hidden) return;
     const finish = () => {
       repoReceipt.hidden = true;
-      if (window.gsap) window.gsap.set(repoReceipt, { clearProps: 'all' });
+      clearMotion(repoReceipt);
     };
     animateExit(repoReceipt, finish);
   }
@@ -111,7 +154,7 @@
     const finish = () => {
       suggestions.hidden = true;
       suggestions.replaceChildren();
-      if (window.gsap) window.gsap.set(suggestions, { clearProps: 'all' });
+      clearMotion(suggestions);
     };
     animateExit(suggestions, finish);
   }
@@ -173,7 +216,13 @@
     }
   }
 
-  function acceptManualPath(value, reason) {
+  function syncSelectedRows() {
+    for (const row of tree.querySelectorAll('.workspace-tree-row')) {
+      row.dataset.selected = String(row.dataset.path === state.selectedPath);
+    }
+  }
+
+  function acceptManualPath(reason) {
     state.selectedPath = '';
     setRepoState('received');
     repoNote.textContent = reason;
@@ -186,7 +235,7 @@
       const info = await fetchJson(`/api/company/workspaces/inspect?path=${escapeQuery(value)}`);
       if (revision !== state.inputRevision) return;
       if (!info.exists || !info.isDirectory) {
-        acceptManualPath(value, 'Path received. This folder was not found inside the browsable host root, so Work start will validate it.');
+        acceptManualPath('Path received. This folder was not found inside the browsable host root, so Work start will validate it.');
         return;
       }
 
@@ -203,7 +252,7 @@
     } catch (error) {
       if (revision !== state.inputRevision) return;
       if (/outside the allowed workspace root/i.test(error.message)) {
-        acceptManualPath(value, 'Path received. It sits outside the browsable host root, so Lucubro will validate it only when Work starts.');
+        acceptManualPath('Path received. It sits outside the browsable host root, so Lucubro will validate it only when Work starts.');
         return;
       }
       setRepoState('error');
@@ -234,12 +283,6 @@
     animateReadingTrace();
     state.suggestTimer = window.setTimeout(() => loadSuggestions(value, revision), 90);
     state.inspectTimer = window.setTimeout(() => inspectPath(value, revision), 260);
-  }
-
-  function syncSelectedRows() {
-    for (const row of tree.querySelectorAll('.workspace-tree-row')) {
-      row.dataset.selected = String(row.dataset.path === state.selectedPath);
-    }
   }
 
   function createTreeNode(entry, { isRoot = false } = {}) {
@@ -287,7 +330,7 @@
         disclosure.setAttribute('aria-expanded', 'false');
         const finish = () => {
           children.hidden = true;
-          if (window.gsap) window.gsap.set(children, { clearProps: 'all' });
+          clearMotion(children);
         };
         animateExit(children, finish);
         return;
@@ -333,16 +376,11 @@
     if (state.rootRendered || !state.root) return;
     state.rootRendered = true;
     tree.replaceChildren();
-    const rootEntry = {
-      ...state.root,
-      name: state.root.displayPath,
-      hasChildren: true,
-    };
+    const rootEntry = { ...state.root, name: state.root.displayPath, hasChildren: true };
     const rootNode = createTreeNode(rootEntry, { isRoot: true });
     tree.append(rootNode);
     animateEnter(rootNode, { y: 4, duration: 0.2 });
-    const rootToggle = rootNode.querySelector('.workspace-node-toggle');
-    rootToggle?.click();
+    rootNode.querySelector('.workspace-node-toggle')?.click();
   }
 
   async function openTree() {
@@ -366,10 +404,10 @@
   function closeTree({ restoreFocus = false } = {}) {
     if (panel.hidden) return;
     toggle.setAttribute('aria-expanded', 'false');
-    createForm.hidden = true;
+    createRegion.hidden = true;
     const finish = () => {
       panel.hidden = true;
-      if (window.gsap) window.gsap.set(panel, { clearProps: 'all' });
+      clearMotion(panel);
       if (restoreFocus) toggle.focus({ preventScroll: true });
     };
     animateExit(panel, finish);
@@ -400,31 +438,30 @@
     }
   }
 
-  function openCreateForm() {
-    createForm.hidden = false;
+  function openCreateRegion() {
+    createRegion.hidden = false;
     createInput.value = '';
-    if (canAnimate()) animateEnter(createForm, { y: 4, duration: 0.2 });
+    animateEnter(createRegion, { y: 4, duration: 0.2 });
     createInput.focus({ preventScroll: true });
   }
 
-  function closeCreateForm({ restoreFocus = false } = {}) {
-    if (createForm.hidden) return;
+  function closeCreateRegion({ restoreFocus = false } = {}) {
+    if (createRegion.hidden) return;
     const finish = () => {
-      createForm.hidden = true;
+      createRegion.hidden = true;
       createInput.value = '';
-      if (window.gsap) window.gsap.set(createForm, { clearProps: 'all' });
+      clearMotion(createRegion);
       if (restoreFocus) newFolderButton.focus({ preventScroll: true });
     };
-    animateExit(createForm, finish);
+    animateExit(createRegion, finish);
   }
 
   async function createFolder(event) {
-    event.preventDefault();
+    event?.preventDefault?.();
     const name = createInput.value.trim();
-    if (!name) return;
+    if (!name || createSubmit.disabled) return;
     const parentPath = state.selectedPath || state.root?.displayPath || '~';
-    const submit = createForm.querySelector('.workspace-create-submit');
-    submit.disabled = true;
+    createSubmit.disabled = true;
     createInput.disabled = true;
     try {
       const payload = await fetchJson('/api/company/workspaces/directories', {
@@ -432,7 +469,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ parentPath, name }),
       });
-      closeCreateForm();
+      closeCreateRegion();
       state.rootRendered = false;
       tree.replaceChildren();
       await renderRoot();
@@ -443,7 +480,7 @@
       repoNote.textContent = error.message;
       setRepoState('error');
     } finally {
-      submit.disabled = false;
+      createSubmit.disabled = false;
       createInput.disabled = false;
     }
   }
@@ -467,7 +504,7 @@
     event.preventDefault();
     picker.dataset.dragActive = 'false';
     const name = await directoryNameFromDrop(event);
-    if (!name) return;
+    if (!name || !dropReceipt || !dropReceiptTitle || !dropReceiptCopy) return;
 
     dropReceiptTitle.textContent = `Local folder detected: ${name}`;
     dropReceiptCopy.textContent = 'This browser is controlling the NixOS execution host. A browser folder handle is not a NixOS path, so Lucubro will not pretend it can run there. Use the host tree now; direct folder import will require an explicit copy/native bridge.';
@@ -490,29 +527,44 @@
       if (!input.value.trim()) setRepoState('empty');
     }, 80);
   });
-
   input.addEventListener('keydown', (event) => {
-    if (suggestions.hidden || !state.suggestionItems.length) return;
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      state.suggestionIndex = Math.min(state.suggestionItems.length - 1, state.suggestionIndex + 1);
-      updateSuggestionActive();
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      state.suggestionIndex = Math.max(0, state.suggestionIndex - 1);
-      updateSuggestionActive();
-    } else if (event.key === 'Enter' && state.suggestionIndex >= 0) {
-      event.preventDefault();
-      selectHostPath(state.suggestionItems[state.suggestionIndex].displayPath, { source: 'suggestion' });
-    } else if (event.key === 'Escape') {
+    if (!suggestions.hidden && state.suggestionItems.length) {
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        state.suggestionIndex = Math.min(state.suggestionItems.length - 1, state.suggestionIndex + 1);
+        updateSuggestionActive();
+        return;
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        state.suggestionIndex = Math.max(0, state.suggestionIndex - 1);
+        updateSuggestionActive();
+        return;
+      }
+      if (event.key === 'Enter' && state.suggestionIndex >= 0) {
+        event.preventDefault();
+        selectHostPath(state.suggestionItems[state.suggestionIndex].displayPath, { source: 'suggestion' });
+        return;
+      }
+    }
+    if (event.key === 'Escape' && !suggestions.hidden) {
       event.preventDefault();
       hideSuggestions();
     }
   });
 
-  newFolderButton.addEventListener('click', openCreateForm);
-  createCancel.addEventListener('click', () => closeCreateForm({ restoreFocus: true }));
-  createForm.addEventListener('submit', createFolder);
+  newFolderButton.addEventListener('click', openCreateRegion);
+  createSubmit.addEventListener('click', createFolder);
+  createCancel.addEventListener('click', () => closeCreateRegion({ restoreFocus: true }));
+  createInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      createFolder(event);
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      closeCreateRegion({ restoreFocus: true });
+    }
+  });
 
   picker.addEventListener('dragenter', (event) => {
     event.preventDefault();
@@ -544,7 +596,7 @@
   window.addEventListener('pagehide', () => {
     clearTimeout(state.suggestTimer);
     clearTimeout(state.inspectTimer);
-    if (window.gsap) window.gsap.killTweensOf([panel, suggestions, repoReceipt, repoScan, dropReceipt]);
+    if (window.gsap) window.gsap.killTweensOf([panel, suggestions, repoReceipt, repoScan, dropReceipt].filter(Boolean));
   }, { once: true });
 
   initRoot();
