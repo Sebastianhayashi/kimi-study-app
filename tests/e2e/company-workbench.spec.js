@@ -212,6 +212,9 @@ test('mobile keeps the operating map, Manager relationship, composer, and Work s
   await expect(page.getByLabel('Alex, Primary Manager')).toBeVisible();
   await expect(page.getByLabel('Company canvas focus')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Send to Alex' })).toBeVisible();
+  await expect(page.locator('body')).toHaveAttribute('data-company-has-work', 'true');
+  await expect(page.locator('#work-brief')).toHaveCSS('min-height', '52px');
+  await expect(page.locator('#run-settings > summary .settings-summary-label')).toBeVisible();
   await page.locator('#run-settings > summary').click();
   await expect(page.locator('#runtime-choice')).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
