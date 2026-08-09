@@ -23,8 +23,11 @@ function boundary() {
 function validReceipt() {
   return {
     admitted: true,
-    profileName: 'Luna Max',
-    modelId: 'luna-runtime-id',
+    modelId: 'gpt-5.6-luna',
+    reasoningEffort: 'max',
+    mode: 'default',
+    fast: false,
+    permissionProfile: 'full-access',
     providerPermissionProfileId: ':full-access',
     reason: null,
   };
@@ -65,7 +68,7 @@ test('default registry keeps every real provider paused and does not require a r
   assert.equal((await registry.get('claude-code').available()).available, false);
 });
 
-test('enable + exact receipt + concrete authority boundary exposes only admitted Luna Codex', async () => {
+test('enable + exact receipt + concrete authority boundary exposes only gpt-5.6-luna max-effort Codex', async () => {
   const authority = boundary();
   const { registry, admission, calls } = harness({
     enableRealRuntimes: true,
@@ -75,7 +78,8 @@ test('enable + exact receipt + concrete authority boundary exposes only admitted
   });
 
   assert.equal(admission.admitted, true);
-  assert.equal(admission.modelId, 'luna-runtime-id');
+  assert.equal(admission.modelId, 'gpt-5.6-luna');
+  assert.equal(admission.reasoningEffort, 'max');
   const load = calls.find((call) => call.type === 'load');
   assert.deepEqual(load.input, {
     filePath: '/var/lib/lucubro/codex-admission.json',
@@ -84,11 +88,12 @@ test('enable + exact receipt + concrete authority boundary exposes only admitted
   });
   const codex = calls.find((call) => call.type === 'codex');
   assert.equal(codex.input.admission.admitted, true);
+  assert.equal(codex.input.admission.reasoningEffort, 'max');
   assert.equal(codex.input.authorityBoundary, authority);
   assert.equal((await registry.get('codex').available()).available, true);
   const claude = await registry.get('claude-code').available();
   assert.equal(claude.available, false);
-  assert.match(claude.reason, /Only Codex Luna Max/i);
+  assert.match(claude.reason, /gpt-5\.6-luna.*max effort/i);
 });
 
 test('valid receipt without a concrete Lucubro authority boundary remains paused', async () => {
