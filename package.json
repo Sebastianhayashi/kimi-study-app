@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "node scripts/diagnose-company-server-start.js"
+    "build": "CI=1 npx playwright test tests/e2e/diag-company-server.spec.js --workers=1"
   },
   "dependencies": {
     "epubjs": "0.3.93",
