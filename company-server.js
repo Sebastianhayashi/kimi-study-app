@@ -10,6 +10,8 @@ const { evidenceResponsePolicy } = require('./lib/company/evidence-response');
 const { createRunStore } = require('./lib/company/run-store');
 const { createWorkStore } = require('./lib/company/work-store');
 const { createWorkerStore } = require('./lib/company/worker-store');
+const { createProjectStore } = require('./lib/company/project-store');
+const { discoverProjectSources } = require('./lib/company/project-discovery');
 const { createApprovalBroker } = require('./lib/company/approval-broker');
 const { createRunOrchestrator } = require('./lib/company/run-orchestrator');
 const { createWorktreeManager } = require('./lib/company/worktree-manager');
@@ -42,6 +44,8 @@ function createCompanyServer({
   worktreeManager = null,
   workspaceBrowser = null,
   workerStore = null,
+  projectStore = null,
+  projectDiscovery = discoverProjectSources,
   evidenceStore = null,
   workerIdentity = null,
 } = {}) {
@@ -53,6 +57,7 @@ function createCompanyServer({
 
   const runStore = createRunStore({ rootDir: dataDir });
   const workStore = createWorkStore({ rootDir: dataDir });
+  const projects = projectStore || createProjectStore({ rootDir: dataDir });
   const workers = workerStore || createWorkerStore({ rootDir: dataDir });
   const evidence = evidenceStore || createEvidenceStore({ rootDir: dataDir });
   const existingWorker = workers.list()[0] || null;
@@ -87,7 +92,14 @@ function createCompanyServer({
     worktreeManager: worktrees,
     evidenceStore: evidence,
   });
-  const company = createCompanyService({ workStore, runStore, runOrchestrator, defaultWorkerId: localWorker.id });
+  const company = createCompanyService({
+    workStore,
+    runStore,
+    runOrchestrator,
+    projectStore: projects,
+    projectDiscovery,
+    defaultWorkerId: localWorker.id,
+  });
   const workspaces = workspaceBrowser || createWorkspaceBrowser();
 
   function requireWorkspaceAccess(req, res, next) {
@@ -143,10 +155,27 @@ function createCompanyServer({
       employees: [{ id: 'ben', name: 'Ben', position: 'Software Engineer' }],
       workers: [publicWorkerState(localWorker, runtimeStates)],
       runtimes: runtimeStates,
+      projects: company.listProjects(),
       runs: runStore.list().map(publicRunSummary),
       works: company.listWorks(),
       needsYou: approvalBroker.listPending(),
     });
+  });
+
+  app.post('/api/company/projects', requireWorkspaceAccess, (req, res) => {
+    try {
+      const body = req.body || {};
+      const project = company.adoptProject({ repoDir: body.repoDir, name: body.name || null });
+      res.status(201).json({ project });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/company/projects/:projectId', (req, res) => {
+    const project = company.getProject(req.params.projectId);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    res.json(project);
   });
 
   app.get('/api/company/workspaces/root', requireWorkspaceAccess, (req, res) => {
@@ -195,6 +224,7 @@ function createCompanyServer({
       const result = await company.createCodingWork({
         brief: body.brief,
         repoDir: body.repoDir,
+        projectId: body.projectId || null,
         runtime: body.runtime,
         employeeId: body.employeeId || 'ben',
         workerId: localWorker.id,
@@ -276,6 +306,7 @@ function createCompanyServer({
   return {
     app,
     company,
+    projectStore: projects,
     runStore,
     workStore,
     workerStore: workers,
