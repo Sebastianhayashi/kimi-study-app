@@ -106,9 +106,9 @@ test('browser-style Work returns durable typed evidence that survives reload', a
   expect(screenshot.metadata.deterministic).toBe(true);
   expect(diff).toMatchObject({ kind: 'diff', source: 'worktree' });
   expect(payload.events.some((event) => Object.hasOwn(event, 'contentBase64'))).toBe(false);
-  expect(payload.events.some((event) => typeof event.diff === 'string')).toBe(false);
+  expect(payload.events.some((event) => String(event.diff || '').includes('diff --git'))).toBe(false);
   const diffEvent = payload.events.find((event) => event.type === 'artifact.produced' && event.kind === 'diff');
-  expect(diffEvent).toMatchObject({ evidenceId: diff.id, changedFiles: ['src/session.js'] });
+  expect(diffEvent).toMatchObject({ evidenceId: diff.id, changedFiles: ['src/session.js'], preview: true });
 
   const content = await fetch(`${URL}/api/company/evidence/${encodeURIComponent(screenshot.id)}/content`);
   expect(content.ok).toBe(true);
