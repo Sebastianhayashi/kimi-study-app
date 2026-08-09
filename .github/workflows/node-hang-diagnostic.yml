@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   isolate:
@@ -22,18 +23,43 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Run Node test files independently
+        id: diagnostic
         shell: bash
         run: |
           set -u
+          : > node-diagnostic.log
+          overall=0
           for file in test/*.test.js; do
-            echo "=== START $file ==="
+            echo "=== START $file ===" | tee -a node-diagnostic.log
             set +e
-            timeout 45s node --test "$file"
-            code=$?
+            timeout 45s node --test "$file" 2>&1 | tee -a node-diagnostic.log
+            code=${PIPESTATUS[0]}
             set -e
-            echo "=== END $file exit=$code ==="
+            echo "=== END $file exit=$code ===" | tee -a node-diagnostic.log
             if [ "$code" -ne 0 ]; then
-              echo "DIAGNOSTIC_FAILURE file=$file exit=$code"
-              exit "$code"
+              echo "DIAGNOSTIC_FAILURE file=$file exit=$code" | tee -a node-diagnostic.log
+              overall=$code
+              break
             fi
           done
+          echo "exit_code=$overall" >> "$GITHUB_OUTPUT"
+      - name: Report diagnostic result
+        uses: actions/github-script@v7
+        env:
+          DIAGNOSTIC_EXIT: ${{ steps.diagnostic.outputs.exit_code }}
+        with:
+          script: |
+            const fs = require('fs');
+            const log = fs.readFileSync('node-diagnostic.log', 'utf8');
+            const tail = log.length > 18000 ? log.slice(-18000) : log;
+            const exitCode = process.env.DIAGNOSTIC_EXIT || 'unknown';
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[node-diagnostic] ${context.sha.slice(0, 7)} exit ${exitCode}`,
+              body: `Temporary CI diagnostic for the hanging Node suite.\n\nCommit: \`${context.sha}\`\nExit: \`${exitCode}\`\n\n\`\`\`text\n${tail}\n\`\`\``,
+            });
+      - name: Fail after report
+        if: steps.diagnostic.outputs.exit_code != '0'
+        shell: bash
+        run: exit "${{ steps.diagnostic.outputs.exit_code }}"
