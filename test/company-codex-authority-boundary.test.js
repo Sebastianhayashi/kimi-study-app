@@ -30,6 +30,7 @@ test('authority boundary policy defaults missing capabilities to denied even whe
 
   assert.deepEqual(policy, {
     cwd: '/work/lucubro',
+    workspaceKind: null,
     workspaceRead: true,
     workspaceWrite: false,
     shellExecute: false,
