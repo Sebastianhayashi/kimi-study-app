@@ -21,10 +21,11 @@ function request(overrides = {}) {
     runId: 'run_luna_enforced',
     workId: 'work_luna_enforced',
     cwd: '/work/lucubro',
+    workspaceKind: 'scratch',
     prompt: 'Return a short source-backed summary.',
     model: 'luna-runtime-id',
     delegationEnvelope: {
-      allow: ['workspace.read'],
+      allow: ['workspace.read', 'shell.execute'],
       deny: ['workspace.write', 'network.access', 'git.push', 'filesystem.destructive'],
     },
     async requestApproval() { return 'deny'; },
@@ -32,7 +33,12 @@ function request(overrides = {}) {
   };
 }
 
-function fakeAppServer({ threadModel = 'luna-runtime-id', permissionProfileId = ':full-access', serviceTier = null } = {}) {
+function fakeAppServer({
+  threadModel = 'luna-runtime-id',
+  permissionProfileId = ':full-access',
+  serviceTier = 'default',
+  ephemeral = true,
+} = {}) {
   const calls = [];
 
   function child() {
@@ -55,7 +61,7 @@ function fakeAppServer({ threadModel = 'luna-runtime-id', permissionProfileId = 
             result = { userAgent: 'codex-test' };
           } else if (message.method === 'thread/start') {
             result = {
-              thread: { id: 'thread_luna' },
+              thread: { id: 'thread_luna', ephemeral },
               model: threadModel,
               modelProvider: 'openai',
               serviceTier,
@@ -82,7 +88,8 @@ function fakeAppServer({ threadModel = 'luna-runtime-id', permissionProfileId = 
   }
 
   const authorityBoundary = {
-    async attest() {
+    async attest({ policy }) {
+      assert.equal(policy.workspaceKind, 'scratch');
       return { enforced: true, boundaryId: 'fixture-external-boundary' };
     },
     spawn({ command, args }) {
@@ -101,7 +108,7 @@ async function collect(runtime, input) {
   return events;
 }
 
-test('admitted Codex Run pins Luna, clears Fast, disables provider fallback, pins Default mode, and uses named full-access without provider sandbox', async () => {
+test('admitted Codex Run pins Luna, clears Fast, disables fallback, pins Default mode, and uses an ephemeral named full-access thread', async () => {
   const fake = fakeAppServer();
   const runtime = createCodexAppServerRuntime({
     admission: admission(),
@@ -119,6 +126,7 @@ test('admitted Codex Run pins Luna, clears Fast, disables provider fallback, pin
     allowProviderModelFallback: false,
     serviceTier: null,
     permissions: ':full-access',
+    ephemeral: true,
   });
 
   const turnStart = fake.calls.find((call) => call.method === 'turn/start');
@@ -134,7 +142,7 @@ test('admitted Codex Run pins Luna, clears Fast, disables provider fallback, pin
   });
 });
 
-test('admitted Codex Run rejects a caller model override before provider spawn', async () => {
+test('admitted Codex Run rejects caller model override and provider-session resume before boundary spawn', async () => {
   let boundaryCalled = false;
   const runtime = createCodexAppServerRuntime({
     admission: admission(),
@@ -148,14 +156,19 @@ test('admitted Codex Run rejects a caller model override before provider spawn',
     runtime.run(request({ model: 'other-model' })).next(),
     /must use admitted Luna Max model/i,
   );
+  await assert.rejects(
+    runtime.run(request({ providerSessionId: 'thread_old' })).next(),
+    /ephemeral.*provider session/i,
+  );
   assert.equal(boundaryCalled, false);
 });
 
-test('thread/start machine response must match admitted Luna model, no-Fast tier, and active provider profile before any user turn starts', async () => {
+test('thread/start machine response must match admitted Luna model, non-Fast tier, active provider profile, and ephemeral state before any user turn starts', async () => {
   for (const fixture of [
-    { threadModel: 'other-model', permissionProfileId: ':full-access', serviceTier: null, expected: /model/i },
-    { threadModel: 'luna-runtime-id', permissionProfileId: ':workspace', serviceTier: null, expected: /permission/i },
-    { threadModel: 'luna-runtime-id', permissionProfileId: ':full-access', serviceTier: 'fast', expected: /service tier/i },
+    { threadModel: 'other-model', expected: /model/i },
+    { permissionProfileId: ':workspace', expected: /permission/i },
+    { serviceTier: 'fast', expected: /service tier/i },
+    { ephemeral: false, expected: /ephemeral/i },
   ]) {
     const fake = fakeAppServer(fixture);
     const runtime = createCodexAppServerRuntime({
