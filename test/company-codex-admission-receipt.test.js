@@ -13,7 +13,8 @@ const {
 
 const EXPECTED_REPO = 'Sebastianhayashi/lucubro';
 const EXPECTED_COMMIT = '0123456789abcdef0123456789abcdef01234567';
-const LUNA_MODEL_ID = 'provider-luna-max-id';
+const LUNA_MODEL_ID = 'gpt-5.6-luna';
+const FULL_ACCESS_PROFILE_ID = ':danger-full-access';
 
 function digest(char) {
   return `sha256:${char.repeat(64)}`;
@@ -23,20 +24,20 @@ function validReceipt() {
   return {
     kind: 'lucubro-codex-admission',
     schemaVersion: 1,
-    observedAt: '2026-08-09T13:30:00.000Z',
+    observedAt: '2026-08-09T14:10:00.000Z',
     source: {
       repo: EXPECTED_REPO,
       commit: EXPECTED_COMMIT,
     },
     appServer: {
-      userAgent: 'codex-cli/0.147.0',
+      userAgent: 'lucubro/0.1.0 (codex-app-server; 0.147.0)',
       platformFamily: 'unix',
       platformOs: 'linux',
     },
-    catalog: {
-      modelId: LUNA_MODEL_ID,
-      displayName: 'Luna Max',
-      uniqueMatch: true,
+    catalogDiagnostic: {
+      lunaMaxUniqueMatch: false,
+      effectiveConfigModelId: LUNA_MODEL_ID,
+      note: 'Picker visibility is diagnostic only; the no-fallback thread proof is authoritative.',
     },
     profile: {
       profileName: 'Luna Max',
@@ -48,18 +49,21 @@ function validReceipt() {
     thread: {
       modelId: LUNA_MODEL_ID,
       modelProvider: 'openai',
-      serviceTier: null,
+      serviceTier: 'default',
+      requestedServiceTier: null,
       collaborationMode: 'default',
-      activePermissionProfileId: ':full-access',
+      activePermissionProfileId: FULL_ACCESS_PROFILE_ID,
+      providerFallbackDisabled: true,
+      ephemeral: true,
     },
     permissionProfile: {
-      providerId: ':full-access',
+      providerId: FULL_ACCESS_PROFILE_ID,
       normalized: 'full-access',
       allowed: true,
     },
     authority: {
       enforced: true,
-      boundaryId: 'nixos-external-authority-v1',
+      boundaryId: 'systemd-user-codex-v1',
       probes: {
         workspaceEscapeBlocked: true,
         networkDenyBlocked: true,
@@ -82,8 +86,14 @@ function validReceipt() {
   };
 }
 
-test('exact machine receipt admits only Luna Max default Fast-off full-access on the exact Lucubro commit', () => {
-  const result = verifyCodexAdmissionReceipt(validReceipt(), {
+test('exact machine receipt admits Luna Max from the real no-fallback ephemeral thread proof even when model/list did not expose Luna', () => {
+  const receipt = validReceipt();
+  receipt.catalogDiagnostic = {
+    lunaMaxUniqueMatch: false,
+    effectiveConfigModelId: LUNA_MODEL_ID,
+  };
+
+  const result = verifyCodexAdmissionReceipt(receipt, {
     expectedRepo: EXPECTED_REPO,
     expectedCommit: EXPECTED_COMMIT,
   });
@@ -91,16 +101,17 @@ test('exact machine receipt admits only Luna Max default Fast-off full-access on
   assert.equal(result.admitted, true);
   assert.equal(result.profileName, 'Luna Max');
   assert.equal(result.modelId, LUNA_MODEL_ID);
+  assert.equal(result.providerPermissionProfileId, FULL_ACCESS_PROFILE_ID);
   assert.deepEqual(result.unknown, []);
   assert.deepEqual(result.mismatches, []);
   assert.deepEqual(result.bundleDigests, {
     gstack: digest('a'),
     'mattpocock-skills': digest('b'),
   });
-  assert.equal(result.authority.boundaryId, 'nixos-external-authority-v1');
+  assert.equal(result.authority.boundaryId, 'systemd-user-codex-v1');
 });
 
-test('receipt fails closed for stale commit, Fast service tier, or a thread that did not actually use Luna', () => {
+test('receipt fails closed for stale commit, Fast tier, provider fallback, or a thread that did not actually use Luna', () => {
   const stale = validReceipt();
   stale.source.commit = 'fedcba9876543210fedcba9876543210fedcba98';
   assert.equal(verifyCodexAdmissionReceipt(stale, {
@@ -117,17 +128,26 @@ test('receipt fails closed for stale commit, Fast service tier, or a thread that
   assert.equal(fastResult.admitted, false);
   assert.ok(fastResult.mismatches.some((entry) => entry.field === 'thread.serviceTier'));
 
-  const fallback = validReceipt();
-  fallback.thread.modelId = 'fallback-model-id';
-  const fallbackResult = verifyCodexAdmissionReceipt(fallback, {
+  const fallbackEnabled = validReceipt();
+  fallbackEnabled.thread.providerFallbackDisabled = false;
+  const fallbackEnabledResult = verifyCodexAdmissionReceipt(fallbackEnabled, {
     expectedRepo: EXPECTED_REPO,
     expectedCommit: EXPECTED_COMMIT,
   });
-  assert.equal(fallbackResult.admitted, false);
-  assert.ok(fallbackResult.mismatches.some((entry) => entry.field === 'thread.modelId'));
+  assert.equal(fallbackEnabledResult.admitted, false);
+  assert.ok(fallbackEnabledResult.mismatches.some((entry) => entry.field === 'thread.providerFallbackDisabled'));
+
+  const fallbackModel = validReceipt();
+  fallbackModel.thread.modelId = 'gpt-5.6-sol';
+  const fallbackModelResult = verifyCodexAdmissionReceipt(fallbackModel, {
+    expectedRepo: EXPECTED_REPO,
+    expectedCommit: EXPECTED_COMMIT,
+  });
+  assert.equal(fallbackModelResult.admitted, false);
+  assert.ok(fallbackModelResult.mismatches.some((entry) => entry.field === 'thread.modelId'));
 });
 
-test('receipt requires machine-observed default mode, active full-access profile, and every authority probe', () => {
+test('receipt requires machine-observed default mode, active full-access profile, ephemeral thread, and exact systemd authority probes', () => {
   const wrongMode = validReceipt();
   wrongMode.thread.collaborationMode = 'plan';
   assert.equal(verifyCodexAdmissionReceipt(wrongMode, {
@@ -142,6 +162,20 @@ test('receipt requires machine-observed default mode, active full-access profile
     expectedCommit: EXPECTED_COMMIT,
   }).admitted, false);
 
+  const durableProviderThread = validReceipt();
+  durableProviderThread.thread.ephemeral = false;
+  assert.equal(verifyCodexAdmissionReceipt(durableProviderThread, {
+    expectedRepo: EXPECTED_REPO,
+    expectedCommit: EXPECTED_COMMIT,
+  }).admitted, false);
+
+  const wrongBoundary = validReceipt();
+  wrongBoundary.authority.boundaryId = 'legacy-provider-sandbox';
+  assert.equal(verifyCodexAdmissionReceipt(wrongBoundary, {
+    expectedRepo: EXPECTED_REPO,
+    expectedCommit: EXPECTED_COMMIT,
+  }).admitted, false);
+
   const weakBoundary = validReceipt();
   weakBoundary.authority.probes.gitPushDenyBlocked = false;
   const weakResult = verifyCodexAdmissionReceipt(weakBoundary, {
@@ -150,6 +184,22 @@ test('receipt requires machine-observed default mode, active full-access profile
   });
   assert.equal(weakResult.admitted, false);
   assert.ok(weakResult.mismatches.some((entry) => entry.field === 'authority.probes.gitPushDenyBlocked'));
+});
+
+test('receipt accepts both null and explicit default service-tier observations but rejects non-default values', () => {
+  const nullTier = validReceipt();
+  nullTier.thread.serviceTier = null;
+  assert.equal(verifyCodexAdmissionReceipt(nullTier, {
+    expectedRepo: EXPECTED_REPO,
+    expectedCommit: EXPECTED_COMMIT,
+  }).admitted, true);
+
+  const unexpected = validReceipt();
+  unexpected.thread.serviceTier = 'priority';
+  assert.equal(verifyCodexAdmissionReceipt(unexpected, {
+    expectedRepo: EXPECTED_REPO,
+    expectedCommit: EXPECTED_COMMIT,
+  }).admitted, false);
 });
 
 test('receipt requires complete pinned Matt/gstack roots with real sha256 digests', () => {
