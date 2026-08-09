@@ -21,10 +21,9 @@ const { createWorktreeManager } = require('./lib/company/worktree-manager');
 const { createExecutionWorkspaceManager } = require('./lib/company/execution-workspace-manager');
 const { createCompanyService } = require('./lib/company/company-service');
 const { createWorkspaceBrowser } = require('./lib/company/workspace-browser');
-const { createClaudeAgentSdkRuntime } = require('./lib/company/runtime/claude-agent-sdk');
-const { createCodexAppServerRuntime } = require('./lib/company/runtime/codex-app-server');
+const { createDefaultRuntimeRegistry: createDefaultRuntimeRegistryImpl } = require('./lib/company/runtime/default-runtime-registry');
+const { createSystemdCodexAuthorityBoundary: createSystemdAuthorityBoundaryImpl } = require('./lib/company/runtime/systemd-codex-authority-boundary');
 const { createMockCompanyRuntime } = require('./lib/company/runtime/mock');
-const { applyRuntimePolicy } = require('./lib/company/runtime/policy');
 
 const ROOT = __dirname;
 
@@ -45,6 +44,9 @@ function createCompanyServer({
   rootDir = ROOT,
   dataDir = process.env.LUCUBRO_COMPANY_DATA_DIR || path.join(rootDir, 'data', 'company'),
   runtimes = null,
+  environment = process.env,
+  createDefaultRuntimeRegistry = createDefaultRuntimeRegistryImpl,
+  createSystemdAuthorityBoundary = createSystemdAuthorityBoundaryImpl,
   worktreeManager = null,
   workspaceManager = null,
   workspaceBrowser = null,
@@ -58,6 +60,9 @@ function createCompanyServer({
   workPlanner = null,
   skillMountBuilder = null,
 } = {}) {
+  if (!environment || typeof environment !== 'object') throw new Error('Company server environment is required.');
+  if (typeof createDefaultRuntimeRegistry !== 'function') throw new Error('Company server createDefaultRuntimeRegistry must be a function.');
+  if (typeof createSystemdAuthorityBoundary !== 'function') throw new Error('Company server createSystemdAuthorityBoundary must be a function.');
   fs.mkdirSync(dataDir, { recursive: true });
   const app = express();
   app.use(express.json({ limit: '256kb' }));
@@ -84,16 +89,38 @@ function createCompanyServer({
     kind: workerIdentity && workerIdentity.kind || existingWorker && existingWorker.kind || 'self-hosted',
   });
   const approvalBroker = createApprovalBroker({ runStore });
-  const configuredRuntimeRegistry = runtimes || new Map([
-    ['claude-code', createClaudeAgentSdkRuntime()],
-    ['codex', createCodexAppServerRuntime()],
-  ]);
-  const runtimeRegistry = runtimes
-    ? configuredRuntimeRegistry
-    : applyRuntimePolicy(configuredRuntimeRegistry, {
-      enableRealRuntimes: process.env.LUCUBRO_ENABLE_REAL_RUNTIMES === '1',
+
+  let runtimeRegistry;
+  let codexAdmission = null;
+  if (runtimes) {
+    runtimeRegistry = runtimes;
+  } else {
+    const enableRealRuntimes = environment.LUCUBRO_ENABLE_REAL_RUNTIMES === '1';
+    const authorityConfig = {
+      systemdRunBinary: environment.LUCUBRO_SYSTEMD_RUN_BINARY || null,
+      codexExecutable: environment.LUCUBRO_CODEX_EXECUTABLE || null,
+      codexInstallRoot: environment.LUCUBRO_CODEX_INSTALL_ROOT || null,
+      codexHomeSource: environment.LUCUBRO_CODEX_HOME_SOURCE || null,
+    };
+    const hasAuthorityConfig = Object.values(authorityConfig).every((value) => typeof value === 'string' && value.trim());
+    const codexAuthorityBoundary = enableRealRuntimes && hasAuthorityConfig
+      ? createSystemdAuthorityBoundary({
+        ...authorityConfig,
+        stateRoot: environment.LUCUBRO_CODEX_AUTHORITY_STATE_ROOT || path.join(dataDir, 'codex-authority'),
+        runtimePath: environment.PATH || process.env.PATH || '/run/current-system/sw/bin:/usr/bin:/bin',
+      })
+      : null;
+    const configured = createDefaultRuntimeRegistry({
+      enableRealRuntimes,
+      codexAdmissionFile: environment.LUCUBRO_CODEX_ADMISSION_FILE || null,
+      expectedRepo: environment.LUCUBRO_BUILD_REPO || 'Sebastianhayashi/lucubro',
+      expectedCommit: environment.LUCUBRO_BUILD_COMMIT || null,
+      codexAuthorityBoundary,
     });
-  if (process.env.LUCUBRO_COMPANY_MOCK_RUNTIME === '1' && !runtimeRegistry.has('mock')) runtimeRegistry.set('mock', createMockCompanyRuntime());
+    runtimeRegistry = configured.registry;
+    codexAdmission = configured.admission;
+  }
+  if (environment.LUCUBRO_COMPANY_MOCK_RUNTIME === '1' && !runtimeRegistry.has('mock')) runtimeRegistry.set('mock', createMockCompanyRuntime());
 
   const worktrees = worktreeManager || (
     process.env.NODE_ENV === 'test' && process.env.LUCUBRO_COMPANY_MOCK_RUNTIME === '1'
@@ -459,6 +486,7 @@ function createCompanyServer({
     localWorker,
     approvalBroker,
     runtimeRegistry,
+    codexAdmission,
     workspaceBrowser: workspaces,
     executionWorkspaceManager: executionWorkspaces,
   };
