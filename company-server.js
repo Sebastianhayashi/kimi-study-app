@@ -15,6 +15,7 @@ const { discoverProjectSources } = require('./lib/company/project-discovery');
 const { createApprovalBroker } = require('./lib/company/approval-broker');
 const { createRunOrchestrator } = require('./lib/company/run-orchestrator');
 const { createWorktreeManager } = require('./lib/company/worktree-manager');
+const { createExecutionWorkspaceManager } = require('./lib/company/execution-workspace-manager');
 const { createCompanyService } = require('./lib/company/company-service');
 const { createWorkspaceBrowser } = require('./lib/company/workspace-browser');
 const { createClaudeAgentSdkRuntime } = require('./lib/company/runtime/claude-agent-sdk');
@@ -42,12 +43,15 @@ function createCompanyServer({
   dataDir = process.env.LUCUBRO_COMPANY_DATA_DIR || path.join(rootDir, 'data', 'company'),
   runtimes = null,
   worktreeManager = null,
+  workspaceManager = null,
   workspaceBrowser = null,
   workerStore = null,
   projectStore = null,
   projectDiscovery = discoverProjectSources,
   evidenceStore = null,
   workerIdentity = null,
+  workPlanner = null,
+  skillMountBuilder = null,
 } = {}) {
   fs.mkdirSync(dataDir, { recursive: true });
   const app = express();
@@ -85,12 +89,17 @@ function createCompanyServer({
       ? testWorktreeManager()
       : createWorktreeManager()
   );
+  const executionWorkspaces = workspaceManager || createExecutionWorkspaceManager({
+    rootDir: dataDir,
+    gitWorktreeManager: worktrees,
+  });
   const runOrchestrator = createRunOrchestrator({
     runStore,
     approvalBroker,
     runtimeRegistry,
-    worktreeManager: worktrees,
+    workspaceManager: executionWorkspaces,
     evidenceStore: evidence,
+    skillMountBuilder,
   });
   const company = createCompanyService({
     workStore,
@@ -98,6 +107,7 @@ function createCompanyServer({
     runOrchestrator,
     projectStore: projects,
     projectDiscovery,
+    workPlanner,
     defaultWorkerId: localWorker.id,
   });
   const workspaces = workspaceBrowser || createWorkspaceBrowser();
@@ -266,9 +276,11 @@ function createCompanyServer({
         }
         assertProjectWorkspaceAccess(body.projectId);
       }
-      const result = await company.createCodingWork({
+      const hasRepo = Boolean(body.repoDir && String(body.repoDir).trim());
+      const createWork = body.projectId || hasRepo ? company.createCodingWork : company.createWork;
+      const result = await createWork({
         brief: body.brief,
-        repoDir: body.repoDir,
+        repoDir: hasRepo ? body.repoDir : null,
         projectId: body.projectId || null,
         runtime: body.runtime,
         employeeId: body.employeeId || 'ben',
@@ -360,6 +372,7 @@ function createCompanyServer({
     approvalBroker,
     runtimeRegistry,
     workspaceBrowser: workspaces,
+    executionWorkspaceManager: executionWorkspaces,
   };
 }
 
