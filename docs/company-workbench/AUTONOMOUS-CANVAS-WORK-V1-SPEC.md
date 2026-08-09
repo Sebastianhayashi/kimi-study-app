@@ -2,6 +2,7 @@
 
 Status: proposed executable product slice
 Decision date: 2026-08-09
+Runtime correction: 2026-08-10
 Governing product direction: issue #19 and `PRODUCT-THESIS.md`
 Depends on: `PROJECT-PERSISTENCE-V1-SPEC.md`, `SPEC.md`, `RUNTIME-POLICY.md`
 Canonical acceptance journeys: Coffee Roast Beginner Guide and Website Build
@@ -18,9 +19,11 @@ Lucubro must consume complete managed Skill bundles such as Matt Pocock's engine
 
 A request may remain lightweight saved Work, become related to earlier Work, or grow into Project context over time. Persistence does not imply Project creation. Temporary Skill specialization does not imply durable Employee creation.
 
-All AI execution in this slice is restricted to the operator-approved Codex Luna Max profile. No other model/profile and no Fast mode are permitted.
+All AI execution in this slice is restricted to one exact Codex execution contract: provider model id `gpt-5.6-luna`, reasoning effort `max`, collaboration mode `default`, Fast disabled, provider full access, and provider fallback disabled. No other model or weaker reasoning effort is permitted.
 
-This spec supersedes the earlier task-specific interpretation in which `research-lucubro` and `teach-canvas` were proposed as standalone replacement Skills. Host adaptation belongs in Lucubro's compatibility/output layer unless a genuinely new reusable methodology is missing from the installed ecosystem.
+`max` is reasoning effort, not part of the model name. Provider display text such as `GPT-5.6-Luna` is diagnostic metadata only and must not be used as model identity.
+
+This spec supersedes both the earlier task-specific Skill interpretation and the earlier synthetic `Luna Max` runtime-label interpretation. `research-lucubro` and `teach-canvas` are not standalone replacement Skills, and runtime admission is expressed as independent machine-verifiable fields rather than one ambiguous label.
 
 ## Problem Statement
 
@@ -38,7 +41,7 @@ Lucubro therefore needs to answer these questions for arbitrary Work:
 - Which Skill sequences are ordered dependencies and which branches can run independently?
 - Which Skill assumptions are compatible with Codex default mode and Lucubro tools?
 - How should host-specific assumptions be adapted without forking the Skill methodology?
-- When does one Luna execution suffice, and when should bounded specialist subruns be used?
+- When does one `gpt-5.6-luna` execution suffice, and when should bounded specialist subruns be used?
 - How are Skill selection and actual mount proven independently from model prose?
 - How do outputs become Evidence and Canvas Artifacts instead of leaking third-party UI/file conventions into the product?
 - How does useful Work persist without being forced into a Project?
@@ -47,7 +50,7 @@ Lucubro therefore needs to answer these questions for arbitrary Work:
 
 Autonomous Canvas Work v1 includes:
 
-- Luna-only runtime admission for every AI Run and specialist subrun;
+- exact Codex runtime admission for every AI Run and specialist subrun using `gpt-5.6-luna` with reasoning effort `max`;
 - managed whole-bundle installation and pinning for approved Skill ecosystems;
 - initial approved bundles covering Matt Pocock skills and gstack, with room for additional providers;
 - a Skill Bundle Manifest recording source, pinned ref/commit, license, host variant, digest, and materialized root;
@@ -84,8 +87,11 @@ Autonomous Canvas Work v1 does not include:
 - storing raw provider chain-of-thought or using it as Evidence;
 - allowing model self-report to prove Skill mounts, runtime profile, or tool execution;
 - using Claude or any non-Codex model in Lucubro AI execution;
+- using any model other than `gpt-5.6-luna`;
+- reducing reasoning effort below `max`;
 - using Codex Fast mode;
-- silently falling back when Luna Max/default/non-Fast/full-access attestation is unavailable or mismatched;
+- silently falling back when exact-model/max-effort/default/non-Fast/full-access attestation is unavailable or mismatched;
+- treating provider display text as model identity;
 - allowing provider full access to bypass the Lucubro Delegation Envelope;
 - implementing a Freeform/Figma-style unconstrained infinite canvas;
 - solving cloud collaboration or full multi-user synchronization in V1.
@@ -94,8 +100,9 @@ Autonomous Canvas Work v1 does not include:
 
 - Issue #19 defines Lucubro as a persistent semantic Company Canvas in which Project structure grows around Work only when needed.
 - Project Persistence v1 makes durable Project semantics independent of provider sessions and raw transcripts.
-- Current runtime policy approves Codex Luna Max, default mode, Fast disabled, full access, while preserving Lucubro authority semantics above provider permissions.
-- The current Codex adapter does not yet attest the complete approved Luna profile, so real runtime use remains gated.
+- Current runtime policy approves `gpt-5.6-luna`, reasoning effort `max`, default collaboration mode, Fast disabled, and provider full access, while preserving Lucubro authority semantics above provider permissions.
+- Trusted NixOS machine evidence has identified exact provider model id/model `gpt-5.6-luna` and provider display label `GPT-5.6-Luna`; display text is not an admission key.
+- The real runtime path must force reasoning effort `max` on each admitted turn; merely selecting the Luna model does not satisfy this requirement.
 - Matt Pocock's skills are explicitly designed to be small, composable, and installable as a complete skill set. The bundle also contains router/setup concepts for choosing among the set.
 - gstack ships a broad specialist workflow set including product discovery, specification, engineering/design review, browser/QA, release, and supporting tools. It supports Codex as a host but some individual assumptions can still require host compatibility handling.
 - Both initial upstream repositories are MIT-licensed, so managed vendoring or pinned installation is technically possible subject to normal attribution/packaging policy.
@@ -107,7 +114,7 @@ Autonomous Canvas Work v1 does not include:
 - The trusted Worker can materialize complete approved Skill bundles into Lucubro-managed roots.
 - Bundles are pinned for deterministic behavior and updated deliberately rather than tracking upstream `main` invisibly during a Run.
 - The Primary Manager remains the user-facing orchestrator.
-- The same approved Luna Max runtime may perform different specialist roles using different bounded contexts and mounted Skills.
+- The same approved `gpt-5.6-luna` max-effort execution contract may perform different specialist roles using different bounded contexts and mounted Skills.
 - A host compatibility overlay is separate from upstream Skill content and records the upstream version it adapts.
 - A compatibility overlay should be generic by host/capability/output mismatch wherever possible, not task-specific.
 - Coffee is a simple canary. Website Build is a broader canary intended to prove the architecture generalizes beyond one workflow.
@@ -115,7 +122,7 @@ Autonomous Canvas Work v1 does not include:
 ## Open Questions
 
 1. Should approved bundles ship vendored with Lucubro releases, be materialized on first setup from pinned Git commits, or support both modes?
-2. What exact Codex App Server fields can prove Luna Max/default/Fast-disabled/full-access, and what trusted-host receipt is required for fields the provider does not expose directly?
+2. Which provider/runtime fields should be recorded redundantly in final Run receipts beyond the required exact model id, max-effort contract, default mode, Fast state, and permission profile?
 3. How should static Skill dependencies be inferred when a bundle does not declare them in machine-readable metadata?
 4. Which compatibility differences can be solved by a generic host capability adapter versus a small versioned Skill-specific overlay?
 5. Which bundle updates can be accepted automatically after compatibility tests and which require operator review?
@@ -186,7 +193,7 @@ The Work Planning Pass converts user intent into inspectable execution structure
 
 ### Specialist Subrun
 
-A Specialist Subrun is a bounded execution attempt with a specific objective, Skill closure, context, and Delegation Envelope. It may use the same Luna Max model as the Manager and is not automatically a durable Employee.
+A Specialist Subrun is a bounded execution attempt with a specific objective, Skill closure, context, and Delegation Envelope. It may use the same exact `gpt-5.6-luna` max-effort execution contract as the Manager and is not automatically a durable Employee.
 
 ### Evidence Graph
 
@@ -213,7 +220,7 @@ Related Work can reference earlier Work/Artifacts without a Project. Project Pro
 9. Artifact owns the deliverable, not the renderer.
 10. Work may persist indefinitely without becoming a Project.
 11. Employee owns durable responsibility, not temporary specialization.
-12. Provider profile is execution infrastructure, not product identity.
+12. Provider/model/reasoning configuration is execution infrastructure, not product identity.
 
 ## User Stories
 
@@ -227,9 +234,9 @@ Acceptance:
 - The user is not asked to choose from Matt/gstack Skill menus before Work can form.
 - The selected Skill graph remains inspectable after the fact.
 
-### ACW-US-002 Luna-only execution
+### ACW-US-002 Exact Codex execution
 
-As the product owner, I want every AI execution attempt to use the exact approved Luna profile, so runtime behavior cannot silently drift.
+As the product owner, I want every AI execution attempt to use `gpt-5.6-luna` with reasoning effort `max`, default collaboration mode, Fast disabled, full access, and no provider fallback, so runtime behavior cannot silently drift.
 
 ### ACW-US-003 Complete bundle availability
 
@@ -301,9 +308,9 @@ Acceptance:
 
 ## Requirements
 
-- **ACW-REQ-001 Luna-only admission:** Every AI Run/subrun must be admitted only under the exact approved Codex Luna Max profile.
-- **ACW-REQ-002 No Fast:** Fast mode must be disabled for every admitted AI execution attempt.
-- **ACW-REQ-003 No fallback:** Missing/unknown/mismatched runtime profile data must block execution.
+- **ACW-REQ-001 Exact Codex admission:** Every AI Run/subrun must use provider model id `gpt-5.6-luna`, reasoning effort `max`, collaboration mode `default`, Fast disabled, provider full access, and provider fallback disabled.
+- **ACW-REQ-002 No Fast or weaker effort:** Fast must be disabled and reasoning effort must not be lower than `max` for every admitted AI execution attempt.
+- **ACW-REQ-003 No fallback/inference:** Missing/unknown/mismatched runtime data must block execution. Provider display text and model prose cannot substitute for machine evidence.
 - **ACW-REQ-004 Authority separation:** Provider full access must not expand the Lucubro Delegation Envelope.
 - **ACW-REQ-005 Managed bundles:** Lucubro must materialize approved complete Skill bundles as versioned managed capability roots.
 - **ACW-REQ-006 Bundle provenance:** Every bundle must retain source, pinned version/ref, digest, license/provenance, and host-variant identity.
@@ -327,7 +334,7 @@ Acceptance:
 - **ACW-REQ-024 Progressive Project promotion:** Project creation/promotion depends on durable continuing-work signals, not one saved request.
 - **ACW-REQ-025 Issue discipline:** Issues require independently trackable unresolved Project frontier.
 - **ACW-REQ-026 Cross-Canvas reference/restart:** Artifact/block references, Evidence links, and saved Work identities survive reuse and restart independently of provider sessions.
-- **ACW-REQ-027 Honest runtime/Skill evidence:** Product state distinguishes catalog availability, selected Skills, mounted Skills, requested runtime profile, and attested runtime profile.
+- **ACW-REQ-027 Honest runtime/Skill evidence:** Product state distinguishes catalog availability, selected Skills, mounted Skills, exact model identity, reasoning effort, collaboration mode, Fast state, permission profile, and machine-observed runtime state.
 - **ACW-REQ-028 No raw reasoning or per-task authoring dependency:** Raw chain-of-thought is never product state, and V1 success must not depend on authoring new bespoke Skills for each acceptance task.
 
 ## Durability Ladder
@@ -360,7 +367,7 @@ Passing proves lightweight autonomous composition.
 2. Planner queries the same complete Skill Catalog, not a website-specific hard-coded menu.
 3. When appropriate, the selected graph may include upstream office-hours/product discovery, specification, design/prototype review, implementation, code review, browser/QA, and delivery capabilities.
 4. Skill dependencies/resources are mounted lazily from their bundles with compatibility and mount receipts.
-5. Luna may use bounded specialist subruns when independent breadth justifies them, but temporary roles do not create permanent Employees.
+5. `gpt-5.6-luna` may use bounded specialist subruns when independent breadth justifies them, but temporary roles do not create permanent Employees.
 6. The Work may grow into Project context because it is multi-stage and persistent, but Project promotion is a separate durability decision from Skill routing.
 7. Intermediate Evidence/Artifacts and final Canvas/deliverables remain Lucubro-owned and inspectable.
 
@@ -376,7 +383,7 @@ Autonomous Canvas Work v1 succeeds when:
 4. Website Build passes without creating a new website-specific Skill package.
 5. Skill selection and actual mount are separately evidenced.
 6. Host incompatibilities are handled by explicit overlays or blocks, not silent improvisation.
-7. Every AI execution is admitted as Luna Max/default/Fast-disabled/full-access and remains subject to the Delegation Envelope.
+7. Every AI execution is admitted as `gpt-5.6-luna` with reasoning effort `max`, default mode, Fast disabled, provider full access, and fallback disabled, while remaining subject to the Delegation Envelope.
 8. Specialist subruns remain proportional and do not manufacture Employees.
 9. Evidence and Artifact identity remain independent of provider sessions and vendor output formats.
 10. Saved Work can persist/reuse before Project promotion.
@@ -399,7 +406,7 @@ Project Persistence remains responsible for Project identity, source-backed cont
 
 ### Runtime Policy
 
-`RUNTIME-POLICY.md` remains authoritative. Bundle breadth does not permit alternate models or Fast mode.
+`RUNTIME-POLICY.md` remains authoritative. Bundle breadth does not permit alternate models, weaker reasoning effort, or Fast mode.
 
 ## Traceability
 
