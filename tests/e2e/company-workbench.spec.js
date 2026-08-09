@@ -66,7 +66,7 @@ test('front door presents Alex and a quiet Manager canvas without dashboard nois
   await expect(page.getByLabel('Alex, Primary Manager')).toBeVisible();
   await expect(page.getByLabel('Company canvas focus')).toBeVisible();
   await expect(page.locator('#canvas-lens-current')).toHaveText('Manager canvas');
-  await expect(page.getByLabel('Current company context')).toBeHidden();
+  await expect(page.getByLabel('Current company context')).toHaveAttribute('data-state', 'quiet');
   await expect(page.locator('#conversation-feed h1')).toHaveCount(0);
   await expect(page.locator('#run-settings')).not.toHaveAttribute('open', '');
   await expect(page.getByRole('button', { name: 'Send to Alex' })).toBeEnabled();
@@ -118,8 +118,8 @@ test('durable Work survives reload without replaying Conversation and remains re
   await expect(page.locator('#run-settings')).not.toHaveAttribute('open', '');
   await expect(page.locator('.work-object-title strong')).toContainText('Fix the session refresh bug');
   await expect(page.getByText('Ben · Software Engineer')).toBeVisible();
-  await expect(page.locator('.status')).toHaveText('Ready for review');
-  await expect(page.locator('.status')).toHaveAttribute('data-tone', 'review');
+  await expect(page.locator('.work-object .status')).toHaveText('Ready for review');
+  await expect(page.locator('.work-object .status')).toHaveAttribute('data-tone', 'review');
   await expect(page.getByText('Code changes · 1 file')).toBeVisible();
   await expect(page.locator('body')).toHaveAttribute('data-company-has-work', 'true');
   await expect(page.locator('.composer-dock')).toHaveCSS('position', 'fixed');
@@ -127,7 +127,6 @@ test('durable Work survives reload without replaying Conversation and remains re
   await page.reload();
   await expect(page.locator('#conversation-feed .work-object')).toHaveCount(0);
   await expect(page.locator('#durable-work-context')).toBeVisible();
-  await expect(page.getByLabel('Current company context')).toBeHidden();
 
   const durableRow = page.locator('[data-testid="durable-work-row"]').filter({ hasText: 'Fix the session refresh bug' });
   await expect(durableRow).toBeVisible();
@@ -150,6 +149,8 @@ test('out-of-envelope request resolves on the owning Work instead of requiring a
   await useDesktopViewport(page);
   await page.goto(`${URL}/company`);
   await configureMockWork(page, 'Fix auth needs-approval');
+  const currentWork = page.locator('.work-object').filter({ hasText: 'Fix auth needs-approval' });
+  await expect(currentWork).toBeVisible();
   await expect(page.locator('[data-testid="needs-you-card"]')).toBeVisible();
   await expect(page.getByText('network.access')).toBeVisible();
   await expect(page.locator('#needs-you-button')).toHaveAttribute('data-active', 'true');
@@ -162,8 +163,8 @@ test('out-of-envelope request resolves on the owning Work instead of requiring a
   await page.locator('[data-testid="needs-you-card"] .primary-action').click();
   await expect(page.locator('#needs-you-count')).toHaveText('0');
   await expect(page.locator('[data-testid="needs-you-card"]')).toHaveCount(0);
-  await expect(page.locator('.canvas-event-history')).toContainText('Decision received');
-  await expect(page.locator('.status')).toHaveText('Ready for review');
+  await expect(currentWork.locator('.canvas-event-history')).toContainText('Decision received');
+  await expect(currentWork.locator('.status')).toHaveText('Ready for review');
 });
 
 test('keyboard shortcut submits Work without exposing runtime mechanics in the main thread', async ({ page }) => {
@@ -184,7 +185,6 @@ test('mobile keeps the Manager relationship, canvas focus, composer, and Work su
   await waitForCompanyControllers(page);
   await expect(page.getByLabel('Alex, Primary Manager')).toBeVisible();
   await expect(page.getByLabel('Company canvas focus')).toBeVisible();
-  await expect(page.getByLabel('Current company context')).toBeHidden();
   await expect(page.getByRole('button', { name: 'Send to Alex' })).toBeVisible();
   await page.locator('#run-settings > summary').click();
   await expect(page.locator('#runtime-choice')).toBeVisible();
@@ -201,13 +201,15 @@ test('skip navigation reaches the persistent Company Canvas content for keyboard
   await expect(page.locator('#company-main')).toBeFocused();
 });
 
-test('reduced motion preserves the complete product state without GSAP dependency', async ({ page }) => {
+test('reduced motion preserves semantic Company state without animation timing dependencies', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(`${URL}/company`);
   await waitForCompanyControllers(page);
   await expect(page.getByRole('heading', { name: 'What should we move forward?' })).toBeVisible();
   await expect(page.getByLabel('Company canvas focus')).toBeVisible();
-  await expect(page.getByLabel('Current company context')).toBeHidden();
+  const context = page.getByLabel('Current company context');
+  await expect(context).toHaveAttribute('data-state', /^(quiet|active|review|decision)$/);
+  await expect(context).toHaveCSS('opacity', '1');
   const reduced = await page.evaluate(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   expect(reduced).toBe(true);
   await expect(page.getByRole('button', { name: 'Send to Alex' })).toBeEnabled();
