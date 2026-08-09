@@ -181,6 +181,26 @@ function createCompanyServer({
     res.json(project);
   });
 
+  app.post('/api/company/projects/:projectId/checkpoint', requireWorkspaceAccess, (req, res) => {
+    try {
+      const project = company.checkpointProject({
+        projectId: req.params.projectId,
+        checkpoint: req.body || {},
+      });
+      res.json({ project });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/company/projects/:projectId/continuation', requireWorkspaceAccess, (req, res) => {
+    try {
+      res.json(company.inspectProjectContinuation(req.params.projectId));
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   app.get('/api/company/workspaces/root', requireWorkspaceAccess, (req, res) => {
     res.json({ root: workspaces.root });
   });
