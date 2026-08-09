@@ -174,6 +174,7 @@
     if (event.type === 'message.delta') return 'Employee update';
     if (event.type === 'tool.started') return `${event.tool || 'Tool'} started`;
     if (event.type === 'tool.completed') return `${event.tool || 'Tool'} finished`;
+    if (event.type === 'evidence.produced') return 'Evidence captured';
     if (event.type === 'artifact.updated') return 'Evidence updated';
     if (event.type === 'artifact.produced') return 'Evidence produced';
     if (event.type === 'approval.requested') return 'Decision requested';
@@ -343,6 +344,63 @@
     }
   }
 
+  function evidenceSourceCopy(item) {
+    if (item.source === 'deterministic-mock') return 'Deterministic mock';
+    if (item.source === 'worktree') return 'Worktree evidence';
+    return item.source || 'Run evidence';
+  }
+
+  function addEvidence(view, item) {
+    if (!item || !item.id) return;
+    let shelf = view.body.querySelector('.run-evidence-shelf');
+    if (!shelf) {
+      shelf = el('section', 'run-evidence-shelf');
+      shelf.dataset.testid = 'run-evidence';
+      shelf.setAttribute('aria-label', 'Run evidence');
+      const header = el('div', 'run-evidence-header');
+      header.append(el('h3', '', 'Run evidence'), el('span', 'run-evidence-count', '0 captured'));
+      shelf.append(header, el('div', 'run-evidence-grid'));
+      const execution = view.body.querySelector('.run-detail');
+      if (execution) view.body.insertBefore(shelf, execution);
+      else view.body.append(shelf);
+      animateIn(shelf, { y: 7, duration: 0.24 });
+    }
+
+    const grid = shelf.querySelector('.run-evidence-grid');
+    if (grid.querySelector(`[data-evidence-id="${CSS.escape(item.id)}"]`)) return;
+
+    const card = el('article', 'run-evidence-item');
+    card.dataset.evidenceId = item.id;
+    card.dataset.evidenceKind = item.kind || 'unknown';
+    if (String(item.mimeType || '').startsWith('image/')) {
+      const image = document.createElement('img');
+      image.src = `/api/company/evidence/${encodeURIComponent(item.id)}/content`;
+      image.alt = `${item.label || 'Screenshot'} evidence`;
+      image.loading = 'eager';
+      image.decoding = 'async';
+      card.append(image);
+    } else {
+      const glyph = el('div', 'run-evidence-glyph', String(item.kind || 'evidence').slice(0, 1).toUpperCase());
+      glyph.setAttribute('aria-hidden', 'true');
+      card.append(glyph);
+    }
+
+    const copy = el('div', 'run-evidence-copy');
+    copy.append(
+      el('strong', '', item.label || item.kind || 'Evidence'),
+      el('span', 'run-evidence-source', `${evidenceSourceCopy(item)} · ${item.kind || 'evidence'}`),
+    );
+    const url = item.metadata && item.metadata.url;
+    if (url) copy.append(el('span', 'run-evidence-context', url));
+    card.append(copy);
+    grid.append(card);
+    shelf.querySelector('.run-evidence-count').textContent = `${grid.children.length} captured`;
+
+    if (hasGsap()) {
+      window.gsap.fromTo(card, { autoAlpha: 0, y: 7, scale: 0.992 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.25, ease: 'power2.out', clearProps: 'transform,opacity,visibility' });
+    }
+  }
+
   function renderNeedsYou() {
     const count = state.needsYou.size;
     needsCount.textContent = String(count);
@@ -499,6 +557,16 @@
       updateLiveState(view, {
         label: `${tool} finished`,
         copy: 'The Run reported the tool operation complete.',
+        phase: 'active',
+        event,
+      });
+    }
+
+    if (event.type === 'evidence.produced' && event.evidence) {
+      addEvidence(view, event.evidence);
+      updateLiveState(view, {
+        label: 'Evidence captured',
+        copy: `${event.evidence.label || 'Run evidence'} is now attached to this Work.`,
         phase: 'active',
         event,
       });
