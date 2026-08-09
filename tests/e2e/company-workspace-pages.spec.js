@@ -209,7 +209,8 @@ test('context lenses change focus without replacing the Company Canvas shell', a
   await page.locator('#canvas-lens-trigger').click();
   await page.locator('[data-canvas-lens-target="manager"]').click();
   await expect(page).toHaveURL(`${URL}/company`);
-  await expect(page.getByRole('heading', { name: 'What should we move forward?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your company, in motion.' })).toBeVisible();
+  await expect(page.locator('#company-operating-map')).toBeVisible();
   await expect(page.locator('body')).toHaveAttribute('data-canvas-lens', 'manager');
   await expect(page.locator('.composer-dock')).toBeVisible();
 
