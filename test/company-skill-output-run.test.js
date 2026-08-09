@@ -62,6 +62,18 @@ test('RunOrchestrator ingests Skill outputs without persisting vendor raw payloa
         type: 'skill.output',
         skillId: 'mattpocock-skills:implement',
         output: {
+          type: 'file.deliverable',
+          file: {
+            path: 'dist/launch-report.md',
+            mimeType: 'text/markdown',
+            content: '# Launch report\n',
+          },
+        },
+      };
+      yield {
+        type: 'skill.output',
+        skillId: 'mattpocock-skills:implement',
+        output: {
           type: 'workspace.diff',
           changedFiles: ['src/home.js'],
           diff: 'diff --git a/src/home.js b/src/home.js\n+secret raw diff body\n',
@@ -116,6 +128,12 @@ test('RunOrchestrator ingests Skill outputs without persisting vendor raw payloa
     repoDir: null,
     prompt: 'Do the work.',
     subrunId: 'subrun_ingestion',
+    fileDeliverables: [{
+      path: 'dist/launch-report.md',
+      label: 'Launch report',
+      mimeType: 'text/markdown',
+      userIntentEvidence: 'dist/launch-report.md',
+    }],
     delegationEnvelope: {
       allow: ['workspace.read', 'network.access'],
       deny: ['git.push'],
@@ -128,15 +146,20 @@ test('RunOrchestrator ingests Skill outputs without persisting vendor raw payloa
   assert.equal(events.some((event) => event.type === 'skill.output'), false);
   assert.equal(events.some((event) => event.type === 'evidence.produced' && event.evidence.id === 'evidence_run_skill_1'), true);
   assert.equal(events.some((event) => event.type === 'artifact.content.proposed'), true);
-  assert.equal(events.some((event) => event.type === 'workspace.mutation.reported' && event.evidenceId === 'evidence_run_skill_2'), true);
+  assert.equal(events.some((event) => event.type === 'file.deliverable.produced'
+    && event.file.path === 'dist/launch-report.md'
+    && event.file.evidenceId === 'evidence_run_skill_2'), true);
+  assert.equal(events.some((event) => event.type === 'workspace.mutation.reported' && event.evidenceId === 'evidence_run_skill_3'), true);
   assert.equal(events.some((event) => event.type === 'skill.output.unsupported'), true);
   assert.equal(events.some((event) => event.type === 'approval.resolved' && event.capability === 'network.access' && event.decision === 'allow'), true);
 
   const serialized = JSON.stringify(events);
+  assert.equal(serialized.includes('# Launch report'), false);
   assert.equal(serialized.includes('secret raw diff body'), false);
   assert.equal(serialized.includes('private transient teaching scratch note'), false);
   assert.equal(serialized.includes('vendor raw html payload'), false);
-  assert.match(evidenceStore.readContent('evidence_run_skill_2').toString('utf8'), /secret raw diff body/);
+  assert.equal(evidenceStore.readContent('evidence_run_skill_2').toString('utf8'), '# Launch report\n');
+  assert.match(evidenceStore.readContent('evidence_run_skill_3').toString('utf8'), /secret raw diff body/);
 });
 
 test('RunOrchestrator sanitizes skill.output when ingestion is not configured', async (t) => {
