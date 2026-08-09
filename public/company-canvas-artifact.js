@@ -34,6 +34,16 @@
     return `/api/company/evidence/${encodeURIComponent(id)}/content`;
   }
 
+  function safeExternalUrl(value) {
+    if (typeof value !== 'string' || !value.trim()) return null;
+    try {
+      const url = new URL(value);
+      return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : null;
+    } catch {
+      return null;
+    }
+  }
+
   function citationRow(block, byId) {
     const refs = Array.isArray(block.evidenceRefs) ? block.evidenceRefs : [];
     if (!refs.length) return null;
@@ -78,12 +88,13 @@
     if (columns.length) {
       const head = el('thead');
       const row = el('tr');
-      for (const column of columns) row.append(el('th', '', column));
+      for (const column of columns) row.append(el('th', '', String(column ?? '')));
       head.append(row);
       table.append(head);
     }
     const body = el('tbody');
     for (const values of rows) {
+      if (!Array.isArray(values)) continue;
       const row = el('tr');
       for (const value of values) row.append(el('td', '', String(value ?? '')));
       body.append(row);
@@ -196,7 +207,7 @@
       copy.append(el('strong', '', evidence.label || evidence.kind || 'Evidence'));
       const publisher = evidence.metadata?.publisher || evidence.source || 'Evidence';
       copy.append(el('span', '', publisher));
-      const sourcePage = evidence.metadata?.sourcePage || evidence.metadata?.url || null;
+      const sourcePage = safeExternalUrl(evidence.metadata?.sourcePage || evidence.metadata?.url || null);
       if (sourcePage) copy.append(el('span', 'canvas-artifact-evidence-url', sourcePage));
       const actions = el('div', 'canvas-artifact-evidence-actions');
       if (sourcePage) {
