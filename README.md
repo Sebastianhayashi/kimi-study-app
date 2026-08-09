@@ -17,34 +17,43 @@
 
 Lucubro is for one person running a company with AI help.
 
-The CEO should not have to operate a collection of agent sessions, provider consoles, project-management screens, and infrastructure dashboards just to move work forward. Lucubro gives the CEO one durable relationship with **Alex, the Primary Manager**, and one continuous work surface where company state can form around the work itself.
+The CEO should not have to operate a collection of agent sessions, provider consoles, project-management screens, infrastructure dashboards, and remote machines just to move work forward. Lucubro gives the CEO one durable relationship with **Alex, the Primary Manager**, one continuous company canvas, and a fleet of execution Workers that can keep doing the work even when the CEO is holding only an iPhone or iPad.
 
-The governing product thesis is:
+The governing product thesis has two axes:
 
 > **Multica is Lucubro's operational backbone. Lucubro turns that backbone into an AI-native kinetic company canvas: the user expresses intent, and durable company structure materializes, changes, and recedes contextually around the Work.**
+>
+> **The user chooses outcomes. Lucubro chooses and supervises execution. Workers do the work. Evidence returns to durable company state.**
 
-Multica is an operational reference, not a screen template. Lucubro keeps durable Work/Run separation, structured live activity, evidence, progressive disclosure, explicit authority, and truthful state while replacing rigid screen-first interaction with a continuously responsive AI-native canvas.
+Multica is an operational reference, not a screen template. Lucubro keeps durable Work/Run separation, project-management depth, structured live activity, evidence, progressive disclosure, explicit authority, and truthful state while replacing rigid screen-first interaction with a continuously responsive AI-native canvas.
 
-See [`docs/company-workbench/PRODUCT-THESIS.md`](docs/company-workbench/PRODUCT-THESIS.md).
+Provider/model choice is normally below the user's level of concern. The default question is not "Claude, Codex, Kimi, or another model?" It is "what is the cheapest reliable execution path that can actually complete this Work under the required quality, privacy, latency, risk, authority, and availability constraints?"
+
+See:
+
+- [`docs/company-workbench/PRODUCT-THESIS.md`](docs/company-workbench/PRODUCT-THESIS.md)
+- [`docs/company-workbench/REMOTE-WORKER-RESEARCH.md`](docs/company-workbench/REMOTE-WORKER-RESEARCH.md)
 
 ## One company canvas
 
-Conversation is not a disposable transcript and it is not a chat sidebar attached to another product. It is an input protocol for durable company state.
+Conversation is not a disposable transcript and it is not a chat sidebar attached to another product. It is one input protocol for durable company state.
 
 ```text
-CEO intent
+CEO outcome
   ↓
 Alex · Primary Manager
   ↓
 Durable Work
   ↓
-Named Employees / responsibility
+Named Employee / responsibility
+  ↓
+Worker + execution path
   ↓
 Lucubro Run
   ↓
 normalized public events
   ↓
-Evidence · Project context · Needs You · Review · Decision
+Evidence · Project context · Knowledge · Needs You · Review · Decision
 ```
 
 Two interaction rules govern the product:
@@ -61,15 +70,144 @@ A normal sequence is:
 intent acknowledged
   → Work forms
   → responsibility appears
+  → Worker / execution path is selected
   → live execution updates the same Work object
-  → Artifact evidence grows inside it
+  → Artifact and browser evidence grow inside it
   → Project context grows only when needed
+  → relevant Knowledge attaches where it is used
   → Needs You appears only when judgment is required
   → the decision mutates the same durable object
   → stable state settles and motion stops
 ```
 
 Animation follows real deterministic UI state or normalized product events. Lucubro does not use fake thinking, fake percentages, staged AI progress, or raw chain-of-thought to look alive.
+
+## Digital employees, not exposed AI plumbing
+
+Lucubro separates responsibility from execution infrastructure:
+
+```text
+Employee owns responsibility.
+Assignment dispatches Work.
+Run is one execution attempt.
+Worker is where the Run executes.
+Runtime / Model / Playbook is how that Run executes.
+```
+
+An Employee is not a machine and a model is not an Employee. Ben can remain responsible for a coding Work even if one Run uses a local model on a Linux Worker, another uses Codex on a Mac Worker, and a later Run is resumed through a different provider.
+
+The normal CEO workflow should not depend on provider CLI syntax, model menus, session IDs, or API configuration. Important runtime actions are translated into product-level actions such as **Compact context**, **Pause**, **Cancel**, **Retry**, **Start fresh Run**, or **Take over browser**.
+
+Provider-native controls are not deleted. An Execution inspector can progressively reveal normalized events, terminal tail, and an **Advanced runtime / Open provider terminal** escape hatch. Commands such as `/compact` remain available for expert intervention without becoming the canonical vocabulary for Work or Project state.
+
+## Mobile control, self-hosted Workers
+
+Mac, iPad, iPhone, and ordinary browsers are first-class Lucubro control surfaces. They do not have to be the machines that perform the Work.
+
+The target topology supports both an all-in-one install and split control/Worker deployments:
+
+```text
+All-in-one self-hosted
+
+Phone / iPad / Mac
+        |
+        v
+Lucubro service + Worker on one trusted machine
+        |
+        +-- durable company state
+        +-- provider runtimes
+        +-- git / browser / tools
+```
+
+```text
+Split control + Worker
+
+Phone / iPad / Mac
+        |
+        v
+Lucubro Control Plane / Relay
+        ^
+        | authenticated Worker-initiated channel
+        |
+Self-hosted Worker(s)
+        |
+        +-- isolated Run environments
+        +-- Claude Code / Codex / local models / tools
+        +-- browser execution
+```
+
+The split topology is a product direction, not a claim about the current prototype. The preferred design is for Workers to initiate authenticated outbound connections rather than requiring a home/office machine to expose an arbitrary public inbound port. Direct LAN or private-network access remains a valid self-hosted option.
+
+Worker identity is durable. Run environments may be disposable. A Worker can reconnect or move networks without changing the identity of the Employee, Work, Project, or evidence it previously produced.
+
+## Outcome-first capability routing
+
+Users normally describe an outcome and constraints. Lucubro selects an execution path.
+
+```text
+Outcome
+  → required capability / risk / authority
+  → can an approved deterministic playbook do it?
+  → responsible Employee + approved capability
+  → eligible Worker set
+  → eligible Runtime / tool / model set
+  → quality / cost / latency / privacy / availability decision
+  → Run
+```
+
+A simple maintenance request such as "update Codex" may not need an LLM at all if an approved deterministic playbook can safely perform and verify the update. A small low-risk transformation may use a cheaper/local model. A difficult coding change may justify a stronger coding agent. Browser QA requires a browser-capable Worker independently of which model is used.
+
+The default objective is:
+
+> **Minimize expected total cost subject to capability, expected quality, latency, privacy, risk/authority, and availability constraints.**
+
+This is not blind cheapest-model routing. Rework, failures, and poor-quality output are part of total expected cost. Users can override routing for a Work/Run when they want expert control, and material routing choices should remain inspectable through a Routing Decision Record.
+
+## Browser evidence, Live View, and takeover
+
+A digital employee should be able to prove browser work without making the user watch every click.
+
+The intended evidence ladder is:
+
+1. **State** - current URL/title/action and normalized public events.
+2. **Milestone screenshot** - captured at useful boundaries or on request.
+3. **Replay evidence** - video and/or Playwright trace attached to the Run/Artifact.
+4. **Live View** - on-demand streamed observation of the active browser session.
+5. **Take over** - explicit human-in-the-loop click/type/scroll control when intervention is needed.
+
+Takeover has an ownership boundary:
+
+```text
+Agent controls browser
+  → user requests Take over
+  → automated browser input pauses
+  → user controls the session
+  → user releases control or gives a new instruction
+  → Lucubro records a handoff receipt
+  → agent resumes from current page state
+```
+
+The agent and user must not race each other silently. Mobile should default to low-bandwidth state and screenshots, then load live frames only when the user asks to watch.
+
+The current prototype does not yet implement remote Live View or takeover. These sit after the Worker and evidence contracts in the implementation order.
+
+## Company Knowledge
+
+Company Knowledge is durable Lucubro state, not a provider session's memory.
+
+Candidate durable knowledge includes:
+
+- Project plans and documents;
+- accepted decisions and decision receipts;
+- reusable research;
+- accepted Artifacts and implementation notes;
+- Employee role/capability guidance;
+- Skills and Playbooks;
+- Run learnings that are explicitly promoted into company knowledge.
+
+Knowledge carries provenance and scope. Users should be able to inspect what the company currently knows, where an item came from, and which Work/Project is using it. Relevant Knowledge can attach contextually to current Work, while a broader Knowledge lens can support explicit search, inspection, and curation.
+
+Provider-native session memory may accelerate one Run, but it is never canonical company knowledge.
 
 ## Domain objects are not pages
 
@@ -79,11 +217,11 @@ A recurring product rule is:
 
 Lucubro distinguishes five surface types:
 
-- **Domain object** — durable truth such as Work, Project, Issue, Employee, Run, Artifact, or Decision.
-- **Canvas object** — the current visible projection of domain state.
-- **Lens** — a focused structured view over domain objects while the Company Canvas Shell remains continuous.
-- **Transient interaction** — acknowledgement, suggestion, loading/reconciliation, or receipt state.
-- **Configuration surface** — provider/account/runtime/workspace/policy controls that appear when relevant.
+- **Domain object** - durable truth such as Work, Project, Issue, Employee, Worker, Run, Artifact, or Decision.
+- **Canvas object** - the current visible projection of domain state.
+- **Lens** - a focused structured view over domain objects while the Company Canvas Shell remains continuous.
+- **Transient interaction** - acknowledgement, suggestion, loading/reconciliation, or receipt state.
+- **Configuration surface** - provider/account/runtime/Worker/workspace/policy controls that appear when relevant.
 
 That distinction keeps Lucubro from becoming a conventional SaaS dashboard with an AI chat layer.
 
@@ -92,8 +230,9 @@ That distinction keeps Lucubro from becoming a conventional SaaS dashboard with 
 - **Work** is the default action unit. Home remains Work-first across long Projects and lightweight tasks.
 - **Project** is a durable Work Context that can grow around long-running or multi-part work. Issues / Map / Activity are Project lenses, not mandatory setup before the CEO can ask for something.
 - **Employees** are durable identities and responsibility. They appear with the Work they own and can open a deeper responsibility/capability lens when needed.
-- **Knowledge** first appears as context, source, memory, or evidence attached to Work/Project. A global library is not assumed before a real retrieval/archive workflow justifies it.
-- **Usage / cost** belongs with the Work/Run/runtime that incurred it and with budget boundaries that materially affect decisions.
+- **Workers** are execution hosts. Their capabilities and health appear when they explain execution, risk, availability, or intervention, not as a default infrastructure dashboard.
+- **Knowledge** is durable company context with provenance. It attaches to Work/Project and can also be inspected through a broader Knowledge lens when the user asks.
+- **Usage / cost** belongs with the Work/Run/execution path that incurred it and with budget boundaries that materially affect decisions.
 - **Account / provider** state is infrastructure. It normally stays behind Advanced/Settings and surfaces when credentials, quota, availability, or policy blocks current Work.
 - **Artifacts** are evidence owned by Work. They do not compete with their owning Work as a parallel home-screen subject.
 
@@ -130,13 +269,15 @@ CEO request
   → Accept or Rework
 ```
 
-The UI combines:
+The current development branch adds the first **Company Operating Map** slice. It projects existing durable Work under the Employee who owns it, keeps Run/evidence/decision state attached to the same Work object, survives reload, and makes Alex a company-level routing anchor rather than the visual center of a chat application.
 
-- a live Manager canvas for current intent and Work mutation;
-- a Working set for actionable Active Work / Review / Needs You state;
+The UI also combines:
+
 - reload-safe Durable Work Context;
 - contextual canvas lenses for durable Work, Employee responsibility, and advanced execution state;
-- a kinetic Execution setup with runtime choice and host Workspace selection.
+- a kinetic Execution setup with runtime choice and host Workspace selection;
+- Needs You authority decisions and Artifact review;
+- deterministic mock product events for interaction development.
 
 Reloading does not fabricate historical chat. Lucubro restores only durable state and evidence it can prove.
 
@@ -167,7 +308,7 @@ LUCUBRO_WORKSPACE_ROOT="$HOME"
 
 ### Browser device vs execution host
 
-A browser on a Mac/iPhone can control Lucubro running on NixOS:
+A browser on a Mac/iPhone can control Lucubro running on NixOS over a trusted network:
 
 ```text
 Mac / iPhone browser
@@ -185,17 +326,17 @@ The Company Canvas uses a Klein-blue-centered system built around `#002FA7`.
 
 Klein blue is the brand axis, not a paint bucket:
 
-- blue — identity, primary action, focus, selection, active structure;
-- amber — Needs You / authority boundary;
-- green — accepted / available / evidence-ready;
-- red — failed / destructive error;
-- cool neutrals — most application surfaces.
+- blue - identity, primary action, focus, selection, active structure;
+- amber - Needs You / authority boundary;
+- green - accepted / available / evidence-ready;
+- red - failed / destructive error;
+- cool neutrals - most application surfaces.
 
 Motion has three scales:
 
-- **micro** — focus, selection, receipt, tree/disclosure behavior;
-- **object** — Intent, Work, Artifact, Decision formation/update/settling;
-- **scene** — canvas focus changes while the shell remains continuous.
+- **micro** - focus, selection, receipt, tree/disclosure behavior;
+- **object** - Intent, Work, Artifact, Decision, Worker-presence formation/update/settling;
+- **scene** - canvas focus changes while the shell remains continuous.
 
 GSAP owns choreography, not product truth. If GSAP fails or reduced motion is requested, all underlying state and actions remain understandable and usable.
 
@@ -236,6 +377,8 @@ npm start
 
 There is no authentication layer yet. Enabling LAN workspace browsing exposes directory names and directory creation within the configured root to devices that can reach the service. Do not expose this listener directly to the public internet.
 
+This trusted-LAN preview is **not** the future remote Worker protocol. Public/off-LAN remote operation requires authenticated device/Worker pairing and an encrypted remote transport that has not been implemented yet.
+
 ## What Lucubro owns
 
 Lucubro is the product source of truth for:
@@ -246,7 +389,9 @@ Lucubro is the product source of truth for:
 - authorization and approval history;
 - Artifact evidence;
 - CEO review decisions;
-- append-only product events.
+- append-only product events;
+- future Worker identity/capability state;
+- future Company Knowledge/provenance state.
 
 Runtime providers own execution-specific mechanics such as model context, provider session/thread IDs, provider-specific tool calls, and protocol details. Provider sessions are references from Lucubro Runs, never product identity.
 
@@ -254,15 +399,17 @@ Runtime providers own execution-specific mechanics such as model context, provid
 
 `Auto` means a bounded **Delegation Envelope**, not unrestricted authority.
 
-A coding Work may allow ordinary workspace read/write and local shell execution while keeping materially different authority separate, including network access, package installation, git push, destructive filesystem operations, permission expansion, and other external side effects.
+A coding Work may allow ordinary workspace read/write and local shell execution while keeping materially different authority separate, including network access, package installation, git push, destructive filesystem operations, permission expansion, host-level mutation, credential changes, and other external side effects.
 
 Out-of-envelope actions become `Needs You` instead of silently expanding authority.
+
+Remote Worker execution makes this boundary more important, not less. Worker pairing, capability roots, browser takeover, and host-wide maintenance must remain auditable and revocable.
 
 ## Runtime status
 
 Adapters exist for Claude Code / Agent SDK work, Codex App Server work, and deterministic mock execution.
 
-Real Claude/Codex execution is currently **paused as a product priority** while the Canvas Shell, Work Core, and UI/UX contract are being stabilized. Real-provider smoke tests are not a release gate, and the UI must not imply a provider is ready merely because a binary is installed.
+Real Claude/Codex execution is currently **paused as a product priority** while the Company Operating Map, Worker contract, evidence pipeline, and UI/UX interaction model are being stabilized. Real-provider smoke tests are not a release gate, and the UI must not imply a provider is ready merely because a binary is installed.
 
 ## Repository architecture
 
@@ -280,22 +427,27 @@ lib/company/
   └── runtime/                provider adapters + mock
 
 public/
-  ├── company.html             persistent Company Canvas Shell
-  ├── company.js               live Work/event projection
-  ├── company-durable.js       reload-safe Work Context
-  ├── company-v3.js            Working set projection
-  ├── company-kinetic.js       Execution setup lifecycle motion
-  ├── company-workspace.js     host tree/autocomplete/create-folder behavior
-  ├── company-pages.js         contextual lens + History API controller
-  ├── company-canvas-shell.css persistent lens/focus visual system
-  └── company*.css             product surfaces and state styling
+  ├── company.html                 persistent Company Canvas Shell
+  ├── company.js                   live Work/event projection
+  ├── company-operating-map.js     Work → Employee operating projection
+  ├── company-durable.js           reload-safe Work Context
+  ├── company-v3.js                semantic company-state projection
+  ├── company-kinetic.js           Execution setup lifecycle motion
+  ├── company-workspace.js         host tree/autocomplete/create-folder behavior
+  ├── company-pages.js             contextual lens + History API controller
+  ├── company-operating-map.css    operating-map visual hierarchy
+  ├── company-canvas-shell.css     persistent lens/focus visual system
+  └── company*.css                 product surfaces and state styling
 
 docs/company-workbench/
-  ├── PRODUCT-THESIS.md        governing product direction
-  ├── DESIGN-SYSTEM.md         visual + interaction system
-  ├── MOTION-SYSTEM.md         event/component/scene motion contract
-  └── SPEC.md                  current executable V1 engineering slice
+  ├── PRODUCT-THESIS.md            governing product direction
+  ├── REMOTE-WORKER-RESEARCH.md    primary-source Worker/routing/browser research
+  ├── DESIGN-SYSTEM.md             visual + interaction system
+  ├── MOTION-SYSTEM.md             event/component/scene motion contract
+  └── SPEC.md                      current executable V1 engineering slice
 ```
+
+The planned Worker domain, remote transport, evidence pipeline, Capability Router, and Company Knowledge store are deliberately not represented above as existing modules yet.
 
 ## Quality gates
 
@@ -305,7 +457,7 @@ npm test
 npx playwright test
 ```
 
-Company coverage includes Work/Run persistence, authorization, Artifact-before-completion ordering, review decisions, Durable Work Context, live canvas behavior, Workspace tree/path behavior, contextual lens continuity/history, keyboard/focus, mobile containment, reduced motion, and Klein-blue design states.
+Company coverage includes Work/Run persistence, authorization, Artifact-before-completion ordering, review decisions, Durable Work Context, Company Operating Map projection, live canvas behavior, Workspace tree/path behavior, contextual lens continuity/history, keyboard/focus, mobile containment, reduced motion, and Klein-blue design states.
 
 Tests assert user-observable semantics rather than exact GSAP durations or transform values.
 
@@ -318,8 +470,15 @@ Tests assert user-observable semantics rather than exact GSAP durations or trans
 - Default Home is Work-first.
 - One Workspace-level Primary Manager relationship.
 - A domain object does not automatically become a top-level page.
-- Hide mechanisms, not responsibility, risk, durable state, or evidence.
-- Employee is durable identity; Assignment / Work is dispatch; Run is one execution attempt.
+- Employee owns responsibility; Worker is where a Run executes; Runtime/Model/Playbook is how it executes.
+- Mobile/control clients and Workers may run on different devices.
+- Users choose outcomes by default; Lucubro chooses and supervises execution.
+- Prefer an approved deterministic playbook over an LLM when it is sufficient.
+- Optimize expected total cost under capability, quality, latency, privacy, authority/risk, and availability constraints.
+- Company Knowledge is durable Lucubro state; provider session memory is not canonical knowledge.
+- Browser screenshots, trace/video, Live View, and takeover are evidence/intervention attached to a Run.
+- Hide mechanisms, not responsibility, risk, durable state, evidence, or expert control.
+- Provider-native terminal/CLI remains available as a scoped Advanced runtime escape hatch.
 - The workspace path names the execution host, not the browser device.
 - Live state may advance; authorization advances only across explicitly accepted material deltas.
 - Auto delegates within an envelope; it does not erase the envelope.
@@ -332,15 +491,20 @@ Important unfinished areas include:
 
 - Primary Manager clarification, planning, and Work Proposal behavior is still minimal;
 - Project domain/state growth from Work is not implemented in the new canvas model yet;
-- Knowledge does not yet have a locked durable domain contract;
-- Usage/account are not independent product apps and have not yet been reintroduced contextually;
+- Worker domain, capability advertisement, pairing/revocation, health, and Run→Worker attachment are not implemented yet;
+- authenticated off-LAN remote Worker transport is not implemented;
+- browser Live View and human takeover are not implemented;
+- screenshot/trace/video/test-report evidence is not yet normalized into one Run evidence pipeline;
+- Capability Router and automatic cost/quality routing are not implemented;
+- Company Knowledge has a governing product contract but not yet a canonical persisted store/provenance implementation;
+- Usage/account have not yet been reintroduced contextually around execution and routing;
 - Durable Work Context restores the latest attached Run rather than complete multi-Run history;
 - Rework does not yet create the next Run automatically;
 - approval waits are still in-memory and not restart-recoverable;
 - cancellation and full Run recovery are incomplete;
 - direct client-folder import is not implemented;
 - multi-Employee collaboration, Playbooks, Required Gates, and Routing Decision Records are not yet full canvas surfaces;
-- hosted account/authentication/billing/cloud queues are out of the current local-first slice;
+- hosted authentication/billing/relay infrastructure is not part of the current local-first slice;
 - real Claude/Codex testing is intentionally not the current focus.
 
 ## Active vs frozen code
@@ -351,13 +515,14 @@ Important unfinished areas include:
 
 ## Product documents
 
-- [`docs/company-workbench/PRODUCT-THESIS.md`](docs/company-workbench/PRODUCT-THESIS.md) — governing product direction
-- [`docs/company-workbench/DESIGN-SYSTEM.md`](docs/company-workbench/DESIGN-SYSTEM.md) — visual and interaction system
-- [`docs/company-workbench/MOTION-SYSTEM.md`](docs/company-workbench/MOTION-SYSTEM.md) — live canvas and motion contract
-- [`docs/company-workbench/SPEC.md`](docs/company-workbench/SPEC.md) — current V1 engineering slice, not complete IA
-- [`AGENTS.md`](AGENTS.md) — repository and agent contribution rules
-- [`CONTRIBUTING.md`](CONTRIBUTING.md) — contribution and verification requirements
-- [`SECURITY.md`](SECURITY.md) — security policy
+- [`docs/company-workbench/PRODUCT-THESIS.md`](docs/company-workbench/PRODUCT-THESIS.md) - governing product direction
+- [`docs/company-workbench/REMOTE-WORKER-RESEARCH.md`](docs/company-workbench/REMOTE-WORKER-RESEARCH.md) - primary-source research for Worker, routing, and browser evidence
+- [`docs/company-workbench/DESIGN-SYSTEM.md`](docs/company-workbench/DESIGN-SYSTEM.md) - visual and interaction system
+- [`docs/company-workbench/MOTION-SYSTEM.md`](docs/company-workbench/MOTION-SYSTEM.md) - live canvas and motion contract
+- [`docs/company-workbench/SPEC.md`](docs/company-workbench/SPEC.md) - current V1 engineering slice, not complete IA
+- [`AGENTS.md`](AGENTS.md) - repository and agent contribution rules
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) - contribution and verification requirements
+- [`SECURITY.md`](SECURITY.md) - security policy
 
 ## License
 
