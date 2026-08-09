@@ -21,6 +21,7 @@ async function waitForServer() {
 
 async function waitForCompanyControllers(page) {
   await expect(page.locator('#workspace-picker')).toHaveAttribute('data-controller', 'ready');
+  await expect(page.locator('#company-operating-map')).toHaveAttribute('data-controller', 'ready');
 }
 
 async function configureMockWork(page, brief) {
@@ -58,16 +59,23 @@ test.beforeAll(async () => {
 
 test.afterAll(async () => { if (server && !server.killed) server.kill('SIGTERM'); });
 
-test('front door presents Alex and a quiet Manager canvas without dashboard noise', async ({ page }) => {
+test('front door explains the company operating model before asking for another chat turn', async ({ page }) => {
   await useDesktopViewport(page);
   await page.goto(`${URL}/company`);
   await waitForCompanyControllers(page);
-  await expect(page.getByRole('heading', { name: 'What should we move forward?' })).toBeVisible();
+
+  const map = page.getByLabel('Company operating map');
+  await expect(map).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your company, in motion.' })).toBeVisible();
+  await expect(map).toContainText('Durable Work across AI Employees, Runs, evidence, and decisions.');
+  await expect(map.getByTestId('operating-manager')).toContainText('Alex');
+  await expect(map.getByTestId('operating-employee-row').filter({ hasText: 'Ben' })).toBeVisible();
+  await expect(map).toContainText('No durable Work yet.');
+
   await expect(page.getByLabel('Alex, Primary Manager')).toBeVisible();
   await expect(page.getByLabel('Company canvas focus')).toBeVisible();
   await expect(page.locator('#canvas-lens-current')).toHaveText('Manager canvas');
   await expect(page.getByLabel('Current company context')).toHaveAttribute('data-state', 'quiet');
-  await expect(page.locator('#conversation-feed h1')).toHaveCount(0);
   await expect(page.locator('#run-settings')).not.toHaveAttribute('open', '');
   await expect(page.getByRole('button', { name: 'Send to Alex' })).toBeEnabled();
   await expect(page.locator('#runtime-note')).toContainText('Ready: mock');
@@ -111,7 +119,7 @@ test('execution setup exposes kinetic runtime choices and a line-based repositor
   await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-kinetic-execution.png') });
 });
 
-test('durable Work survives reload without replaying Conversation and remains reviewable', async ({ page }) => {
+test('durable Work appears under its Employee, survives reload, and opens evidence from the map', async ({ page }) => {
   await useDesktopViewport(page);
   await page.goto(`${URL}/company`);
   await configureMockWork(page, 'Fix the session refresh bug');
@@ -124,14 +132,21 @@ test('durable Work survives reload without replaying Conversation and remains re
   await expect(page.locator('body')).toHaveAttribute('data-company-has-work', 'true');
   await expect(page.locator('.composer-dock')).toHaveCSS('position', 'fixed');
 
+  const employeeRow = page.getByTestId('operating-employee-row').filter({ hasText: 'Ben' });
+  const mapNode = employeeRow.getByTestId('operating-work-node').filter({ hasText: 'Fix the session refresh bug' });
+  await expect(mapNode).toBeVisible();
+  await expect(mapNode).toContainText('Ready for review');
+  await expect(mapNode).toContainText('mock');
+
   await page.reload();
+  await waitForCompanyControllers(page);
   await expect(page.locator('#conversation-feed .work-object')).toHaveCount(0);
   await expect(page.locator('#durable-work-context')).toBeVisible();
 
-  const durableRow = page.locator('[data-testid="durable-work-row"]').filter({ hasText: 'Fix the session refresh bug' });
-  await expect(durableRow).toBeVisible();
-  await expect(durableRow).toContainText('Ready for review');
-  await durableRow.click();
+  const restoredNode = page.getByTestId('operating-work-node').filter({ hasText: 'Fix the session refresh bug' });
+  await expect(restoredNode).toBeVisible();
+  await expect(restoredNode).toContainText('Ready for review');
+  await restoredNode.click();
 
   const durableDetail = page.locator('#durable-work-detail');
   await expect(durableDetail).toBeVisible();
@@ -142,15 +157,17 @@ test('durable Work survives reload without replaying Conversation and remains re
 
   await durableDetail.getByRole('button', { name: 'Accept' }).click();
   await expect(durableDetail).toContainText('Accepted');
-  await expect(durableRow).toContainText('Accepted');
+  await expect(restoredNode).toContainText('Accepted');
 });
 
-test('out-of-envelope request resolves on the owning Work instead of requiring a chat receipt', async ({ page }) => {
+test('out-of-envelope request mutates the owning Work on the operating map', async ({ page }) => {
   await useDesktopViewport(page);
   await page.goto(`${URL}/company`);
   await configureMockWork(page, 'Fix auth needs-approval');
   const currentWork = page.locator('.work-object').filter({ hasText: 'Fix auth needs-approval' });
+  const mapNode = page.getByTestId('operating-work-node').filter({ hasText: 'Fix auth needs-approval' });
   await expect(currentWork).toBeVisible();
+  await expect(mapNode).toContainText('Needs you');
   await expect(page.locator('[data-testid="needs-you-card"]')).toBeVisible();
   await expect(page.getByText('network.access')).toBeVisible();
   await expect(page.locator('#needs-you-button')).toHaveAttribute('data-active', 'true');
@@ -165,6 +182,7 @@ test('out-of-envelope request resolves on the owning Work instead of requiring a
   await expect(page.locator('[data-testid="needs-you-card"]')).toHaveCount(0);
   await expect(currentWork.locator('.canvas-event-history')).toContainText('Decision received');
   await expect(currentWork.locator('.status')).toHaveText('Ready for review');
+  await expect(mapNode).toContainText('Ready for review');
 });
 
 test('keyboard shortcut submits Work without exposing runtime mechanics in the main thread', async ({ page }) => {
@@ -179,10 +197,12 @@ test('keyboard shortcut submits Work without exposing runtime mechanics in the m
   await expect(page.getByText('Runtime: mock')).toBeHidden();
 });
 
-test('mobile keeps the Manager relationship, canvas focus, composer, and Work surface inside the viewport', async ({ page }) => {
+test('mobile keeps the operating map, Manager relationship, composer, and Work surface inside the viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${URL}/company`);
   await waitForCompanyControllers(page);
+  await expect(page.getByLabel('Company operating map')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your company, in motion.' })).toBeVisible();
   await expect(page.getByLabel('Alex, Primary Manager')).toBeVisible();
   await expect(page.getByLabel('Company canvas focus')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Send to Alex' })).toBeVisible();
@@ -201,11 +221,14 @@ test('skip navigation reaches the persistent Company Canvas content for keyboard
   await expect(page.locator('#company-main')).toBeFocused();
 });
 
-test('reduced motion preserves semantic Company state without animation timing dependencies', async ({ page }) => {
+test('reduced motion preserves the operating map and semantic Company state', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(`${URL}/company`);
   await waitForCompanyControllers(page);
-  await expect(page.getByRole('heading', { name: 'What should we move forward?' })).toBeVisible();
+  const map = page.getByLabel('Company operating map');
+  await expect(map).toBeVisible();
+  await expect(map).toHaveCSS('opacity', '1');
+  await expect(page.getByRole('heading', { name: 'Your company, in motion.' })).toBeVisible();
   await expect(page.getByLabel('Company canvas focus')).toBeVisible();
   const context = page.getByLabel('Current company context');
   await expect(context).toHaveAttribute('data-state', /^(quiet|active|review|decision)$/);
