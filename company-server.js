@@ -6,6 +6,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { createEvidenceStore } = require('./lib/company/evidence-store');
+const { evidenceResponsePolicy } = require('./lib/company/evidence-response');
 const { createRunStore } = require('./lib/company/run-store');
 const { createWorkStore } = require('./lib/company/work-store');
 const { createWorkerStore } = require('./lib/company/worker-store');
@@ -235,10 +236,12 @@ function createCompanyServer({
       const item = evidence.get(req.params.evidenceId);
       if (!item) return res.status(404).json({ error: 'Evidence not found' });
       const content = evidence.readContent(item.id);
-      res.set('Content-Type', item.mimeType || 'application/octet-stream');
+      const policy = evidenceResponsePolicy(item);
+      res.set('Content-Type', policy.contentType);
+      res.set('Content-Disposition', policy.contentDisposition);
       res.set('Content-Length', String(content.byteLength));
       res.set('Cache-Control', 'private, no-store');
-      res.set('X-Content-Type-Options', 'nosniff');
+      if (policy.nosniff) res.set('X-Content-Type-Options', 'nosniff');
       res.send(content);
     } catch (error) {
       res.status(400).json({ error: error.message });
