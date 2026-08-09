@@ -106,6 +106,9 @@ test('browser-style Work returns durable typed evidence that survives reload', a
   expect(screenshot.metadata.deterministic).toBe(true);
   expect(diff).toMatchObject({ kind: 'diff', source: 'worktree' });
   expect(payload.events.some((event) => Object.hasOwn(event, 'contentBase64'))).toBe(false);
+  expect(payload.events.some((event) => typeof event.diff === 'string')).toBe(false);
+  const diffEvent = payload.events.find((event) => event.type === 'artifact.produced' && event.kind === 'diff');
+  expect(diffEvent).toMatchObject({ evidenceId: diff.id, changedFiles: ['src/session.js'] });
 
   const content = await fetch(`${URL}/api/company/evidence/${encodeURIComponent(screenshot.id)}/content`);
   expect(content.ok).toBe(true);
@@ -127,6 +130,7 @@ test('browser-style Work returns durable typed evidence that survives reload', a
   const image = evidenceShelf.locator('img').first();
   await expect(image).toBeVisible();
   await expect.poll(() => image.evaluate((node) => node.naturalWidth)).toBeGreaterThan(0);
+  await expect(detail).toContainText('src/session.js');
 });
 
 test('Run evidence materializes inside the live Work object as the event arrives', async ({ page }) => {
@@ -152,6 +156,7 @@ test('Run evidence materializes inside the live Work object as the event arrives
   const image = shelf.locator('img').first();
   await expect(image).toBeVisible();
   await expect.poll(() => image.evaluate((node) => node.naturalWidth)).toBeGreaterThan(0);
+  await expect(work.locator('.artifact:not(.run-detail) pre')).toContainText('src/session.js');
   await expect(work.locator('.status')).toHaveText('Ready for review');
 
   await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-evidence-live.png') });
