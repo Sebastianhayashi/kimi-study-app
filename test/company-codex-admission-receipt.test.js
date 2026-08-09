@@ -35,7 +35,10 @@ function validReceipt() {
       platformOs: 'linux',
     },
     catalogDiagnostic: {
+      modelId: LUNA_MODEL_ID,
       exactModelIdMatch: true,
+      supportedReasoningEfforts: ['low', 'medium', 'high', 'max'],
+      maxReasoningEffortSupported: true,
       providerDisplayName: 'GPT-5.6-Luna',
       effectiveConfigModelId: LUNA_MODEL_ID,
       note: 'Provider display text is diagnostic only; exact model id is authoritative.',
@@ -107,6 +110,47 @@ test('exact machine receipt admits gpt-5.6-luna with max effort independent of p
     'mattpocock-skills': digest('b'),
   });
   assert.equal(result.authority.boundaryId, 'systemd-user-codex-v1');
+});
+
+test('receipt fails closed unless the machine catalog proves exact Luna identity and max support', () => {
+  const missing = validReceipt();
+  delete missing.catalogDiagnostic;
+  const missingResult = verifyCodexAdmissionReceipt(missing, {
+    expectedRepo: EXPECTED_REPO,
+    expectedCommit: EXPECTED_COMMIT,
+  });
+  assert.equal(missingResult.admitted, false);
+  assert.ok(missingResult.unknown.includes('catalogDiagnostic.modelId'));
+  assert.ok(missingResult.unknown.includes('catalogDiagnostic.supportedReasoningEfforts'));
+
+  const wrongModel = validReceipt();
+  wrongModel.catalogDiagnostic.modelId = 'gpt-5.6-sol';
+  const wrongModelResult = verifyCodexAdmissionReceipt(wrongModel, {
+    expectedRepo: EXPECTED_REPO,
+    expectedCommit: EXPECTED_COMMIT,
+  });
+  assert.equal(wrongModelResult.admitted, false);
+  assert.ok(wrongModelResult.mismatches.some((entry) => entry.field === 'catalogDiagnostic.modelId'));
+
+  const ambiguous = validReceipt();
+  ambiguous.catalogDiagnostic.exactModelIdMatch = false;
+  const ambiguousResult = verifyCodexAdmissionReceipt(ambiguous, {
+    expectedRepo: EXPECTED_REPO,
+    expectedCommit: EXPECTED_COMMIT,
+  });
+  assert.equal(ambiguousResult.admitted, false);
+  assert.ok(ambiguousResult.mismatches.some((entry) => entry.field === 'catalogDiagnostic.exactModelIdMatch'));
+
+  const noMax = validReceipt();
+  noMax.catalogDiagnostic.supportedReasoningEfforts = ['low', 'medium', 'high'];
+  noMax.catalogDiagnostic.maxReasoningEffortSupported = false;
+  const noMaxResult = verifyCodexAdmissionReceipt(noMax, {
+    expectedRepo: EXPECTED_REPO,
+    expectedCommit: EXPECTED_COMMIT,
+  });
+  assert.equal(noMaxResult.admitted, false);
+  assert.ok(noMaxResult.mismatches.some((entry) => entry.field === 'catalogDiagnostic.maxReasoningEffortSupported'));
+  assert.ok(noMaxResult.mismatches.some((entry) => entry.field === 'catalogDiagnostic.supportedReasoningEfforts'));
 });
 
 test('receipt fails closed for stale commit, wrong model, non-max effort, Fast tier, or provider fallback', () => {
