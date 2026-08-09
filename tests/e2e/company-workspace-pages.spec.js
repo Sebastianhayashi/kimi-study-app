@@ -158,33 +158,57 @@ test('workspace tree remains contained and touchable on a mobile viewport', asyn
   await page.screenshot({ path: path.join(ROOT, 'test-results', 'company-mobile-workspace-tree.png') });
 });
 
-test('company routes expose Manager, Work, Employees, and Settings as real product sections', async ({ page }) => {
+test('context lenses change focus without replacing the Company Canvas shell', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${URL}/company`);
 
-  await page.goto(`${URL}/company/work`);
+  await expect(page.locator('.manager-presence')).toBeVisible();
+  await expect(page.locator('.composer-dock')).toBeVisible();
+  await expect(page.locator('#canvas-lens-trigger')).toBeVisible();
+  await page.evaluate(() => { window.__lucubroCanvasShellProbe = 'alive'; });
+
+  await page.locator('#canvas-lens-trigger').click();
+  await page.getByRole('menuitem', { name: /Work/i }).click();
+  await expect(page).toHaveURL(`${URL}/company/work`);
   await expect(page.getByRole('heading', { name: 'Work', exact: true })).toBeVisible();
-  await expect(page.locator('[data-company-nav="work"]')).toHaveAttribute('aria-current', 'page');
-  await expect(page.locator('.composer-dock')).toBeHidden();
+  await expect(page.locator('body')).toHaveAttribute('data-canvas-lens', 'work');
+  await expect(page.locator('.manager-presence')).toBeVisible();
+  await expect(page.locator('.composer-dock')).toBeVisible();
+  expect(await page.evaluate(() => window.__lucubroCanvasShellProbe)).toBe('alive');
 
-  await page.goto(`${URL}/company/employees`);
+  await page.locator('#canvas-lens-trigger').click();
+  await page.getByRole('menuitem', { name: /Employees/i }).click();
+  await expect(page).toHaveURL(`${URL}/company/employees`);
   await expect(page.getByRole('heading', { name: 'Employees', exact: true })).toBeVisible();
-  await expect(page.locator('[data-company-nav="employees"]')).toHaveAttribute('aria-current', 'page');
   await expect(page.locator('#employee-page-list')).toContainText('Alex');
   await expect(page.locator('#employee-page-list')).toContainText('Ben');
-  await expect(page.locator('#employee-page-list')).toContainText('Primary Manager');
+  expect(await page.evaluate(() => window.__lucubroCanvasShellProbe)).toBe('alive');
 
-  await page.goto(`${URL}/company/settings`);
-  await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
-  await expect(page.locator('[data-company-nav="settings"]')).toHaveAttribute('aria-current', 'page');
+  await page.locator('#canvas-lens-trigger').click();
+  await page.getByRole('menuitem', { name: /Execution settings/i }).click();
+  await expect(page).toHaveURL(`${URL}/company/settings`);
+  await expect(page.getByRole('heading', { name: 'Execution settings', exact: true })).toBeVisible();
   await expect(page.locator('#settings-runtime-list')).toContainText('mock');
-  await expect(page.locator('#settings-runtime-list')).toContainText('Available');
   await expect(page.locator('#settings-workspace-root')).toHaveText(WORKSPACE_ROOT);
+  await expect(page.locator('.composer-dock')).toBeVisible();
+  expect(await page.evaluate(() => window.__lucubroCanvasShellProbe)).toBe('alive');
+
+  await page.goBack();
+  await expect(page).toHaveURL(`${URL}/company/employees`);
+  await expect(page.locator('body')).toHaveAttribute('data-canvas-lens', 'employees');
+  expect(await page.evaluate(() => window.__lucubroCanvasShellProbe)).toBe('alive');
+
+  await page.goBack();
+  await expect(page).toHaveURL(`${URL}/company/work`);
+  await expect(page.locator('body')).toHaveAttribute('data-canvas-lens', 'work');
+
+  await page.locator('#canvas-lens-trigger').click();
+  await page.getByRole('menuitem', { name: /Manager canvas/i }).click();
+  await expect(page).toHaveURL(`${URL}/company`);
+  await expect(page.getByRole('heading', { name: 'What should we move forward?' })).toBeVisible();
+  await expect(page.locator('body')).toHaveAttribute('data-canvas-lens', 'manager');
+  await expect(page.locator('.composer-dock')).toBeVisible();
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);
-
-  await page.locator('[data-company-nav="manager"]').click();
-  await expect(page).toHaveURL(`${URL}/company`);
-  await expect(page.getByRole('heading', { name: 'What should we move forward?' })).toBeVisible();
-  await expect(page.locator('.composer-dock')).toBeVisible();
 });
