@@ -24,15 +24,15 @@
   cursor: not-allowed;
 }
 
-body[data-company-has-work="false"] .workspace {
+body[data-company-has-work="false"][data-canvas-lens="manager"] .workspace {
   min-height: 0;
 }
 
-body[data-company-has-work="false"] .conversation {
+body[data-company-has-work="false"][data-canvas-lens="manager"] .conversation {
   padding-bottom: 0;
 }
 
-body[data-company-has-work="false"] .composer-dock {
+body[data-company-has-work="false"][data-canvas-lens="manager"] .composer-dock {
   position: relative;
   z-index: 20;
   left: auto;
@@ -42,7 +42,7 @@ body[data-company-has-work="false"] .composer-dock {
   transform: none;
 }
 
-body[data-company-has-work="false"] .composer {
+body[data-company-has-work="false"][data-canvas-lens="manager"] .composer {
   box-shadow: 0 12px 38px rgba(18, 32, 71, 0.09), inset 0 2px 0 rgba(0, 47, 167, 0.82);
 }
 
@@ -77,14 +77,14 @@ body[data-company-has-work="false"] .composer {
 }
 
 @media (max-width: 760px) {
-  body[data-company-has-work="false"] .composer-dock {
+  body[data-company-has-work="false"][data-canvas-lens="manager"] .composer-dock {
     width: calc(100% - 28px);
     margin-top: 26px;
   }
 }
 
 @media (max-width: 560px) {
-  body[data-company-has-work="false"] .composer-dock {
+  body[data-company-has-work="false"][data-canvas-lens="manager"] .composer-dock {
     width: calc(100% - 16px);
     margin-top: 22px;
     margin-bottom: max(18px, env(safe-area-inset-bottom));
