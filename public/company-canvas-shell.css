@@ -234,7 +234,7 @@ body[data-canvas-lens]:not([data-canvas-lens="manager"]) .composer {
   box-shadow: 0 22px 58px rgba(18, 32, 71, 0.13), inset 0 2px 0 rgba(0, 47, 167, 0.72);
 }
 
-body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) {
+body[data-company-has-work="true"] .composer:not(:has(#work-brief:focus)):not(:has(.run-settings[open])) {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -243,12 +243,12 @@ body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-se
   box-shadow: 0 14px 42px rgba(18, 32, 71, 0.12), inset 0 2px 0 rgba(0, 47, 167, 0.72);
 }
 
-body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) .composer-main {
+body[data-company-has-work="true"] .composer:not(:has(#work-brief:focus)):not(:has(.run-settings[open])) .composer-main {
   min-width: 0;
   padding: 0;
 }
 
-body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) textarea {
+body[data-company-has-work="true"] .composer:not(:has(#work-brief:focus)):not(:has(.run-settings[open])) textarea {
   height: 52px;
   min-height: 52px;
   max-height: 52px;
@@ -259,29 +259,29 @@ body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-se
   line-height: 1.35;
 }
 
-body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) .composer-toolbar {
+body[data-company-has-work="true"] .composer:not(:has(#work-brief:focus)):not(:has(.run-settings[open])) .composer-toolbar {
   align-items: center;
   gap: 6px;
   padding: 5px 6px 5px 0;
   border-top: 0;
 }
 
-body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) .run-settings > summary {
+body[data-company-has-work="true"] .composer:not(:has(#work-brief:focus)):not(:has(.run-settings[open])) .run-settings > summary {
   min-height: 38px;
   padding: 0 7px;
 }
 
-body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) .settings-summary-value,
-body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) .composer-help {
+body[data-company-has-work="true"] .composer:not(:has(#work-brief:focus)):not(:has(.run-settings[open])) .settings-summary-value,
+body[data-company-has-work="true"] .composer:not(:has(#work-brief:focus)):not(:has(.run-settings[open])) .composer-help {
   display: none;
 }
 
-body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) .primary-action {
+body[data-company-has-work="true"] .composer:not(:has(#work-brief:focus)):not(:has(.run-settings[open])) .primary-action {
   min-height: 38px;
   padding-inline: 13px;
 }
 
-body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) .composer-error {
+body[data-company-has-work="true"] .composer:not(:has(#work-brief:focus)):not(:has(.run-settings[open])) .composer-error {
   grid-column: 1 / -1;
 }
 
@@ -372,7 +372,7 @@ body[data-canvas-lens]:not([data-canvas-lens="manager"]) .product-page-header::b
     transform: translateX(-50%);
   }
 
-  body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) textarea {
+  body[data-company-has-work="true"] .composer:not(:has(#work-brief:focus)):not(:has(.run-settings[open])) textarea {
     padding-left: 12px;
     padding-right: 10px;
     font-size: 13px;
