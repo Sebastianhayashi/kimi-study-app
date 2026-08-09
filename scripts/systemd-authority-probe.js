@@ -5,8 +5,8 @@ const fs = require('node:fs');
 const net = require('node:net');
 const os = require('node:os');
 const path = require('node:path');
-const { spawn } = require('node:child_process');
 const { buildSystemdSandboxArgs } = require('../lib/company/runtime/systemd-codex-authority-boundary');
+const { runAuthorityProbeCommand } = require('../lib/company/runtime/systemd-authority-probe-runner');
 
 function text(value) {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
@@ -39,22 +39,6 @@ function absoluteExistingExecutable(value, label) {
   return resolved;
 }
 
-function run(command, args, options = {}) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
-      cwd: options.cwd,
-      env: options.env || process.env,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    let stdout = '';
-    let stderr = '';
-    child.stdout.on('data', (chunk) => { stdout = `${stdout}${chunk}`.slice(-12000); });
-    child.stderr.on('data', (chunk) => { stderr = `${stderr}${chunk}`.slice(-12000); });
-    child.once('error', reject);
-    child.once('close', (code, signal) => resolve({ code, signal, stdout, stderr }));
-  });
-}
-
 function privatePaths(stateRoot, name) {
   const root = path.join(stateRoot, name);
   const home = path.join(root, 'home');
@@ -85,7 +69,7 @@ async function runSandbox({
     executable,
     executableArgs,
   });
-  return run(systemdRun, args, {
+  return runAuthorityProbeCommand(systemdRun, args, {
     cwd: workspace,
     env: {
       PATH: process.env.PATH || '/run/current-system/sw/bin',
@@ -93,6 +77,7 @@ async function runSandbox({
       USER: process.env.USER || '',
       LOGNAME: process.env.LOGNAME || process.env.USER || '',
     },
+    timeoutMs: 15_000,
   });
 }
 
@@ -223,9 +208,13 @@ async function main() {
     probes,
     observations: {
       workspaceEscapeExit: escape.code,
+      workspaceEscapeTimedOut: escape.timedOut,
       destructiveExit: destructive.code,
+      destructiveTimedOut: destructive.timedOut,
       networkExit: network.code,
+      networkTimedOut: network.timedOut,
       gitPushExit: push.code,
+      gitPushTimedOut: push.timedOut,
     },
   };
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
