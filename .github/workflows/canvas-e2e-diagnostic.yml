@@ -6,6 +6,11 @@ on:
       - design/klein-blue-company-v3
     paths:
       - .github/workflows/canvas-e2e-diagnostic.yml
+      - public/company.html
+      - public/company-workspace.js
+      - public/company-pages.js
+      - public/company-canvas-shell.css
+      - tests/e2e/company-workspace-pages.spec.js
 
 permissions:
   contents: read
@@ -74,6 +79,7 @@ jobs:
             ];
             const snapshot = await page.evaluate((ids) => Object.fromEntries(ids.map((id) => [id, Boolean(document.getElementById(id))])), ids);
             events.push(`DOM ${JSON.stringify(snapshot)}`);
+            events.push(`CONTROLLER ${await page.locator('#workspace-picker').getAttribute('data-controller')}`);
             await page.locator('#run-settings > summary').click();
             await page.locator('#repo-dir').fill('/tmp/example');
             await page.waitForTimeout(500);
@@ -81,6 +87,7 @@ jobs:
             await page.locator('#workspace-tree-toggle').click();
             await page.waitForTimeout(100);
             events.push(`TREE_HIDDEN ${await page.locator('#workspace-tree-panel').getAttribute('hidden')}`);
+            events.push(`GSAP ${await page.evaluate(() => typeof window.gsap)}`);
             console.log(events.join('\n'));
             await browser.close();
           })().catch((error) => { console.error(error.stack || error); process.exitCode = 1; });
