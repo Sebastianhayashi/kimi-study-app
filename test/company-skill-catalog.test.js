@@ -32,7 +32,7 @@ function materializeFixture(t) {
   writeFile(sourceRoot, 'SKILL.md', skill('bundle-router', 'Route across this bundle.', 'version: 1.0.0\n'));
   writeFile(sourceRoot, 'skills/engineering/tdd/SKILL.md', skill('tdd', 'Test-driven development.'));
   writeFile(sourceRoot, 'skills/productivity/teach/SKILL.md', skill('teach', 'Teach a concept.'));
-  writeFile(sourceRoot, 'office-hours/SKILL.md', skill('office-hours', 'Interrogate a product idea.', 'version: 2.0.0\n'));
+  writeFile(sourceRoot, 'office-hours/SKILL.md', `---\nname: office-hours\nversion: 2.0.0\ndescription: Interrogate a product idea.\nallowed-tools:\n  - Bash\n  - AskUserQuestion\n  - WebSearch\ntriggers:\n  - brainstorm this\n  - is this worth building\n  - office hours\ngbrain:\n  schema: 1\n  context_queries:\n    - id: nested-row-must-not-become-trigger\n---\n\n# Office Hours\n\nBody for office-hours.\n`);
   writeFile(sourceRoot, 'notes/SKILL.md', '# Not an eligible skill because it has no frontmatter\n');
   writeFile(sourceRoot, 'skills/engineering/tdd/references/tests.md', '# Reference only\n');
 
@@ -75,6 +75,30 @@ test('full Skill Catalog recursively indexes every eligible SKILL.md across bund
   assert.ok(entries.every((entry) => entry.bundleId === 'fixture-bundle'));
   assert.ok(entries.every((entry) => /^sha256:[0-9a-f]{64}$/.test(entry.contentHash)));
   assert.ok(entries.every((entry) => !Object.hasOwn(entry, 'body')));
+});
+
+test('Skill Catalog exposes compact upstream routing metadata without nested YAML leakage', (t) => {
+  const { store } = materializeFixture(t);
+  const catalog = createSkillCatalog({ bundleStore: store });
+  catalog.refresh();
+
+  const officeHours = catalog.get('fixture-bundle:office-hours');
+  assert.deepEqual(officeHours.triggers, [
+    'brainstorm this',
+    'is this worth building',
+    'office hours',
+  ]);
+  assert.deepEqual(officeHours.allowedTools, [
+    'Bash',
+    'AskUserQuestion',
+    'WebSearch',
+  ]);
+  assert.equal(officeHours.version, '2.0.0');
+  assert.equal(officeHours.triggers.includes('nested-row-must-not-become-trigger'), false);
+
+  const tdd = catalog.get('fixture-bundle:tdd');
+  assert.deepEqual(tdd.triggers, []);
+  assert.deepEqual(tdd.allowedTools, []);
 });
 
 test('Skill body is loaded lazily by stable bundle-qualified identity', (t) => {
