@@ -66,6 +66,7 @@ async function runSandbox({
     privateHome: privateState.home,
     privateCodexHome: privateState.codexHome,
     runtimePath: process.env.PATH || '/run/current-system/sw/bin',
+    runtimeMaxSec: 12,
     executable,
     executableArgs,
   });
