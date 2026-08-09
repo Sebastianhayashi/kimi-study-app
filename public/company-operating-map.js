@@ -19,6 +19,9 @@
   let refreshQueued = false;
   let disposed = false;
 
+  rowsHost.removeAttribute('aria-live');
+  rowsHost.removeAttribute('aria-relevant');
+
   const canAnimate = () => Boolean(window.gsap && !reducedMotion.matches);
 
   function el(tag, className, text) {
@@ -41,21 +44,6 @@
       proposed: ['Proposed', 'neutral'],
     };
     return map[status] || [status || 'Unknown', 'neutral'];
-  }
-
-  function statusPriority(status) {
-    const priorities = {
-      'needs-you': 0,
-      review: 1,
-      'in-progress': 2,
-      starting: 3,
-      'needs-rework': 4,
-      held: 5,
-      failed: 6,
-      proposed: 7,
-      accepted: 8,
-    };
-    return priorities[status] ?? 9;
   }
 
   function ownerId(work) {
@@ -81,6 +69,10 @@
     const id = String(work.activeRunId);
     const compact = id.length > 11 ? id.slice(-8) : id;
     return `Run ${compact}`;
+  }
+
+  function createdAtValue(work) {
+    return Date.parse(work.createdAt || 0) || 0;
   }
 
   function animateMount(node) {
@@ -198,15 +190,13 @@
   }
 
   function visibleWorks(works) {
-    return [...works]
-      .sort((a, b) => {
-        const byStatus = statusPriority(a.status) - statusPriority(b.status);
-        if (byStatus !== 0) return byStatus;
-        const aTime = Date.parse(a.updatedAt || a.createdAt || 0) || 0;
-        const bTime = Date.parse(b.updatedAt || b.createdAt || 0) || 0;
-        return bTime - aTime;
-      })
-      .slice(0, 6);
+    const unsettled = works
+      .filter((work) => work.status !== 'accepted')
+      .sort((a, b) => createdAtValue(b) - createdAtValue(a));
+    const settled = works
+      .filter((work) => work.status === 'accepted')
+      .sort((a, b) => createdAtValue(b) - createdAtValue(a));
+    return [...unsettled, ...settled].slice(0, 6);
   }
 
   function render(data) {
@@ -224,11 +214,9 @@
       }
     }
 
-    const orderedPeople = [...people.values()];
-    for (const person of orderedPeople) {
+    for (const person of people.values()) {
       const row = ensureRow(person);
       updateRowIdentity(row, person);
-      rowsHost.append(row.row);
     }
 
     for (const [id, record] of rowNodes) {
@@ -244,7 +232,7 @@
       const isNew = !record;
       if (!record) record = createWorkNode(work);
       updateWorkNode(record, work);
-      row.track.append(record.button);
+      if (record.button.parentElement !== row.track) row.track.prepend(record.button);
       if (isNew) animateMount(record.button);
     }
 
