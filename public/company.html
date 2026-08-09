@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="/company-pages.css">
   <link rel="stylesheet" href="/company-a11y-v3.css">
   <link rel="stylesheet" href="/company-canvas-shell.css">
+  <link rel="stylesheet" href="/company-operating-map.css">
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" integrity="sha512-oJ8QbaQThQoJZ7oEv+29jfPM6CcP+zUxh3PKJs1vyOhx0UraUrE7PQgeItu3dOuCJyrzWpoYMsVjkkPEBzbUqw==" crossorigin="anonymous" defer></script>
 </head>
 <body data-company-has-work="false" data-company-view="manager" data-canvas-lens="manager">
@@ -91,42 +92,64 @@
     </div>
 
     <main id="company-main" class="workspace" tabindex="-1">
-      <section id="company-conversation" class="conversation canvas-lens-panel" aria-label="Manager conversation" data-company-view-panel="manager" data-canvas-lens-panel="manager">
-        <article class="message manager-message intro-message" data-animate="intro">
+      <section id="company-conversation" class="conversation canvas-lens-panel" aria-label="Company operating canvas" data-company-view-panel="manager" data-canvas-lens-panel="manager">
+        <section id="company-operating-map" class="company-operating-map" aria-label="Company operating map" aria-labelledby="operating-map-heading" data-controller="loading">
+          <header class="operating-map-header">
+            <div class="operating-map-heading">
+              <span class="context-kicker">Company operating map</span>
+              <h1 id="operating-map-heading">Your company, in motion.</h1>
+              <p>Durable Work across AI Employees, Runs, evidence, and decisions. Alex coordinates execution; you step in when judgment is required.</p>
+              <span id="operating-map-summary" class="operating-map-summary-line" role="status">Loading company state…</span>
+            </div>
+
+            <section id="company-context" class="company-context" aria-label="Current company context" data-state="quiet">
+              <div class="context-intro">
+                <span class="context-kicker">Current state</span>
+                <span id="context-copy" class="context-copy">Quiet until something changes.</span>
+              </div>
+              <dl class="context-stats">
+                <div class="context-stat">
+                  <dt>Moving</dt>
+                  <dd id="context-active-count">0</dd>
+                </div>
+                <div class="context-stat">
+                  <dt>Review</dt>
+                  <dd id="context-review-count">0</dd>
+                </div>
+                <div class="context-stat">
+                  <dt>Needs you</dt>
+                  <dd id="context-decision-count">0</dd>
+                </div>
+              </dl>
+            </section>
+          </header>
+
+          <div class="operating-map-stage">
+            <article class="operating-manager-row" data-testid="operating-manager">
+              <div class="operating-manager-anchor">
+                <span class="operating-manager-avatar" aria-hidden="true">A</span>
+                <span class="operating-manager-copy">
+                  <span>Primary Manager</span>
+                  <strong>Alex</strong>
+                  <small>Company-level routing and judgment compression</small>
+                </span>
+              </div>
+              <div class="operating-manager-function">
+                <strong>Routes intent</strong>
+                <span>Outcome → Work → Employee → Run → Evidence / Decision</span>
+              </div>
+            </article>
+            <div id="operating-map-rows" aria-live="polite" aria-relevant="additions text"></div>
+          </div>
+        </section>
+
+        <article class="message manager-message intro-message company-manager-command" data-animate="intro">
           <div class="message-avatar" aria-hidden="true">A</div>
           <div class="message-content">
-            <div class="message-author">Alex</div>
-            <h1>What should we move forward?</h1>
-            <p class="lede">Give me the outcome. I’ll structure the Work, assign the right Employee, and only bring back decisions that need you.</p>
-            <p class="manager-operating-model" aria-label="Alex operating model">
-              <span>Clarify intent</span>
-              <span>Structure Work</span>
-              <span>Assign Employees</span>
-              <span>Surface decisions</span>
-            </p>
+            <div class="message-author">Alex · Command</div>
+            <p><strong>Give me an outcome.</strong> I’ll turn it into durable Work, assign responsibility, and route execution from this canvas.</p>
           </div>
         </article>
-
-        <section id="company-context" class="company-context" aria-label="Current company context" data-state="quiet">
-          <div class="context-intro">
-            <span class="context-kicker">Working set</span>
-            <span id="context-copy" class="context-copy">Quiet until something changes.</span>
-          </div>
-          <dl class="context-stats">
-            <div class="context-stat">
-              <dt>Active Work</dt>
-              <dd id="context-active-count">0</dd>
-            </div>
-            <div class="context-stat">
-              <dt>Review</dt>
-              <dd id="context-review-count">0</dd>
-            </div>
-            <div class="context-stat">
-              <dt>Needs you</dt>
-              <dd id="context-decision-count">0</dd>
-            </div>
-          </dl>
-        </section>
 
         <section id="durable-work-context" class="durable-work-context" aria-label="Durable Work context" hidden>
           <div class="durable-work-context-header">
@@ -333,6 +356,7 @@
   <script src="/company-v3.js" defer></script>
   <script src="/company-workspace.js" defer></script>
   <script src="/company-kinetic.js" defer></script>
+  <script src="/company-operating-map.js" defer></script>
   <script src="/company-pages.js" defer></script>
 </body>
 </html>
