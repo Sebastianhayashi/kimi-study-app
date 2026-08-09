@@ -64,11 +64,12 @@
     return 'Durable Work';
   }
 
-  function runCopy(work) {
+  function runCopy(work, run, worker) {
     if (!work.activeRunId) return 'No active Run';
     const id = String(work.activeRunId);
     const compact = id.length > 11 ? id.slice(-8) : id;
-    return `Run ${compact}`;
+    const runLabel = `Run ${compact}`;
+    return worker && worker.name ? `${runLabel} · ${worker.name}` : runLabel;
   }
 
   function createdAtValue(work) {
@@ -159,32 +160,36 @@
 
     button.addEventListener('click', () => {
       const live = document.querySelector(`.work-object[data-work-id="${CSS.escape(work.id)}"]`);
-      window.dispatchEvent(new CustomEvent('lucubro:open-work', { detail: { workId: work.id } }));
       if (live) {
         if (!live.hasAttribute('tabindex')) live.setAttribute('tabindex', '-1');
         live.focus({ preventScroll: true });
         live.scrollIntoView({ block: 'center', behavior: reducedMotion.matches ? 'auto' : 'smooth' });
+        return;
       }
+      window.dispatchEvent(new CustomEvent('lucubro:open-work', { detail: { workId: work.id } }));
     });
 
     workNodes.set(work.id, { button, work: null });
     return workNodes.get(work.id);
   }
 
-  function updateWorkNode(record, work) {
+  function updateWorkNode(record, work, run, worker) {
     const previousStatus = record.work?.status || null;
     const [label, tone] = statusInfo(work.status);
     const button = record.button;
+    const executionLabel = runCopy(work, run, worker);
     button.dataset.status = work.status || 'unknown';
     button.dataset.tone = tone;
-    button.setAttribute('aria-label', `${workTitle(work)}. ${label}. ${runCopy(work)}.`);
+    if (run && run.workerId) button.dataset.workerId = run.workerId;
+    else delete button.dataset.workerId;
+    button.setAttribute('aria-label', `${workTitle(work)}. ${label}. ${executionLabel}.`);
     button.querySelector('.operating-work-status').textContent = label;
     button.querySelector('.operating-work-title').textContent = workTitle(work);
     button.querySelector('.operating-work-meta').textContent = work.brief && work.brief !== workTitle(work)
       ? work.brief
       : 'Durable company Work';
     button.querySelector('.operating-work-execution').textContent = workExecutionCopy(work);
-    button.querySelector('.operating-work-runtime').textContent = runCopy(work);
+    button.querySelector('.operating-work-runtime').textContent = executionLabel;
     record.work = work;
     if (previousStatus && previousStatus !== work.status) animateState(button);
   }
@@ -202,8 +207,12 @@
   function render(data) {
     const employees = Array.isArray(data.employees) ? data.employees : [];
     const works = Array.isArray(data.works) ? data.works : [];
+    const runs = Array.isArray(data.runs) ? data.runs : [];
+    const workers = Array.isArray(data.workers) ? data.workers : [];
     const shownWorks = visibleWorks(works);
     const people = new Map(employees.map((employee) => [employee.id, employee]));
+    const runsById = new Map(runs.map((run) => [run.id, run]));
+    const workersById = new Map(workers.map((worker) => [worker.id, worker]));
 
     for (const work of shownWorks) {
       const id = ownerId(work);
@@ -231,8 +240,10 @@
       let record = workNodes.get(work.id);
       const isNew = !record;
       if (!record) record = createWorkNode(work);
-      updateWorkNode(record, work);
-      if (record.button.parentElement !== row.track) row.track.prepend(record.button);
+      const run = work.activeRunId ? runsById.get(work.activeRunId) || null : null;
+      const worker = run && run.workerId ? workersById.get(run.workerId) || null : null;
+      updateWorkNode(record, work, run, worker);
+      row.track.append(record.button);
       if (isNew) animateMount(record.button);
     }
 
