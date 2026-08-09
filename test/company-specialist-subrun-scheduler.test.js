@@ -58,7 +58,7 @@ function node(id, role, dependsOn = []) {
   };
 }
 
-test('independent specialist branches start in the same wave while dependent work waits for prerequisites', async () => {
+test('dependent specialist starts as soon as its own prerequisites finish without waiting for unrelated work', async () => {
   const fixture = harness();
   const execution = fixture.scheduler.run({
     parentRunId: 'run_manager',
@@ -73,15 +73,14 @@ test('independent specialist branches start in the same wave while dependent wor
   assert.deepEqual(fixture.starts.map((item) => item.role).sort(), ['comparisons', 'research']);
   assert.equal(fixture.starts.some((item) => item.role === 'teach'), false);
 
-  fixture.waits.get('run_comparisons').resolve({ id: 'run_comparisons', status: 'completed', summary: 'comparison done' });
-  await nextTurn();
-  assert.equal(fixture.starts.some((item) => item.role === 'teach'), false);
-
   fixture.waits.get('run_research').resolve({ id: 'run_research', status: 'completed', summary: 'research done' });
   await nextTurn();
   assert.equal(fixture.starts.filter((item) => item.role === 'teach').length, 1);
+  assert.equal(fixture.waits.get('run_comparisons').promise instanceof Promise, true);
 
   fixture.waits.get('run_teach').resolve({ id: 'run_teach', status: 'completed', summary: 'teaching done' });
+  await nextTurn();
+  fixture.waits.get('run_comparisons').resolve({ id: 'run_comparisons', status: 'completed', summary: 'comparison done' });
   const result = await execution;
 
   assert.equal(result.status, 'completed');
