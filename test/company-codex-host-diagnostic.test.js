@@ -141,6 +141,40 @@ test('host diagnostic discovers Luna/config/permission profiles without starting
   assert.equal(fake.calls.some((call) => call.method === 'turn/start'), false);
 });
 
+test('host diagnostic binds the Luna Max operator profile to the exact trusted provider model id, not provider display text', async () => {
+  const fake = fakeAppServer({
+    models: [
+      {
+        id: 'gpt-5.6-luna',
+        model: 'gpt-5.6-luna',
+        displayName: 'GPT-5.6-Luna',
+        isDefault: false,
+        defaultServiceTier: 'priority',
+        additionalSpeedTiers: ['fast'],
+        serviceTiers: [{ id: 'priority', name: 'Priority' }],
+      },
+      { id: 'other-id', model: 'other-id', displayName: 'Other Model' },
+    ],
+  });
+  const result = await inspectCodexHost({
+    cwd: '/work/lucubro',
+    expectedModelId: 'gpt-5.6-luna',
+    spawnImpl: fake.spawnImpl,
+    now: () => '2026-08-09T14:00:00.000Z',
+  });
+
+  assert.deepEqual(result.lunaMax, {
+    uniqueMatch: true,
+    modelId: 'gpt-5.6-luna',
+    model: 'gpt-5.6-luna',
+    displayName: 'GPT-5.6-Luna',
+    isDefault: false,
+    defaultServiceTier: 'priority',
+    additionalSpeedTiers: ['fast'],
+    serviceTierIds: ['priority'],
+  });
+});
+
 test('host diagnostic refuses to invent a Luna model id when catalog match is ambiguous', async () => {
   const fake = fakeAppServer({
     models: [
