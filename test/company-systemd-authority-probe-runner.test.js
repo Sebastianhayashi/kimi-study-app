@@ -42,3 +42,35 @@ test('authority probe runner bounds captured stdout/stderr', async () => {
   assert.equal(result.stdout.length, 128);
   assert.equal(result.stderr.length, 128);
 });
+
+test('authority probe runner uses a synchronous timeout primitive instead of waiting on async pipe close', async () => {
+  const calls = [];
+  const result = await runAuthorityProbeCommand('/fixed/systemd-run', ['--wait'], {
+    timeoutMs: 120,
+    maxOutputBytes: 64,
+    spawnSyncImpl(command, args, options) {
+      calls.push({ command, args, options });
+      const error = new Error('spawnSync /fixed/systemd-run ETIMEDOUT');
+      error.code = 'ETIMEDOUT';
+      return {
+        status: null,
+        signal: 'SIGKILL',
+        stdout: Buffer.from('partial-out'),
+        stderr: Buffer.from('partial-err'),
+        error,
+      };
+    },
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].command, '/fixed/systemd-run');
+  assert.deepEqual(calls[0].args, ['--wait']);
+  assert.equal(calls[0].options.timeout, 120);
+  assert.equal(calls[0].options.killSignal, 'SIGKILL');
+  assert.equal(calls[0].options.shell, false);
+  assert.equal(result.code, null);
+  assert.equal(result.signal, 'SIGKILL');
+  assert.equal(result.timedOut, true);
+  assert.equal(result.stdout, 'partial-out');
+  assert.equal(result.stderr, 'partial-err');
+});
