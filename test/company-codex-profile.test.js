@@ -8,11 +8,12 @@ const {
   verifyCodexProfile,
 } = require('../lib/company/runtime/codex-profile');
 
-const MODEL_ID = 'fixture-luna-max-model-id';
+const MODEL_ID = 'gpt-5.6-luna';
 
 function approvedObserved(overrides = {}) {
   return {
     modelId: MODEL_ID,
+    reasoningEffort: 'max',
     mode: 'default',
     fast: false,
     permissionProfile: 'full-access',
@@ -20,36 +21,31 @@ function approvedObserved(overrides = {}) {
   };
 }
 
-test('approved Codex profile requires an explicit trusted Luna Max model id', () => {
-  assert.throws(
-    () => createApprovedCodexProfile({ modelId: '' }),
-    /Luna Max model id is required/,
-  );
-
-  assert.deepEqual(createApprovedCodexProfile({ modelId: MODEL_ID }), {
-    profileName: 'Luna Max',
+test('approved Codex execution profile is exact gpt-5.6-luna with max effort, default mode, Fast off, and full access', () => {
+  assert.deepEqual(createApprovedCodexProfile(), {
     modelId: MODEL_ID,
+    reasoningEffort: 'max',
     mode: 'default',
     fast: false,
     permissionProfile: 'full-access',
   });
 });
 
-test('exact Luna Max default non-Fast full-access attestation is admitted', () => {
-  const policy = createApprovedCodexProfile({ modelId: MODEL_ID });
+test('exact Luna max-effort default non-Fast full-access attestation is admitted', () => {
+  const policy = createApprovedCodexProfile();
   const result = verifyCodexProfile({ policy, observed: approvedObserved() });
 
   assert.equal(result.admitted, true);
   assert.deepEqual(result.mismatches, []);
   assert.deepEqual(result.unknown, []);
-  assert.equal(result.profileName, 'Luna Max');
 });
 
-test('wrong model, mode, Fast state, or permission profile blocks admission', () => {
-  const policy = createApprovedCodexProfile({ modelId: MODEL_ID });
+test('wrong model, reasoning effort, mode, Fast state, or permission profile blocks admission', () => {
+  const policy = createApprovedCodexProfile();
 
   for (const observed of [
     approvedObserved({ modelId: 'some-other-model' }),
+    approvedObserved({ reasoningEffort: 'high' }),
     approvedObserved({ mode: 'plan' }),
     approvedObserved({ fast: true }),
     approvedObserved({ permissionProfile: 'workspace-write' }),
@@ -61,9 +57,9 @@ test('wrong model, mode, Fast state, or permission profile blocks admission', ()
 });
 
 test('missing required attestation fields fail closed instead of being inferred', () => {
-  const policy = createApprovedCodexProfile({ modelId: MODEL_ID });
+  const policy = createApprovedCodexProfile();
 
-  for (const field of ['modelId', 'mode', 'fast', 'permissionProfile']) {
+  for (const field of ['modelId', 'reasoningEffort', 'mode', 'fast', 'permissionProfile']) {
     const observed = approvedObserved();
     delete observed[field];
     const result = verifyCodexProfile({ policy, observed });
