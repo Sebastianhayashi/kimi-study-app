@@ -7,7 +7,12 @@ const { PassThrough, Writable } = require('node:stream');
 
 const { probeCodexThreadProfile } = require('../lib/company/runtime/codex-thread-profile-probe');
 
-function fakeAppServer({ serviceTier = 'default' } = {}) {
+function fakeAppServer({
+  threadModel = 'gpt-5.6-luna',
+  permissionProfileId = ':danger-full-access',
+  serviceTier = 'default',
+  ephemeral = true,
+} = {}) {
   const calls = [];
   const process = new EventEmitter();
   process.stdout = new PassThrough();
@@ -28,14 +33,12 @@ function fakeAppServer({ serviceTier = 'default' } = {}) {
           result = { userAgent: 'codex-cli/fixture' };
         } else if (message.method === 'thread/start') {
           result = {
-            thread: { id: 'thread_probe_fixture' },
-            model: 'gpt-5.6-luna',
+            thread: { id: 'thread_probe_fixture', ephemeral },
+            model: threadModel,
             modelProvider: 'openai',
             serviceTier,
-            activePermissionProfile: { id: ':danger-full-access' },
+            activePermissionProfile: permissionProfileId ? { id: permissionProfileId } : null,
           };
-        } else if (message.method === 'thread/archive') {
-          result = {};
         } else {
           callback(new Error(`Unexpected thread probe RPC: ${message.method}`));
           return;
@@ -55,7 +58,7 @@ function fakeAppServer({ serviceTier = 'default' } = {}) {
   };
 }
 
-test('thread profile probe starts and archives a Luna thread without starting any turn', async () => {
+test('thread profile probe uses an ephemeral Luna thread without starting any turn or storage operation', async () => {
   const fake = fakeAppServer();
   const result = await probeCodexThreadProfile({
     cwd: '/work/lucubro',
@@ -71,7 +74,7 @@ test('thread profile probe starts and archives a Luna thread without starting an
     activePermissionProfileId: ':danger-full-access',
     providerFallbackDisabled: true,
     requestedServiceTier: null,
-    archived: true,
+    ephemeral: true,
   });
   const start = fake.calls.find((call) => call.method === 'thread/start');
   assert.deepEqual(start.params, {
@@ -80,45 +83,30 @@ test('thread profile probe starts and archives a Luna thread without starting an
     allowProviderModelFallback: false,
     serviceTier: null,
     permissions: ':danger-full-access',
+    ephemeral: true,
   });
   assert.equal(fake.calls.some((call) => call.method === 'turn/start'), false);
   assert.equal(fake.calls.some((call) => call.method === 'turn/steer'), false);
-  assert.equal(fake.calls.some((call) => call.method === 'thread/archive'), true);
+  assert.equal(fake.calls.some((call) => call.method.startsWith('thread/') && call.method !== 'thread/start'), false);
 });
 
-test('probe refuses a provider model fallback or different active permission profile', async () => {
-  const fallback = fakeAppServer();
-  const originalSpawn = fallback.spawnImpl;
-  fallback.spawnImpl = (command, args, options) => {
-    const child = originalSpawn(command, args, options);
-    const originalWrite = child.stdin._write.bind(child.stdin);
-    child.stdin._write = function patchedWrite(chunk, encoding, callback) {
-      const message = JSON.parse(String(chunk).trim());
-      if (message.method !== 'thread/start') return originalWrite(chunk, encoding, callback);
-      fallback.calls.push(message);
-      child.stdout.write(`${JSON.stringify({
-        id: message.id,
-        result: {
-          thread: { id: 'thread_probe_fallback' },
-          model: 'gpt-5.6-sol',
-          modelProvider: 'openai',
-          serviceTier: 'default',
-          activePermissionProfile: { id: ':danger-full-access' },
-        },
-      })}\n`);
-      callback();
-    };
-    return child;
-  };
-
-  await assert.rejects(
-    probeCodexThreadProfile({
-      cwd: '/work/lucubro',
-      modelId: 'gpt-5.6-luna',
-      permissionProfileId: ':danger-full-access',
-      spawnImpl: fallback.spawnImpl,
-    }),
-    /model mismatch/i,
-  );
-  assert.equal(fallback.calls.some((call) => call.method === 'turn/start'), false);
+test('probe refuses provider fallback, wrong permission profile, Fast, or non-ephemeral response', async () => {
+  for (const fixture of [
+    { threadModel: 'gpt-5.6-sol', expected: /model mismatch/i },
+    { permissionProfileId: ':workspace', expected: /permission profile mismatch/i },
+    { serviceTier: 'fast', expected: /Fast service tier/i },
+    { ephemeral: false, expected: /ephemeral/i },
+  ]) {
+    const fake = fakeAppServer(fixture);
+    await assert.rejects(
+      probeCodexThreadProfile({
+        cwd: '/work/lucubro',
+        modelId: 'gpt-5.6-luna',
+        permissionProfileId: ':danger-full-access',
+        spawnImpl: fake.spawnImpl,
+      }),
+      fixture.expected,
+    );
+    assert.equal(fake.calls.some((call) => call.method === 'turn/start'), false);
+  }
 });
