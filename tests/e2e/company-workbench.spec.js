@@ -24,10 +24,16 @@ async function waitForCompanyControllers(page) {
   await expect(page.locator('#company-operating-map')).toHaveAttribute('data-controller', 'ready');
 }
 
-async function configureMockWork(page, brief) {
-  await waitForCompanyControllers(page);
+async function openExecutionSetup(page) {
   const settings = page.locator('#run-settings');
   if (!(await settings.getAttribute('open'))) await settings.locator('summary').click();
+  await expect(settings).toHaveAttribute('open', '');
+  return settings;
+}
+
+async function configureMockWork(page, brief) {
+  await waitForCompanyControllers(page);
+  await openExecutionSetup(page);
   await page.locator('[data-runtime-id="mock"]').click();
   await page.locator('#repo-dir').fill('/tmp/lucubro-fixture-repo');
   await expect(page.locator('#repo-path-control')).toHaveAttribute('data-state', 'received');
@@ -92,7 +98,7 @@ test('execution setup exposes kinetic runtime choices and a line-based repositor
   await useDesktopViewport(page);
   await page.goto(`${URL}/company`);
   await waitForCompanyControllers(page);
-  await page.locator('#run-settings > summary').click();
+  await openExecutionSetup(page);
 
   const choices = page.locator('#runtime-choice');
   await expect(choices).toBeVisible();
@@ -194,7 +200,7 @@ test('out-of-envelope request mutates the owning Work on the operating map', asy
 test('keyboard shortcut submits Work without exposing runtime mechanics in the main thread', async ({ page }) => {
   await page.goto(`${URL}/company`);
   await waitForCompanyControllers(page);
-  await page.locator('#run-settings > summary').click();
+  await openExecutionSetup(page);
   await page.locator('[data-runtime-id="mock"]').click();
   await page.locator('#repo-dir').fill('/tmp/lucubro-fixture-repo');
   await page.locator('#work-brief').fill('Fix keyboard submission');
@@ -235,7 +241,7 @@ test('mobile keeps the operating map, Manager relationship, composer, and Work s
   await expect(page.locator('body')).toHaveAttribute('data-company-has-work', 'true');
   await expect(page.locator('#work-brief')).toHaveCSS('min-height', '52px');
   await expect(page.locator('#run-settings > summary .settings-summary-label')).toBeVisible();
-  await page.locator('#run-settings > summary').click();
+  await openExecutionSetup(page);
   await expect(page.locator('#runtime-choice')).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
@@ -265,6 +271,6 @@ test('reduced motion preserves the operating map and semantic Company state', as
   const reduced = await page.evaluate(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   expect(reduced).toBe(true);
   await expect(page.getByRole('button', { name: 'Send to Alex' })).toBeEnabled();
-  await page.locator('#run-settings > summary').click();
+  await openExecutionSetup(page);
   await expect(page.locator('#runtime-choice')).toBeVisible();
 });
