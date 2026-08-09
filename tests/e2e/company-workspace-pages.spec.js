@@ -174,6 +174,7 @@ test('context lenses change focus without replacing the Company Canvas shell', a
   await expect(page.locator('body')).toHaveAttribute('data-canvas-lens', 'work');
   await expect(page.locator('.manager-presence')).toBeVisible();
   await expect(page.locator('.composer-dock')).toBeVisible();
+  await expect(page.locator('#canvas-lens-trigger')).toBeFocused();
   expect(await page.evaluate(() => window.__lucubroCanvasShellProbe)).toBe('alive');
 
   await page.locator('#canvas-lens-trigger').click();
