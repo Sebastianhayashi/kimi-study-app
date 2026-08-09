@@ -160,8 +160,7 @@
         timeline
           .from('.topbar .brand', { autoAlpha: 0, x: -travel, duration: 0.30 })
           .from('.manager-presence', { autoAlpha: 0, y: -4, duration: 0.28 }, '-=0.18')
-          .from('.attention-button', { autoAlpha: 0, x: travel, duration: 0.28 }, '-=0.18')
-          .from('#company-context', { autoAlpha: 0, y: travel, duration: 0.34 }, '-=0.10');
+          .from('.attention-button', { autoAlpha: 0, x: travel, duration: 0.28 }, '-=0.18');
         return () => timeline.kill();
       },
     );
