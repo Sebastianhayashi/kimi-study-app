@@ -29,7 +29,7 @@ function writeSkill(root, name) {
   };
 }
 
-function fakeChild({ mountedSkill }) {
+function fakeChild({ mountedSkill, mountEnabled = true }) {
   const child = new EventEmitter();
   const calls = [];
   child.stdout = new PassThrough();
@@ -58,7 +58,7 @@ function fakeChild({ mountedSkill }) {
                 description: 'Research',
                 path: mountedSkill.skillPath,
                 scope: 'user',
-                enabled: true,
+                enabled: mountEnabled,
               }],
               errors: [],
             }],
@@ -81,27 +81,8 @@ function fakeChild({ mountedSkill }) {
   return { child, calls };
 }
 
-test('Codex Run verifies Skill mount on the same App Server before thread start and emits a Run-bound receipt', async (t) => {
-  const mountRoot = tempRoot(t);
-  const mountedSkill = writeSkill(mountRoot, 'research');
-  const fake = fakeChild({ mountedSkill });
-  const boundaryCalls = [];
-  const runtime = createCodexAppServerRuntime({
-    spawnImpl() { throw new Error('raw spawn must not be used for Run'); },
-    authorityBoundary: {
-      async attest({ policy }) {
-        boundaryCalls.push({ type: 'attest', policy });
-        return { enforced: true, boundaryId: 'boundary_mount_fixture' };
-      },
-      spawn(input) {
-        boundaryCalls.push({ type: 'spawn', input });
-        return fake.child;
-      },
-    },
-  });
-
-  const events = [];
-  for await (const event of runtime.run({
+function mountedRequest(mountRoot, mountedSkill, overrides = {}) {
+  return {
     runId: 'run_mount_fixture',
     subrunId: 'subrun_research_fixture',
     workId: 'work_mount_fixture',
@@ -123,7 +104,31 @@ test('Codex Run verifies Skill mount on the same App Server before thread start 
       }],
     },
     async requestApproval() { return 'deny'; },
-  })) events.push(event);
+    ...overrides,
+  };
+}
+
+test('Codex Run verifies Skill mount on the same App Server before thread start and emits a Run-bound receipt', async (t) => {
+  const mountRoot = tempRoot(t);
+  const mountedSkill = writeSkill(mountRoot, 'research');
+  const fake = fakeChild({ mountedSkill });
+  const boundaryCalls = [];
+  const runtime = createCodexAppServerRuntime({
+    spawnImpl() { throw new Error('raw spawn must not be used for Run'); },
+    authorityBoundary: {
+      async attest({ policy }) {
+        boundaryCalls.push({ type: 'attest', policy });
+        return { enforced: true, boundaryId: 'boundary_mount_fixture' };
+      },
+      spawn(input) {
+        boundaryCalls.push({ type: 'spawn', input });
+        return fake.child;
+      },
+    },
+  });
+
+  const events = [];
+  for await (const event of runtime.run(mountedRequest(mountRoot, mountedSkill))) events.push(event);
 
   const receiptEvent = events.find((event) => event.type === 'skill.mounted');
   assert.ok(receiptEvent);
@@ -147,4 +152,32 @@ test('Codex Run verifies Skill mount on the same App Server before thread start 
   assert.ok(mountIndex >= 0 && threadIndex > mountIndex);
   assert.equal(boundaryCalls[0].type, 'attest');
   assert.equal(boundaryCalls[1].type, 'spawn');
+});
+
+test('Codex Run terminates the App Server and never starts a thread when Skill mount verification fails', async (t) => {
+  const mountRoot = tempRoot(t);
+  const mountedSkill = writeSkill(mountRoot, 'research');
+  const fake = fakeChild({ mountedSkill, mountEnabled: false });
+  const runtime = createCodexAppServerRuntime({
+    spawnImpl() { throw new Error('raw spawn must not be used for Run'); },
+    authorityBoundary: {
+      async attest() { return { enforced: true, boundaryId: 'boundary_mount_failure_fixture' }; },
+      spawn() { return fake.child; },
+    },
+  });
+
+  await assert.rejects(
+    runtime.run(mountedRequest(mountRoot, mountedSkill)).next(),
+    /Expected Skill is not enabled in Codex mount: research/,
+  );
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(fake.child.killed, true);
+  assert.equal(fake.calls.some((call) => call.method === 'thread/start'), false);
+  assert.deepEqual(fake.calls.map((call) => call.method), [
+    'initialize',
+    'initialized',
+    'skills/extraRoots/set',
+    'skills/list',
+  ]);
 });
