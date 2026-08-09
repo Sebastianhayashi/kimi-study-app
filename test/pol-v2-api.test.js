@@ -66,6 +66,36 @@ process.stdout.write(JSON.stringify({role:'assistant',content:JSON.stringify(cri
   fs.chmodSync(file, 0o755);
 }
 
+function waitForChildExit(child, timeoutMs) {
+  if (child.exitCode != null || child.signalCode != null) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    const onExit = () => {
+      clearTimeout(timer);
+      resolve(true);
+    };
+    const timer = setTimeout(() => {
+      child.off('exit', onExit);
+      resolve(false);
+    }, timeoutMs);
+    child.once('exit', onExit);
+  });
+}
+
+async function stopServerAndRemoveRuntime(child, runtimeRoot) {
+  if (child.exitCode == null && child.signalCode == null) child.kill('SIGTERM');
+  const exited = await waitForChildExit(child, 2_000);
+  if (!exited && child.exitCode == null && child.signalCode == null) {
+    child.kill('SIGKILL');
+    await waitForChildExit(child, 2_000);
+  }
+  fs.rmSync(runtimeRoot, {
+    recursive: true,
+    force: true,
+    maxRetries: 20,
+    retryDelay: 50,
+  });
+}
+
 async function startServer(t, { enabled, runtimeRoot }) {
   const port = await freePort();
   const coursesDir = path.join(runtimeRoot, 'courses');
@@ -87,10 +117,7 @@ async function startServer(t, { enabled, runtimeRoot }) {
   });
   child.stdout.on('data', (chunk) => logs.push(String(chunk)));
   child.stderr.on('data', (chunk) => logs.push(String(chunk)));
-  t.after(async () => {
-    if (child.exitCode == null) child.kill('SIGTERM');
-    await new Promise((resolve) => child.exitCode == null ? child.once('exit', resolve) : resolve());
-  });
+  t.after(() => stopServerAndRemoveRuntime(child, runtimeRoot));
   const base = `http://127.0.0.1:${port}`;
   for (let attempt = 0; attempt < 100; attempt += 1) {
     if (child.exitCode != null) throw new Error(`server exited early (${child.exitCode})\n${logs.join('')}`);
@@ -128,7 +155,6 @@ function artifactInput(contentStorage = 'local-body') {
 
 test('Flag-A routes and APIs are absent when LUCUBRO_POL_V2 is off', { timeout: 30_000 }, async (t) => {
   const runtimeRoot = path.join(ROOT, 'tests', '.runtime', `pol-off-${process.pid}-${Date.now()}`);
-  t.after(() => fs.rmSync(runtimeRoot, { recursive: true, force: true }));
   const { base, coursesDir } = await startServer(t, { enabled: false, runtimeRoot });
   writeCourse(coursesDir);
   const api = await fetch(`${base}/api/artifacts`);
@@ -142,7 +168,6 @@ test('Flag-A routes and APIs are absent when LUCUBRO_POL_V2 is off', { timeout: 
 
 test('Flag-A artifact API preserves privacy, append-only events, critique decisions, and pre-baseline gap focus', { timeout: 60_000 }, async (t) => {
   const runtimeRoot = path.join(ROOT, 'tests', '.runtime', `pol-on-${process.pid}-${Date.now()}`);
-  t.after(() => fs.rmSync(runtimeRoot, { recursive: true, force: true }));
   const coursesDir = path.join(runtimeRoot, 'courses');
   const courseDir = writeCourse(coursesDir);
   const { base } = await startServer(t, { enabled: true, runtimeRoot });
