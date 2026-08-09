@@ -43,6 +43,18 @@ async function waitForCompletedRun(runId) {
   throw new Error(`Run did not complete: ${runId}`);
 }
 
+async function createCompletedWork(brief) {
+  const response = await fetch(`${URL}/api/company/works`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ brief, runtime: 'mock' }),
+  });
+  expect(response.ok).toBe(true);
+  const created = await response.json();
+  await waitForCompletedRun(created.run.id);
+  return created;
+}
+
 async function stopServer() {
   if (!server || server.exitCode !== null) return;
   await new Promise((resolve) => {
@@ -158,6 +170,104 @@ function seedCoffeeArtifact(workId) {
   });
 }
 
+function seedWebsiteArtifact(workId) {
+  const evidenceStore = createEvidenceStore({ rootDir: DATA_DIR });
+  const browserCheck = evidenceStore.create({
+    id: 'evidence_website_browser_check',
+    runId: 'run_website_qa',
+    workId,
+    workerId: 'worker_canvas_artifact',
+    kind: 'screenshot',
+    label: 'Homepage browser check',
+    mimeType: 'image/png',
+    source: 'browser-qa',
+    metadata: {
+      url: 'https://preview.example.test/',
+      publisher: 'Browser QA',
+    },
+    content: FIXTURE_PNG,
+  });
+  const deliveryFile = evidenceStore.create({
+    id: 'evidence_website_delivery_file',
+    runId: 'run_website_delivery',
+    workId,
+    workerId: 'worker_canvas_artifact',
+    kind: 'deliverable-file',
+    label: 'Built landing page',
+    mimeType: 'text/html',
+    source: 'skill-output',
+    metadata: {
+      path: 'dist/index.html',
+      requested: true,
+      userIntentEvidence: 'dist/index.html',
+    },
+    content: '<!doctype html><title>Launch</title>',
+  });
+
+  const artifactStore = createCanvasArtifactStore({
+    rootDir: DATA_DIR,
+    evidenceStore,
+    createArtifactId: () => 'artifact_website_delivery',
+    createBlockId: (() => {
+      let index = 0;
+      return () => `block_website_${++index}`;
+    })(),
+  });
+  return artifactStore.create({
+    workId,
+    projectId: null,
+    title: 'Website Delivery',
+    blocks: [
+      {
+        type: 'heading',
+        content: { text: 'Launch-ready landing page' },
+      },
+      {
+        type: 'image',
+        content: {
+          evidenceId: browserCheck.id,
+          alt: 'Browser QA capture of the delivered landing page',
+          caption: 'Final browser check from the delivery run.',
+        },
+        evidenceRefs: [browserCheck.id],
+      },
+      {
+        type: 'claim',
+        material: true,
+        content: { text: 'The delivered homepage passed the captured browser check.' },
+        evidenceRefs: [browserCheck.id],
+      },
+      {
+        type: 'list',
+        content: {
+          items: [
+            'Responsive hero and primary call to action',
+            'Production build output captured as a requested file',
+            'Browser evidence attached to the Work',
+          ],
+        },
+      },
+      {
+        type: 'code',
+        content: {
+          language: 'sh',
+          text: 'npm run build',
+        },
+      },
+      {
+        type: 'file-reference',
+        content: {
+          path: 'dist/index.html',
+          label: 'Built landing page',
+          mimeType: 'text/html',
+          evidenceId: deliveryFile.id,
+        },
+        evidenceRefs: [deliveryFile.id],
+      },
+    ],
+  });
+}
+
 test.beforeAll(async () => {
   fs.rmSync(DATA_DIR, { recursive: true, force: true });
   server = spawn(process.execPath, [path.join(ROOT, 'company-server.js')], {
@@ -184,15 +294,7 @@ test.afterAll(async () => {
 
 test('Coffee Artifact renders as evidence-backed editorial content inside durable Work and survives reload', async ({ page }) => {
   await page.setViewportSize({ width: 1180, height: 900 });
-  const brief = 'Teach me the difference between light, medium, and dark coffee roasts.';
-  const createdResponse = await fetch(`${URL}/api/company/works`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ brief, runtime: 'mock' }),
-  });
-  expect(createdResponse.ok).toBe(true);
-  const created = await createdResponse.json();
-  await waitForCompletedRun(created.run.id);
+  const created = await createCompletedWork('Teach me the difference between light, medium, and dark coffee roasts.');
   seedCoffeeArtifact(created.work.id);
 
   await page.goto(`${URL}/company?work=${encodeURIComponent(created.work.id)}`);
@@ -227,4 +329,32 @@ test('Coffee Artifact renders as evidence-backed editorial content inside durabl
 
   await page.reload();
   await expect(page.getByTestId('canvas-artifact')).toContainText('Coffee Roast Field Guide');
+});
+
+test('Website Artifact uses the same Canvas renderer without exposing Skill plumbing', async ({ page }) => {
+  await page.setViewportSize({ width: 1180, height: 900 });
+  const created = await createCompletedWork('Build and deliver a launch-ready landing page as dist/index.html.');
+  seedWebsiteArtifact(created.work.id);
+
+  await page.goto(`${URL}/company?work=${encodeURIComponent(created.work.id)}`);
+  const artifact = page.getByTestId('canvas-artifact');
+  await expect(artifact).toBeVisible();
+  await expect(artifact).toContainText('Website Delivery');
+  await expect(artifact).toContainText('Launch-ready landing page');
+  await expect(artifact).toContainText('npm run build');
+  await expect(artifact).toContainText('Built landing page');
+  await expect(artifact).toContainText('dist/index.html');
+  await expect(artifact).toContainText('The delivered homepage passed the captured browser check.');
+  await expect(artifact).not.toContainText('matt:');
+  await expect(artifact).not.toContainText('gstack:');
+  await expect(artifact.locator('img')).toHaveAttribute('alt', 'Browser QA capture of the delivered landing page');
+  await expect(artifact.getByRole('link', { name: 'Open file' })).toHaveAttribute('href', /evidence_website_delivery_file/);
+
+  const evidenceDrawer = artifact.getByTestId('artifact-evidence-drawer');
+  await evidenceDrawer.locator('summary').click();
+  await expect(evidenceDrawer).toContainText('Homepage browser check');
+  await expect(evidenceDrawer).toContainText('Built landing page');
+
+  await page.reload();
+  await expect(page.getByTestId('canvas-artifact')).toContainText('Website Delivery');
 });
