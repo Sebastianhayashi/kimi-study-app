@@ -101,7 +101,7 @@ async function collect(runtime, input) {
   return events;
 }
 
-test('admitted Codex Run pins Luna, clears Fast, disables provider fallback, and uses named full-access without provider sandbox', async () => {
+test('admitted Codex Run pins Luna, clears Fast, disables provider fallback, pins Default mode, and uses named full-access without provider sandbox', async () => {
   const fake = fakeAppServer();
   const runtime = createCodexAppServerRuntime({
     admission: admission(),
@@ -124,6 +124,14 @@ test('admitted Codex Run pins Luna, clears Fast, disables provider fallback, and
   const turnStart = fake.calls.find((call) => call.method === 'turn/start');
   assert.equal(Object.hasOwn(turnStart.params, 'model'), false);
   assert.equal(Object.hasOwn(turnStart.params, 'sandboxPolicy'), false);
+  assert.deepEqual(turnStart.params.collaborationMode, {
+    mode: 'default',
+    settings: {
+      model: 'luna-runtime-id',
+      reasoningEffort: null,
+      developerInstructions: null,
+    },
+  });
 });
 
 test('admitted Codex Run rejects a caller model override before provider spawn', async () => {
