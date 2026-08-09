@@ -64,6 +64,7 @@ test('workspace path line wakes to Klein blue whenever the input is focused', as
   const activeLine = page.locator('.repo-path-line-active');
   const baseLine = page.locator('.repo-path-line');
 
+  await expect(page.locator('#workspace-picker')).toHaveAttribute('data-controller', 'ready');
   await input.fill(FIXTURE_REPO);
   await expect(page.locator('#repo-path-control')).toHaveAttribute('data-state', 'received');
   await page.locator('#runtime-choice-label').click();
@@ -83,6 +84,7 @@ test('workspace picker expands a host tree, autocompletes paths, and creates fol
   await page.setViewportSize({ width: 1100, height: 820 });
   await page.goto(`${URL}/company`);
   await page.locator('#run-settings > summary').click();
+  await expect(page.locator('#workspace-picker')).toHaveAttribute('data-controller', 'ready');
   await expect(page.locator('#workspace-tree-toggle')).toBeVisible();
 
   await page.locator('#workspace-tree-toggle').click();
@@ -148,6 +150,7 @@ test('workspace tree remains contained and touchable on a mobile viewport', asyn
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${URL}/company`);
   await page.locator('#run-settings > summary').click();
+  await expect(page.locator('#workspace-picker')).toHaveAttribute('data-controller', 'ready');
   await page.locator('#workspace-tree-toggle').click();
   await expect(page.locator('#workspace-tree-panel')).toBeVisible();
   await expect(page.locator('.workspace-node-name').filter({ hasText: 'Projects' }).first()).toBeVisible();
@@ -168,7 +171,7 @@ test('context lenses change focus without replacing the Company Canvas shell', a
   await page.evaluate(() => { window.__lucubroCanvasShellProbe = 'alive'; });
 
   await page.locator('#canvas-lens-trigger').click();
-  await page.getByRole('menuitem', { name: /Work/i }).click();
+  await page.locator('[data-canvas-lens-target="work"]').click();
   await expect(page).toHaveURL(`${URL}/company/work`);
   await expect(page.getByRole('heading', { name: 'Work', exact: true })).toBeVisible();
   await expect(page.locator('body')).toHaveAttribute('data-canvas-lens', 'work');
@@ -178,7 +181,7 @@ test('context lenses change focus without replacing the Company Canvas shell', a
   expect(await page.evaluate(() => window.__lucubroCanvasShellProbe)).toBe('alive');
 
   await page.locator('#canvas-lens-trigger').click();
-  await page.getByRole('menuitem', { name: /Employees/i }).click();
+  await page.locator('[data-canvas-lens-target="employees"]').click();
   await expect(page).toHaveURL(`${URL}/company/employees`);
   await expect(page.getByRole('heading', { name: 'Employees', exact: true })).toBeVisible();
   await expect(page.locator('#employee-page-list')).toContainText('Alex');
@@ -186,7 +189,7 @@ test('context lenses change focus without replacing the Company Canvas shell', a
   expect(await page.evaluate(() => window.__lucubroCanvasShellProbe)).toBe('alive');
 
   await page.locator('#canvas-lens-trigger').click();
-  await page.getByRole('menuitem', { name: /Execution settings/i }).click();
+  await page.locator('[data-canvas-lens-target="settings"]').click();
   await expect(page).toHaveURL(`${URL}/company/settings`);
   await expect(page.getByRole('heading', { name: 'Execution settings', exact: true })).toBeVisible();
   await expect(page.locator('#settings-runtime-list')).toContainText('mock');
@@ -204,7 +207,7 @@ test('context lenses change focus without replacing the Company Canvas shell', a
   await expect(page.locator('body')).toHaveAttribute('data-canvas-lens', 'work');
 
   await page.locator('#canvas-lens-trigger').click();
-  await page.getByRole('menuitem', { name: /Manager canvas/i }).click();
+  await page.locator('[data-canvas-lens-target="manager"]').click();
   await expect(page).toHaveURL(`${URL}/company`);
   await expect(page.getByRole('heading', { name: 'What should we move forward?' })).toBeVisible();
   await expect(page.locator('body')).toHaveAttribute('data-canvas-lens', 'manager');
@@ -226,7 +229,7 @@ test('persistent composer returns focus to Manager canvas when it creates new Wo
   await page.locator('#run-settings > summary').click();
 
   await page.locator('#canvas-lens-trigger').click();
-  await page.getByRole('menuitem', { name: /Work/i }).click();
+  await page.locator('[data-canvas-lens-target="work"]').click();
   await expect(page.locator('body')).toHaveAttribute('data-canvas-lens', 'work');
 
   const instruction = 'Start new Work from a focused lens';
