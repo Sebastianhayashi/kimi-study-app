@@ -7,12 +7,16 @@ const { PassThrough, Writable } = require('node:stream');
 
 const { createCodexAppServerRuntime } = require('../lib/company/runtime/codex-app-server');
 
-function admission() {
+function admission(overrides = {}) {
   return {
     admitted: true,
-    profileName: 'Luna Max',
-    modelId: 'luna-runtime-id',
+    modelId: 'gpt-5.6-luna',
+    reasoningEffort: 'max',
+    mode: 'default',
+    fast: false,
+    permissionProfile: 'full-access',
     providerPermissionProfileId: ':full-access',
+    ...overrides,
   };
 }
 
@@ -23,7 +27,7 @@ function request(overrides = {}) {
     cwd: '/work/lucubro',
     workspaceKind: 'scratch',
     prompt: 'Return a short source-backed summary.',
-    model: 'luna-runtime-id',
+    model: 'gpt-5.6-luna',
     delegationEnvelope: {
       allow: ['workspace.read', 'shell.execute'],
       deny: ['workspace.write', 'network.access', 'git.push', 'filesystem.destructive'],
@@ -34,7 +38,7 @@ function request(overrides = {}) {
 }
 
 function fakeAppServer({
-  threadModel = 'luna-runtime-id',
+  threadModel = 'gpt-5.6-luna',
   permissionProfileId = ':full-access',
   serviceTier = 'default',
   ephemeral = true,
@@ -108,7 +112,7 @@ async function collect(runtime, input) {
   return events;
 }
 
-test('admitted Codex Run pins Luna, clears Fast, disables fallback, pins Default mode, and uses an ephemeral named full-access thread', async () => {
+test('admitted Codex Run pins gpt-5.6-luna, max effort, clears Fast, disables fallback, pins Default mode, and uses an ephemeral named full-access thread', async () => {
   const fake = fakeAppServer();
   const runtime = createCodexAppServerRuntime({
     admission: admission(),
@@ -121,7 +125,7 @@ test('admitted Codex Run pins Luna, clears Fast, disables fallback, pins Default
 
   const threadStart = fake.calls.find((call) => call.method === 'thread/start');
   assert.deepEqual(threadStart.params, {
-    model: 'luna-runtime-id',
+    model: 'gpt-5.6-luna',
     cwd: '/work/lucubro',
     allowProviderModelFallback: false,
     serviceTier: null,
@@ -135,30 +139,37 @@ test('admitted Codex Run pins Luna, clears Fast, disables fallback, pins Default
   assert.deepEqual(turnStart.params.collaborationMode, {
     mode: 'default',
     settings: {
-      model: 'luna-runtime-id',
-      reasoningEffort: null,
+      model: 'gpt-5.6-luna',
+      reasoningEffort: 'max',
       developerInstructions: null,
     },
   });
 });
 
-test('admitted Codex Run rejects caller model override and provider-session resume before boundary spawn', async () => {
+test('admitted Codex Run rejects caller model override, non-max admission, and provider-session resume before boundary spawn', async () => {
   let boundaryCalled = false;
-  const runtime = createCodexAppServerRuntime({
-    admission: admission(),
-    authorityBoundary: {
-      async attest() { boundaryCalled = true; return { enforced: true }; },
-      spawn() { throw new Error('must not spawn'); },
-    },
-  });
+  const authorityBoundary = {
+    async attest() { boundaryCalled = true; return { enforced: true }; },
+    spawn() { throw new Error('must not spawn'); },
+  };
 
+  const runtime = createCodexAppServerRuntime({ admission: admission(), authorityBoundary });
   await assert.rejects(
     runtime.run(request({ model: 'other-model' })).next(),
-    /must use admitted Luna Max model/i,
+    /must use admitted.*gpt-5\.6-luna/i,
   );
   await assert.rejects(
     runtime.run(request({ providerSessionId: 'thread_old' })).next(),
     /ephemeral.*provider session/i,
+  );
+
+  const weakRuntime = createCodexAppServerRuntime({
+    admission: admission({ reasoningEffort: 'high' }),
+    authorityBoundary,
+  });
+  await assert.rejects(
+    weakRuntime.run(request()).next(),
+    /reasoning.*max|execution profile/i,
   );
   assert.equal(boundaryCalled, false);
 });
