@@ -7,6 +7,9 @@ const os = require('node:os');
 const path = require('node:path');
 const { createProjectStore } = require('../lib/company/project-store');
 const { discoverProjectSources } = require('../lib/company/project-discovery');
+const { createWorkStore } = require('../lib/company/work-store');
+const { createRunStore } = require('../lib/company/run-store');
+const { createCompanyService } = require('../lib/company/company-service');
 const {
   captureSourceSnapshot,
   reconcileProjectSources,
@@ -22,6 +25,24 @@ function writeSource(repo, relativePath, content) {
   const file = path.join(repo, relativePath);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, content);
+}
+
+function companyFor(t, repo) {
+  const data = tempRoot(t, 'lucubro-project-continuation-data-');
+  const projectStore = createProjectStore({ rootDir: data });
+  const workStore = createWorkStore({ rootDir: data });
+  const runStore = createRunStore({ rootDir: data });
+  const company = createCompanyService({
+    workStore,
+    runStore,
+    runOrchestrator: { start() { throw new Error('not used'); } },
+    projectStore,
+    projectDiscovery: discoverProjectSources,
+    defaultWorkerId: 'worker_local',
+    createProjectId: () => 'project_continuation',
+  });
+  const project = company.adoptProject({ repoDir: repo, name: 'Continuation fixture' });
+  return { company, projectStore, project };
 }
 
 test('Project discovery fingerprints canonical sources without copying source content', (t) => {
@@ -113,4 +134,34 @@ test('Reconciliation distinguishes a Project that has never checkpointed sources
   });
   assert.equal(result.status, 'uncheckpointed');
   assert.equal(result.stale, false);
+});
+
+test('Company checkpoint captures current canonical fingerprints and later reports source drift', (t) => {
+  const repo = tempRoot(t, 'lucubro-project-continuation-repo-');
+  fs.mkdirSync(path.join(repo, '.git'));
+  writeSource(repo, 'CONTEXT.md', '# Context\nfirst\n');
+  const { company, projectStore, project } = companyFor(t, repo);
+
+  const checkpointed = company.checkpointProject({
+    projectId: project.id,
+    checkpoint: {
+      status: 'active',
+      scope: 'Persistence v1',
+      nextSafeAction: 'implement continuation compiler',
+    },
+  });
+  assert.equal(checkpointed.checkpoint.sourceSnapshot.length, 1);
+
+  const fresh = company.inspectProjectContinuation(project.id);
+  assert.equal(fresh.reconciliation.status, 'fresh');
+
+  const checkpointFingerprint = checkpointed.checkpoint.sourceSnapshot[0].fingerprint;
+  writeSource(repo, 'CONTEXT.md', '# Context\nsecond\n');
+
+  const stale = company.inspectProjectContinuation(project.id);
+  assert.equal(stale.reconciliation.status, 'stale');
+  assert.equal(stale.reconciliation.changed[0].path, 'CONTEXT.md');
+  assert.equal(stale.reconciliation.changed[0].checkpointFingerprint, checkpointFingerprint);
+  assert.notEqual(stale.reconciliation.changed[0].currentFingerprint, checkpointFingerprint);
+  assert.equal(projectStore.get(project.id).checkpoint.sourceSnapshot[0].fingerprint, checkpointFingerprint);
 });
