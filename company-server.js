@@ -109,6 +109,14 @@ function createCompanyServer({
     });
   }
 
+  function assertProjectWorkspaceAccess(projectId) {
+    const project = company.getProject(projectId);
+    if (!project) throw new Error(`Project not found: ${projectId}`);
+    const inspected = workspaces.inspect(project.repoDir);
+    if (!inspected || !inspected.exists || !inspected.isDirectory) throw new Error('Project repoDir must remain an existing directory inside the allowed workspace root.');
+    return project;
+  }
+
   async function readRuntimeStates() {
     const runtimeStates = [];
     for (const [id, runtime] of runtimeRegistry.entries()) {
@@ -183,6 +191,7 @@ function createCompanyServer({
 
   app.post('/api/company/projects/:projectId/checkpoint', requireWorkspaceAccess, (req, res) => {
     try {
+      assertProjectWorkspaceAccess(req.params.projectId);
       const project = company.checkpointProject({
         projectId: req.params.projectId,
         checkpoint: req.body || {},
@@ -195,6 +204,7 @@ function createCompanyServer({
 
   app.get('/api/company/projects/:projectId/continuation', requireWorkspaceAccess, (req, res) => {
     try {
+      assertProjectWorkspaceAccess(req.params.projectId);
       res.json(company.inspectProjectContinuation(req.params.projectId));
     } catch (error) {
       res.status(400).json({ error: error.message });
