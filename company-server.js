@@ -10,6 +10,8 @@ const { evidenceResponsePolicy } = require('./lib/company/evidence-response');
 const { createRunStore } = require('./lib/company/run-store');
 const { createWorkStore } = require('./lib/company/work-store');
 const { createWorkerStore } = require('./lib/company/worker-store');
+const { createProjectStore } = require('./lib/company/project-store');
+const { discoverProjectSources } = require('./lib/company/project-discovery');
 const { createApprovalBroker } = require('./lib/company/approval-broker');
 const { createRunOrchestrator } = require('./lib/company/run-orchestrator');
 const { createWorktreeManager } = require('./lib/company/worktree-manager');
@@ -42,6 +44,8 @@ function createCompanyServer({
   worktreeManager = null,
   workspaceBrowser = null,
   workerStore = null,
+  projectStore = null,
+  projectDiscovery = discoverProjectSources,
   evidenceStore = null,
   workerIdentity = null,
 } = {}) {
@@ -53,6 +57,7 @@ function createCompanyServer({
 
   const runStore = createRunStore({ rootDir: dataDir });
   const workStore = createWorkStore({ rootDir: dataDir });
+  const projects = projectStore || createProjectStore({ rootDir: dataDir });
   const workers = workerStore || createWorkerStore({ rootDir: dataDir });
   const evidence = evidenceStore || createEvidenceStore({ rootDir: dataDir });
   const existingWorker = workers.list()[0] || null;
@@ -87,14 +92,33 @@ function createCompanyServer({
     worktreeManager: worktrees,
     evidenceStore: evidence,
   });
-  const company = createCompanyService({ workStore, runStore, runOrchestrator, defaultWorkerId: localWorker.id });
+  const company = createCompanyService({
+    workStore,
+    runStore,
+    runOrchestrator,
+    projectStore: projects,
+    projectDiscovery,
+    defaultWorkerId: localWorker.id,
+  });
   const workspaces = workspaceBrowser || createWorkspaceBrowser();
 
+  function canAccessWorkspace(req) {
+    return isLoopbackRequest(req) || process.env.LUCUBRO_ALLOW_LAN_WORKSPACE_BROWSER === '1';
+  }
+
   function requireWorkspaceAccess(req, res, next) {
-    if (isLoopbackRequest(req) || process.env.LUCUBRO_ALLOW_LAN_WORKSPACE_BROWSER === '1') return next();
+    if (canAccessWorkspace(req)) return next();
     return res.status(403).json({
       error: 'Host workspace browsing is disabled for LAN clients. Set LUCUBRO_ALLOW_LAN_WORKSPACE_BROWSER=1 only on a trusted network.',
     });
+  }
+
+  function assertProjectWorkspaceAccess(projectId) {
+    const project = company.getProject(projectId);
+    if (!project) throw new Error(`Project not found: ${projectId}`);
+    const inspected = workspaces.inspect(project.repoDir);
+    if (!inspected || !inspected.exists || !inspected.isDirectory) throw new Error('Project repoDir must remain an existing directory inside the allowed workspace root.');
+    return project;
   }
 
   async function readRuntimeStates() {
@@ -143,10 +167,52 @@ function createCompanyServer({
       employees: [{ id: 'ben', name: 'Ben', position: 'Software Engineer' }],
       workers: [publicWorkerState(localWorker, runtimeStates)],
       runtimes: runtimeStates,
+      projects: company.listProjects(),
       runs: runStore.list().map(publicRunSummary),
       works: company.listWorks(),
       needsYou: approvalBroker.listPending(),
     });
+  });
+
+  app.post('/api/company/projects', requireWorkspaceAccess, (req, res) => {
+    try {
+      const body = req.body || {};
+      if (!body.repoDir || !String(body.repoDir).trim()) throw new Error('Project repoDir is required.');
+      const inspected = workspaces.inspect(body.repoDir);
+      if (!inspected || !inspected.exists || !inspected.isDirectory) throw new Error('Project repoDir must be an existing directory.');
+      const project = company.adoptProject({ repoDir: inspected.path || body.repoDir, name: body.name || null });
+      res.status(201).json({ project });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/company/projects/:projectId', (req, res) => {
+    const project = company.getProject(req.params.projectId);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    res.json(project);
+  });
+
+  app.post('/api/company/projects/:projectId/checkpoint', requireWorkspaceAccess, (req, res) => {
+    try {
+      assertProjectWorkspaceAccess(req.params.projectId);
+      const project = company.checkpointProject({
+        projectId: req.params.projectId,
+        checkpoint: req.body || {},
+      });
+      res.json({ project });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/company/projects/:projectId/continuation', requireWorkspaceAccess, (req, res) => {
+    try {
+      assertProjectWorkspaceAccess(req.params.projectId);
+      res.json(company.inspectProjectContinuation(req.params.projectId));
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
   });
 
   app.get('/api/company/workspaces/root', requireWorkspaceAccess, (req, res) => {
@@ -192,9 +258,18 @@ function createCompanyServer({
   app.post('/api/company/works', async (req, res) => {
     try {
       const body = req.body || {};
+      if (body.projectId) {
+        if (!canAccessWorkspace(req)) {
+          return res.status(403).json({
+            error: 'Project-bound Work cannot read host Project Sources from this client. Enable LAN workspace access only on a trusted network.',
+          });
+        }
+        assertProjectWorkspaceAccess(body.projectId);
+      }
       const result = await company.createCodingWork({
         brief: body.brief,
         repoDir: body.repoDir,
+        projectId: body.projectId || null,
         runtime: body.runtime,
         employeeId: body.employeeId || 'ben',
         workerId: localWorker.id,
@@ -276,6 +351,7 @@ function createCompanyServer({
   return {
     app,
     company,
+    projectStore: projects,
     runStore,
     workStore,
     workerStore: workers,
