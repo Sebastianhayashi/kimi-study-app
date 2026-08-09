@@ -5,6 +5,7 @@ const express = require('express');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { createEvidenceStore } = require('./lib/company/evidence-store');
 const { createRunStore } = require('./lib/company/run-store');
 const { createWorkStore } = require('./lib/company/work-store');
 const { createWorkerStore } = require('./lib/company/worker-store');
@@ -39,6 +40,7 @@ function createCompanyServer({
   worktreeManager = null,
   workspaceBrowser = null,
   workerStore = null,
+  evidenceStore = null,
   workerIdentity = null,
 } = {}) {
   fs.mkdirSync(dataDir, { recursive: true });
@@ -50,6 +52,7 @@ function createCompanyServer({
   const runStore = createRunStore({ rootDir: dataDir });
   const workStore = createWorkStore({ rootDir: dataDir });
   const workers = workerStore || createWorkerStore({ rootDir: dataDir });
+  const evidence = evidenceStore || createEvidenceStore({ rootDir: dataDir });
   const existingWorker = workers.list()[0] || null;
   const requestedWorkerId = workerIdentity && workerIdentity.id || process.env.LUCUBRO_WORKER_ID || null;
   const localWorkerId = requestedWorkerId || existingWorker && existingWorker.id || `worker_${crypto.randomUUID()}`;
@@ -70,7 +73,13 @@ function createCompanyServer({
       ? testWorktreeManager()
       : createWorktreeManager()
   );
-  const runOrchestrator = createRunOrchestrator({ runStore, approvalBroker, runtimeRegistry, worktreeManager: worktrees });
+  const runOrchestrator = createRunOrchestrator({
+    runStore,
+    approvalBroker,
+    runtimeRegistry,
+    worktreeManager: worktrees,
+    evidenceStore: evidence,
+  });
   const company = createCompanyService({ workStore, runStore, runOrchestrator, defaultWorkerId: localWorker.id });
   const workspaces = workspaceBrowser || createWorkspaceBrowser();
 
@@ -113,6 +122,7 @@ function createCompanyServer({
       employeeId: run.employeeId,
       workerId: run.workerId || null,
       status: run.status,
+      evidenceCount: evidence.listByRun(run.id).length,
     };
   }
 
@@ -214,9 +224,25 @@ function createCompanyServer({
     res.json({
       run,
       worker: run.workerId ? workers.get(run.workerId) : null,
+      evidence: evidence.listByRun(run.id),
       events: runStore.readEvents(run.id),
       needsYou: approvalBroker.listPending(run.id),
     });
+  });
+
+  app.get('/api/company/evidence/:evidenceId/content', (req, res) => {
+    try {
+      const item = evidence.get(req.params.evidenceId);
+      if (!item) return res.status(404).json({ error: 'Evidence not found' });
+      const content = evidence.readContent(item.id);
+      res.set('Content-Type', item.mimeType || 'application/octet-stream');
+      res.set('Content-Length', String(content.byteLength));
+      res.set('Cache-Control', 'private, no-store');
+      res.set('X-Content-Type-Options', 'nosniff');
+      res.send(content);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
   });
 
   app.get('/api/company/runs/:runId/stream', (req, res) => {
@@ -244,6 +270,7 @@ function createCompanyServer({
     runStore,
     workStore,
     workerStore: workers,
+    evidenceStore: evidence,
     localWorker,
     approvalBroker,
     runtimeRegistry,
