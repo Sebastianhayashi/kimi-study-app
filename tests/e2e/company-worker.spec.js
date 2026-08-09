@@ -1,63 +1,30 @@
 'use strict';
 
 const { test, expect } = require('@playwright/test');
-const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { startCompanyTestServer, stopCompanyTestServer } = require('../support/company-test-server');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const PORT = 3112;
-const URL = `http://127.0.0.1:${PORT}`;
+let URL;
 const DATA_DIR = path.join(ROOT, 'tests', '.runtime', 'company-worker');
 let server;
 
-async function waitForServer() {
-  const deadline = Date.now() + 10_000;
-  while (Date.now() < deadline) {
-    try {
-      const response = await fetch(`${URL}/api/company/health`);
-      if (response.ok) return;
-    } catch {}
-    await new Promise((resolve) => setTimeout(resolve, 80));
-  }
-  throw new Error('company-server did not become ready');
-}
-
-async function stopServer() {
-  if (!server || server.exitCode !== null) return;
-  await new Promise((resolve) => {
-    const forceTimer = setTimeout(() => {
-      if (server.exitCode === null) server.kill('SIGKILL');
-    }, 2_000);
-    server.once('exit', () => {
-      clearTimeout(forceTimer);
-      resolve();
-    });
-    server.kill('SIGTERM');
-  });
-}
-
 test.beforeAll(async () => {
   fs.rmSync(DATA_DIR, { recursive: true, force: true });
-  server = spawn(process.execPath, [path.join(ROOT, 'company-server.js')], {
-    cwd: ROOT,
+  server = await startCompanyTestServer({
+    rootDir: ROOT,
+    dataDir: DATA_DIR,
     env: {
-      ...process.env,
-      NODE_ENV: 'test',
-      PORT: String(PORT),
-      LUCUBRO_COMPANY_PORT: String(PORT),
-      LUCUBRO_COMPANY_DATA_DIR: DATA_DIR,
-      LUCUBRO_COMPANY_MOCK_RUNTIME: '1',
       LUCUBRO_WORKER_ID: 'worker_test',
       LUCUBRO_WORKER_NAME: 'Test Worker',
     },
-    stdio: ['ignore', 'pipe', 'pipe'],
   });
-  await waitForServer();
+  URL = server.url;
 });
 
 test.afterAll(async () => {
-  await stopServer();
+  await stopCompanyTestServer(server);
   fs.rmSync(DATA_DIR, { recursive: true, force: true });
 });
 
