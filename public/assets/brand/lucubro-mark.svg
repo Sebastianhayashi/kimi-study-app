@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-labelledby="title">
   <title id="title">Lucubro</title>
-  <rect x="2" y="2" width="28" height="28" rx="8" fill="#0b57d0"/>
+  <rect x="2" y="2" width="28" height="28" rx="8" fill="#002FA7"/>
   <path d="M8.5 7.5c0-.83.67-1.5 1.5-1.5h3v13.25c0 .69.56 1.25 1.25 1.25H24V25H13.5a5 5 0 0 1-5-5V7.5Z" fill="#fff"/>
   <path d="M17.25 7h6.5l-5.3 11.5H14.7L17.25 7Z" fill="#fff" fill-opacity=".38"/>
 </svg>

@@ -1,17 +1,24 @@
 'use strict';
 
+const crypto = require('crypto');
 const express = require('express');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
+const { createEvidenceStore } = require('./lib/company/evidence-store');
+const { evidenceResponsePolicy } = require('./lib/company/evidence-response');
 const { createRunStore } = require('./lib/company/run-store');
 const { createWorkStore } = require('./lib/company/work-store');
+const { createWorkerStore } = require('./lib/company/worker-store');
 const { createApprovalBroker } = require('./lib/company/approval-broker');
 const { createRunOrchestrator } = require('./lib/company/run-orchestrator');
 const { createWorktreeManager } = require('./lib/company/worktree-manager');
 const { createCompanyService } = require('./lib/company/company-service');
+const { createWorkspaceBrowser } = require('./lib/company/workspace-browser');
 const { createClaudeAgentSdkRuntime } = require('./lib/company/runtime/claude-agent-sdk');
 const { createCodexAppServerRuntime } = require('./lib/company/runtime/codex-app-server');
 const { createMockCompanyRuntime } = require('./lib/company/runtime/mock');
+const { applyRuntimePolicy } = require('./lib/company/runtime/policy');
 
 const ROOT = __dirname;
 
@@ -23,11 +30,20 @@ function testWorktreeManager() {
   };
 }
 
+function isLoopbackRequest(req) {
+  const address = String(req.socket && req.socket.remoteAddress || '');
+  return address === '127.0.0.1' || address === '::1' || address.startsWith('::ffff:127.');
+}
+
 function createCompanyServer({
   rootDir = ROOT,
   dataDir = process.env.LUCUBRO_COMPANY_DATA_DIR || path.join(rootDir, 'data', 'company'),
   runtimes = null,
   worktreeManager = null,
+  workspaceBrowser = null,
+  workerStore = null,
+  evidenceStore = null,
+  workerIdentity = null,
 } = {}) {
   fs.mkdirSync(dataDir, { recursive: true });
   const app = express();
@@ -37,11 +53,26 @@ function createCompanyServer({
 
   const runStore = createRunStore({ rootDir: dataDir });
   const workStore = createWorkStore({ rootDir: dataDir });
+  const workers = workerStore || createWorkerStore({ rootDir: dataDir });
+  const evidence = evidenceStore || createEvidenceStore({ rootDir: dataDir });
+  const existingWorker = workers.list()[0] || null;
+  const requestedWorkerId = workerIdentity && workerIdentity.id || process.env.LUCUBRO_WORKER_ID || null;
+  const localWorkerId = requestedWorkerId || existingWorker && existingWorker.id || `worker_${crypto.randomUUID()}`;
+  const localWorker = workers.upsert({
+    id: localWorkerId,
+    name: workerIdentity && workerIdentity.name || process.env.LUCUBRO_WORKER_NAME || existingWorker && existingWorker.name || os.hostname() || 'Local Worker',
+    kind: workerIdentity && workerIdentity.kind || existingWorker && existingWorker.kind || 'self-hosted',
+  });
   const approvalBroker = createApprovalBroker({ runStore });
-  const runtimeRegistry = runtimes || new Map([
+  const configuredRuntimeRegistry = runtimes || new Map([
     ['claude-code', createClaudeAgentSdkRuntime()],
     ['codex', createCodexAppServerRuntime()],
   ]);
+  const runtimeRegistry = runtimes
+    ? configuredRuntimeRegistry
+    : applyRuntimePolicy(configuredRuntimeRegistry, {
+      enableRealRuntimes: process.env.LUCUBRO_ENABLE_REAL_RUNTIMES === '1',
+    });
   if (process.env.LUCUBRO_COMPANY_MOCK_RUNTIME === '1' && !runtimeRegistry.has('mock')) runtimeRegistry.set('mock', createMockCompanyRuntime());
 
   const worktrees = worktreeManager || (
@@ -49,13 +80,24 @@ function createCompanyServer({
       ? testWorktreeManager()
       : createWorktreeManager()
   );
-  const runOrchestrator = createRunOrchestrator({ runStore, approvalBroker, runtimeRegistry, worktreeManager: worktrees });
-  const company = createCompanyService({ workStore, runStore, runOrchestrator });
+  const runOrchestrator = createRunOrchestrator({
+    runStore,
+    approvalBroker,
+    runtimeRegistry,
+    worktreeManager: worktrees,
+    evidenceStore: evidence,
+  });
+  const company = createCompanyService({ workStore, runStore, runOrchestrator, defaultWorkerId: localWorker.id });
+  const workspaces = workspaceBrowser || createWorkspaceBrowser();
 
-  app.get('/api/company/health', (req, res) => res.json({ ok: true }));
-  app.get('/company', (req, res) => res.sendFile(path.join(rootDir, 'public', 'company.html')));
+  function requireWorkspaceAccess(req, res, next) {
+    if (isLoopbackRequest(req) || process.env.LUCUBRO_ALLOW_LAN_WORKSPACE_BROWSER === '1') return next();
+    return res.status(403).json({
+      error: 'Host workspace browsing is disabled for LAN clients. Set LUCUBRO_ALLOW_LAN_WORKSPACE_BROWSER=1 only on a trusted network.',
+    });
+  }
 
-  app.get('/api/company/bootstrap', async (req, res) => {
+  async function readRuntimeStates() {
     const runtimeStates = [];
     for (const [id, runtime] of runtimeRegistry.entries()) {
       let availability;
@@ -63,13 +105,88 @@ function createCompanyServer({
       catch (error) { availability = { available: false, reason: error.message }; }
       runtimeStates.push({ id, ...availability });
     }
+    return runtimeStates;
+  }
+
+  function publicWorkerState(identity, runtimeStates) {
+    return {
+      ...identity,
+      status: 'online',
+      transport: 'in-process',
+      platform: process.platform,
+      arch: process.arch,
+      capabilities: {
+        workspace: true,
+        runtimes: runtimeStates.filter((runtime) => runtime.available).map((runtime) => runtime.id),
+      },
+    };
+  }
+
+  function publicRunSummary(run) {
+    return {
+      id: run.id,
+      workId: run.workId,
+      employeeId: run.employeeId,
+      workerId: run.workerId || null,
+      status: run.status,
+      evidenceCount: evidence.listByRun(run.id).length,
+    };
+  }
+
+  app.get('/api/company/health', (req, res) => res.json({ ok: true }));
+  app.get(['/company', '/company/work', '/company/employees', '/company/settings'], (req, res) => res.sendFile(path.join(rootDir, 'public', 'company.html')));
+
+  app.get('/api/company/bootstrap', async (req, res) => {
+    const runtimeStates = await readRuntimeStates();
     res.json({
       manager: { id: 'alex', name: 'Alex', position: 'Primary Manager' },
       employees: [{ id: 'ben', name: 'Ben', position: 'Software Engineer' }],
+      workers: [publicWorkerState(localWorker, runtimeStates)],
       runtimes: runtimeStates,
+      runs: runStore.list().map(publicRunSummary),
       works: company.listWorks(),
       needsYou: approvalBroker.listPending(),
     });
+  });
+
+  app.get('/api/company/workspaces/root', requireWorkspaceAccess, (req, res) => {
+    res.json({ root: workspaces.root });
+  });
+
+  app.get('/api/company/workspaces/list', requireWorkspaceAccess, (req, res) => {
+    try {
+      res.json(workspaces.list(req.query.path || '~'));
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/company/workspaces/suggest', requireWorkspaceAccess, (req, res) => {
+    try {
+      res.json(workspaces.suggest(req.query.q || ''));
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/company/workspaces/inspect', requireWorkspaceAccess, (req, res) => {
+    try {
+      res.json(workspaces.inspect(req.query.path || '~'));
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/company/workspaces/directories', requireWorkspaceAccess, (req, res) => {
+    try {
+      const directory = workspaces.createDirectory({
+        parentPath: req.body && req.body.parentPath,
+        name: req.body && req.body.name,
+      });
+      res.status(201).json({ directory });
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
   });
 
   app.post('/api/company/works', async (req, res) => {
@@ -80,6 +197,7 @@ function createCompanyServer({
         repoDir: body.repoDir,
         runtime: body.runtime,
         employeeId: body.employeeId || 'ben',
+        workerId: localWorker.id,
         model: body.model || null,
         delegationEnvelope: body.delegationEnvelope || {
           allow: ['workspace.read', 'workspace.write', 'shell.execute'],
@@ -110,7 +228,30 @@ function createCompanyServer({
   app.get('/api/company/runs/:runId', (req, res) => {
     const run = runStore.get(req.params.runId);
     if (!run) return res.status(404).json({ error: 'Run not found' });
-    res.json({ run, events: runStore.readEvents(run.id), needsYou: approvalBroker.listPending(run.id) });
+    res.json({
+      run,
+      worker: run.workerId ? workers.get(run.workerId) : null,
+      evidence: evidence.listByRun(run.id),
+      events: runStore.readEvents(run.id),
+      needsYou: approvalBroker.listPending(run.id),
+    });
+  });
+
+  app.get('/api/company/evidence/:evidenceId/content', (req, res) => {
+    try {
+      const item = evidence.get(req.params.evidenceId);
+      if (!item) return res.status(404).json({ error: 'Evidence not found' });
+      const content = evidence.readContent(item.id);
+      const policy = evidenceResponsePolicy(item);
+      res.set('Content-Type', policy.contentType);
+      res.set('Content-Disposition', policy.contentDisposition);
+      res.set('Content-Length', String(content.byteLength));
+      res.set('Cache-Control', 'private, no-store');
+      if (policy.nosniff) res.set('X-Content-Type-Options', 'nosniff');
+      res.send(content);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
   });
 
   app.get('/api/company/runs/:runId/stream', (req, res) => {
@@ -132,13 +273,25 @@ function createCompanyServer({
     }
   });
 
-  return { app, company, runStore, workStore, approvalBroker, runtimeRegistry };
+  return {
+    app,
+    company,
+    runStore,
+    workStore,
+    workerStore: workers,
+    evidenceStore: evidence,
+    localWorker,
+    approvalBroker,
+    runtimeRegistry,
+    workspaceBrowser: workspaces,
+  };
 }
 
 if (require.main === module) {
+  const host = process.env.LUCUBRO_COMPANY_HOST || '127.0.0.1';
   const port = Number(process.env.LUCUBRO_COMPANY_PORT || process.env.PORT || 3200);
   const { app } = createCompanyServer();
-  app.listen(port, '127.0.0.1', () => console.log(`[lucubro-company] http://127.0.0.1:${port}/company`));
+  app.listen(port, host, () => console.log(`[lucubro-company] http://${host}:${port}/company`));
 }
 
-module.exports = { createCompanyServer };
+module.exports = { createCompanyServer, isLoopbackRequest };

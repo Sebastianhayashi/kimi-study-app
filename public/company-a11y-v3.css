@@ -1,0 +1,103 @@
+:root {
+  --muted: #667184;
+}
+
+.composer textarea::placeholder,
+.settings-grid input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.primary-action:disabled {
+  border-color: var(--line-strong);
+  background: #dfe4ed;
+  color: var(--muted-strong);
+  opacity: 1;
+}
+
+.composer textarea:disabled,
+.settings-grid input:disabled,
+.settings-grid select:disabled {
+  background: var(--bg-elevated);
+  color: var(--muted-strong);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+body[data-company-has-work="false"][data-canvas-lens="manager"] .workspace {
+  min-height: 0;
+}
+
+body[data-company-has-work="false"][data-canvas-lens="manager"] .conversation {
+  padding-bottom: 0;
+}
+
+body[data-company-has-work="false"][data-canvas-lens="manager"] .composer-dock {
+  position: relative;
+  z-index: 20;
+  left: auto;
+  bottom: auto;
+  width: min(860px, calc(100% - 56px));
+  margin: 30px auto 28px;
+  transform: none !important;
+}
+
+body:not([data-company-has-work="false"]) .composer-dock,
+body[data-canvas-lens]:not([data-canvas-lens="manager"]) .composer-dock {
+  transform: translateX(-50%) !important;
+}
+
+body[data-company-has-work="false"][data-canvas-lens="manager"] .composer {
+  box-shadow: 0 12px 38px rgba(18, 32, 71, 0.09), inset 0 2px 0 rgba(0, 47, 167, 0.82);
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 80;
+  top: -72px;
+  left: 14px;
+  min-height: 40px;
+  padding: 10px 13px;
+  border: 1px solid var(--brand-line);
+  border-radius: var(--radius-control);
+  background: var(--surface-strong);
+  color: var(--brand-primary);
+  box-shadow: var(--shadow-soft);
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: none;
+  transition: top 150ms ease;
+}
+
+.skip-link:focus-visible {
+  top: 10px;
+}
+
+.manager-avatar {
+  border-radius: 10px;
+}
+
+.message-avatar {
+  border-radius: 11px;
+}
+
+@media (max-width: 760px) {
+  body[data-company-has-work="false"][data-canvas-lens="manager"] .composer-dock {
+    width: calc(100% - 28px);
+    margin-top: 26px;
+  }
+}
+
+@media (max-width: 560px) {
+  body[data-company-has-work="false"][data-canvas-lens="manager"] .composer-dock {
+    width: calc(100% - 16px);
+    margin-top: 22px;
+    margin-bottom: max(18px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skip-link {
+    transition: none;
+  }
+}

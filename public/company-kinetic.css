@@ -1,0 +1,443 @@
+.settings-panel,
+.execution-panel-header,
+.execution-field,
+.settings-panel .runtime-line {
+  will-change: transform, opacity;
+}
+
+.settings-panel[data-lifecycle="entering"],
+.settings-panel[data-lifecycle="exiting"],
+.runtime-choice[data-lifecycle="entering"],
+.runtime-choice[data-lifecycle="exiting"] {
+  pointer-events: none;
+}
+
+.execution-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 4px;
+}
+
+.execution-panel-heading {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.execution-panel-heading strong {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 660;
+  letter-spacing: -0.012em;
+}
+
+.execution-panel-heading span {
+  max-width: 52ch;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.execution-panel-close {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted-strong);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.execution-panel-close:hover {
+  border-color: var(--brand-line);
+  background: var(--brand-50);
+  color: var(--brand-primary);
+}
+
+.execution-fields {
+  display: grid;
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.execution-field {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.execution-field-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.execution-field-label {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: -0.004em;
+}
+
+.execution-field-hint {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.runtime-native-select {
+  display: none !important;
+}
+
+.runtime-choice {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.runtime-choice-button {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 10px 11px;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: rgba(251, 252, 255, 0.82);
+  color: var(--ink-soft);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+  will-change: transform, opacity;
+}
+
+.runtime-choice-button::after {
+  content: "";
+  position: absolute;
+  inset: auto 10px 0;
+  height: 2px;
+  border-radius: 999px 999px 0 0;
+  background: var(--brand-primary);
+  opacity: 0;
+  transform: scaleX(0.25);
+  transform-origin: center;
+  transition: opacity 150ms ease, transform 180ms ease;
+}
+
+.runtime-choice-button:hover:not(:disabled) {
+  border-color: var(--brand-line);
+  background: var(--brand-50);
+  color: var(--brand-primary);
+}
+
+.runtime-choice-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.runtime-choice-button[data-selected="true"] {
+  border-color: var(--brand-400);
+  background: var(--brand-soft);
+  color: var(--brand-primary);
+  box-shadow: inset 0 0 0 1px rgba(0, 47, 167, 0.06), 0 8px 18px rgba(25, 45, 96, 0.06);
+}
+
+.runtime-choice-button[data-selected="true"]::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.runtime-choice-button:disabled {
+  cursor: not-allowed;
+  border-color: var(--line);
+  background: var(--bg-elevated);
+  color: var(--muted);
+  box-shadow: none;
+  opacity: 1;
+}
+
+.runtime-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  background: var(--surface-strong);
+  color: var(--muted-strong);
+  font-size: 10px;
+  font-weight: 760;
+  letter-spacing: -0.025em;
+  will-change: transform;
+}
+
+.runtime-choice-button[data-selected="true"] .runtime-mark {
+  border-color: var(--brand-line);
+  background: var(--surface-strong);
+  color: var(--brand-primary);
+}
+
+.runtime-choice-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.runtime-choice-copy strong {
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 660;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.runtime-choice-copy small {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 540;
+  line-height: 1.2;
+}
+
+.runtime-choice-button[data-selected="true"] .runtime-choice-copy small {
+  color: var(--brand-700);
+}
+
+.runtime-check {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--brand-primary);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 760;
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 150ms ease, transform 180ms ease;
+  will-change: transform, opacity;
+}
+
+.runtime-choice-button[data-selected="true"] .runtime-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.runtime-selection-receipt {
+  min-height: 16px;
+  margin: 0;
+  color: var(--brand-primary);
+  font-size: 10px;
+  font-weight: 620;
+  line-height: 1.4;
+  will-change: transform, opacity;
+}
+
+.repo-path-control {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 1px 0 0;
+}
+
+.repo-path-input-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.repo-path-control #repo-dir {
+  min-width: 0;
+  min-height: 44px;
+  width: 100%;
+  padding: 8px 0 9px;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 510;
+  letter-spacing: -0.012em;
+}
+
+.repo-path-control #repo-dir:hover,
+.repo-path-control #repo-dir:focus {
+  border: 0;
+  background: transparent;
+}
+
+.repo-path-control #repo-dir::placeholder {
+  color: var(--muted);
+  opacity: 1;
+  transition: color 160ms ease;
+}
+
+.repo-path-control:focus-within #repo-dir::placeholder {
+  color: var(--muted-strong);
+}
+
+.repo-path-line {
+  position: relative;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line-strong);
+}
+
+.repo-path-line-active {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--brand-primary);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 190ms cubic-bezier(0.2, 0.75, 0.25, 1);
+  will-change: transform;
+}
+
+.repo-path-control:focus-within .repo-path-line-active,
+.repo-path-control[data-state="focused"] .repo-path-line-active,
+.repo-path-control[data-state="reading"] .repo-path-line-active {
+  transform: scaleX(1);
+}
+
+.repo-path-scan {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 20%;
+  border-radius: inherit;
+  background: var(--brand-400);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.repo-path-feedback {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 18px;
+}
+
+.repo-path-note,
+.repo-path-receipt {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.repo-path-note {
+  color: var(--muted);
+}
+
+.repo-path-control[data-state="reading"] .repo-path-note {
+  color: var(--brand-700);
+}
+
+.repo-path-receipt {
+  flex: 0 0 auto;
+  color: var(--success);
+  font-weight: 650;
+  will-change: transform, opacity;
+}
+
+.repo-path-receipt[data-tone="neutral"] {
+  color: var(--brand-primary);
+}
+
+.repo-path-receipt::before {
+  content: "✓";
+  margin-right: 5px;
+}
+
+.settings-panel .runtime-line {
+  margin-top: 20px;
+  padding-top: 13px;
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 560px) {
+  .settings-panel {
+    padding: 14px;
+  }
+
+  .execution-panel-heading span {
+    max-width: 30ch;
+  }
+
+  .execution-fields {
+    gap: 22px;
+    margin-top: 17px;
+  }
+
+  .runtime-choice {
+    display: flex;
+    gap: 8px;
+    margin: 0 -2px;
+    padding: 0 2px 3px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+
+  .runtime-choice::-webkit-scrollbar {
+    display: none;
+  }
+
+  .runtime-choice-button {
+    flex: 0 0 148px;
+    min-height: 62px;
+    scroll-snap-align: start;
+  }
+
+  .repo-path-control #repo-dir {
+    font-size: 16px;
+  }
+
+  .repo-path-feedback {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-panel,
+  .execution-panel-header,
+  .execution-field,
+  .settings-panel .runtime-line,
+  .runtime-choice-button,
+  .runtime-mark,
+  .runtime-check,
+  .runtime-selection-receipt,
+  .repo-path-receipt,
+  .repo-path-scan,
+  .repo-path-line-active {
+    will-change: auto;
+  }
+
+  .runtime-choice-button,
+  .runtime-choice-button::after,
+  .runtime-check,
+  .repo-path-line-active,
+  .repo-path-control #repo-dir::placeholder {
+    transition: none !important;
+  }
+}

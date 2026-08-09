@@ -3,17 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f4f2ec">
+  <meta name="theme-color" content="#f6f7fb">
+  <meta name="description" content="Lucubro is a local-first AI company workbench for a single CEO, with durable Work, named Employees, review evidence, and scoped decisions.">
   <title>Lucubro · Company</title>
+  <link rel="icon" href="/assets/brand/lucubro-mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/vendor/geist/wght.css">
   <link rel="stylesheet" href="/company.css">
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" integrity="sha512-NcZdtrT77bJr4STcmsGAESr06BYGE8woZdSdEgqnpyqac7sugNO+Tr4bGwGF3MsnEkGKhU2KL2xh6Ec+BqsaHA==" crossorigin="anonymous" defer></script>
+  <link rel="stylesheet" href="/company-v3.css">
+  <link rel="stylesheet" href="/company-durable.css">
+  <link rel="stylesheet" href="/company-kinetic.css">
+  <link rel="stylesheet" href="/company-workspace.css">
+  <link rel="stylesheet" href="/company-pages.css">
+  <link rel="stylesheet" href="/company-a11y-v3.css">
+  <link rel="stylesheet" href="/company-canvas-shell.css">
+  <link rel="stylesheet" href="/company-operating-map.css">
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" integrity="sha512-oJ8QbaQThQoJZ7oEv+29jfPM6CcP+zUxh3PKJs1vyOhx0UraUrE7PQgeItu3dOuCJyrzWpoYMsVjkkPEBzbUqw==" crossorigin="anonymous" defer></script>
 </head>
-<body>
-  <div class="app-shell" data-ui="company-v2">
+<body data-company-has-work="false" data-company-view="manager" data-canvas-lens="manager">
+  <a class="skip-link" href="#company-main">Skip to company content</a>
+  <div class="app-shell" data-ui="company-v3">
     <header class="topbar" aria-label="Company workspace header">
       <a class="brand" href="/company" aria-label="Lucubro Company home">
-        <img class="brand-mark" src="/assets/brand/lucubro-mark.svg" width="28" height="28" alt="">
+        <img class="brand-mark" src="/assets/brand/lucubro-mark.svg" width="30" height="30" alt="">
         <span class="brand-wordmark">Lucubro</span>
       </a>
 
@@ -32,17 +43,187 @@
       </button>
     </header>
 
-    <main class="workspace">
-      <section class="conversation" aria-label="Manager conversation">
-        <div id="conversation-feed" class="conversation-feed" aria-live="polite" aria-relevant="additions">
-          <article class="message manager-message intro-message" data-animate="intro">
-            <div class="message-avatar" aria-hidden="true">A</div>
-            <div class="message-content">
-              <div class="message-author">Alex</div>
-              <h1>What should we move forward?</h1>
-              <p class="lede">Give me the outcome. I’ll structure the Work, assign the right Employee, and only bring back decisions that need you.</p>
+    <div class="canvas-lens-bar" aria-label="Company canvas focus">
+      <div class="canvas-lens-bar-inner">
+        <div class="canvas-lens-context" aria-live="polite">
+          <span class="canvas-lens-kicker">Company canvas</span>
+          <strong id="canvas-lens-current">Manager canvas</strong>
+        </div>
+        <div class="canvas-lens-control">
+          <button id="canvas-lens-trigger" class="canvas-lens-trigger" type="button" aria-haspopup="menu" aria-controls="canvas-lens-menu" aria-expanded="false">
+            <span class="canvas-lens-trigger-copy">
+              <span>Focus</span>
+              <strong>Manager canvas</strong>
+            </span>
+            <span class="canvas-lens-trigger-caret" aria-hidden="true">⌄</span>
+          </button>
+          <div id="canvas-lens-menu" class="canvas-lens-menu" role="menu" hidden>
+            <a class="canvas-lens-option" href="/company" role="menuitem" data-canvas-lens-target="manager" aria-current="page">
+              <span class="canvas-lens-option-index" aria-hidden="true">01</span>
+              <span class="canvas-lens-option-copy">
+                <strong>Manager canvas</strong>
+                <span>Intent, current Work, evidence and decisions</span>
+              </span>
+            </a>
+            <a class="canvas-lens-option" href="/company/work" role="menuitem" data-canvas-lens-target="work">
+              <span class="canvas-lens-option-index" aria-hidden="true">02</span>
+              <span class="canvas-lens-option-copy">
+                <strong>Work</strong>
+                <span>Durable company work and return paths</span>
+              </span>
+            </a>
+            <a class="canvas-lens-option" href="/company/employees" role="menuitem" data-canvas-lens-target="employees">
+              <span class="canvas-lens-option-index" aria-hidden="true">03</span>
+              <span class="canvas-lens-option-copy">
+                <strong>Employees</strong>
+                <span>Responsibility and durable identities</span>
+              </span>
+            </a>
+            <a class="canvas-lens-option" href="/company/settings" role="menuitem" data-canvas-lens-target="settings">
+              <span class="canvas-lens-option-index" aria-hidden="true">04</span>
+              <span class="canvas-lens-option-copy">
+                <strong>Execution settings</strong>
+                <span>Runtime and execution-host infrastructure</span>
+              </span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <main id="company-main" class="workspace" tabindex="-1">
+      <section id="company-conversation" class="conversation canvas-lens-panel" aria-label="Company operating canvas" data-company-view-panel="manager" data-canvas-lens-panel="manager">
+        <section id="company-operating-map" class="company-operating-map" aria-label="Company operating map" aria-labelledby="operating-map-heading" data-controller="loading">
+          <header class="operating-map-header">
+            <div class="operating-map-heading">
+              <span class="context-kicker">Company operating map</span>
+              <h1 id="operating-map-heading">Your company, in motion.</h1>
+              <p>Durable Work across AI Employees, Runs, evidence, and decisions. Alex coordinates execution; you step in when judgment is required.</p>
+              <span id="operating-map-summary" class="operating-map-summary-line" role="status">Loading company state…</span>
             </div>
-          </article>
+
+            <section id="company-context" class="company-context" aria-label="Current company context" data-state="quiet">
+              <div class="context-intro">
+                <span class="context-kicker">Current state</span>
+                <span id="context-copy" class="context-copy">Quiet until something changes.</span>
+              </div>
+              <dl class="context-stats">
+                <div class="context-stat">
+                  <dt>Moving</dt>
+                  <dd id="context-active-count">0</dd>
+                </div>
+                <div class="context-stat">
+                  <dt>Review</dt>
+                  <dd id="context-review-count">0</dd>
+                </div>
+                <div class="context-stat">
+                  <dt>Needs you</dt>
+                  <dd id="context-decision-count">0</dd>
+                </div>
+              </dl>
+            </section>
+          </header>
+
+          <div class="operating-map-stage">
+            <article class="operating-manager-row" data-testid="operating-manager">
+              <div class="operating-manager-anchor">
+                <span class="operating-manager-avatar" aria-hidden="true">A</span>
+                <span class="operating-manager-copy">
+                  <span>Primary Manager</span>
+                  <strong>Alex</strong>
+                  <small>Company-level routing and judgment compression</small>
+                </span>
+              </div>
+              <div class="operating-manager-function">
+                <strong>Routes intent</strong>
+                <span>Outcome → Work → Employee → Run → Evidence / Decision</span>
+              </div>
+            </article>
+            <div id="operating-map-rows" aria-live="polite" aria-relevant="additions text"></div>
+          </div>
+        </section>
+
+        <article class="message manager-message intro-message company-manager-command" data-animate="intro">
+          <div class="message-avatar" aria-hidden="true">A</div>
+          <div class="message-content">
+            <div class="message-author">Alex · Command</div>
+            <p><strong>Give me an outcome.</strong> I’ll turn it into durable Work, assign responsibility, and route execution from this canvas.</p>
+          </div>
+        </article>
+
+        <section id="durable-work-context" class="durable-work-context" aria-label="Durable Work context" hidden>
+          <div class="durable-work-context-header">
+            <div class="durable-work-context-title">
+              <span class="context-kicker">Work context</span>
+              <strong>Recent durable Work</strong>
+            </div>
+            <span id="durable-work-summary" class="durable-work-summary">Loading Work context…</span>
+          </div>
+          <div id="durable-work-list" class="durable-work-list"></div>
+          <div id="durable-work-detail-host" class="durable-work-detail-host" hidden></div>
+        </section>
+
+        <div id="conversation-feed" class="conversation-feed" aria-live="polite" aria-relevant="additions"></div>
+      </section>
+
+      <section id="company-work-page" class="product-page canvas-lens-panel" data-company-view-panel="work" data-canvas-lens-panel="work" aria-labelledby="company-work-heading" hidden>
+        <header class="product-page-header">
+          <div class="product-page-heading">
+            <span class="context-kicker">Work lens</span>
+            <h1 id="company-work-heading">Work</h1>
+            <p>Durable Work stays part of the same company canvas. Focus an item to return to its evidence and current decision state.</p>
+          </div>
+          <span id="work-page-summary" class="product-page-meta">Loading Work…</span>
+        </header>
+        <div id="work-page-list" class="product-page-body" aria-live="polite">
+          <div class="product-empty-state"><span>Loading durable Work…</span></div>
+        </div>
+      </section>
+
+      <section id="company-employees-page" class="product-page canvas-lens-panel" data-company-view-panel="employees" data-canvas-lens-panel="employees" aria-labelledby="company-employees-heading" hidden>
+        <header class="product-page-header">
+          <div class="product-page-heading">
+            <span class="context-kicker">Responsibility lens</span>
+            <h1 id="company-employees-heading">Employees</h1>
+            <p>Inspect the durable identities that own Work without leaving the CEO-facing Manager relationship.</p>
+          </div>
+          <span id="employee-page-summary" class="product-page-meta">Loading Employees…</span>
+        </header>
+        <div id="employee-page-list" class="product-page-body" aria-live="polite">
+          <div class="product-empty-state"><span>Loading Employee identities…</span></div>
+        </div>
+      </section>
+
+      <section id="company-settings-page" class="product-page canvas-lens-panel" data-company-view-panel="settings" data-canvas-lens-panel="settings" aria-labelledby="company-settings-heading" hidden>
+        <header class="product-page-header">
+          <div class="product-page-heading">
+            <span class="context-kicker">Advanced execution lens</span>
+            <h1 id="company-settings-heading">Execution settings</h1>
+            <p>Inspect runtime and execution-host state without turning infrastructure into the default CEO workflow.</p>
+          </div>
+          <span id="settings-page-summary" class="product-page-meta">Loading local state…</span>
+        </header>
+        <div class="product-page-body">
+          <section class="settings-section" aria-labelledby="settings-runtimes-heading">
+            <div class="settings-section-heading">
+              <h2 id="settings-runtimes-heading">Runtimes</h2>
+              <p>Availability is read from the local server. An installed binary is not presented as ready unless the adapter reports it ready.</p>
+            </div>
+            <div id="settings-runtime-list"></div>
+          </section>
+          <section class="settings-section" aria-labelledby="settings-workspace-heading">
+            <div class="settings-section-heading">
+              <h2 id="settings-workspace-heading">Host workspace root</h2>
+              <p>The Workspace picker can only browse and create folders inside this configured execution-host root.</p>
+            </div>
+            <div class="settings-index-row">
+              <span class="settings-index-copy">
+                <span class="settings-index-name">Execution host</span>
+                <span class="settings-index-meta">Used by the tree picker in Execution setup</span>
+              </span>
+              <span id="settings-workspace-root" class="settings-path">Loading…</span>
+            </div>
+          </section>
         </div>
       </section>
     </main>
@@ -77,15 +258,79 @@
               <span id="settings-summary-value" class="settings-summary-value">Checking local workspace…</span>
             </summary>
             <div class="settings-panel">
-              <p>Execution stays behind the Work. Change these only when the local target or runtime changes.</p>
-              <div class="settings-grid">
-                <label for="repo-dir">Repository path
-                  <input id="repo-dir" name="repoDir" placeholder="/path/to/repository" autocomplete="off" required>
-                </label>
-                <label for="runtime">Runtime
-                  <select id="runtime" name="runtime" required aria-describedby="runtime-note"></select>
-                </label>
+              <div class="execution-panel-header">
+                <div class="execution-panel-heading">
+                  <strong>Execution setup</strong>
+                  <span>Choose how this Work should run and where it should operate. Lucubro keeps these mechanics behind the Work once they are set.</span>
+                </div>
+                <button id="close-run-settings" class="execution-panel-close" type="button" aria-label="Close Execution setup">×</button>
               </div>
+
+              <div class="execution-fields">
+                <section class="execution-field runtime-field" aria-labelledby="runtime-choice-label">
+                  <div class="execution-field-head">
+                    <span id="runtime-choice-label" class="execution-field-label">Runtime</span>
+                    <span class="execution-field-hint">Choose an available execution engine</span>
+                  </div>
+                  <div id="runtime-choice" class="runtime-choice" role="radiogroup" aria-labelledby="runtime-choice-label" aria-describedby="runtime-note"></div>
+                  <select id="runtime" class="runtime-native-select" name="runtime" required aria-hidden="true" tabindex="-1"></select>
+                  <p id="runtime-selection-receipt" class="runtime-selection-receipt" role="status" hidden></p>
+                </section>
+
+                <section class="execution-field repo-field" aria-labelledby="workspace-picker-label">
+                  <div class="execution-field-head">
+                    <span id="workspace-picker-label" class="execution-field-label">Workspace</span>
+                    <span class="execution-field-hint">Execution host</span>
+                  </div>
+                  <div id="workspace-picker" class="workspace-picker" data-drag-active="false">
+                    <div id="repo-path-control" class="repo-path-control" data-state="empty">
+                      <div class="workspace-path-row">
+                        <button id="workspace-tree-toggle" class="workspace-tree-toggle" type="button" aria-expanded="false" aria-controls="workspace-tree-panel" aria-label="Browse folders on execution host">
+                          <span class="workspace-tree-caret" aria-hidden="true">▸</span>
+                        </button>
+                        <div class="repo-path-input-row">
+                          <label class="sr-only" for="repo-dir">Repository or workspace path on execution host</label>
+                          <input id="repo-dir" name="repoDir" placeholder="~/Projects/lucubro" autocomplete="off" required aria-autocomplete="list" aria-controls="workspace-suggestions" aria-describedby="repo-path-note repo-path-receipt">
+                        </div>
+                      </div>
+                      <div class="repo-path-line" aria-hidden="true">
+                        <span class="repo-path-line-active"></span>
+                        <span id="repo-path-scan" class="repo-path-scan"></span>
+                      </div>
+                      <div class="repo-path-feedback">
+                        <p id="repo-path-note" class="repo-path-note">Type ~/… or browse folders on the execution host.</p>
+                        <p id="repo-path-receipt" class="repo-path-receipt" role="status" hidden>Repository found</p>
+                      </div>
+                      <div id="workspace-suggestions" class="workspace-suggestions" role="listbox" aria-label="Host path suggestions" hidden></div>
+                    </div>
+
+                    <div id="workspace-tree-panel" class="workspace-tree-panel" hidden>
+                      <div class="workspace-tree-header">
+                        <div class="workspace-tree-heading">
+                          <strong>Host folders</strong>
+                          <span id="workspace-root-label">Loading execution host…</span>
+                        </div>
+                        <button id="workspace-new-folder" class="workspace-new-folder-button" type="button">New folder</button>
+                      </div>
+                      <div class="workspace-tree-scroll">
+                        <div id="workspace-tree" class="workspace-tree-root" role="tree" aria-label="Execution host folders"></div>
+                      </div>
+                      <div id="workspace-create-form" class="workspace-create-form" role="group" aria-label="Create folder on execution host" hidden>
+                        <label class="sr-only" for="workspace-create-name">New folder name</label>
+                        <input id="workspace-create-name" placeholder="Folder name" autocomplete="off">
+                        <button class="workspace-create-submit" type="button">Create</button>
+                        <button id="workspace-create-cancel" class="workspace-create-cancel" type="button">Cancel</button>
+                      </div>
+                    </div>
+
+                    <div id="workspace-drop-receipt" class="workspace-drop-receipt" role="status" hidden>
+                      <strong id="workspace-drop-receipt-title">Local folder detected</strong>
+                      <span id="workspace-drop-receipt-copy"></span>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
               <div class="runtime-line">
                 <span id="runtime-indicator" class="runtime-indicator" aria-hidden="true"></span>
                 <p id="runtime-note" class="runtime-note" role="status">Checking local workspace…</p>
@@ -107,5 +352,11 @@
     </footer>
   </div>
   <script src="/company.js" defer></script>
+  <script src="/company-durable.js" defer></script>
+  <script src="/company-v3.js" defer></script>
+  <script src="/company-workspace.js" defer></script>
+  <script src="/company-kinetic.js" defer></script>
+  <script src="/company-operating-map.js" defer></script>
+  <script src="/company-pages.js" defer></script>
 </body>
 </html>

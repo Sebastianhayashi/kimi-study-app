@@ -1,21 +1,25 @@
 # Lucubro Company Workbench V1
 
-Status: implementation branch foundation
+Status: executable engineering slice, not complete product information architecture
 Decision date: 2026-08-08
+
+> Product-direction precedence: [`PRODUCT-THESIS.md`](PRODUCT-THESIS.md) governs why Lucubro exists and how domain objects relate to the AI-native Company Canvas. This V1 spec defines a narrow Work/Run/approval execution seam. It must not be read as a fixed navigation map or as evidence that every object below deserves a separate page.
 
 ## Problem Statement
 
 Lucubro is pivoting from an AI learning workspace into a local-first AI company workbench for a single CEO. The product needs one durable place where the CEO works with a Primary Manager, delegates durable Work to named AI Employees, supervises only material decisions, and can inspect the evidence behind completed work.
 
-The first product milestone must prove that this model survives contact with real coding agents. A provider conversation or CLI session must not become the product's source of truth. Provider-specific permissions, events, session ids, and output formats remain execution details behind a stable Lucubro Run contract.
+The first engineering milestone must prove that this model is independent of provider sessions. A provider conversation or CLI session must not become the product's source of truth. Provider-specific permissions, events, session ids, and output formats remain execution details behind a stable Lucubro Run contract.
+
+Real Claude/Codex execution is currently paused as a product-development priority while the Company Canvas interaction contract is stabilized. The deterministic mock runtime remains the active UI/product test source and exercises the same Work/Run/product-event boundary.
 
 ## Solution
 
 Build one executable vertical slice:
 
-CEO request → durable Work → Ben assignment → isolated Run → Claude Code or Codex runtime → normalized product events → Delegation Envelope approval → artifact/diff → review-ready Work → Accept/Rework.
+CEO request → durable Work → Ben assignment → isolated Run → runtime adapter → normalized product events → Delegation Envelope approval → artifact/diff → review-ready Work → Accept/Rework.
 
-The default surface remains a persistent Primary Manager conversation. Operational depth stays contextual. Raw provider reasoning and terminal noise are not promoted into the Manager conversation.
+The default product surface belongs to the persistent Company Canvas Shell and Primary Manager relationship. Operational depth stays contextual. Raw provider reasoning and terminal noise are not promoted into product truth.
 
 ## User Stories
 
@@ -40,14 +44,15 @@ The default surface remains a persistent Primary Manager conversation. Operation
 
 ## Implementation Decisions
 
-- Product thesis is locked: Lucubro is a single-CEO AI company workbench. Session managers and coding agents are execution capabilities beneath the product.
+- The governing product thesis lives above this spec: Multica-style durable operational state is projected through an AI-native kinetic Company Canvas rather than a fixed page hierarchy.
+- This spec defines the Work/Run execution boundary only. Domain nouns in this document do not imply navigation items.
 - Lucubro owns Work, Run state, authorization, artifacts, and audit history. Providers own their agent loop, provider context, tools, and provider session/thread mechanics.
 - Employee is a durable identity. Assignment/Work is dispatch. Run is one execution attempt. Runtime is the execution engine.
 - Provider session/thread scope defaults to Run, not Employee. A Run may resume its provider session, but a new Run is a new execution boundary by default.
 - Runtime integration is behind a provider-neutral adapter. Product code consumes normalized events rather than Claude or Codex wire objects.
-- Claude integration targets Claude Agent SDK and loads it dynamically so the legacy product dependency lock is not silently changed before deliberate adoption.
-- Codex integration targets `codex app-server` over stdio JSONL with initialization, thread start/resume, turn start, event projection, and server-initiated approval responses.
-- Raw reasoning events are discarded by the product event projector. Product events include lifecycle, user-visible agent text, tool summaries, diffs/artifacts, approval requests, warnings, and terminal state.
+- Claude integration targets Claude Agent SDK behind the adapter when real-provider work resumes.
+- Codex integration targets `codex app-server` behind the same product boundary when real-provider work resumes.
+- Raw reasoning events are discarded by the product event projector. Product events include lifecycle, user-visible public agent text, tool summaries, diffs/artifacts, approval requests, warnings, and terminal state.
 - Auto is a scoped Delegation Envelope. Default coding authority allows workspace read/write and ordinary local shell execution. Network access, git push, destructive filesystem operations, unknown external side effects, and permission expansion require separate authority unless explicitly delegated.
 - Commands are classified before authorization. Generic shell authority does not silently include git push, package installation/network actions, or destructive local commands.
 - Each active coding Run uses an isolated git worktree in production. Tests inject a non-mutating worktree implementation.
@@ -63,20 +68,25 @@ The default surface remains a persistent Primary Manager conversation. Operation
 - Runtime adapter tests use fake Claude streams and fake Codex app-server JSONL to prove provider session capture, safe event projection, handshake semantics, and approval routing.
 - Run tests prove Lucubro Run identity remains canonical while provider session id remains a separate reference.
 - Persistence tests reload Run state and append-only events from disk.
-- A browser journey uses the mock runtime only in test mode to exercise conversation → Work → Run → Needs You → review → Accept without external model credentials.
-- Existing repository unit and browser suites remain regression gates for the legacy product during the pivot branch.
+- Browser journeys use the deterministic mock runtime to exercise Intent → Work → Run → Needs You → evidence → review → Accept without external model credentials.
+- Canvas/lens tests verify that durable inspection can change focus without replacing the Primary Manager shell, composer, or browser-history continuity.
+- Existing repository unit and browser suites remain regression gates for frozen legacy behavior during the pivot.
 
 ## Out of Scope
 
-- Intelligent Manager decomposition/planning beyond the single coding Work path.
+- Intelligent Manager decomposition/planning beyond the current Work path.
+- Full Project growth / Issues / Map / Activity implementation.
+- Knowledge durable-domain design.
 - Multiple Employees collaborating on the same Work.
 - Playbook selection and Required Gate UI.
 - Learned/adaptive runtime routing.
 - Cloud queues, multi-user tenancy, billing, hosted credentials, or provider spend aggregation.
 - Automatic merge, deploy, git push, production changes, or unrestricted network access.
-- Full product visual redesign. V1 UI validates the live Work/Run/approval journey; visual refinement follows real-runtime evidence.
-- Migration or deletion of the existing learning-workspace product on `main`.
+- Treating Project, Knowledge, Usage, Account, Employee, Artifact, or other domain/configuration nouns as mandatory top-level pages.
+- Migration or deletion of the frozen learning-workspace implementation solely for this slice.
 
 ## Further Notes
 
-This branch is intentionally a side-by-side pivot slice. The legacy application already contains useful local-first, event, state-ownership, runner, and testing patterns. V1 reuses those engineering principles while introducing a new Company domain rather than rewriting the old product in place.
+The legacy application still contains useful local-first, event, state-ownership, runner, and testing patterns. V1 reuses those engineering principles while the active Company product evolves around the governing Product Thesis.
+
+The current Company UI should be evaluated as reusable implementation material for the persistent kinetic canvas, not as a final information architecture merely because a route or component exists today.
