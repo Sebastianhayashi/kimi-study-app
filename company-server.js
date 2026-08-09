@@ -102,8 +102,12 @@ function createCompanyServer({
   });
   const workspaces = workspaceBrowser || createWorkspaceBrowser();
 
+  function canAccessWorkspace(req) {
+    return isLoopbackRequest(req) || process.env.LUCUBRO_ALLOW_LAN_WORKSPACE_BROWSER === '1';
+  }
+
   function requireWorkspaceAccess(req, res, next) {
-    if (isLoopbackRequest(req) || process.env.LUCUBRO_ALLOW_LAN_WORKSPACE_BROWSER === '1') return next();
+    if (canAccessWorkspace(req)) return next();
     return res.status(403).json({
       error: 'Host workspace browsing is disabled for LAN clients. Set LUCUBRO_ALLOW_LAN_WORKSPACE_BROWSER=1 only on a trusted network.',
     });
@@ -254,6 +258,14 @@ function createCompanyServer({
   app.post('/api/company/works', async (req, res) => {
     try {
       const body = req.body || {};
+      if (body.projectId) {
+        if (!canAccessWorkspace(req)) {
+          return res.status(403).json({
+            error: 'Project-bound Work cannot read host Project Sources from this client. Enable LAN workspace access only on a trusted network.',
+          });
+        }
+        assertProjectWorkspaceAccess(body.projectId);
+      }
       const result = await company.createCodingWork({
         brief: body.brief,
         repoDir: body.repoDir,
