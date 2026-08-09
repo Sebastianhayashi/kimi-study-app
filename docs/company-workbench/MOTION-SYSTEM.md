@@ -1,6 +1,6 @@
 # Lucubro motion system
 
-Lucubro's motion language exists to make product state legible. It is not a decorative layer added after the interface is designed.
+Lucubro's motion language exists to make product state, causality, and focus legible. It is not a decorative layer added after the interface is designed.
 
 The governing principles are:
 
@@ -8,9 +8,46 @@ The governing principles are:
 >
 > **Conversation drives the canvas.**
 
-At rest, Lucubro is visually calm. When the user expresses intent or product state changes, the affected components should acknowledge, transition, receipt, and settle.
+At rest, Lucubro is visually calm. When the user expresses intent, changes focus, or real product state changes, affected components acknowledge, transition, receipt, and settle.
 
-The Manager surface is not treated as a chat transcript with cards appended below it. It is a live company canvas. Conversation is the input protocol that changes durable objects on that canvas.
+This document follows the product hierarchy in [`PRODUCT-THESIS.md`](PRODUCT-THESIS.md). Motion never decides that a domain object should become a page or lens.
+
+## Three scales of motion
+
+### Micro motion
+
+Short local feedback:
+
+- focus line activation;
+- runtime selection;
+- path reading / suggestion / receipt;
+- tree disclosure;
+- button press and focus restoration;
+- menu open/close.
+
+### Object motion
+
+Durable or decision-bearing object lifecycle:
+
+- Intent mount / receipt replacement;
+- Work formation;
+- Employee/responsibility attachment;
+- live event replacement inside Work;
+- Artifact/evidence growth;
+- Needs You / Decision appearance;
+- Review / Accepted / Rework / Failed state transitions.
+
+### Scene motion
+
+Focus changes inside the persistent Company Canvas Shell:
+
+- Manager canvas → Work lens;
+- Work → Employee responsibility lens;
+- Work/Project → evidence or execution lens;
+- contextual lens → Manager canvas;
+- browser back/forward restoring a previous lens.
+
+Scene motion must preserve the stable shell: Lucubro identity, Alex relationship, composer, Needs You, and deep-link continuity remain conceptually present.
 
 ## Conversation-driven canvas
 
@@ -18,120 +55,162 @@ A CEO instruction should produce a continuous causal sequence on one stable surf
 
 ```text
 user intent
-  → intent received
-  → Work formed
-  → Employee / Run attached
+  → intent acknowledged
+  → Work forms
+  → responsibility / Run attaches
   → public Run events update the same Work object
-  → evidence appears inside that object
-  → Needs You / Review changes that object in place
+  → evidence grows inside that object
+  → Project context may grow around the Work
+  → Needs You / Review changes the same object
   → stable state settles
 ```
 
-The canvas should feel alive because real state is changing, not because the screen contains ambient animation.
+The canvas feels alive because real state changes, not because the screen contains ambient animation.
 
 ### Stable space, changing objects
 
-Lucubro does not imitate a freeform design canvas. The spatial frame should remain predictable.
+Lucubro does not imitate a freeform design canvas.
 
-- Objects keep stable visual anchors while their state changes.
-- A new intent enters near the current work flow instead of opening a separate wizard.
-- A Work object grows in place as Employee, Run, evidence, review, and decision state arrive.
-- Do not navigate away just to show a state that can be expressed as a mutation of the current object.
+- Objects keep stable anchors while their state changes.
+- New intent enters near the current work flow instead of opening a wizard.
+- A Work object grows in place as responsibility, execution, evidence, review, and decision state arrive.
+- Do not navigate away merely to show state that can mutate the current object.
 - Do not scatter state into unrelated toasts when it belongs to a visible Work object.
-- When an object is no longer active, motion stops. Stable company state should be visually quiet.
+- Stable company state stops moving.
 
-### Event-driven motion
+## Event-driven object motion
 
-Real-time motion must be driven by real product events.
+Real-time motion is driven by normalized product events or deterministic local UI state.
 
 Examples:
 
-- `Work created` mounts the durable Work object.
-- `run.started` advances its live execution state.
-- a normalized public `message.delta` updates the live copy inside the Work object. Raw chain-of-thought is never shown.
-- `tool.started` and `tool.completed` update the live execution receipt.
-- `artifact.updated` or `artifact.produced` mounts or updates the evidence region.
-- `approval.requested` moves the object into an authority / Needs You state.
-- `approval.resolved` returns the object to execution when appropriate.
-- `run.completed` only moves the object to Review after required evidence exists.
-- CEO Accept / Rework changes the same durable object instead of replacing it with a completion toast.
+- Work creation mounts the durable Work object.
+- `run.started` advances live execution state.
+- normalized public `message.delta` updates one live region; raw chain-of-thought is never shown.
+- `tool.started` / `tool.completed` update the execution receipt.
+- `artifact.updated` / `artifact.produced` mount or update evidence.
+- `approval.requested` moves the owning Work into an authority / Needs You state.
+- `approval.resolved` changes the same Work according to the actual decision.
+- `run.completed` moves Work to Review only after required evidence exists.
+- CEO Accept / Rework changes the same durable object rather than producing a detached toast.
 
-The UI must not invent intermediate AI stages that do not exist in product state.
+The UI must not invent intermediate AI stages unsupported by product state.
 
 ### Streaming behavior
 
-When a runtime emits normalized public incremental output, Lucubro should update one live region rather than append dozens of tiny chat messages.
-
-The preferred behavior is:
+When a runtime emits normalized public incremental output, Lucubro updates one live region rather than appending tiny messages:
 
 ```text
-existing live copy exits or yields
+existing public live copy yields
   → newest public update enters
-  → recent event history keeps a compact trace
-  → evidence and decisions grow as durable sub-objects
+  → compact recent-event trace remains
+  → evidence/decisions grow as durable sub-objects
 ```
 
-This gives the sensation of a system generating in real time without exposing hidden reasoning or manufacturing fake tokens.
+This creates real-time generation feeling without exposing hidden reasoning or manufacturing fake tokens.
+
+## Scene and lens choreography
+
+A lens is a focus change inside the same Company Canvas Shell, not a separate product page.
+
+### Lens selector open
+
+```text
+Focus control acknowledges
+  → menu surface enters
+  → current/available lenses enter in reading order
+  → current lens remains visibly marked
+```
+
+The menu should feel summoned from the existing canvas, not launched as a navigation destination.
+
+### Lens change
+
+Canonical scene transition:
+
+```text
+current lens supporting content yields
+  → current scene exits briefly
+  → URL/history focus updates
+  → target lens materializes in the same canvas region
+  → target hierarchy settles
+  → shell remains stable throughout
+```
+
+The transition should normally be short enough that the user perceives continuity rather than waiting for a page change.
+
+### Back / forward
+
+Browser history restores the same semantic lens state through the same scene transition. It must not require a full hard reload for normal in-product lens changes.
+
+### Deep link
+
+Opening a deep URL directly may construct the target lens immediately because there is no previous in-memory scene to transition from. The stable shell should still be the same shell used by normal navigation.
+
+### Lens exit
+
+When returning to Manager canvas or another lens:
+
+```text
+transient lens controls leave
+  → lens content yields
+  → next scene enters
+  → composer / Alex / Needs You continuity remains
+```
+
+Do not animate unrelated shell anchors out merely because the focus changes.
 
 ## Component lifecycle contract
 
-Interactive components use a complete lifecycle:
+Visible interactive components use:
 
 ```text
 mount
   → entering
   → active
   → exiting
-  → unmount / hidden / replacement
+  → hidden / unmount / replacement
 ```
 
-A component must not normally jump directly from hidden to active or from active to removed when the transition is visible to the user.
+A visible component should not normally jump directly from hidden to active or active to removed.
 
 ### Entering
 
-Entering motion explains where a component came from and what now matters.
-
-- Parent container establishes the surface first.
-- Header / identity follows.
-- Decision-bearing controls enter next.
-- Supporting copy and status settle last.
-- Related sibling choices use a short stagger rather than independent delays.
-- Entrance order follows reading and decision order, not DOM novelty.
+- Parent surface establishes itself first.
+- Identity/header follows.
+- decision-bearing controls enter next.
+- supporting copy/status settles last.
+- related siblings use short stagger.
+- order follows reading/decision order.
 
 ### Active
 
-The component reaches a visually stable resting state.
-
-- No ambient looping is required.
-- Controls are interactive only after the relevant entering transition has made them legible.
-- The resting state must work without animation.
+- no ambient loop is required;
+- state becomes visually stable;
+- interaction must remain usable without animation.
 
 ### Exiting
 
-Exit motion is a first-class state, not the reverse-engineered absence of an entrance.
-
-- Receipts and transient status leave first.
-- Supporting status leaves before primary controls.
-- Repeated choices leave in a short reverse stagger.
-- The parent surface leaves last.
-- DOM replacement, `hidden`, or disclosure collapse happens only after the visible exit completes when the user initiated the close/replacement.
-- Exit should be shorter than entrance so the interface never feels reluctant to get out of the user's way.
+- receipts/transient status leave first;
+- supporting status leaves before primary controls;
+- repeated choices leave in reverse stagger;
+- parent surface leaves last;
+- DOM replacement/`hidden` happens after visible exit when the user can perceive the transition;
+- exit is normally shorter than entrance.
 
 ### Replacement
 
-When one visible component set is replaced by another, use:
-
 ```text
-old component(s) exit
+old visible content exits
   → DOM/state replacement
-  → new component(s) enter
+  → new content enters
 ```
 
-Do not instantly replace visible controls and then animate the new controls on top of the discontinuity.
+Do not instantly replace visible content and then animate the replacement on top of the discontinuity.
 
 ## Execution setup choreography
 
-Execution setup is one reference implementation of the lifecycle system.
+Execution setup remains a reference implementation of the lifecycle contract.
 
 ### Open
 
@@ -139,121 +218,112 @@ Execution setup is one reference implementation of the lifecycle system.
 panel surface
   → panel identity
   → Runtime field
-  → runtime choices, staggered
+  → runtime choices stagger
   → Workspace path
-  → path line / tree when requested
-  → runtime availability status
+  → path/tree when requested
+  → availability status
 ```
 
-The visual hierarchy stays calm, but the sequence makes the panel feel assembled in response to the user's intent.
-
-### Runtime list load / refresh
-
-Runtime availability comes from product state. If the visible runtime set changes while Execution setup is open:
+### Runtime refresh
 
 ```text
-existing runtime choices exit in reverse order
-  → choice DOM is replaced
-  → new runtime choices enter in decision order
+existing choices reverse-exit
+  → choice DOM/state replaces
+  → new choices enter
   → current selection settles
 ```
 
-Unavailable providers remain visible and disabled.
+Unavailable providers stay visible and disabled.
 
 ### Runtime selection
 
-Selecting another runtime uses two linked transitions:
-
-1. the previous selected component releases its selected state;
-2. the new selected component and receipt enter.
-
-If a previous textual receipt is visible, it exits before its text is replaced. Do not mutate visible receipt text in place without transition.
+Previous selected state releases; new selection and receipt enter. Visible receipt text exits before replacement.
 
 ### Workspace path
 
-Workspace path uses a line-based interaction and may expand into an execution-host tree:
-
 ```text
-empty
-  → focused
-  → reading host path / suggestions
-  → host directory found or Path received
+empty neutral line
+  → focused Klein-blue line
+  → reading suggestions/host inspection
+  → Path received / Folder found / Repository found
 ```
 
-When typing resumes after a receipt, the receipt exits before the reading state takes over again. The reading trace itself enters and exits once; it does not loop.
+Focus is independent from receipt state. Focusing a previously received path still wakes the Klein-blue line.
 
-`Repository found` is allowed only after the execution-host workspace API has inspected that directory. `Path received` confirms browser/UI receipt only.
+When typing resumes, old receipt exits before reading state takes over. The reading trace is one-shot, not a loop.
+
+`Repository found` is allowed only after execution-host inspection. `Path received` confirms UI receipt only.
 
 ### Close
 
-The explicit close choreography is:
-
 ```text
 receipts
-  → runtime availability status
-  → Workspace path / tree
-  → runtime choices, reverse stagger
+  → availability status
+  → Workspace path/tree
+  → runtime choices reverse-stagger
   → Runtime field
   → panel identity
   → panel surface
-  → disclosure collapses
+  → disclosure collapse
 ```
 
-The close sequence is deliberately faster than the open sequence. Submission must use this same exit path rather than instantly toggling the disclosure closed.
+Submission uses this same exit lifecycle rather than instantly hiding the disclosure.
 
 ## Timing grammar
 
 Typical targets:
 
-- acknowledgement: 80 to 160ms;
-- small exit: 100 to 160ms;
-- local selection / receipt: 180 to 260ms;
-- component entrance: 180 to 280ms;
-- real-time event replacement: 120 to 240ms;
-- evidence-region entrance: 180 to 300ms;
-- coordinated panel entrance: about 260 to 420ms total;
-- coordinated panel exit: about 180 to 300ms total.
+- acknowledgement: 80–160ms;
+- small exit: 100–160ms;
+- local selection / receipt: 180–260ms;
+- component entrance: 180–280ms;
+- live event replacement: 120–240ms;
+- evidence entrance: 180–300ms;
+- scene/lens transition: roughly 180–360ms;
+- coordinated disclosure entrance: roughly 260–420ms;
+- coordinated disclosure exit: roughly 180–300ms.
 
-Do not add dead time merely to make an animation noticeable. Real-time UI must feel faster than the underlying work, never slower because animation is waiting to perform.
+Do not add dead time merely to make animation noticeable. Real-time UI must never feel slower because motion is waiting to perform.
 
 ## GSAP implementation rules
 
-Use the official GSAP skill guidance as the implementation reference.
+Use the official GreenSock GSAP skill guidance as implementation reference.
 
-- Prefer `gsap.timeline()` for sequences.
+- Prefer `gsap.timeline()` for coordinated sequences.
 - Use timeline position parameters instead of arbitrary chained delays.
 - Prefer transforms and `autoAlpha` / opacity.
-- Use stagger for related list items.
-- Use one-shot pulses for real incoming events; do not use infinite activity loops.
-- Use `clearProps` or explicit cleanup so inline motion styles do not become product state.
-- Kill timelines and tweens during lifecycle teardown.
-- Use `will-change` only on elements that actually animate.
-- Do not use ScrollTrigger on ordinary Company Workbench scrolling.
-- Avoid animating layout properties when transforms communicate the same motion.
-- Keep domain state ownership outside animation modules. Motion reacts to product state; it does not decide product state.
+- Use stagger for related list items and reverse stagger for exit.
+- Use one-shot pulses for real incoming events; never infinite ambient AI activity loops.
+- `clearProps`/cleanup must prevent inline motion styles becoming state.
+- Kill timelines/tweens on lifecycle teardown.
+- Use `will-change` only where animation actually occurs.
+- Do not use ScrollTrigger for ordinary Company Workbench scrolling.
+- Avoid layout-property animation when transforms communicate the same transition.
+- Domain state and lens selection remain outside GSAP ownership. Motion reacts to state.
 
 ## Reduced motion and failure behavior
 
 With `prefers-reduced-motion: reduce`:
 
-- skip non-essential entering and exiting choreography;
-- move directly to the meaningful active or hidden state;
-- keep all selection, receipt, Work, review, approval, workspace, and canvas semantics intact;
-- continue updating live textual state from real events without movement.
+- skip non-essential choreography;
+- land directly in the same semantic state;
+- preserve selection, lens history, receipts, Work, review, approvals, Workspace, and canvas behavior;
+- continue live textual updates from real events.
 
-If GSAP fails to load, all underlying controls and state transitions must still work. Animation is an enhancement to comprehension, never a dependency for correctness.
+If GSAP fails to load, all underlying controls and state transitions still work. Animation is an enhancement to comprehension, not a correctness dependency.
 
 ## Honesty boundary
 
-Motion may communicate only state Lucubro can substantiate.
+Motion may communicate only substantiated state.
 
 Allowed:
 
 - intent received;
 - Work created;
+- lens focus changed;
 - runtime selected;
+- local path focus / reading input;
 - execution-host directory found;
-- local UI reading/settling;
 - normalized public runtime update;
 - real Work state transition;
 - real Needs You request;
@@ -268,4 +338,4 @@ Not allowed:
 - fake completion;
 - raw model chain-of-thought as animation content.
 
-The desired sensation is that Lucubro is continuously responsive to the user and to real system events, not that the interface is pretending to be busy.
+The desired sensation is continuous, truthful responsiveness: the canvas feels intelligent because user intent and real company state visibly cause change.
