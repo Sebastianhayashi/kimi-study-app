@@ -160,6 +160,32 @@ Provider/account state is infrastructure. It normally stays behind Advanced/Sett
 
 Artifact is evidence owned by Work. It should normally appear inside the Work that produced it. Archive/search can exist later without making outputs compete with their operational context.
 
+## Runtime controls and terminal escape hatches
+
+Hiding provider mechanics by default does **not** mean deleting provider capability or removing expert control.
+
+Lucubro should prevent the normal CEO workflow from depending on provider-specific CLI syntax, session housekeeping, or a raw terminal. It should translate important provider controls into product-level execution actions attached to a Run or Work whenever a stable provider-neutral meaning exists.
+
+Examples include:
+
+- compact or reduce runtime context;
+- pause or cancel a Run;
+- continue, retry, or start a fresh Run;
+- change an approved model/runtime for a subsequent Run;
+- inspect normalized execution events and public logs;
+- inspect or change the Delegation Envelope within authorization rules;
+- reconnect or repair provider state when execution is blocked.
+
+Provider-native commands such as `/compact` remain execution capabilities. They should not become primary Lucubro vocabulary when Lucubro can express the same intent more durably, for example **Compact context** or **Start fresh Run**.
+
+For local-first expert users, Lucubro may expose an explicit **Advanced runtime** or **Open provider terminal** escape hatch from the relevant Run/Execution inspector. That escape hatch is secondary, clearly scoped to the selected Run, and never becomes the canonical source of Work, Project, Employee, Artifact, Decision, or authorization state.
+
+Raw chain-of-thought remains hidden. A provider session may be compacted, restarted, or discarded while Lucubro's durable company state survives.
+
+The product principle is:
+
+> **Hide runtime mechanics by default; preserve expert control and provider escape hatches.**
+
 ## Motion is product behavior
 
 Lucubro's distinctive motion is not decorative polish. It makes the causal relationship between user intent, AI/system events, and durable company state perceptible.
@@ -180,7 +206,7 @@ The interface should be quiet when nothing changes. Motion should become noticea
 - A domain noun does not earn top-level navigation merely by existing.
 - Conversation and structured Work are the same product shell.
 - Stable space, changing objects.
-- Hide mechanisms, not responsibility, risk, durable state, or evidence.
+- Hide runtime mechanisms by default, but preserve responsibility, risk, durable state, evidence, expert control, and explicit provider escape hatches.
 - A visible durable state must have an actionable path.
 - Motion follows deterministic local state or normalized product events.
 - No fake thinking, fake staged AI progress, fake validation, or raw chain-of-thought.
