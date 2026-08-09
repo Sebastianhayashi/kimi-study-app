@@ -76,6 +76,10 @@ function setup(t) {
     workerId: 'worker_local',
     runtime: 'mock',
     status: 'running',
+    delegationEnvelope: {
+      allow: ['workspace.read', 'workspace.write'],
+      deny: ['network.access', 'git.push'],
+    },
   });
   const runtimeRequests = [];
   const mountBuilds = [];
@@ -92,6 +96,7 @@ function setup(t) {
           cwd: request.cwd,
           prompt: request.prompt,
           skillMount: request.skillMount,
+          delegationEnvelope: request.delegationEnvelope,
         }));
         yield {
           type: 'skill.mounted',
@@ -137,7 +142,7 @@ test('Manager can start a bounded specialist child Run from planned Skills witho
     role: 'research',
     objective: 'Research reliable facts about coffee roast levels.',
     skillIds: ['mattpocock-skills:research'],
-    delegationEnvelope: { allow: ['workspace.read'], deny: ['workspace.write', 'git.push'] },
+    delegationEnvelope: { allow: ['workspace.read'], deny: ['workspace.write'] },
   });
   const finalRun = await fixture.specialists.wait(started.run.id);
 
@@ -147,6 +152,10 @@ test('Manager can start a bounded specialist child Run from planned Skills witho
   assert.equal(started.run.role, 'research');
   assert.equal(started.run.workId, fixture.work.id);
   assert.equal(started.run.employeeId, null);
+  assert.deepEqual(started.run.delegationEnvelope, {
+    allow: ['workspace.read'],
+    deny: ['network.access', 'git.push', 'workspace.write'],
+  });
   assert.equal(finalRun.status, 'completed');
   assert.equal(finalRun.summary, 'Research complete');
 
@@ -159,6 +168,10 @@ test('Manager can start a bounded specialist child Run from planned Skills witho
   assert.equal(fixture.runtimeRequests[0].employeeId, null);
   assert.equal(fixture.runtimeRequests[0].prompt, 'Research reliable facts about coffee roast levels.');
   assert.equal(fixture.runtimeRequests[0].skillMount.expectedSkills[0].skillId, 'mattpocock-skills:research');
+  assert.deepEqual(fixture.runtimeRequests[0].delegationEnvelope, {
+    allow: ['workspace.read'],
+    deny: ['network.access', 'git.push', 'workspace.write'],
+  });
 
   const parentEvents = fixture.runStore.readEvents(fixture.parentRun.id);
   assert.equal(parentEvents.some((event) => event.type === 'subrun.started' && event.subrunId === 'subrun_research'), true);
@@ -178,6 +191,25 @@ test('Specialist cannot mount a Skill that was not selected by the owning Work p
       delegationEnvelope: { allow: ['workspace.read'], deny: [] },
     }),
     /Specialist Skill is not selected by the owning Work plan: gstack:qa/,
+  );
+
+  assert.equal(fixture.runStore.get('run_specialist_research'), null);
+  assert.equal(fixture.runtimeRequests.length, 0);
+  assert.equal(fixture.mountBuilds.length, 0);
+});
+
+test('Specialist cannot expand authority beyond the parent Run Delegation Envelope', async (t) => {
+  const fixture = setup(t);
+
+  await assert.rejects(
+    fixture.specialists.start({
+      parentRunId: fixture.parentRun.id,
+      role: 'research',
+      objective: 'Research using the network.',
+      skillIds: ['mattpocock-skills:research'],
+      delegationEnvelope: { allow: ['workspace.read', 'network.access'], deny: [] },
+    }),
+    /Specialist Delegation Envelope expands parent authority: network.access/,
   );
 
   assert.equal(fixture.runStore.get('run_specialist_research'), null);
