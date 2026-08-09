@@ -141,6 +141,67 @@
     return event.type;
   }
 
+  function evidenceSourceCopy(item) {
+    if (item.source === 'deterministic-mock') return 'Deterministic mock';
+    if (item.source === 'worktree') return 'Worktree evidence';
+    return item.source || 'Run evidence';
+  }
+
+  function renderEvidenceShelf(runPayload) {
+    const items = Array.isArray(runPayload?.evidence) ? runPayload.evidence : [];
+    if (!items.length) return null;
+
+    const section = el('section', 'run-evidence-shelf');
+    section.dataset.testid = 'run-evidence';
+    section.setAttribute('aria-label', 'Run evidence');
+
+    const header = el('div', 'run-evidence-header');
+    header.append(
+      el('h3', '', 'Run evidence'),
+      el('span', '', `${items.length} captured`),
+    );
+    const grid = el('div', 'run-evidence-grid');
+
+    for (const item of items) {
+      const card = el('article', 'run-evidence-item');
+      card.dataset.evidenceKind = item.kind || 'unknown';
+
+      if (String(item.mimeType || '').startsWith('image/')) {
+        const image = document.createElement('img');
+        image.src = `/api/company/evidence/${encodeURIComponent(item.id)}/content`;
+        image.alt = `${item.label || 'Screenshot'} evidence`;
+        image.loading = 'eager';
+        image.decoding = 'async';
+        card.append(image);
+      } else {
+        const glyph = el('div', 'run-evidence-glyph', String(item.kind || 'evidence').slice(0, 1).toUpperCase());
+        glyph.setAttribute('aria-hidden', 'true');
+        card.append(glyph);
+      }
+
+      const copy = el('div', 'run-evidence-copy');
+      copy.append(
+        el('strong', '', item.label || item.kind || 'Evidence'),
+        el('span', 'run-evidence-source', `${evidenceSourceCopy(item)} · ${item.kind || 'evidence'}`),
+      );
+      const url = item.metadata && item.metadata.url;
+      if (url) copy.append(el('span', 'run-evidence-context', url));
+      card.append(copy);
+
+      if (!String(item.mimeType || '').startsWith('image/')) {
+        const open = el('a', 'run-evidence-open', 'Open evidence');
+        open.href = `/api/company/evidence/${encodeURIComponent(item.id)}/content`;
+        open.target = '_blank';
+        open.rel = 'noopener';
+        card.append(open);
+      }
+      grid.append(card);
+    }
+
+    section.append(header, grid);
+    return section;
+  }
+
   async function decideWork(work, decision) {
     const response = await fetch(`/api/company/works/${encodeURIComponent(work.id)}/decision`, {
       method: 'POST',
@@ -178,10 +239,11 @@
 
     const meta = el('div', 'durable-work-meta');
     const [statusLabel] = displayStatus(work.status);
+    const workerLabel = runPayload?.worker?.name || runPayload?.run?.workerId || 'Execution host unavailable';
     meta.append(
       statusNode(work.status),
       el('span', '', 'Ben · Software Engineer'),
-      el('span', '', work.runtime ? `Runtime ${work.runtime}` : 'Runtime unavailable'),
+      el('span', '', workerLabel),
       el('span', '', `Updated ${formatTimestamp(work.updatedAt)}`),
     );
 
@@ -208,15 +270,18 @@
         body.append(activitySection);
       }
 
+      const evidenceShelf = renderEvidenceShelf(runPayload);
+      if (evidenceShelf) body.append(evidenceShelf);
+
       if (artifact) {
-        const evidence = el('details', 'artifact durable-work-artifact');
+        const artifactDetail = el('details', 'artifact durable-work-artifact');
         const files = artifact.changedFiles || run.changedFiles || [];
-        evidence.open = work.status === 'review';
-        evidence.append(
+        artifactDetail.open = work.status === 'review';
+        artifactDetail.append(
           el('summary', '', files.length ? `Code changes · ${files.length} file${files.length === 1 ? '' : 's'}` : 'Review code changes'),
           el('pre', '', artifact.diff || 'No textual diff was captured.'),
         );
-        body.append(evidence);
+        body.append(artifactDetail);
       } else {
         const empty = el('div', 'durable-work-evidence-empty');
         empty.append(
@@ -229,7 +294,7 @@
       const execution = el('details', 'artifact run-detail durable-run-detail');
       execution.append(
         el('summary', '', 'Execution details'),
-        el('pre', '', `Run: ${run.id}\nRuntime: ${run.runtime}\nStatus: ${run.status}\nBranch: ${run.branch || 'n/a'}\nChanged files: ${(run.changedFiles || []).join(', ') || 'none'}`),
+        el('pre', '', `Run: ${run.id}\nWorker: ${workerLabel}\nRuntime: ${run.runtime}\nStatus: ${run.status}\nBranch: ${run.branch || 'n/a'}\nChanged files: ${(run.changedFiles || []).join(', ') || 'none'}`),
       );
       body.append(execution);
     }
