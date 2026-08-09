@@ -212,6 +212,26 @@ test('mobile keeps the operating map, Manager relationship, composer, and Work s
   await expect(page.getByLabel('Alex, Primary Manager')).toBeVisible();
   await expect(page.getByLabel('Company canvas focus')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Send to Alex' })).toBeVisible();
+
+  const brief = 'Verify compact mobile company control';
+  const created = await page.evaluate(async (workBrief) => {
+    const response = await fetch('/api/company/works', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        brief: workBrief,
+        repoDir: '/tmp/lucubro-mobile-fixture',
+        runtime: 'mock',
+      }),
+    });
+    if (!response.ok) throw new Error(await response.text());
+    return response.json();
+  }, brief);
+  expect(created.run.id).toBeTruthy();
+
+  await page.reload();
+  await waitForCompanyControllers(page);
+  await expect(page.getByTestId('operating-work-node').filter({ hasText: brief })).toBeVisible();
   await expect(page.locator('body')).toHaveAttribute('data-company-has-work', 'true');
   await expect(page.locator('#work-brief')).toHaveCSS('min-height', '52px');
   await expect(page.locator('#run-settings > summary .settings-summary-label')).toBeVisible();
