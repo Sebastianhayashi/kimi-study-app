@@ -23,6 +23,13 @@ async function waitForServer() {
   throw new Error('company-server did not become ready');
 }
 
+async function openExecutionSetup(page) {
+  const settings = page.locator('#run-settings');
+  if ((await settings.getAttribute('open')) === null) await settings.locator('summary').click();
+  await expect(settings).toHaveAttribute('open', '');
+  return settings;
+}
+
 async function waitForCompletedRun(runId) {
   const deadline = Date.now() + 10_000;
   while (Date.now() < deadline) {
@@ -139,7 +146,7 @@ test('Run evidence materializes inside the live Work object as the event arrives
   await expect(page.locator('#workspace-picker')).toHaveAttribute('data-controller', 'ready');
   await expect(page.locator('#company-operating-map')).toHaveAttribute('data-controller', 'ready');
 
-  await page.locator('#run-settings > summary').click();
+  await openExecutionSetup(page);
   await page.locator('[data-runtime-id="mock"]').click();
   await page.locator('#repo-dir').fill('/tmp/lucubro-live-evidence-fixture');
   await expect(page.locator('#repo-path-control')).toHaveAttribute('data-state', 'received');
