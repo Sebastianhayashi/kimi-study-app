@@ -6,6 +6,9 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
+const {
+  inspectApprovedSkillBundleMaterializations,
+} = require('../lib/company/approved-skill-bundle-materialization');
 const { createSkillBundleStore } = require('../lib/company/skill-bundle-store');
 const { computeBundleRootDigest, createSkillBundleMaterializer } = require('../lib/company/skill-bundle-materializer');
 const { APPROVED_SKILL_BUNDLE_MANIFESTS } = require('../lib/company/skill-bundle-providers');
@@ -79,4 +82,56 @@ test('registered pinned bundle may learn its content digest only during exact ma
   const active = store.get(manifest.id);
   assert.equal(active.rootDigest, expectedDigest);
   assert.equal(active.installationState, 'active');
+});
+
+test('approved bundle inspector reports active exact roots and exposes content drift without mutating the store', (t) => {
+  const dataRoot = tempRoot(t);
+  const sourceRoot = tempRoot(t, 'lucubro-provider-inspect-source-');
+  write(sourceRoot, 'README.md', '# Inspect fixture\n');
+  write(sourceRoot, 'one/SKILL.md', '---\nname: one\ndescription: First skill.\n---\n# One\n');
+
+  const approved = {
+    id: 'remote-fixture',
+    source: { provider: 'github', repository: 'example/skills' },
+    pinnedRef: 'ffffffffffffffffffffffffffffffffffffffff',
+    pinnedCommit: 'ffffffffffffffffffffffffffffffffffffffff',
+    license: { spdx: 'MIT', sourcePath: 'LICENSE' },
+    hostVariant: 'codex',
+    rootDigest: null,
+    installationState: 'registered',
+  };
+  const store = createSkillBundleStore({ rootDir: dataRoot });
+  store.register(approved);
+  const materialized = createSkillBundleMaterializer({ bundleStore: store }).importFromDirectory(approved.id, { sourceRoot });
+
+  const [receipt] = inspectApprovedSkillBundleMaterializations({
+    dataDir: dataRoot,
+    approvedManifests: [approved],
+  });
+  assert.deepEqual(receipt, {
+    id: approved.id,
+    pinnedCommit: approved.pinnedCommit,
+    approvedPinnedCommit: approved.pinnedCommit,
+    pinnedCommitMatchesApproved: true,
+    installationState: 'active',
+    active: true,
+    materializedRoot: store.get(approved.id).materializedRoot,
+    rootExists: true,
+    manifestRootDigest: materialized.rootDigest,
+    observedRootDigest: materialized.rootDigest,
+    digestMatchesManifest: true,
+    digestError: null,
+  });
+
+  write(store.get(approved.id).materializedRoot, 'drift.txt', 'drift\n');
+  const [drifted] = inspectApprovedSkillBundleMaterializations({
+    dataDir: dataRoot,
+    approvedManifests: [approved],
+  });
+  assert.equal(drifted.active, true);
+  assert.equal(drifted.rootExists, true);
+  assert.equal(drifted.manifestRootDigest, materialized.rootDigest);
+  assert.notEqual(drifted.observedRootDigest, materialized.rootDigest);
+  assert.equal(drifted.digestMatchesManifest, false);
+  assert.equal(drifted.digestError, null);
 });
