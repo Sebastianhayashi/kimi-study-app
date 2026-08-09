@@ -38,6 +38,7 @@
   const menuItems = [...document.querySelectorAll('[data-canvas-lens-target]')];
   const brand = document.querySelector('.brand');
   const composer = document.querySelector('.composer-dock');
+  const workForm = document.querySelector('#work-form');
   const workList = document.querySelector('#work-page-list');
   const workSummary = document.querySelector('#work-page-summary');
   const employeeList = document.querySelector('#employee-page-list');
@@ -296,8 +297,12 @@
 
   function closeMenu({ restoreFocus = false, immediate = false } = {}) {
     if (!menu || !trigger || menu.hidden) return;
+    if (immediate) {
+      finishMenuClose({ restoreFocus });
+      return;
+    }
     if (menuClosing) return;
-    if (immediate || !canAnimate()) {
+    if (!canAnimate()) {
       finishMenuClose({ restoreFocus });
       return;
     }
@@ -348,6 +353,13 @@
     currentItem?.focus({ preventScroll: true });
   }
 
+  function pushLensUrl(lens) {
+    const route = lensToRoute.get(lens);
+    if (window.location.pathname !== route || window.location.search) {
+      history.pushState({ lucubroLens: lens }, '', route);
+    }
+  }
+
   async function switchLens(nextLens, { historyMode = 'push', initial = false } = {}) {
     if (!lensToRoute.has(nextLens)) nextLens = 'manager';
     const serial = ++transitionSerial;
@@ -359,6 +371,7 @@
 
     if (!initial && previousLens === nextLens) {
       setShellState(nextLens);
+      if (historyMode === 'push') pushLensUrl(nextLens);
       return;
     }
 
@@ -370,12 +383,8 @@
     currentLens = nextLens;
     setShellState(nextLens);
 
-    if (historyMode === 'push') {
-      const route = lensToRoute.get(nextLens);
-      if (window.location.pathname !== route || window.location.search) history.pushState({ lucubroLens: nextLens }, '', route);
-    } else if (historyMode === 'replace') {
-      history.replaceState({ lucubroLens: nextLens }, '', window.location.href);
-    }
+    if (historyMode === 'push') pushLensUrl(nextLens);
+    else if (historyMode === 'replace') history.replaceState({ lucubroLens: nextLens }, '', window.location.href);
 
     await loadLens(nextLens);
     if (serial !== transitionSerial) return;
@@ -427,6 +436,10 @@
     closeMenu();
   });
 
+  workForm?.addEventListener('submit', () => {
+    if (currentLens !== 'manager') switchLens('manager', { historyMode: 'push' });
+  }, { capture: true });
+
   brand?.addEventListener('click', (event) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
@@ -446,5 +459,7 @@
   for (const panel of panels) panel.hidden = panel.dataset.canvasLensPanel !== currentLens;
   setShellState(currentLens);
   history.replaceState({ lucubroLens: currentLens }, '', window.location.href);
-  loadLens(currentLens).then(() => animatePanelIn(panelFor(currentLens)));
+  loadLens(currentLens).then(() => {
+    if (currentLens !== 'manager') animatePanelIn(panelFor(currentLens));
+  });
 })();
