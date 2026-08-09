@@ -61,7 +61,7 @@ test.afterAll(async () => {
   fs.rmSync(DATA_DIR, { recursive: true, force: true });
 });
 
-test('Worker is a durable execution host while provider/runtime remains secondary', async ({ page }) => {
+test('Worker is a durable execution host while real provider runtimes remain explicitly paused', async ({ page }) => {
   await page.goto(`${URL}/company`);
   await expect(page.locator('#company-operating-map')).toHaveAttribute('data-controller', 'ready');
 
@@ -77,7 +77,18 @@ test('Worker is a durable execution host while provider/runtime remains secondar
     status: 'online',
     transport: 'in-process',
   });
-  expect(initial.workers[0].capabilities.runtimes).toContain('mock');
+  expect(initial.workers[0].capabilities.runtimes).toEqual(['mock']);
+  expect(initial.runtimes.find((runtime) => runtime.id === 'codex')).toMatchObject({ available: false, paused: true });
+  expect(initial.runtimes.find((runtime) => runtime.id === 'claude-code')).toMatchObject({ available: false, paused: true });
+  expect(initial.runtimes.find((runtime) => runtime.id === 'mock')).toMatchObject({ available: true });
+
+  await page.locator('#run-settings > summary').click();
+  await expect(page.locator('[data-runtime-id="codex"]')).toBeDisabled();
+  await expect(page.locator('[data-runtime-id="codex"]')).toHaveAttribute('aria-label', 'Codex, not ready');
+  await expect(page.locator('[data-runtime-id="claude-code"]')).toBeDisabled();
+  await expect(page.locator('[data-runtime-id="claude-code"]')).toHaveAttribute('aria-label', 'Claude Code, not ready');
+  await expect(page.locator('[data-runtime-id="mock"]')).toBeEnabled();
+  await page.locator('#close-run-settings').click();
 
   const created = await page.evaluate(async () => {
     const response = await fetch('/api/company/works', {
