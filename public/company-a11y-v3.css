@@ -39,7 +39,12 @@ body[data-company-has-work="false"][data-canvas-lens="manager"] .composer-dock {
   bottom: auto;
   width: min(860px, calc(100% - 56px));
   margin: 30px auto 28px;
-  transform: none;
+  transform: none !important;
+}
+
+body:not([data-company-has-work="false"]) .composer-dock,
+body[data-canvas-lens]:not([data-canvas-lens="manager"]) .composer-dock {
+  transform: translateX(-50%) !important;
 }
 
 body[data-company-has-work="false"][data-canvas-lens="manager"] .composer {
