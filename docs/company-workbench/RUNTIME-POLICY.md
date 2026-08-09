@@ -17,6 +17,8 @@ When real Codex execution is explicitly resumed, Lucubro development and smoke t
 
 Lucubro must not silently fall back to another model/profile, enable fast mode, or reduce/expand this permission profile while claiming to be using the approved configuration. A mismatch should be treated as unavailable or blocked, not as an automatic substitution.
 
+`full access` describes the approved Codex/provider host-access profile. It does **not** erase Lucubro's product-level Delegation Envelope. When real Codex resumes, the adapter/execution boundary must still preserve Lucubro authority semantics such as `Needs You` for actions outside the current Work envelope. Provider freedom and product authorization are separate layers; both requirements must hold at the same time.
+
 ## Current product gate
 
 Real Claude/Codex execution remains paused as a product-development priority while the Company Canvas, Worker, Evidence, authorization, and routing boundaries are stabilized. Installation/authentication readiness does not by itself authorize a real Run.
