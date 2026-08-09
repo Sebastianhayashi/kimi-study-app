@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('crypto');
 const express = require('express');
 const fs = require('fs');
 const os = require('os');
@@ -49,10 +50,13 @@ function createCompanyServer({
   const runStore = createRunStore({ rootDir: dataDir });
   const workStore = createWorkStore({ rootDir: dataDir });
   const workers = workerStore || createWorkerStore({ rootDir: dataDir });
+  const existingWorker = workers.list()[0] || null;
+  const requestedWorkerId = workerIdentity && workerIdentity.id || process.env.LUCUBRO_WORKER_ID || null;
+  const localWorkerId = requestedWorkerId || existingWorker && existingWorker.id || `worker_${crypto.randomUUID()}`;
   const localWorker = workers.upsert({
-    id: workerIdentity && workerIdentity.id || process.env.LUCUBRO_WORKER_ID || 'worker_local',
-    name: workerIdentity && workerIdentity.name || process.env.LUCUBRO_WORKER_NAME || os.hostname() || 'Local Worker',
-    kind: workerIdentity && workerIdentity.kind || 'self-hosted',
+    id: localWorkerId,
+    name: workerIdentity && workerIdentity.name || process.env.LUCUBRO_WORKER_NAME || existingWorker && existingWorker.name || os.hostname() || 'Local Worker',
+    kind: workerIdentity && workerIdentity.kind || existingWorker && existingWorker.kind || 'self-hosted',
   });
   const approvalBroker = createApprovalBroker({ runStore });
   const runtimeRegistry = runtimes || new Map([
