@@ -97,6 +97,40 @@ test('Project adoption is durable across Company server recreation', async (t) =
   });
 });
 
+test('Re-adopting the same repository refreshes sources without replacing Project identity', async (t) => {
+  const dataDir = tempRoot(t);
+  const { workspaceRoot, repoDir } = createRepo(t, 'lucubro-project-refresh-');
+  fs.writeFileSync(path.join(repoDir, 'CONTEXT.md'), '# Context\n');
+
+  await withServer({
+    dataDir,
+    runtimes: new Map(),
+    worktreeManager: {},
+    workspaceBrowser: workspaceBrowserFor(workspaceRoot),
+  }, async (baseUrl) => {
+    const firstResponse = await fetch(`${baseUrl}/api/company/projects`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ repoDir }),
+    });
+    assert.equal(firstResponse.status, 201);
+    const first = await firstResponse.json();
+    assert.deepEqual(first.project.sources.map((source) => source.path), ['CONTEXT.md']);
+
+    fs.writeFileSync(path.join(repoDir, 'AGENTS.md'), '# Instructions\n');
+
+    const secondResponse = await fetch(`${baseUrl}/api/company/projects`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ repoDir }),
+    });
+    assert.equal(secondResponse.status, 201);
+    const second = await secondResponse.json();
+    assert.equal(second.project.id, first.project.id);
+    assert.deepEqual(second.project.sources.map((source) => source.path), ['AGENTS.md', 'CONTEXT.md']);
+  });
+});
+
 test('Project adoption cannot inspect a repository outside the configured workspace root', async (t) => {
   const dataDir = tempRoot(t);
   const allowedRoot = tempRoot(t, 'lucubro-project-allowed-');
