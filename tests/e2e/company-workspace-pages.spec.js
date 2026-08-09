@@ -26,6 +26,19 @@ async function waitForServer() {
   throw new Error('company-server did not become ready');
 }
 
+async function openExecutionSetup(page) {
+  const settings = page.locator('#run-settings');
+  if ((await settings.getAttribute('open')) === null) await settings.locator('summary').click();
+  await expect(settings).toHaveAttribute('open', '');
+  return settings;
+}
+
+async function closeExecutionSetup(page) {
+  const settings = page.locator('#run-settings');
+  if ((await settings.getAttribute('open')) !== null) await page.locator('#close-run-settings').click();
+  await expect(settings).not.toHaveAttribute('open', '');
+}
+
 test.beforeAll(async () => {
   fs.rmSync(DATA_DIR, { recursive: true, force: true });
   fs.rmSync(WORKSPACE_ROOT, { recursive: true, force: true });
@@ -58,7 +71,7 @@ test.afterAll(async () => {
 test('workspace path line wakes to Klein blue whenever the input is focused', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${URL}/company`);
-  await page.locator('#run-settings > summary').click();
+  await openExecutionSetup(page);
 
   const input = page.locator('#repo-dir');
   const activeLine = page.locator('.repo-path-line-active');
@@ -83,7 +96,7 @@ test('workspace path line wakes to Klein blue whenever the input is focused', as
 test('workspace picker expands a host tree, autocompletes paths, and creates folders', async ({ page }) => {
   await page.setViewportSize({ width: 1100, height: 820 });
   await page.goto(`${URL}/company`);
-  await page.locator('#run-settings > summary').click();
+  await openExecutionSetup(page);
   await expect(page.locator('#workspace-picker')).toHaveAttribute('data-controller', 'ready');
   await expect(page.locator('#workspace-tree-toggle')).toBeVisible();
 
@@ -123,7 +136,7 @@ test('Manager is a conversation-driven live canvas whose Work object grows with 
   await page.goto(`${URL}/company`);
   await expect(page.locator('body')).toHaveAttribute('data-canvas-state', 'quiet');
 
-  await page.locator('#run-settings > summary').click();
+  await openExecutionSetup(page);
   await page.locator('[data-runtime-id="mock"]').click();
   await page.locator('#repo-dir').fill(FIXTURE_REPO);
   await expect(page.locator('#repo-path-control')).toHaveAttribute('data-state', 'received');
@@ -149,7 +162,7 @@ test('Manager is a conversation-driven live canvas whose Work object grows with 
 test('workspace tree remains contained and touchable on a mobile viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${URL}/company`);
-  await page.locator('#run-settings > summary').click();
+  await openExecutionSetup(page);
   await expect(page.locator('#workspace-picker')).toHaveAttribute('data-controller', 'ready');
   await page.locator('#workspace-tree-toggle').click();
   await expect(page.locator('#workspace-tree-panel')).toBeVisible();
@@ -223,11 +236,11 @@ test('persistent composer returns focus to Manager canvas when it creates new Wo
   await page.goto(`${URL}/company`);
   await page.evaluate(() => { window.__lucubroCanvasShellProbe = 'alive'; });
 
-  await page.locator('#run-settings > summary').click();
+  await openExecutionSetup(page);
   await page.locator('[data-runtime-id="mock"]').click();
   await page.locator('#repo-dir').fill(FIXTURE_REPO);
   await expect(page.locator('#repo-path-control')).toHaveAttribute('data-state', 'received');
-  await page.locator('#run-settings > summary').click();
+  await closeExecutionSetup(page);
 
   await page.locator('#canvas-lens-trigger').click();
   await page.locator('[data-canvas-lens-target="work"]').click();
