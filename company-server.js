@@ -95,7 +95,7 @@ function createCompanyServer({
   if (runtimes) {
     runtimeRegistry = runtimes;
   } else {
-    const enableRealRuntimes = environment.LUCUBRO_ENABLE_REAL_RUNTIMES === '1';
+    const realRuntimeRequested = environment.LUCUBRO_ENABLE_REAL_RUNTIMES === '1';
     const authorityConfig = {
       systemdRunBinary: environment.LUCUBRO_SYSTEMD_RUN_BINARY || null,
       codexExecutable: environment.LUCUBRO_CODEX_EXECUTABLE || null,
@@ -103,13 +103,14 @@ function createCompanyServer({
       codexHomeSource: environment.LUCUBRO_CODEX_HOME_SOURCE || null,
     };
     const hasAuthorityConfig = Object.values(authorityConfig).every((value) => typeof value === 'string' && value.trim());
-    const codexAuthorityBoundary = enableRealRuntimes && hasAuthorityConfig
+    const codexAuthorityBoundary = realRuntimeRequested && hasAuthorityConfig
       ? createSystemdAuthorityBoundary({
         ...authorityConfig,
         stateRoot: environment.LUCUBRO_CODEX_AUTHORITY_STATE_ROOT || path.join(dataDir, 'codex-authority'),
         runtimePath: environment.PATH || process.env.PATH || '/run/current-system/sw/bin:/usr/bin:/bin',
       })
       : null;
+    const enableRealRuntimes = realRuntimeRequested && Boolean(codexAuthorityBoundary);
     const configured = createDefaultRuntimeRegistry({
       enableRealRuntimes,
       codexAdmissionFile: environment.LUCUBRO_CODEX_ADMISSION_FILE || null,
