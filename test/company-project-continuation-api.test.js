@@ -73,3 +73,42 @@ test('Continuation API exposes stale canonical source state without mutating the
     assert.equal(project.checkpoint.sourceSnapshot[0].fingerprint, originalFingerprint);
   });
 });
+
+test('Continuation rechecks the current workspace boundary after server recreation', async (t) => {
+  const dataDir = tempRoot(t, 'lucubro-project-continuation-rebound-data-');
+  const originalRoot = tempRoot(t, 'lucubro-project-continuation-original-');
+  const restrictedRoot = tempRoot(t, 'lucubro-project-continuation-restricted-');
+  const repoDir = path.join(originalRoot, 'repo');
+  fs.mkdirSync(repoDir);
+  fs.mkdirSync(path.join(repoDir, '.git'));
+  fs.writeFileSync(path.join(repoDir, 'CONTEXT.md'), '# Context\n');
+
+  let projectId;
+  await withServer({
+    dataDir,
+    runtimes: new Map(),
+    worktreeManager: {},
+    workspaceBrowser: createWorkspaceBrowser({ rootDir: originalRoot, homeDir: originalRoot, showHidden: true }),
+  }, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/company/projects`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ repoDir }),
+    });
+    assert.equal(response.status, 201);
+    const body = await response.json();
+    projectId = body.project.id;
+  });
+
+  await withServer({
+    dataDir,
+    runtimes: new Map(),
+    worktreeManager: {},
+    workspaceBrowser: createWorkspaceBrowser({ rootDir: restrictedRoot, homeDir: restrictedRoot, showHidden: true }),
+  }, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/company/projects/${projectId}/continuation`);
+    assert.equal(response.status, 400);
+    const body = await response.json();
+    assert.match(body.error, /outside the allowed workspace root/i);
+  });
+});
