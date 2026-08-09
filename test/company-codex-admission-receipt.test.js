@@ -35,13 +35,14 @@ function validReceipt() {
       platformOs: 'linux',
     },
     catalogDiagnostic: {
-      lunaMaxUniqueMatch: false,
+      exactModelIdMatch: true,
+      providerDisplayName: 'GPT-5.6-Luna',
       effectiveConfigModelId: LUNA_MODEL_ID,
-      note: 'Picker visibility is diagnostic only; the no-fallback thread proof is authoritative.',
+      note: 'Provider display text is diagnostic only; exact model id is authoritative.',
     },
     profile: {
-      profileName: 'Luna Max',
       modelId: LUNA_MODEL_ID,
+      reasoningEffort: 'max',
       mode: 'default',
       fast: false,
       permissionProfile: 'full-access',
@@ -86,21 +87,18 @@ function validReceipt() {
   };
 }
 
-test('exact machine receipt admits Luna Max from the real no-fallback ephemeral thread proof even when model/list did not expose Luna', () => {
-  const receipt = validReceipt();
-  receipt.catalogDiagnostic = {
-    lunaMaxUniqueMatch: false,
-    effectiveConfigModelId: LUNA_MODEL_ID,
-  };
-
-  const result = verifyCodexAdmissionReceipt(receipt, {
+test('exact machine receipt admits gpt-5.6-luna with max effort independent of provider display text', () => {
+  const result = verifyCodexAdmissionReceipt(validReceipt(), {
     expectedRepo: EXPECTED_REPO,
     expectedCommit: EXPECTED_COMMIT,
   });
 
   assert.equal(result.admitted, true);
-  assert.equal(result.profileName, 'Luna Max');
   assert.equal(result.modelId, LUNA_MODEL_ID);
+  assert.equal(result.reasoningEffort, 'max');
+  assert.equal(result.mode, 'default');
+  assert.equal(result.fast, false);
+  assert.equal(result.permissionProfile, 'full-access');
   assert.equal(result.providerPermissionProfileId, FULL_ACCESS_PROFILE_ID);
   assert.deepEqual(result.unknown, []);
   assert.deepEqual(result.mismatches, []);
@@ -111,13 +109,32 @@ test('exact machine receipt admits Luna Max from the real no-fallback ephemeral 
   assert.equal(result.authority.boundaryId, 'systemd-user-codex-v1');
 });
 
-test('receipt fails closed for stale commit, Fast tier, provider fallback, or a thread that did not actually use Luna', () => {
+test('receipt fails closed for stale commit, wrong model, non-max effort, Fast tier, or provider fallback', () => {
   const stale = validReceipt();
   stale.source.commit = 'fedcba9876543210fedcba9876543210fedcba98';
   assert.equal(verifyCodexAdmissionReceipt(stale, {
     expectedRepo: EXPECTED_REPO,
     expectedCommit: EXPECTED_COMMIT,
   }).admitted, false);
+
+  const wrongModel = validReceipt();
+  wrongModel.profile.modelId = 'gpt-5.6-sol';
+  wrongModel.thread.modelId = 'gpt-5.6-sol';
+  const wrongModelResult = verifyCodexAdmissionReceipt(wrongModel, {
+    expectedRepo: EXPECTED_REPO,
+    expectedCommit: EXPECTED_COMMIT,
+  });
+  assert.equal(wrongModelResult.admitted, false);
+  assert.ok(wrongModelResult.mismatches.some((entry) => entry.field === 'profile.modelId'));
+
+  const weakEffort = validReceipt();
+  weakEffort.profile.reasoningEffort = 'high';
+  const weakEffortResult = verifyCodexAdmissionReceipt(weakEffort, {
+    expectedRepo: EXPECTED_REPO,
+    expectedCommit: EXPECTED_COMMIT,
+  });
+  assert.equal(weakEffortResult.admitted, false);
+  assert.ok(weakEffortResult.mismatches.some((entry) => entry.field === 'profile.reasoningEffort'));
 
   const fast = validReceipt();
   fast.thread.serviceTier = 'fast';
@@ -136,19 +153,11 @@ test('receipt fails closed for stale commit, Fast tier, provider fallback, or a 
   });
   assert.equal(fallbackEnabledResult.admitted, false);
   assert.ok(fallbackEnabledResult.mismatches.some((entry) => entry.field === 'thread.providerFallbackDisabled'));
-
-  const fallbackModel = validReceipt();
-  fallbackModel.thread.modelId = 'gpt-5.6-sol';
-  const fallbackModelResult = verifyCodexAdmissionReceipt(fallbackModel, {
-    expectedRepo: EXPECTED_REPO,
-    expectedCommit: EXPECTED_COMMIT,
-  });
-  assert.equal(fallbackModelResult.admitted, false);
-  assert.ok(fallbackModelResult.mismatches.some((entry) => entry.field === 'thread.modelId'));
 });
 
-test('receipt requires machine-observed default mode, active full-access profile, ephemeral thread, and exact systemd authority probes', () => {
+test('receipt requires default mode, active full-access profile, ephemeral thread, and exact systemd authority probes', () => {
   const wrongMode = validReceipt();
+  wrongMode.profile.mode = 'plan';
   wrongMode.thread.collaborationMode = 'plan';
   assert.equal(verifyCodexAdmissionReceipt(wrongMode, {
     expectedRepo: EXPECTED_REPO,
