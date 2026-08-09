@@ -206,6 +206,10 @@
   transform-origin: 50% 24px;
 }
 
+body .composer-dock:has(.run-settings[open]) {
+  z-index: 50;
+}
+
 body[data-canvas-lens]:not([data-canvas-lens="manager"]) .workspace {
   min-height: calc(100dvh - 119px);
   padding-bottom: 154px;
