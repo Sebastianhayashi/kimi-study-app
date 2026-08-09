@@ -56,7 +56,51 @@ test('Evidence metadata and bytes survive store recreation without exposing stor
   const second = createEvidenceStore({ rootDir: root });
   assert.deepEqual(second.get('evidence_fixture'), created);
   assert.deepEqual(second.listByRun('run_fixture'), [created]);
+  assert.deepEqual(second.listByWork('work_fixture'), [created]);
   assert.deepEqual(second.readContent('evidence_fixture'), bytes);
+});
+
+test('Work Evidence aggregates across specialist Runs without crossing Work boundaries', (t) => {
+  const root = tempRoot(t);
+  let counter = 0;
+  const store = createEvidenceStore({
+    rootDir: root,
+    createId: () => `evidence_work_${++counter}`,
+    now: () => `2026-08-09T05:5${counter}:00.000Z`,
+  });
+  const research = store.create({
+    runId: 'run_research',
+    workId: 'work_coffee',
+    workerId: 'worker_fixture',
+    kind: 'source-page',
+    label: 'Research source',
+    mimeType: 'text/plain',
+    source: 'web',
+    content: 'source',
+  });
+  const teaching = store.create({
+    runId: 'run_teach',
+    workId: 'work_coffee',
+    workerId: 'worker_fixture',
+    kind: 'teaching-note',
+    label: 'Teaching evidence',
+    mimeType: 'text/plain',
+    source: 'skill-output',
+    content: 'teaching',
+  });
+  store.create({
+    runId: 'run_other',
+    workId: 'work_other',
+    workerId: 'worker_fixture',
+    kind: 'source-page',
+    label: 'Other Work source',
+    mimeType: 'text/plain',
+    source: 'web',
+    content: 'other',
+  });
+
+  assert.deepEqual(store.listByWork('work_coffee').map((item) => item.id), [research.id, teaching.id]);
+  assert.deepEqual(store.listByRun('run_research').map((item) => item.id), [research.id]);
 });
 
 test('Evidence ids and content size are bounded by the store contract', (t) => {
