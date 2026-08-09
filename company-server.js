@@ -18,6 +18,7 @@ const { createWorkspaceBrowser } = require('./lib/company/workspace-browser');
 const { createClaudeAgentSdkRuntime } = require('./lib/company/runtime/claude-agent-sdk');
 const { createCodexAppServerRuntime } = require('./lib/company/runtime/codex-app-server');
 const { createMockCompanyRuntime } = require('./lib/company/runtime/mock');
+const { applyRuntimePolicy } = require('./lib/company/runtime/policy');
 
 const ROOT = __dirname;
 
@@ -63,10 +64,15 @@ function createCompanyServer({
     kind: workerIdentity && workerIdentity.kind || existingWorker && existingWorker.kind || 'self-hosted',
   });
   const approvalBroker = createApprovalBroker({ runStore });
-  const runtimeRegistry = runtimes || new Map([
+  const configuredRuntimeRegistry = runtimes || new Map([
     ['claude-code', createClaudeAgentSdkRuntime()],
     ['codex', createCodexAppServerRuntime()],
   ]);
+  const runtimeRegistry = runtimes
+    ? configuredRuntimeRegistry
+    : applyRuntimePolicy(configuredRuntimeRegistry, {
+      enableRealRuntimes: process.env.LUCUBRO_ENABLE_REAL_RUNTIMES === '1',
+    });
   if (process.env.LUCUBRO_COMPANY_MOCK_RUNTIME === '1' && !runtimeRegistry.has('mock')) runtimeRegistry.set('mock', createMockCompanyRuntime());
 
   const worktrees = worktreeManager || (
