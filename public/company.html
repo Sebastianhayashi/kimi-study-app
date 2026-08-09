@@ -15,9 +15,10 @@
   <link rel="stylesheet" href="/company-workspace.css">
   <link rel="stylesheet" href="/company-pages.css">
   <link rel="stylesheet" href="/company-a11y-v3.css">
+  <link rel="stylesheet" href="/company-canvas-shell.css">
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" integrity="sha512-NcZdtrT77bJr4STcmsGAESr06BYGE8woZdSdEgqnpyqac7sugNO+Tr4bGwGF3MsnEkGKhU2KL2xh6Ec+BqsaHA==" crossorigin="anonymous" defer></script>
 </head>
-<body data-company-has-work="false" data-company-view="manager">
+<body data-company-has-work="false" data-company-view="manager" data-canvas-lens="manager">
   <a class="skip-link" href="#company-main">Skip to company content</a>
   <div class="app-shell" data-ui="company-v3">
     <header class="topbar" aria-label="Company workspace header">
@@ -41,17 +42,56 @@
       </button>
     </header>
 
-    <nav class="company-section-nav" aria-label="Company sections">
-      <div class="company-section-nav-inner">
-        <a class="company-section-link" href="/company" data-company-nav="manager" aria-current="page">Manager</a>
-        <a class="company-section-link" href="/company/work" data-company-nav="work">Work</a>
-        <a class="company-section-link" href="/company/employees" data-company-nav="employees">Employees</a>
-        <a class="company-section-link" href="/company/settings" data-company-nav="settings">Settings</a>
+    <div class="canvas-lens-bar" aria-label="Company canvas focus">
+      <div class="canvas-lens-bar-inner">
+        <div class="canvas-lens-context" aria-live="polite">
+          <span class="canvas-lens-kicker">Company canvas</span>
+          <strong id="canvas-lens-current">Manager canvas</strong>
+        </div>
+        <div class="canvas-lens-control">
+          <button id="canvas-lens-trigger" class="canvas-lens-trigger" type="button" aria-haspopup="menu" aria-controls="canvas-lens-menu" aria-expanded="false">
+            <span class="canvas-lens-trigger-copy">
+              <span>Focus</span>
+              <strong>Manager canvas</strong>
+            </span>
+            <span class="canvas-lens-trigger-caret" aria-hidden="true">⌄</span>
+          </button>
+          <div id="canvas-lens-menu" class="canvas-lens-menu" role="menu" hidden>
+            <a class="canvas-lens-option" href="/company" role="menuitem" data-canvas-lens-target="manager" aria-current="page">
+              <span class="canvas-lens-option-index" aria-hidden="true">01</span>
+              <span class="canvas-lens-option-copy">
+                <strong>Manager canvas</strong>
+                <span>Intent, current Work, evidence and decisions</span>
+              </span>
+            </a>
+            <a class="canvas-lens-option" href="/company/work" role="menuitem" data-canvas-lens-target="work">
+              <span class="canvas-lens-option-index" aria-hidden="true">02</span>
+              <span class="canvas-lens-option-copy">
+                <strong>Work</strong>
+                <span>Durable company work and return paths</span>
+              </span>
+            </a>
+            <a class="canvas-lens-option" href="/company/employees" role="menuitem" data-canvas-lens-target="employees">
+              <span class="canvas-lens-option-index" aria-hidden="true">03</span>
+              <span class="canvas-lens-option-copy">
+                <strong>Employees</strong>
+                <span>Responsibility and durable identities</span>
+              </span>
+            </a>
+            <a class="canvas-lens-option" href="/company/settings" role="menuitem" data-canvas-lens-target="settings">
+              <span class="canvas-lens-option-index" aria-hidden="true">04</span>
+              <span class="canvas-lens-option-copy">
+                <strong>Execution settings</strong>
+                <span>Runtime and execution-host infrastructure</span>
+              </span>
+            </a>
+          </div>
+        </div>
       </div>
-    </nav>
+    </div>
 
     <main id="company-main" class="workspace" tabindex="-1">
-      <section id="company-conversation" class="conversation" aria-label="Manager conversation" data-company-view-panel="manager">
+      <section id="company-conversation" class="conversation canvas-lens-panel" aria-label="Manager conversation" data-company-view-panel="manager" data-canvas-lens-panel="manager">
         <article class="message manager-message intro-message" data-animate="intro">
           <div class="message-avatar" aria-hidden="true">A</div>
           <div class="message-content">
@@ -103,12 +143,12 @@
         <div id="conversation-feed" class="conversation-feed" aria-live="polite" aria-relevant="additions"></div>
       </section>
 
-      <section id="company-work-page" class="product-page" data-company-view-panel="work" aria-labelledby="company-work-heading" hidden>
+      <section id="company-work-page" class="product-page canvas-lens-panel" data-company-view-panel="work" data-canvas-lens-panel="work" aria-labelledby="company-work-heading" hidden>
         <header class="product-page-header">
           <div class="product-page-heading">
-            <span class="context-kicker">Durable company state</span>
+            <span class="context-kicker">Work lens</span>
             <h1 id="company-work-heading">Work</h1>
-            <p>Everything Alex has turned into durable Work. Open an item to return to its evidence and current decision state.</p>
+            <p>Durable Work stays part of the same company canvas. Focus an item to return to its evidence and current decision state.</p>
           </div>
           <span id="work-page-summary" class="product-page-meta">Loading Work…</span>
         </header>
@@ -117,12 +157,12 @@
         </div>
       </section>
 
-      <section id="company-employees-page" class="product-page" data-company-view-panel="employees" aria-labelledby="company-employees-heading" hidden>
+      <section id="company-employees-page" class="product-page canvas-lens-panel" data-company-view-panel="employees" data-canvas-lens-panel="employees" aria-labelledby="company-employees-heading" hidden>
         <header class="product-page-header">
           <div class="product-page-heading">
-            <span class="context-kicker">Durable identities</span>
+            <span class="context-kicker">Responsibility lens</span>
             <h1 id="company-employees-heading">Employees</h1>
-            <p>Named company identities that keep their accountability across Work and Runs. This view only shows identities the current product actually knows.</p>
+            <p>Inspect the durable identities that own Work without leaving the CEO-facing Manager relationship.</p>
           </div>
           <span id="employee-page-summary" class="product-page-meta">Loading Employees…</span>
         </header>
@@ -131,12 +171,12 @@
         </div>
       </section>
 
-      <section id="company-settings-page" class="product-page" data-company-view-panel="settings" aria-labelledby="company-settings-heading" hidden>
+      <section id="company-settings-page" class="product-page canvas-lens-panel" data-company-view-panel="settings" data-canvas-lens-panel="settings" aria-labelledby="company-settings-heading" hidden>
         <header class="product-page-header">
           <div class="product-page-heading">
-            <span class="context-kicker">Local execution</span>
-            <h1 id="company-settings-heading">Settings</h1>
-            <p>Truthful local runtime and workspace state. Per-Work execution choices still live with the instruction that uses them.</p>
+            <span class="context-kicker">Advanced execution lens</span>
+            <h1 id="company-settings-heading">Execution settings</h1>
+            <p>Inspect runtime and execution-host state without turning infrastructure into the default CEO workflow.</p>
           </div>
           <span id="settings-page-summary" class="product-page-meta">Loading local state…</span>
         </header>
