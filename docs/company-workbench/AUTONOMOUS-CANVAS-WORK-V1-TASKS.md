@@ -3,15 +3,25 @@
 Status: executable task map
 Depends on: `AUTONOMOUS-CANVAS-WORK-V1-SPEC.md`, `AUTONOMOUS-CANVAS-WORK-V1-PLAN.md`
 
+## Progress
+
+- ACW-T001: complete, red/green targeted test recorded.
+- ACW-T002: complete, fail-closed Luna profile verifier implemented.
+- ACW-T003: complete, red/green runtime-policy test recorded.
+- ACW-T004: complete, real-runtime flag no longer bypasses Luna admission and non-Codex real providers remain blocked.
+- ACW-T005 onward: pending. Real Codex remains blocked.
+
 ## Slice 0: Luna Runtime Admission
 
 - **ACW-T001 [test]** Add pure verifier tests for exact approved profile, wrong profile/model, Fast enabled, wrong/default mode, wrong permission profile, and missing required attestation. Requirements: ACW-REQ-001..004,025. Files: `test/company-codex-profile.test.js`.
 - **ACW-T002 [impl]** Add Codex profile policy/verifier with a fail-closed admission result. Requirements: ACW-REQ-001..004,025. Files: `lib/company/runtime/codex-profile.js`.
 - **ACW-T003 [test]** Extend runtime-policy tests so `enableRealRuntimes` alone cannot expose Codex when admission is not verified. Requirements: ACW-REQ-001..004. Files: `test/company-runtime-policy.test.js`.
 - **ACW-T004 [impl]** Gate real Codex runtime exposure on an admission wrapper while keeping mock behavior unchanged. Requirements: ACW-REQ-001..004. Files: `lib/company/runtime/policy.js`.
-- **ACW-T005 [test]** Add fake app-server tests for machine-readable preflight inputs (`model/list`, effective config, permission profile/active profile, speed/service tier where available). Requirements: ACW-REQ-001..003,025. Files: `test/company-codex-app-server-admission.test.js` or existing adapter test file.
-- **ACW-T006 [impl]** Add adapter preflight/attestation collection without enabling real runtime by default. Requirements: ACW-REQ-001..004,025. Files: `lib/company/runtime/codex-app-server.js` plus focused helper(s).
-- **ACW-T007 [ops]** On trusted Worker, record exact machine-readable id corresponding to `Luna Max`; keep real execution blocked until this receipt is captured. Requirements: ACW-REQ-001..003. Files: runtime verification evidence/documentation only.
+- **ACW-T005 [test]** Add fake app-server tests for machine-readable preflight inputs (`model/list`, effective `config/read`, permission profile/active profile, speed/service tier where available). Requirements: ACW-REQ-001..003,025. Files: `test/company-codex-app-server-admission.test.js` or existing adapter test file.
+- **ACW-T006 [impl]** Add adapter preflight/attestation collection without enabling real runtime by default. Consume current Codex App Server machine state and leave any unprovable required property as unknown. Requirements: ACW-REQ-001..004,025. Files: `lib/company/runtime/codex-app-server.js` plus focused helper(s).
+- **ACW-T007 [ops]** On trusted Worker, record the exact machine-readable model id corresponding to the operator label `Luna Max`, plus effective default-mode/Fast/permission evidence. Keep real execution blocked until this receipt is captured. Requirements: ACW-REQ-001..003. Files: runtime verification evidence/documentation only.
+- **ACW-T008 [test]** Prove that the required provider `full access` profile does not bypass Lucubro's Delegation Envelope. A Work lacking network/git/destructive authority must still produce a Lucubro-owned block/Needs You path even when the provider itself is unrestricted. Requirements: ACW-REQ-004. Files: focused authority/runtime integration test.
+- **ACW-T009 [impl]** Add a product-layer authority enforcement seam that remains effective under provider full access; do not rely solely on Codex sandbox restrictions as the Delegation Envelope implementation. Requirements: ACW-REQ-004. Files: runtime/orchestrator authority boundary determined by the test.
 
 ## Slice 1: Skill Registry + Mount Receipt
 
@@ -71,7 +81,8 @@ Depends on: `AUTONOMOUS-CANVAS-WORK-V1-SPEC.md`, `AUTONOMOUS-CANVAS-WORK-V1-PLAN
 ## Gate discipline
 
 - Execute tasks in red -> green -> refactor order inside each slice.
-- Do not start real Codex Coffee work before ACW-T001..T007 are satisfied on the trusted Worker.
+- Do not start real Codex Coffee work before ACW-T001..T009 are satisfied on the trusted Worker.
+- Do not treat provider `full access` as product authority. ACW-T008/T009 are mandatory before real execution.
 - Do not implement Project promotion before Related Work and stable Artifact references exist.
 - Do not implement visual polish before the Artifact/Evidence contracts are stable.
 - Every slice must pass `npm run check`, `npm test`, and relevant Chromium regression tests before being called verified.
