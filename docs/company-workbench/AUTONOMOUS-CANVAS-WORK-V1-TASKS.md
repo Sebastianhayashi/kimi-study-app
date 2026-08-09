@@ -9,43 +9,50 @@ The earlier task map incorrectly hard-coded `research-lucubro` and `teach-canvas
 
 The corrected task map treats complete approved Matt/gstack-style bundles as the capability inventory and tests generic routing across unrelated user requests.
 
+The earlier runtime map also incorrectly compressed model identity and reasoning effort into a synthetic `Luna Max` label. Admission now treats `gpt-5.6-luna`, reasoning effort `max`, collaboration mode `default`, Fast disabled, provider full access, and provider fallback disabled as independent machine-verifiable fields.
+
 ## Progress
 
-- ACW-T001..T004: complete with targeted red/green coverage. Luna profile verification and runtime-policy admission fail closed.
-- ACW-T005: complete. Fake App Server tests cover `model/list`, effective `config/read`, `permissionProfile/list`, experimental API opt-in, and unknown-state reporting.
-- ACW-T006: complete at the preflight seam. `createCodexAppServerRuntime().preflight()` collects machine state but intentionally does not claim admission. Actual thread-start attestation remains part of the trusted-Worker gate.
-- ACW-T007: pending. Exact trusted-Worker Luna model/profile/mode/Fast receipt has not been captured.
+- ACW-T001..T004: complete with targeted red/green coverage. Exact `gpt-5.6-luna` / `max` / default / Fast-off / full-access profile verification and runtime-policy admission fail closed.
+- ACW-T005: complete. Fake App Server tests cover `model/list`, effective `config/read`, `permissionProfile/list`, experimental API opt-in, supported reasoning efforts, and unknown-state reporting.
+- ACW-T006: complete at the preflight seam. `createCodexAppServerRuntime().preflight()` collects machine state but intentionally does not claim admission. Actual trusted-Worker thread/turn attestation remains a release gate.
+- ACW-T007: pending for the exact current Lucubro head. Historical trusted-Worker evidence proves `gpt-5.6-luna`, OpenAI provider, default/non-Fast thread state, full-access provider profile, no fallback, and ephemeral threads, but the final receipt must also prove `max` support/enforcement and be rebound to the exact deployed commit.
 - ACW-T008: complete with targeted red/green coverage. Codex Run cannot bypass a Lucubro-owned authority boundary.
-- ACW-T009: partial. The fail-closed authority-boundary contract is wired before Codex Run spawn; a concrete trusted-Worker sandbox implementation and attestation are still required before real execution.
+- ACW-T009: implementation landed. The concrete systemd authority boundary and four-probe admission contract are wired before real Codex exposure; exact-current-head trusted-Worker attestation remains required before real execution.
 - ACW-T101..T104: complete with targeted red/green coverage for durable manifests, full-tree materialization, atomic activation/rollback, and restart persistence.
-- ACW-T105: partial. Matt Pocock and gstack manifests are pinned to exact upstream commits and MIT provenance; their complete real bundles have not yet been materialized on the trusted Worker and recorded with root digests.
+- ACW-T105: implementation landed and historical trusted-Worker materialization evidence exists for the exact pinned gstack and Matt Pocock bundle commits with matching root digests. Re-attestation against the final Lucubro head is still required before real canaries.
 - ACW-T201..T207: complete with targeted red/green coverage for recursive full-catalog indexing, routing metadata, invocation policy, lazy bodies, dependency closure, path containment, compatibility overlays, and exact-commit overlay invalidation.
 - ACW-T301: complete at the planner-validation seam. Coffee sees the full catalog and selects existing `research` plus user-intent-authorized `teach`; no Coffee-specific Skill is introduced.
 - ACW-T302: complete at the planner-validation seam. Website Build composes existing discovery/spec/design/implementation/review/QA capabilities from the same catalog; no Website-specific Skill is introduced.
-- ACW-T303: candidate complete at the product seam. Validated public Work planning is persisted, ordinary non-repo Work uses Lucubro scratch execution space, and the HTTP seam no longer requires a fake repository for lightweight Work. Whole-repository CI is still pending.
+- ACW-T303: candidate complete at the product seam. Validated public Work planning is persisted, ordinary non-repo Work uses Lucubro scratch execution space, and the HTTP seam no longer requires a fake repository for lightweight Work. Exact-current-head whole-repository verification remains pending.
 - ACW-T304: complete. Planner proposals cannot fabricate runtime or Skill mount attestation and cannot persist raw reasoning fields.
 - ACW-T305: complete with targeted red/green coverage. Same-process Codex mount verification uses `skills/extraRoots/set` plus forced `skills/list`, rejects unexpected/disabled/drifted Skills, and does not treat system Skills outside the mount root as selected.
-- ACW-T306: implementation landed through the runtime/orchestrator seam. Verified mount receipts are bound to Run/Subrun and persisted as Run events; full repository CI is still pending.
+- ACW-T306: implementation landed through the runtime/orchestrator seam. Verified mount receipts are bound to Run/Subrun and persisted as Run events; exact-current-head whole-repository verification remains pending.
 - ACW-T307: complete with targeted red/green coverage. Run-scoped mount views copy complete selected Skill directories while excluding unselected Skill bodies from the runtime-visible root.
 - ACW-T401..T404: candidate complete with targeted/shadow coverage. Specialist work is represented as disposable child Runs, cannot widen parent authority, schedules only after its own dependencies complete, and the Website canary composes existing Skills without creating durable Employees or Website-specific Skills.
 - ACW-T501..T503: candidate complete with targeted/shadow coverage. Skill output is normalized into Evidence, proposed semantic Artifact content, workspace mutation, authority request, transient note, or sanitized unsupported output; material claims require real same-Work Evidence.
-- ACW-T504: candidate complete at the contract/Run seam. Only explicitly requested relative paths can become file deliverables; produced bytes are durably Evidence-backed and the file receipt does not create Artifact/Canvas identity. Targeted Node contract coverage is green; whole-repository CI is pending.
-- ACW-T601: candidate complete with targeted coverage. Renderer-owned HTML/React/Markdown-style state is rejected from canonical Canvas Artifact identity and stable block/reference semantics are tested.
-- ACW-T602: candidate complete at the canonical IR/store seam. Canvas Artifacts persist stable Artifact/block ids, same-Work Evidence edges, snapshot references, semantic interactions with required static fallbacks, and requested-file references. A shared proposal normalizer and assembler now connect accepted Skill output/file receipts to canonical Artifact state without promoting blocked/unsupported output.
-- ACW-T603: browser candidate landed. Coffee canonical Artifacts are exposed through a Work-owned read API and projected inside Durable Work as editorial mixed visual/text/interactive content with a source drawer. The Playwright acceptance test is authored but not verified on the current head because this environment lacks Playwright/Express and no PR Actions run exists yet.
-- ACW-T604: browser generalization candidate landed with no vertical-specific product code. Website delivery uses the same canonical IR, Work Artifact API, renderer, code/file-reference/media/source blocks, and hides Skill plumbing by default. The second Playwright acceptance test is likewise pending a real Chromium gate.
-- ACW-T605 onward: pending.
-- Real Codex remains blocked. Current targeted tests and shadow integration harnesses are not a substitute for full repository CI.
+- ACW-T504: candidate complete at the contract/Run seam. Only explicitly requested relative paths can become file deliverables; produced bytes are durably Evidence-backed and the file receipt does not create Artifact/Canvas identity.
+- ACW-T601..T602: candidate complete. Canonical Canvas Artifact IR owns stable Artifact/block ids, same-Work Evidence/reference edges, semantic interactions with static fallbacks, and requested-file references; renderer-owned HTML/React/Markdown state is rejected from canonical identity.
+- ACW-T603..T604: browser candidates landed. Coffee and Website use the same Work-owned Artifact API/renderer and hide Skill plumbing by default. Real Chromium acceptance has been exercised on a prior branch state; exact-current-head Chromium verification remains pending.
+- ACW-T605..T606: candidate complete. Markdown/PDF export compiles from canonical IR rather than DOM scraping, preserves Evidence/provenance/static fallbacks, and uses a fail-closed Pandoc + XeLaTeX path with literal-safe semantic text handling.
+- ACW-T701..T702: candidate complete. Related Work indexing and durable Artifact/block snapshot-reference semantics allow later Work to reuse prior exact Artifact content without provider-session continuity or premature Project creation.
+- ACW-T703..T704: candidate complete. Project promotion requires persistent objective/frontier plus continuity signals, is inspectable/reversible, and supports durable non-repository `work-context` Projects while preserving original Work ids.
+- ACW-T705: candidate complete. Issue eligibility is independently gated on an existing Project frontier; tracker availability or authority alone cannot manufacture an Issue.
+- ACW-T706: candidate complete at the policy/persistence seams. Multi-stage non-repository Work can grow into Project context independently from whichever Skills were used.
+- ACW-T804: candidate complete at the generalization seam. An unrelated Japan-energy board-memo fixture reuses the existing catalog and `matt:research`, adds only request/evaluation data, creates no vertical-specific Skill/product path, and preserves Canvas + explicit file-deliverable semantics.
+- ACW-T801..T803: real-provider Coffee/Website canaries and their final runtime/bundle/mount/Artifact receipts remain blocked until exact-current-head trusted-Worker admission and verification pass.
+- The repository now exposes `npm run build` as the canonical WRP-compatible alias for `npm run quality`, so `verify.commit` with the control plane's `npm-build` profile executes Lucubro static checks plus the full Node unit suite instead of failing on a missing build script.
+- Real Codex remains fail-closed. Historical machine receipts and targeted/shadow tests are evidence, but they are not a substitute for exact-current-head trusted-Worker admission and verification.
 
 ## Slice 0: Luna Runtime Admission
 
-- **ACW-T001 [test]** Add pure verifier tests for exact approved profile, wrong profile/model, Fast enabled, wrong/default mode, wrong permission profile, and missing required attestation. Requirements: ACW-REQ-001..004,027. Files: `test/company-codex-profile.test.js`.
-- **ACW-T002 [impl]** Add Codex profile policy/verifier with fail-closed admission. Requirements: ACW-REQ-001..004,027. Files: `lib/company/runtime/codex-profile.js`.
+- **ACW-T001 [test]** Add pure verifier tests for exact approved model/reasoning/mode/Fast/permission fields, mismatches, and missing required attestation. Requirements: ACW-REQ-001..004,027. Files: `test/company-codex-profile.test.js`.
+- **ACW-T002 [impl]** Add Codex execution-profile policy/verifier with fail-closed admission. Requirements: ACW-REQ-001..004,027. Files: `lib/company/runtime/codex-profile.js`.
 - **ACW-T003 [test]** Prove `enableRealRuntimes` alone cannot expose Codex without verified admission and cannot expose another real provider. Requirements: ACW-REQ-001..004. Files: `test/company-runtime-policy.test.js`.
-- **ACW-T004 [impl]** Gate real Codex exposure on Luna admission while keeping mock behavior unchanged. Requirements: ACW-REQ-001..004. Files: `lib/company/runtime/policy.js`.
-- **ACW-T005 [test]** Add fake app-server tests for machine-readable preflight inputs: `model/list`, `config/read`, permission profile/active profile, and speed/service tier where available. Requirements: ACW-REQ-001..003,027.
+- **ACW-T004 [impl]** Gate real Codex exposure on exact approved admission while keeping mock behavior unchanged. Requirements: ACW-REQ-001..004. Files: `lib/company/runtime/policy.js`.
+- **ACW-T005 [test]** Add fake app-server tests for machine-readable preflight inputs: `model/list`, supported reasoning efforts, `config/read`, permission profile/active profile, and speed/service tier where available. Requirements: ACW-REQ-001..003,027.
 - **ACW-T006 [impl]** Add adapter preflight/attestation collection without enabling real runtime by default. Leave unprovable required properties unknown. Requirements: ACW-REQ-001..004,027.
-- **ACW-T007 [ops]** On trusted Worker, record exact machine-readable model id for operator label `Luna Max`, plus effective mode/Fast/permission evidence. Keep real execution blocked until receipt exists. Requirements: ACW-REQ-001..003.
+- **ACW-T007 [ops]** On the trusted Worker and exact Lucubro commit, record machine-readable evidence for model id `gpt-5.6-luna`, reasoning effort `max` support and Lucubro turn enforcement, default collaboration mode, Fast disabled, provider full access, no fallback, and ephemeral thread state. Keep real execution blocked until the exact-commit receipt exists. Requirements: ACW-REQ-001..003.
 - **ACW-T008 [test]** Prove provider `full access` cannot bypass Lucubro Delegation Envelope for network/git/destructive actions. Requirements: ACW-REQ-004.
 - **ACW-T009 [impl]** Add product-layer authority enforcement that remains effective under provider full access and does not rely solely on Codex sandbox restrictions. Requirements: ACW-REQ-004.
 
@@ -119,7 +126,7 @@ The corrected task map treats complete approved Matt/gstack-style bundles as the
 ## Gate discipline
 
 - Execute tasks in red -> green -> refactor order inside each slice.
-- Do not start real Codex Work before ACW-T001..T009 are satisfied on the trusted Worker.
+- Do not start real Codex Work before ACW-T001..T009 are satisfied on the trusted Worker for the exact deployed commit.
 - Do not treat provider full access as Lucubro product authority.
 - Do not create a new task-specific Skill to make Coffee, Website, or another canary pass unless the installed ecosystem genuinely lacks the methodology and the new Skill is broadly reusable beyond the canary.
 - Complete bundles are installed; individual Skill bodies are loaded/mounted lazily.
