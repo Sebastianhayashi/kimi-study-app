@@ -14,12 +14,34 @@
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const hasGsap = () => Boolean(window.gsap && !reducedMotion.matches);
+  let artifactRendererPromise = null;
 
   function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
     if (text != null) node.textContent = text;
     return node;
+  }
+
+  function ensureArtifactStyles() {
+    if (document.querySelector('link[data-company-canvas-artifact]')) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/company-canvas-artifact.css';
+    link.dataset.companyCanvasArtifact = 'true';
+    document.head.append(link);
+  }
+
+  async function ensureArtifactRenderer() {
+    ensureArtifactStyles();
+    if (window.LucubroCanvasArtifact?.renderArtifact) return window.LucubroCanvasArtifact;
+    if (!artifactRendererPromise) {
+      artifactRendererPromise = import('/company-canvas-artifact.js').then(() => {
+        if (!window.LucubroCanvasArtifact?.renderArtifact) throw new Error('Canvas Artifact renderer did not initialize.');
+        return window.LucubroCanvasArtifact;
+      });
+    }
+    return artifactRendererPromise;
   }
 
   function displayStatus(status) {
@@ -217,7 +239,7 @@
     await openWork(work.id, { preserveSelection: true, syncHistory: false });
   }
 
-  function renderDetail(work, runPayload) {
+  function renderDetail(work, runPayload, artifactPayload = null) {
     detailHost.replaceChildren();
 
     const detail = el('article', 'durable-work-detail');
@@ -248,6 +270,14 @@
     );
 
     const body = el('div', 'durable-work-detail-body');
+    const artifacts = Array.isArray(artifactPayload?.artifacts) ? artifactPayload.artifacts : [];
+    if (artifacts.length && window.LucubroCanvasArtifact?.renderArtifact) {
+      const canvasArtifact = window.LucubroCanvasArtifact.renderArtifact(
+        artifacts[artifacts.length - 1],
+        Array.isArray(artifactPayload?.evidence) ? artifactPayload.evidence : [],
+      );
+      if (canvasArtifact) body.append(canvasArtifact);
+    }
 
     if (!runPayload || !runPayload.run) {
       const empty = el('div', 'durable-work-evidence-empty');
@@ -282,7 +312,7 @@
           el('pre', '', artifact.diff || 'No textual diff was captured.'),
         );
         body.append(artifactDetail);
-      } else {
+      } else if (!artifacts.length) {
         const empty = el('div', 'durable-work-evidence-empty');
         empty.append(
           el('strong', '', 'No Artifact evidence yet.'),
@@ -341,6 +371,12 @@
     detail.dataset.statusLabel = statusLabel;
   }
 
+  async function fetchArtifactPayload(workId) {
+    const response = await fetch(`/api/company/works/${encodeURIComponent(workId)}/artifacts`);
+    if (!response.ok) throw new Error(`Work Artifacts unavailable (${response.status})`);
+    return response.json();
+  }
+
   async function openWork(workId, { preserveSelection = false, syncHistory = true } = {}) {
     const work = state.works.find((item) => item.id === workId);
     if (!work) return;
@@ -366,13 +402,18 @@
     detailHost.append(loading);
 
     try {
-      let runPayload = null;
-      if (work.activeRunId) {
-        const response = await fetch(`/api/company/runs/${encodeURIComponent(work.activeRunId)}`);
-        if (!response.ok) throw new Error(`Run evidence unavailable (${response.status})`);
-        runPayload = await response.json();
-      }
-      renderDetail(work, runPayload);
+      const runPromise = work.activeRunId
+        ? fetch(`/api/company/runs/${encodeURIComponent(work.activeRunId)}`).then(async (response) => {
+          if (!response.ok) throw new Error(`Run evidence unavailable (${response.status})`);
+          return response.json();
+        })
+        : Promise.resolve(null);
+      const [runPayload, artifactPayload] = await Promise.all([
+        runPromise,
+        fetchArtifactPayload(work.id),
+      ]);
+      if (Array.isArray(artifactPayload?.artifacts) && artifactPayload.artifacts.length) await ensureArtifactRenderer();
+      renderDetail(work, runPayload, artifactPayload);
     } catch (error) {
       detailHost.replaceChildren();
       const failure = el('div', 'durable-work-load-error');
