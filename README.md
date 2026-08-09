@@ -189,7 +189,9 @@ Agent controls browser
 
 The agent and user must not race each other silently. Mobile should default to low-bandwidth state and screenshots, then load live frames only when the user asks to watch.
 
-The current prototype does not yet implement remote Live View or takeover. These sit after the Worker and evidence contracts in the implementation order.
+Evidence pipeline v1 now provides typed, durable Run Evidence with persisted metadata/content, worktree diff evidence, and deterministic mock browser screenshots. Screenshot Evidence materializes inside the live Work object when the event arrives and remains available after reload. Raw evidence bytes are stored outside the append-only Run event log; events carry durable Evidence references/metadata instead.
+
+The deterministic screenshot is explicitly labeled mock evidence. Real browser capture, Playwright trace/video, remote Live View, and takeover are not implemented yet.
 
 ## Company Knowledge
 
@@ -261,22 +263,29 @@ CEO request
   → Intent object
   → durable Work
   → Ben · Software Engineer assignment
+  → durable local Worker assignment
   → isolated mock Run
   → normalized live activity on the same Work object
   → optional Needs You authority boundary
-  → diff Artifact
+  → typed Run Evidence
+       → worktree diff
+       → deterministic browser screenshot when requested
   → Ready for review
   → Accept or Rework
 ```
 
-The current development branch adds the first **Company Operating Map** slice. It projects existing durable Work under the Employee who owns it, keeps Run/evidence/decision state attached to the same Work object, survives reload, and makes Alex a company-level routing anchor rather than the visual center of a chat application.
+The current development branch includes the first **Company Operating Map** slice. It projects existing durable Work under the Employee who owns it, keeps Run/Evidence/decision state attached to the same Work object, survives reload, and makes Alex a company-level routing anchor rather than the visual center of a chat application.
+
+It also includes **Local Worker v1**: Worker identity is durable, every Run records its `workerId`, bootstrap exposes safe Worker capability/health context, and the Company Operating Map can show where a Run executes without promoting provider/model names into the default CEO surface.
+
+**Evidence pipeline v1** persists typed Evidence metadata and bytes outside the Run event log, exposes safe Evidence content endpoints, projects Evidence counts onto the operating map, materializes screenshot Evidence inside the live Work object, and restores the same Evidence in Durable Work detail after reload. The mock browser screenshot is deterministic and visibly labeled as such; it does not impersonate a real browser capture.
 
 The UI also combines:
 
 - reload-safe Durable Work Context;
 - contextual canvas lenses for durable Work, Employee responsibility, and advanced execution state;
 - a kinetic Execution setup with runtime choice and host Workspace selection;
-- Needs You authority decisions and Artifact review;
+- Needs You authority decisions and Artifact/Evidence review;
 - deterministic mock product events for interaction development.
 
 Reloading does not fabricate historical chat. Lucubro restores only durable state and evidence it can prove.
@@ -335,7 +344,7 @@ Klein blue is the brand axis, not a paint bucket:
 Motion has three scales:
 
 - **micro** - focus, selection, receipt, tree/disclosure behavior;
-- **object** - Intent, Work, Artifact, Decision, Worker-presence formation/update/settling;
+- **object** - Intent, Work, Artifact, Evidence, Decision, Worker-presence formation/update/settling;
 - **scene** - canvas focus changes while the shell remains continuous.
 
 GSAP owns choreography, not product truth. If GSAP fails or reduced motion is requested, all underlying state and actions remain understandable and usable.
@@ -385,12 +394,12 @@ Lucubro is the product source of truth for:
 
 - Work / Assignment state;
 - durable Employee identity;
+- durable Worker identity and Run attachment;
 - Run identity and lifecycle;
 - authorization and approval history;
-- Artifact evidence;
+- typed Run Evidence metadata/content and Artifact evidence;
 - CEO review decisions;
 - append-only product events;
-- future Worker identity/capability state;
 - future Company Knowledge/provenance state.
 
 Runtime providers own execution-specific mechanics such as model context, provider session/thread IDs, provider-specific tool calls, and protocol details. Provider sessions are references from Lucubro Runs, never product identity.
@@ -409,7 +418,7 @@ Remote Worker execution makes this boundary more important, not less. Worker pai
 
 Adapters exist for Claude Code / Agent SDK work, Codex App Server work, and deterministic mock execution.
 
-Real Claude/Codex execution is currently **paused as a product priority** while the Company Operating Map, Worker contract, evidence pipeline, and UI/UX interaction model are being stabilized. Real-provider smoke tests are not a release gate, and the UI must not imply a provider is ready merely because a binary is installed.
+Real Claude/Codex execution is currently **paused as a product priority** while the Company Operating Map, Worker contract, Evidence pipeline, and UI/UX interaction model are being stabilized. Real-provider smoke tests are not a release gate, and the UI must not imply a provider is ready merely because a binary is installed.
 
 ## Repository architecture
 
@@ -420,17 +429,20 @@ lib/company/
   ├── company-service.js      Work-level orchestration
   ├── work-store.js           durable Work state
   ├── run-store.js            durable Run state + append-only events
-  ├── run-orchestrator.js     execution lifecycle
+  ├── worker-store.js         durable Worker identity
+  ├── evidence-store.js       durable typed Evidence metadata/content
+  ├── evidence-response.js    safe browser content policy for Evidence
+  ├── run-orchestrator.js     execution lifecycle + Evidence normalization
   ├── approval-broker.js      Delegation Envelope → Needs You
   ├── worktree-manager.js     isolated coding worktrees
   ├── workspace-browser.js    confined host directory navigation
-  └── runtime/                provider adapters + mock
+  └── runtime/                provider adapters + deterministic mock evidence
 
 public/
   ├── company.html                 persistent Company Canvas Shell
-  ├── company.js                   live Work/event projection
-  ├── company-operating-map.js     Work → Employee operating projection
-  ├── company-durable.js           reload-safe Work Context
+  ├── company.js                   live Work/event/Evidence projection
+  ├── company-operating-map.js     Work → Employee → Worker/Evidence projection
+  ├── company-durable.js           reload-safe Work + Evidence Context
   ├── company-v3.js                semantic company-state projection
   ├── company-kinetic.js           Execution setup lifecycle motion
   ├── company-workspace.js         host tree/autocomplete/create-folder behavior
@@ -447,7 +459,7 @@ docs/company-workbench/
   └── SPEC.md                      current executable V1 engineering slice
 ```
 
-The planned Worker domain, remote transport, evidence pipeline, Capability Router, and Company Knowledge store are deliberately not represented above as existing modules yet.
+Remote Worker transport/pairing, real browser observation, Capability Router, and Company Knowledge remain future modules. Local Worker v1 and typed Evidence v1 are implemented in the active Company slice.
 
 ## Quality gates
 
@@ -457,7 +469,7 @@ npm test
 npx playwright test
 ```
 
-Company coverage includes Work/Run persistence, authorization, Artifact-before-completion ordering, review decisions, Durable Work Context, Company Operating Map projection, live canvas behavior, Workspace tree/path behavior, contextual lens continuity/history, keyboard/focus, mobile containment, reduced motion, and Klein-blue design states.
+Company coverage includes Work/Run persistence, durable Worker attachment, typed Evidence persistence/content safety, live and reload-safe Evidence projection, authorization, Artifact-before-completion ordering, review decisions, Durable Work Context, Company Operating Map projection, live canvas behavior, Workspace tree/path behavior, contextual lens continuity/history, keyboard/focus, mobile containment, reduced motion, and Klein-blue design states.
 
 Tests assert user-observable semantics rather than exact GSAP durations or transform values.
 
@@ -491,10 +503,10 @@ Important unfinished areas include:
 
 - Primary Manager clarification, planning, and Work Proposal behavior is still minimal;
 - Project domain/state growth from Work is not implemented in the new canvas model yet;
-- Worker domain, capability advertisement, pairing/revocation, health, and Run→Worker attachment are not implemented yet;
+- local Worker identity and Run→Worker attachment are implemented, but remote capability advertisement, health semantics, pairing/revocation, and multi-Worker routing are not;
 - authenticated off-LAN remote Worker transport is not implemented;
 - browser Live View and human takeover are not implemented;
-- screenshot/trace/video/test-report evidence is not yet normalized into one Run evidence pipeline;
+- typed diff Evidence and deterministic mock screenshot Evidence are implemented, but real browser screenshots, Playwright trace/video, and test-report capture are not connected yet;
 - Capability Router and automatic cost/quality routing are not implemented;
 - Company Knowledge has a governing product contract but not yet a canonical persisted store/provenance implementation;
 - Usage/account have not yet been reintroduced contextually around execution and routing;
