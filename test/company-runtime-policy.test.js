@@ -13,6 +13,18 @@ function fakeRuntime(kind) {
   };
 }
 
+function approvedAdmission(overrides = {}) {
+  return {
+    admitted: true,
+    modelId: 'gpt-5.6-luna',
+    reasoningEffort: 'max',
+    mode: 'default',
+    fast: false,
+    permissionProfile: 'full-access',
+    ...overrides,
+  };
+}
+
 test('real provider runtimes are unavailable by default even when their adapters report ready', async () => {
   const registry = applyRuntimePolicy(new Map([
     ['claude-code', fakeRuntime('claude-agent-sdk')],
@@ -20,34 +32,24 @@ test('real provider runtimes are unavailable by default even when their adapters
     ['mock', fakeRuntime('mock')],
   ]));
 
-  assert.deepEqual(await registry.get('codex').available(), {
-    available: false,
-    paused: true,
-    reason: 'Real provider execution is paused. Enable it explicitly only after the approved runtime policy is enforced.',
-  });
-  assert.deepEqual(await registry.get('claude-code').available(), {
-    available: false,
-    paused: true,
-    reason: 'Real provider execution is paused. Enable it explicitly only after the approved runtime policy is enforced.',
-  });
+  assert.equal((await registry.get('codex').available()).available, false);
+  assert.equal((await registry.get('claude-code').available()).available, false);
   assert.equal((await registry.get('mock').available()).available, true);
 });
 
-test('explicit real-runtime opt-in still blocks Codex without Luna admission', async () => {
+test('explicit real-runtime opt-in still blocks Codex without exact Luna max-effort admission', async () => {
   const codex = fakeRuntime('codex-app-server');
   const registry = applyRuntimePolicy(new Map([['codex', codex]]), {
     enableRealRuntimes: true,
   });
 
   assert.notEqual(registry.get('codex'), codex);
-  assert.deepEqual(await registry.get('codex').available(), {
-    available: false,
-    paused: true,
-    reason: 'Real Codex is blocked until Luna Max profile admission is verified.',
-  });
+  const state = await registry.get('codex').available();
+  assert.equal(state.available, false);
+  assert.match(state.reason, /gpt-5\.6-luna.*max effort/i);
 });
 
-test('verified Luna admission exposes Codex but Claude stays blocked', async () => {
+test('only exact approved Codex execution profile is exposed; weaker effort and Claude stay blocked', async () => {
   const codex = fakeRuntime('codex-app-server');
   const claude = fakeRuntime('claude-agent-sdk');
   const registry = applyRuntimePolicy(new Map([
@@ -55,15 +57,18 @@ test('verified Luna admission exposes Codex but Claude stays blocked', async () 
     ['claude-code', claude],
   ]), {
     enableRealRuntimes: true,
-    admissions: new Map([['codex', { admitted: true, profileName: 'Luna Max' }]]),
+    admissions: new Map([['codex', approvedAdmission()]]),
   });
 
   assert.equal(registry.get('codex'), codex);
   assert.equal((await registry.get('codex').available()).available, true);
   assert.notEqual(registry.get('claude-code'), claude);
-  assert.deepEqual(await registry.get('claude-code').available(), {
-    available: false,
-    paused: true,
-    reason: 'Only Codex Luna Max is permitted for Lucubro AI execution.',
+  assert.match((await registry.get('claude-code').available()).reason, /gpt-5\.6-luna.*max effort/i);
+
+  const weak = applyRuntimePolicy(new Map([['codex', codex]]), {
+    enableRealRuntimes: true,
+    admissions: { codex: approvedAdmission({ reasoningEffort: 'high' }) },
   });
+  assert.notEqual(weak.get('codex'), codex);
+  assert.equal((await weak.get('codex').available()).available, false);
 });
