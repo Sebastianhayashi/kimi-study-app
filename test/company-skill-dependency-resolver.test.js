@@ -26,7 +26,15 @@ function write(root, relative, content) {
 function setupCatalog(t) {
   const dataRoot = tempRoot(t);
   const sourceRoot = tempRoot(t, 'lucubro-skill-deps-source-');
-  write(sourceRoot, 'skills/engineering/implement/SKILL.md', `---\nname: implement\ndescription: Implement a planned change.\n---\n# Implement\nUse \\`/tdd\\` for the build loop. Read [review guidance](references/review.md). Run \\`scripts/check.sh\\`. Ignore \\`../../../../outside-secret.txt\\`.\n`);
+  write(sourceRoot, 'skills/engineering/implement/SKILL.md', [
+    '---',
+    'name: implement',
+    'description: Implement a planned change.',
+    '---',
+    '# Implement',
+    'Use `/tdd` for the build loop. Read [review guidance](references/review.md). Run `scripts/check.sh`. Ignore `../../../../outside-secret.txt`.',
+    '',
+  ].join('\n'));
   write(sourceRoot, 'skills/engineering/implement/references/review.md', '# Review guidance\nSee [checklist](checklist.md).\n');
   write(sourceRoot, 'skills/engineering/implement/references/checklist.md', '# Checklist\n');
   write(sourceRoot, 'skills/engineering/implement/scripts/check.sh', '#!/usr/bin/env bash\nexit 0\n');
