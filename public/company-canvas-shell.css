@@ -372,18 +372,10 @@ body[data-canvas-lens]:not([data-canvas-lens="manager"]) .product-page-header::b
     transform: translateX(-50%);
   }
 
-  body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-
   body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) textarea {
     padding-left: 12px;
     padding-right: 10px;
     font-size: 13px;
-  }
-
-  body[data-company-has-work="true"] .composer:not(:focus-within):not(:has(.run-settings[open])) .settings-summary-label {
-    display: none;
   }
 }
 
