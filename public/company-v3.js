@@ -9,6 +9,7 @@
   const feed = document.querySelector('#conversation-feed');
   const durableContext = document.querySelector('#durable-work-context');
   const needsCount = document.querySelector('#needs-you-count');
+  const brief = document.querySelector('#work-brief');
 
   if (!context || !contextCopy || !activeCount || !reviewCount || !decisionCount || !feed || !needsCount) return;
 
@@ -96,7 +97,10 @@
     setMetric(reviewCount, review);
     setMetric(decisionCount, decisions);
 
-    document.body.dataset.companyHasWork = cards.length ? 'true' : 'false';
+    const hadWork = document.body.dataset.companyHasWork === 'true';
+    const hasWork = cards.length > 0;
+    document.body.dataset.companyHasWork = hasWork ? 'true' : 'false';
+    if (!hadWork && hasWork && brief && document.activeElement === brief) brief.blur();
 
     if (decisions > 0) {
       context.dataset.state = 'decision';
