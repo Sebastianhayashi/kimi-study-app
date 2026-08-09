@@ -165,6 +165,7 @@ function createCompanyServer({
   app.post('/api/company/projects', requireWorkspaceAccess, (req, res) => {
     try {
       const body = req.body || {};
+      if (!body.repoDir || !String(body.repoDir).trim()) throw new Error('Project repoDir is required.');
       const inspected = workspaces.inspect(body.repoDir);
       if (!inspected || !inspected.exists || !inspected.isDirectory) throw new Error('Project repoDir must be an existing directory.');
       const project = company.adoptProject({ repoDir: inspected.path || body.repoDir, name: body.name || null });
