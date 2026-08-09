@@ -11,6 +11,7 @@ const {
 
 const REPO = 'Sebastianhayashi/lucubro';
 const COMMIT = '1234567890abcdef1234567890abcdef12345678';
+const MODEL_ID = 'gpt-5.6-luna';
 
 function digest(char) {
   return `sha256:${char.repeat(64)}`;
@@ -24,14 +25,14 @@ function hostDiagnostic() {
       platformOs: 'linux',
     },
     approvedModel: {
-      expectedModelId: 'gpt-5.6-luna',
+      expectedModelId: MODEL_ID,
       uniqueMatch: true,
-      modelId: 'gpt-5.6-luna',
+      modelId: MODEL_ID,
       displayName: 'GPT-5.6-Luna',
       supportedReasoningEfforts: ['low', 'medium', 'high', 'max'],
       maxReasoningEffortSupported: true,
     },
-    effectiveConfig: { modelId: 'gpt-5.6-luna', modelProvider: 'openai', serviceTier: null },
+    effectiveConfig: { modelId: MODEL_ID, modelProvider: 'openai', serviceTier: null },
     permissionProfiles: [
       { id: ':workspace', description: 'Workspace access', allowed: true },
       { id: ':danger-full-access', description: 'Full access', allowed: true },
@@ -70,6 +71,17 @@ function bundleObservations() {
   ];
 }
 
+function machineInput() {
+  return {
+    cwd: '/checkout/lucubro',
+    dataDir: '/var/lib/lucubro',
+    receiptFile: '/var/lib/lucubro/runtime/codex-admission.json',
+    systemdRunExecutable: '/run/current-system/sw/bin/systemd-run',
+    gitExecutable: '/run/current-system/sw/bin/git',
+    scratchRoot: '/var/tmp/lucubro-admission',
+  };
+}
+
 test('GitHub remote normalization accepts canonical HTTPS/SSH forms and rejects another host', () => {
   assert.equal(normalizeGitHubRepository('https://github.com/Sebastianhayashi/lucubro.git'), REPO);
   assert.equal(normalizeGitHubRepository('git@github.com:Sebastianhayashi/lucubro.git'), REPO);
@@ -86,16 +98,9 @@ test('full-access selector fails closed unless exactly one allowed provider prof
   ]), /exactly one full-access provider profile/i);
 });
 
-test('machine collector binds checkout identity, host catalog, ephemeral Luna thread, authority probes, and bundle roots before writing a receipt', async () => {
+test('machine collector binds checkout identity, exact Luna model, full-access profile, authority probes, and bundle roots before writing a receipt', async () => {
   const calls = [];
-  const result = await collectCodexAdmissionOnMachine({
-    cwd: '/checkout/lucubro',
-    dataDir: '/var/lib/lucubro',
-    receiptFile: '/var/lib/lucubro/runtime/codex-admission.json',
-    systemdRunExecutable: '/run/current-system/sw/bin/systemd-run',
-    gitExecutable: '/run/current-system/sw/bin/git',
-    scratchRoot: '/var/tmp/lucubro-admission',
-  }, {
+  const result = await collectCodexAdmissionOnMachine(machineInput(), {
     readGitIdentityImpl() {
       calls.push(['git']);
       return { repo: REPO, commit: COMMIT };
@@ -107,7 +112,7 @@ test('machine collector binds checkout identity, host catalog, ephemeral Luna th
     async probeThreadImpl(input) {
       calls.push(['thread', input]);
       return {
-        modelId: 'gpt-5.6-luna',
+        modelId: MODEL_ID,
         modelProvider: 'openai',
         serviceTier: null,
         activePermissionProfileId: ':danger-full-access',
@@ -146,8 +151,9 @@ test('machine collector binds checkout identity, host catalog, ephemeral Luna th
   assert.equal(calls[0][0], 'git');
   assert.equal(calls[1][0], 'host');
   assert.equal(calls[2][0], 'thread');
+  assert.equal(calls[2][1].modelId, MODEL_ID);
   assert.equal(calls[2][1].permissionProfileId, ':danger-full-access');
-  assert.equal(calls[2][1].modelProvider, 'openai');
+  assert.equal(Object.hasOwn(calls[2][1], 'modelProvider'), false);
   assert.equal(calls[3][0], 'authority');
   assert.equal(calls[4][0], 'bundles');
   assert.equal(calls[5][0], 'write');
@@ -155,17 +161,34 @@ test('machine collector binds checkout identity, host catalog, ephemeral Luna th
   assert.equal(calls[5][1].expectedCommit, COMMIT);
 });
 
+test('machine collector rejects an ambiguous, wrong, or non-max Luna catalog before thread creation', async () => {
+  for (const mutate of [
+    (diagnostic) => { diagnostic.approvedModel.uniqueMatch = false; },
+    (diagnostic) => { diagnostic.approvedModel.modelId = 'gpt-5.6-sol'; },
+    (diagnostic) => {
+      diagnostic.approvedModel.supportedReasoningEfforts = ['low', 'medium', 'high'];
+      diagnostic.approvedModel.maxReasoningEffortSupported = false;
+    },
+  ]) {
+    let threadCalled = false;
+    const diagnostic = hostDiagnostic();
+    mutate(diagnostic);
+    await assert.rejects(
+      collectCodexAdmissionOnMachine(machineInput(), {
+        readGitIdentityImpl() { return { repo: REPO, commit: COMMIT }; },
+        async inspectHostImpl() { return diagnostic; },
+        async probeThreadImpl() { threadCalled = true; throw new Error('thread must not be called'); },
+      }),
+      /approved Luna catalog/i,
+    );
+    assert.equal(threadCalled, false);
+  }
+});
+
 test('machine collector rejects a checkout from another repo before any Codex host call', async () => {
   let hostCalled = false;
   await assert.rejects(
-    collectCodexAdmissionOnMachine({
-      cwd: '/checkout/lucubro',
-      dataDir: '/var/lib/lucubro',
-      receiptFile: '/var/lib/lucubro/runtime/codex-admission.json',
-      systemdRunExecutable: '/run/current-system/sw/bin/systemd-run',
-      gitExecutable: '/run/current-system/sw/bin/git',
-      scratchRoot: '/var/tmp/lucubro-admission',
-    }, {
+    collectCodexAdmissionOnMachine(machineInput(), {
       readGitIdentityImpl() { return { repo: 'someone/fork', commit: COMMIT }; },
       async inspectHostImpl() { hostCalled = true; return hostDiagnostic(); },
     }),
