@@ -107,6 +107,67 @@ test('semantic Artifact content remains a renderer-independent proposal event', 
   assert.equal(result.event.subrunId, fixture.context.subrunId);
 });
 
+test('Project Memory patch becomes a sanitized proposal only when referenced Evidence belongs to the Work', async (t) => {
+  const fixture = setup(t);
+  await fixture.ingestor.ingest({
+    ...fixture.context,
+    output: {
+      type: 'evidence',
+      evidence: {
+        kind: 'product-candidate',
+        label: 'Taobao sofa-cover candidate',
+        mimeType: 'text/plain',
+        source: 'user-supplied',
+        content: 'Candidate dimensions and listing observations.',
+      },
+    },
+  });
+
+  const result = await fixture.ingestor.ingest({
+    ...fixture.context,
+    output: {
+      type: 'project.memory.patch',
+      summary: 'Evaluated the new sofa-cover candidate against the existing sofa frontier.',
+      evidenceRefs: ['evidence_skill_1'],
+      mutation: {
+        report: {
+          changed: 'A segment-level full-cover candidate is now the leading reversible option.',
+          nextAction: 'Measure the three sofa segments against the seller size chart.',
+        },
+        frontiersUpsert: [{
+          id: 'frontier_sofa',
+          title: 'Sofa visual refresh',
+          status: 'active',
+          summary: 'Validate the candidate before purchase.',
+          nextAction: 'Measure the three sofa segments against the seller size chart.',
+          evidenceIds: ['evidence_skill_1'],
+        }],
+      },
+    },
+  });
+
+  assert.equal(result.classification, 'project-memory');
+  assert.equal(result.accepted, true);
+  assert.equal(result.event.type, 'project.memory.proposed');
+  assert.deepEqual(result.event.evidenceRefs, ['evidence_skill_1']);
+  assert.equal(result.event.mutation.frontiersUpsert[0].id, 'frontier_sofa');
+  assert.equal(JSON.stringify(result.event).includes('transcript'), false);
+
+  const missing = await fixture.ingestor.ingest({
+    ...fixture.context,
+    output: {
+      type: 'project.memory.patch',
+      summary: 'This missing Evidence reference must fail closed.',
+      evidenceRefs: ['evidence_missing'],
+      mutation: { report: { changed: 'Must not become canonical.' } },
+    },
+  });
+  assert.equal(missing.classification, 'project-memory');
+  assert.equal(missing.accepted, false);
+  assert.equal(missing.event.type, 'project.memory.blocked');
+  assert.deepEqual(missing.event.missingEvidenceRefs, ['evidence_missing']);
+});
+
 test('workspace diff is stored as Evidence and raw diff is not copied into the public event', async (t) => {
   const fixture = setup(t);
   const result = await fixture.ingestor.ingest({
