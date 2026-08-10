@@ -14,6 +14,8 @@ const { createRunStore } = require('./lib/company/run-store');
 const { createWorkStore } = require('./lib/company/work-store');
 const { createWorkerStore } = require('./lib/company/worker-store');
 const { createProjectStore } = require('./lib/company/project-store');
+const { createProjectRevisionStore } = require('./lib/company/project-revision-store');
+const { createProjectMemoryService } = require('./lib/company/project-memory-service');
 const { discoverProjectSources } = require('./lib/company/project-discovery');
 const { createApprovalBroker } = require('./lib/company/approval-broker');
 const { createRunOrchestrator } = require('./lib/company/run-orchestrator');
@@ -52,6 +54,8 @@ function createCompanyServer({
   workspaceBrowser = null,
   workerStore = null,
   projectStore = null,
+  projectRevisionStore = null,
+  projectMemoryService = null,
   projectDiscovery = discoverProjectSources,
   evidenceStore = null,
   canvasArtifactStore = null,
@@ -72,6 +76,11 @@ function createCompanyServer({
   const runStore = createRunStore({ rootDir: dataDir });
   const workStore = createWorkStore({ rootDir: dataDir });
   const projects = projectStore || createProjectStore({ rootDir: dataDir });
+  const projectRevisions = projectRevisionStore || createProjectRevisionStore({ rootDir: dataDir });
+  const projectMemory = projectMemoryService || createProjectMemoryService({
+    projectStore: projects,
+    revisionStore: projectRevisions,
+  });
   const workers = workerStore || createWorkerStore({ rootDir: dataDir });
   const evidence = evidenceStore || createEvidenceStore({ rootDir: dataDir });
   const canvasArtifacts = canvasArtifactStore || createCanvasArtifactStore({ rootDir: dataDir, evidenceStore: evidence });
@@ -146,6 +155,7 @@ function createCompanyServer({
     runOrchestrator,
     projectStore: projects,
     projectDiscovery,
+    projectMemoryService: projectMemory,
     workPlanner,
     defaultWorkerId: localWorker.id,
   });
@@ -522,6 +532,8 @@ function createCompanyServer({
     app,
     company,
     projectStore: projects,
+    projectRevisionStore: projectRevisions,
+    projectMemoryService: projectMemory,
     runStore,
     workStore,
     workerStore: workers,
