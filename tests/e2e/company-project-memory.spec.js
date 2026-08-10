@@ -112,3 +112,24 @@ test('reload restores the same Project and Frontier identities with the latest s
   await expect(project.locator('[data-frontier-id="frontier_sofa"]')).toContainText('Size fit is plausible');
   await expect(project.getByTestId('project-next-action')).toContainText('Review real buyer photos');
 });
+
+test('composer continues the visible Project without requiring a fake repository path', async ({ page }) => {
+  await page.goto(`${URL}/company`);
+  const project = page.getByTestId('project-result');
+  await expect(project).toBeVisible();
+  await expect(project.getByRole('button', { name: 'Working in Home refresh' })).toHaveAttribute('aria-pressed', 'true');
+
+  await expect(page.locator('#repo-dir')).toHaveValue('');
+  await page.locator('#work-brief').fill('I found another Taobao sofa-cover listing. Compare it with the current sofa plan.');
+  await expect(page.locator('#send-work')).toBeEnabled();
+  await page.locator('#send-work').click();
+
+  const workObject = page.locator('.work-object').filter({ hasText: 'another Taobao sofa-cover listing' }).first();
+  await expect(workObject).toBeVisible();
+
+  await expect.poll(async () => page.evaluate(async () => {
+    const data = await fetch('/api/company/bootstrap', { cache: 'no-store' }).then((response) => response.json());
+    const work = data.works.find((item) => item.brief.includes('another Taobao sofa-cover listing'));
+    return work ? { projectId: work.projectId, repoDir: work.repoDir } : null;
+  })).toEqual({ projectId: 'project_home_refresh', repoDir: null });
+});
