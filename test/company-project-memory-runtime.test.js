@@ -80,7 +80,7 @@ test('later Work resumes a non-repository Project from durable memory without in
   });
 
   const result = await company.createWork({
-    brief: 'I found a new Taobao sofa-cover candidate. Evaluate it against what we already know.',
+    brief: 'I found a new Taobao sofa-cover candidate https://item.taobao.com/item.htm?id=12345. Evaluate it against what we already know.',
     projectId: 'project_home_refresh',
     runtime: 'mock',
   });
@@ -92,4 +92,9 @@ test('later Work resumes a non-repository Project from durable memory without in
   assert.match(capturedStart.prompt, /Improve the home continuously/);
   assert.match(capturedStart.prompt, /Sofa visual refresh/);
   assert.match(capturedStart.prompt, /Prefer reversible high-ROI changes first/);
+  assert.equal(capturedStart.inputEvidence.length, 1);
+  assert.equal(capturedStart.inputEvidence[0].kind, 'link');
+  assert.equal(capturedStart.inputEvidence[0].source, 'user-input');
+  assert.equal(capturedStart.inputEvidence[0].metadata.url, 'https://item.taobao.com/item.htm?id=12345');
+  assert.equal(capturedStart.inputEvidence[0].metadata.projectId, 'project_home_refresh');
 });
