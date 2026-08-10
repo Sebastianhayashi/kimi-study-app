@@ -7,10 +7,16 @@
   const stageUpdated = document.querySelector('#project-result-updated');
   if (!stage || !host) return;
 
+  const MAX_ATTACHMENT_IMAGES = 4;
+  const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
+  const SUPPORTED_ATTACHMENT_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+  const nativeFetch = window.fetch.bind(window);
   const state = {
     projects: new Map(),
     currentProjectId: null,
     projectedRuns: new Set(),
+    attachmentFiles: [],
+    attachmentPreviewUrls: [],
   };
 
   function text(value) {
@@ -86,6 +92,74 @@
     return card;
   }
 
+  function evidenceContentUrl(item) {
+    return `/api/company/evidence/${encodeURIComponent(item.id)}/content`;
+  }
+
+  function evidencePreviewNode(item) {
+    const link = document.createElement('a');
+    link.className = 'project-evidence-preview';
+    link.dataset.evidenceId = item.id;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+
+    if (String(item.mimeType || '').startsWith('image/')) {
+      link.href = evidenceContentUrl(item);
+      const image = document.createElement('img');
+      image.src = evidenceContentUrl(item);
+      image.alt = item.label || 'Project evidence image';
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      link.append(image);
+    } else if (item.metadata && item.metadata.url) {
+      link.href = item.metadata.url;
+      link.append(el('span', 'project-evidence-preview-glyph', '↗'));
+    } else {
+      link.href = evidenceContentUrl(item);
+      link.append(el('span', 'project-evidence-preview-glyph', String(item.kind || 'E').slice(0, 1).toUpperCase()));
+    }
+
+    const caption = el('span', 'project-evidence-preview-caption');
+    caption.append(
+      el('strong', '', item.source === 'user-input' ? 'You sent' : (item.label || 'Evidence')),
+      el('small', '', item.metadata && item.metadata.filename ? item.metadata.filename : (item.kind || 'evidence')),
+    );
+    link.append(caption);
+    return link;
+  }
+
+  async function renderContextualEvidence(project) {
+    if (!project || !project.id) return;
+    let response;
+    try {
+      response = await nativeFetch(`/api/company/projects/${encodeURIComponent(project.id)}/evidence`, {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+      });
+    } catch {
+      return;
+    }
+    if (!response.ok) return;
+    const payload = await response.json();
+    const evidenceById = new Map((Array.isArray(payload.evidence) ? payload.evidence : []).map((item) => [item.id, item]));
+    const current = host.querySelector(`.project-result[data-project-id="${CSS.escape(project.id)}"]`);
+    if (!current) return;
+    const frontiers = Array.isArray(project.memory && project.memory.frontiers) ? project.memory.frontiers : [];
+    for (const frontier of frontiers) {
+      const card = current.querySelector(`[data-frontier-id="${CSS.escape(frontier.id)}"]`);
+      if (!card) continue;
+      card.querySelector('.project-frontier-evidence')?.remove();
+      const items = (Array.isArray(frontier.evidenceIds) ? frontier.evidenceIds : [])
+        .map((id) => evidenceById.get(id))
+        .filter(Boolean);
+      if (!items.length) continue;
+      const strip = el('div', 'project-frontier-evidence');
+      strip.setAttribute('aria-label', 'Evidence for this Project frontier');
+      for (const item of items.slice(0, 4)) strip.append(evidencePreviewNode(item));
+      card.append(strip);
+    }
+  }
+
   function renderProject(project, { activate = false } = {}) {
     const memory = project.memory || {};
     const report = memory.report && typeof memory.report === 'object' ? memory.report : {};
@@ -152,6 +226,7 @@
     stage.hidden = false;
     document.body.dataset.hasProjectMemory = 'true';
     if (activate) syncProjectFocus(project);
+    void renderContextualEvidence(project);
   }
 
   function hideProjectSurface() {
@@ -188,16 +263,26 @@
     const evidence = el('article', 'run-evidence-item');
     evidence.dataset.evidenceId = item.id;
     evidence.dataset.evidenceKind = item.kind || 'unknown';
-    const glyph = el('div', 'run-evidence-glyph', String(item.kind || 'evidence').slice(0, 1).toUpperCase());
-    glyph.setAttribute('aria-hidden', 'true');
+    if (String(item.mimeType || '').startsWith('image/')) {
+      const image = document.createElement('img');
+      image.src = evidenceContentUrl(item);
+      image.alt = item.label || 'User input image';
+      image.loading = 'eager';
+      image.decoding = 'async';
+      evidence.append(image);
+    } else {
+      const glyph = el('div', 'run-evidence-glyph', String(item.kind || 'evidence').slice(0, 1).toUpperCase());
+      glyph.setAttribute('aria-hidden', 'true');
+      evidence.append(glyph);
+    }
     const copy = el('div', 'run-evidence-copy');
     copy.append(
       el('strong', '', item.label || item.kind || 'Evidence'),
       el('span', 'run-evidence-source', `User input · ${item.kind || 'evidence'}`),
     );
-    const url = item.metadata && item.metadata.url;
-    if (url) copy.append(el('span', 'run-evidence-context', url));
-    evidence.append(glyph, copy);
+    const context = item.metadata && (item.metadata.filename || item.metadata.url);
+    if (context) copy.append(el('span', 'run-evidence-context', context));
+    evidence.append(copy);
     grid.append(evidence);
     shelf.querySelector('.run-evidence-count').textContent = `${grid.children.length} captured`;
   }
@@ -205,17 +290,15 @@
   async function projectRunInputEvidence(card) {
     const runId = text(card && card.dataset && card.dataset.runId);
     if (!runId || state.projectedRuns.has(runId)) return;
-    state.projectedRuns.add(runId);
     try {
-      const response = await fetch(`/api/company/runs/${encodeURIComponent(runId)}`, {
+      const response = await nativeFetch(`/api/company/runs/${encodeURIComponent(runId)}`, {
         headers: { Accept: 'application/json' },
         cache: 'no-store',
       });
       if (!response.ok) return;
       const payload = await response.json();
-      for (const item of Array.isArray(payload.evidence) ? payload.evidence : []) {
-        renderUserEvidence(card, item);
-      }
+      for (const item of Array.isArray(payload.evidence) ? payload.evidence : []) renderUserEvidence(card, item);
+      state.projectedRuns.add(runId);
     } catch {
       // The normal Run stream remains authoritative; this projection is best-effort UI hydration.
     }
@@ -233,10 +316,166 @@
     window.addEventListener('pagehide', () => observer.disconnect(), { once: true });
   }
 
+  function attachmentError(message = '') {
+    const error = document.querySelector('#composer-error');
+    if (!error) return;
+    error.textContent = message;
+    error.hidden = !message;
+  }
+
+  function revokeAttachmentPreviews() {
+    for (const url of state.attachmentPreviewUrls) URL.revokeObjectURL(url);
+    state.attachmentPreviewUrls = [];
+  }
+
+  function renderAttachmentTray() {
+    const tray = document.querySelector('#work-attachment-tray');
+    if (!tray) return;
+    revokeAttachmentPreviews();
+    tray.replaceChildren();
+    tray.hidden = state.attachmentFiles.length === 0;
+    state.attachmentFiles.forEach((file, index) => {
+      const card = el('div', 'composer-attachment');
+      card.dataset.testid = 'composer-attachment';
+      const url = URL.createObjectURL(file);
+      state.attachmentPreviewUrls.push(url);
+      const image = document.createElement('img');
+      image.src = url;
+      image.alt = '';
+      const copy = el('span', 'composer-attachment-copy');
+      copy.append(el('strong', '', file.name || `Photo ${index + 1}`), el('small', '', `${Math.max(1, Math.round(file.size / 1024))} KB`));
+      const remove = el('button', 'composer-attachment-remove', '×');
+      remove.type = 'button';
+      remove.setAttribute('aria-label', `Remove ${file.name || `photo ${index + 1}`}`);
+      remove.addEventListener('click', () => {
+        state.attachmentFiles.splice(index, 1);
+        renderAttachmentTray();
+      });
+      card.append(image, copy, remove);
+      tray.append(card);
+    });
+  }
+
+  function acceptAttachmentFiles(files) {
+    const incoming = Array.from(files || []);
+    if (!incoming.length) return;
+    if (state.attachmentFiles.length + incoming.length > MAX_ATTACHMENT_IMAGES) {
+      attachmentError(`Add up to ${MAX_ATTACHMENT_IMAGES} photos at a time.`);
+      return;
+    }
+    for (const file of incoming) {
+      if (!SUPPORTED_ATTACHMENT_TYPES.has(String(file.type || '').toLowerCase())) {
+        attachmentError('Photos must be JPEG, PNG, or WebP.');
+        return;
+      }
+      if (file.size > MAX_ATTACHMENT_BYTES) {
+        attachmentError('Each photo must be 8 MB or smaller.');
+        return;
+      }
+    }
+    attachmentError('');
+    state.attachmentFiles.push(...incoming);
+    renderAttachmentTray();
+  }
+
+  function clearAttachmentFiles() {
+    state.attachmentFiles = [];
+    const input = document.querySelector('#work-attachments');
+    if (input) input.value = '';
+    renderAttachmentTray();
+  }
+
+  function installAttachmentComposer() {
+    const composerMain = document.querySelector('.composer-main');
+    if (!composerMain || document.querySelector('#work-attachments')) return;
+    const controls = el('div', 'composer-input-tools');
+    const add = el('button', 'composer-photo-button', 'Add photos');
+    add.type = 'button';
+    add.setAttribute('aria-label', 'Add photos to this Project update');
+    const input = document.createElement('input');
+    input.id = 'work-attachments';
+    input.type = 'file';
+    input.multiple = true;
+    input.accept = 'image/jpeg,image/png,image/webp';
+    input.hidden = true;
+    input.addEventListener('change', () => {
+      acceptAttachmentFiles(input.files);
+      input.value = '';
+    });
+    add.addEventListener('click', () => input.click());
+    controls.append(add, input);
+    const tray = el('div', 'composer-attachment-tray');
+    tray.id = 'work-attachment-tray';
+    tray.setAttribute('aria-label', 'Photos attached to this update');
+    tray.hidden = true;
+    composerMain.append(controls, tray);
+  }
+
+  function isWorkCreateRequest(input, init = {}) {
+    const method = String(init.method || (input instanceof Request ? input.method : 'GET')).toUpperCase();
+    if (method !== 'POST') return false;
+    const rawUrl = input instanceof Request ? input.url : String(input || '');
+    try {
+      return new URL(rawUrl, window.location.origin).pathname === '/api/company/works';
+    } catch {
+      return false;
+    }
+  }
+
+  function multipartWorkBody(json) {
+    const form = new FormData();
+    for (const key of ['brief', 'repoDir', 'projectId', 'runtime', 'employeeId', 'model']) {
+      const value = json[key];
+      if (value != null && String(value).length) form.set(key, String(value));
+    }
+    for (const file of state.attachmentFiles) form.append('attachments', file, file.name || 'photo');
+    return form;
+  }
+
+  async function waitForProjectCommit(runId) {
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      try {
+        const response = await nativeFetch(`/api/company/runs/${encodeURIComponent(runId)}`, { cache: 'no-store' });
+        if (response.ok) {
+          const payload = await response.json();
+          if (payload.run && payload.run.status === 'completed') {
+            state.projectedRuns.delete(runId);
+            window.dispatchEvent(new CustomEvent('lucubro:project-memory-refresh'));
+            return;
+          }
+          if (payload.run && ['failed', 'cancelled'].includes(payload.run.status)) return;
+        }
+      } catch {
+        // The normal stream owns execution recovery; this poll only refreshes the semantic Project projection.
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  }
+
+  function installWorkFetchBridge() {
+    window.fetch = async (input, init = {}) => {
+      if (!state.attachmentFiles.length || !isWorkCreateRequest(input, init) || typeof init.body !== 'string') {
+        return nativeFetch(input, init);
+      }
+      let json;
+      try { json = JSON.parse(init.body); }
+      catch { return nativeFetch(input, init); }
+      const headers = new Headers(init.headers || {});
+      headers.delete('Content-Type');
+      const response = await nativeFetch(input, { ...init, headers, body: multipartWorkBody(json) });
+      if (response.ok) {
+        const payload = await response.clone().json().catch(() => null);
+        clearAttachmentFiles();
+        if (payload && payload.run && payload.run.id) void waitForProjectCommit(payload.run.id);
+      }
+      return response;
+    };
+  }
+
   async function load() {
     let response;
     try {
-      response = await fetch('/api/company/bootstrap', { headers: { Accept: 'application/json' }, cache: 'no-store' });
+      response = await nativeFetch('/api/company/bootstrap', { headers: { Accept: 'application/json' }, cache: 'no-store' });
     } catch {
       hideProjectSurface();
       return;
@@ -258,6 +497,10 @@
   }
 
   window.addEventListener('lucubro:project-memory-refresh', load);
+  installAttachmentComposer();
+  installWorkFetchBridge();
   observeWorkEvidence();
   load();
+
+  window.addEventListener('pagehide', () => revokeAttachmentPreviews(), { once: true });
 })();
