@@ -10,6 +10,8 @@ const { createPandocCanvasPdfRenderer } = require('./lib/company/canvas-artifact
 const { createCanvasArtifactStore } = require('./lib/company/canvas-artifact-store');
 const { createEvidenceStore } = require('./lib/company/evidence-store');
 const { evidenceResponsePolicy } = require('./lib/company/evidence-response');
+const { attachmentEvidence, createWorkAttachmentMiddleware } = require('./lib/company/work-input-attachments');
+const { projectEvidence } = require('./lib/company/project-evidence');
 const { createRunStore } = require('./lib/company/run-store');
 const { createWorkStore } = require('./lib/company/work-store');
 const { createWorkerStore } = require('./lib/company/worker-store');
@@ -69,6 +71,7 @@ function createCompanyServer({
   if (typeof createSystemdAuthorityBoundary !== 'function') throw new Error('Company server createSystemdAuthorityBoundary must be a function.');
   fs.mkdirSync(dataDir, { recursive: true });
   const app = express();
+  const parseWorkAttachments = createWorkAttachmentMiddleware();
   app.use(express.json({ limit: '256kb' }));
   app.use('/vendor/geist', express.static(path.join(rootDir, 'node_modules', '@fontsource-variable', 'geist')));
   app.use(express.static(path.join(rootDir, 'public')));
@@ -300,6 +303,12 @@ function createCompanyServer({
     res.json(project);
   });
 
+  app.get('/api/company/projects/:projectId/evidence', (req, res) => {
+    const project = company.getProject(req.params.projectId);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    res.json({ projectId: project.id, evidence: projectEvidence(project, evidence) });
+  });
+
   app.post('/api/company/projects/:projectId/checkpoint', (req, res) => {
     try {
       const project = requireProject(req.params.projectId);
@@ -382,7 +391,7 @@ function createCompanyServer({
     }
   });
 
-  app.post('/api/company/works', async (req, res) => {
+  app.post('/api/company/works', parseWorkAttachments, async (req, res) => {
     try {
       const body = req.body || {};
       let project = null;
@@ -397,6 +406,7 @@ function createCompanyServer({
       const hasRepo = Boolean(body.repoDir && String(body.repoDir).trim());
       const requiresRepo = Boolean((project && project.repoDir) || (!project && hasRepo));
       const createWork = requiresRepo ? company.createCodingWork : company.createWork;
+      const inputEvidence = attachmentEvidence(req.files, { projectId: project ? project.id : null });
       const result = await createWork({
         brief: body.brief,
         repoDir: !project && hasRepo ? body.repoDir : null,
@@ -405,6 +415,7 @@ function createCompanyServer({
         employeeId: body.employeeId || 'ben',
         workerId: localWorker.id,
         model: body.model || null,
+        inputEvidence,
         delegationEnvelope: body.delegationEnvelope || {
           allow: ['workspace.read', 'workspace.write', 'shell.execute'],
           deny: ['git.push'],
