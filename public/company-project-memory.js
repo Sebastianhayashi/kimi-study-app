@@ -10,6 +10,7 @@
   const state = {
     projects: new Map(),
     currentProjectId: null,
+    projectedRuns: new Set(),
   };
 
   function text(value) {
@@ -162,6 +163,76 @@
     host.replaceChildren();
   }
 
+  function ensureEvidenceShelf(card) {
+    let shelf = card.querySelector('.run-evidence-shelf');
+    if (shelf) return shelf;
+    shelf = el('section', 'run-evidence-shelf');
+    shelf.dataset.testid = 'run-evidence';
+    shelf.setAttribute('aria-label', 'Run evidence');
+    const header = el('div', 'run-evidence-header');
+    header.append(el('h3', '', 'Run evidence'), el('span', 'run-evidence-count', '0 captured'));
+    shelf.append(header, el('div', 'run-evidence-grid'));
+    const execution = card.querySelector('.run-detail');
+    if (execution) execution.before(shelf);
+    else card.querySelector('.work-object-body')?.append(shelf);
+    return shelf;
+  }
+
+  function renderUserEvidence(card, item) {
+    if (!item || !item.id || item.source !== 'user-input') return;
+    const shelf = ensureEvidenceShelf(card);
+    const grid = shelf.querySelector('.run-evidence-grid');
+    if (!grid) return;
+    if ([...grid.children].some((node) => node.dataset.evidenceId === item.id)) return;
+
+    const evidence = el('article', 'run-evidence-item');
+    evidence.dataset.evidenceId = item.id;
+    evidence.dataset.evidenceKind = item.kind || 'unknown';
+    const glyph = el('div', 'run-evidence-glyph', String(item.kind || 'evidence').slice(0, 1).toUpperCase());
+    glyph.setAttribute('aria-hidden', 'true');
+    const copy = el('div', 'run-evidence-copy');
+    copy.append(
+      el('strong', '', item.label || item.kind || 'Evidence'),
+      el('span', 'run-evidence-source', `User input · ${item.kind || 'evidence'}`),
+    );
+    const url = item.metadata && item.metadata.url;
+    if (url) copy.append(el('span', 'run-evidence-context', url));
+    evidence.append(glyph, copy);
+    grid.append(evidence);
+    shelf.querySelector('.run-evidence-count').textContent = `${grid.children.length} captured`;
+  }
+
+  async function projectRunInputEvidence(card) {
+    const runId = text(card && card.dataset && card.dataset.runId);
+    if (!runId || state.projectedRuns.has(runId)) return;
+    state.projectedRuns.add(runId);
+    try {
+      const response = await fetch(`/api/company/runs/${encodeURIComponent(runId)}`, {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+      });
+      if (!response.ok) return;
+      const payload = await response.json();
+      for (const item of Array.isArray(payload.evidence) ? payload.evidence : []) {
+        renderUserEvidence(card, item);
+      }
+    } catch {
+      // The normal Run stream remains authoritative; this projection is best-effort UI hydration.
+    }
+  }
+
+  function observeWorkEvidence() {
+    const feed = document.querySelector('#conversation-feed');
+    if (!feed) return;
+    const projectVisibleCards = () => {
+      for (const card of feed.querySelectorAll('.work-object[data-run-id]')) projectRunInputEvidence(card);
+    };
+    const observer = new MutationObserver(projectVisibleCards);
+    observer.observe(feed, { childList: true, subtree: true });
+    projectVisibleCards();
+    window.addEventListener('pagehide', () => observer.disconnect(), { once: true });
+  }
+
   async function load() {
     let response;
     try {
@@ -187,5 +258,6 @@
   }
 
   window.addEventListener('lucubro:project-memory-refresh', load);
+  observeWorkEvidence();
   load();
 })();
