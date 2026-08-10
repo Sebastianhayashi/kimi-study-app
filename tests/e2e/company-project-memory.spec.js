@@ -113,11 +113,17 @@ test('reload restores the same Project and Frontier identities with the latest s
   await expect(project.getByTestId('project-next-action')).toContainText('Review real buyer photos');
 });
 
-test('composer continues the visible Project without requiring a fake repository path', async ({ page }) => {
+test('composer joins an explicit Project focus before continuing without a fake repository path', async ({ page }) => {
   await page.goto(`${URL}/company`);
   const project = page.getByTestId('project-result');
   await expect(project).toBeVisible();
+
+  const continueButton = project.getByRole('button', { name: 'Continue in Home refresh' });
+  await expect(continueButton).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('body')).not.toHaveAttribute('data-active-project-id', 'project_home_refresh');
+  await continueButton.click();
   await expect(project.getByRole('button', { name: 'Working in Home refresh' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('body')).toHaveAttribute('data-active-project-id', 'project_home_refresh');
 
   await expect(page.locator('#repo-dir')).toHaveValue('');
   await page.locator('#work-brief').fill('I found another Taobao sofa-cover listing. Compare it with the current sofa plan.');
