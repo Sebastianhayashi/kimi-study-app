@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 
 const { createCompanyServer } = require('../company-server');
+const { createProjectStore } = require('../lib/company/project-store');
 
 function tempRoot(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'lucubro-general-work-api-'));
@@ -45,7 +46,11 @@ function mockRuntime(observed) {
   return {
     async available() { return { available: true, mode: 'fixture' }; },
     async *run(request) {
-      observed.push({ cwd: request.cwd, workId: request.workId });
+      observed.push({
+        cwd: request.cwd,
+        workId: request.workId,
+        inputEvidence: structuredClone(request.inputEvidence || []),
+      });
       yield { type: 'run.started', providerSessionId: 'session_general_api' };
       yield { type: 'run.completed', summary: 'done' };
     },
@@ -91,7 +96,7 @@ test('ordinary Work HTTP request needs no repository and persists its public pla
     assert.equal(runState.run.workspaceKind, 'scratch');
     assert.equal(path.isAbsolute(runState.run.cwd), true);
     assert.ok(runState.run.cwd.startsWith(path.join(dataDir, 'execution-workspaces')));
-    assert.deepEqual(observed, [{ cwd: runState.run.cwd, workId: created.work.id }]);
+    assert.deepEqual(observed, [{ cwd: runState.run.cwd, workId: created.work.id, inputEvidence: [] }]);
 
     const bootstrapResponse = await fetch(`${baseUrl}/api/company/bootstrap`);
     assert.equal(bootstrapResponse.status, 200);
@@ -100,5 +105,76 @@ test('ordinary Work HTTP request needs no repository and persists its public pla
     assert.ok(restored);
     assert.deepEqual(restored.plan, plan);
     assert.equal(restored.projectId, null);
+  });
+});
+
+test('HTTP Work can continue a durable non-repository Project and persists pasted link Evidence before runtime', async (t) => {
+  const dataDir = tempRoot(t);
+  const projectStore = createProjectStore({ rootDir: dataDir });
+  projectStore.create({
+    id: 'project_home_refresh',
+    name: 'Home refresh',
+    kind: 'work-context',
+    repoDir: null,
+    isGitRepository: false,
+    sources: [],
+    memory: {
+      objective: 'Improve the home continuously as new evidence arrives.',
+      report: {
+        title: 'Home refresh report',
+        summary: 'Keep the current sofa and validate reversible improvements first.',
+        changed: 'A cover candidate is ready for evaluation.',
+        nextAction: 'Compare it with existing sofa facts.',
+      },
+      facts: [{ id: 'fact_sofa', text: 'The sofa is a large red modular chaise.' }],
+      preferences: [{ id: 'pref_reversible', text: 'Prefer reversible high-ROI changes first.' }],
+      decisions: [],
+      frontiers: [{
+        id: 'frontier_sofa',
+        title: 'Sofa visual refresh',
+        status: 'active',
+        summary: 'Validate a segment-level cover.',
+        nextAction: 'Compare the candidate against known dimensions.',
+      }],
+    },
+  });
+  const observed = [];
+  const taobaoUrl = 'https://item.taobao.com/item.htm?id=67890';
+
+  await withServer({
+    dataDir,
+    runtimes: new Map([['mock', mockRuntime(observed)]]),
+  }, async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/company/works`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        brief: `Evaluate this new Taobao sofa-cover candidate ${taobaoUrl}.`,
+        projectId: 'project_home_refresh',
+        runtime: 'mock',
+      }),
+    });
+
+    assert.equal(response.status, 201);
+    const created = await response.json();
+    assert.equal(created.work.projectId, 'project_home_refresh');
+    assert.equal(created.work.repoDir, null);
+
+    const runState = await readCompletedRun(baseUrl, created.run.id);
+    assert.equal(runState.run.workspaceKind, 'scratch');
+    assert.equal(runState.run.branch, null);
+    assert.equal(runState.evidence.length, 1);
+    assert.equal(runState.evidence[0].workId, created.work.id);
+    assert.equal(runState.evidence[0].runId, created.run.id);
+    assert.equal(runState.evidence[0].source, 'user-input');
+    assert.equal(runState.evidence[0].kind, 'link');
+    assert.equal(runState.evidence[0].mimeType, 'text/uri-list');
+    assert.equal(runState.evidence[0].metadata.url, taobaoUrl);
+    assert.equal(runState.evidence[0].metadata.projectId, 'project_home_refresh');
+    assert.equal(observed.length, 1);
+    assert.equal(observed[0].inputEvidence.length, 1);
+    assert.equal(observed[0].inputEvidence[0].id, runState.evidence[0].id);
+    assert.equal(observed[0].inputEvidence[0].metadata.url, taobaoUrl);
+    assert.ok(runState.events.some((event) => event.type === 'evidence.received' && event.evidence && event.evidence.id === runState.evidence[0].id));
   });
 });

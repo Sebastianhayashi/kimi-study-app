@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f6f7fb">
-  <meta name="description" content="Lucubro is a local-first AI company workbench for a single CEO, with durable Work, named Employees, review evidence, and scoped decisions.">
+  <meta name="description" content="Lucubro is a local-first AI company workbench for a single CEO, with durable Work, Project Memory, evolving results, review evidence, and scoped decisions.">
   <title>Lucubro · Company</title>
   <link rel="icon" href="/assets/brand/lucubro-mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/vendor/geist/wght.css">
@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="/company-a11y-v3.css">
   <link rel="stylesheet" href="/company-canvas-shell.css">
   <link rel="stylesheet" href="/company-operating-map.css">
+  <link rel="stylesheet" href="/company-project-memory.css">
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" integrity="sha512-oJ8QbaQThQoJZ7oEv+29jfPM6CcP+zUxh3PKJs1vyOhx0UraUrE7PQgeItu3dOuCJyrzWpoYMsVjkkPEBzbUqw==" crossorigin="anonymous" defer></script>
 </head>
 <body data-company-has-work="false" data-company-view="manager" data-canvas-lens="manager">
@@ -62,7 +63,7 @@
               <span class="canvas-lens-option-index" aria-hidden="true">01</span>
               <span class="canvas-lens-option-copy">
                 <strong>Manager canvas</strong>
-                <span>Intent, current Work, evidence and decisions</span>
+                <span>Current results, intent, evidence and decisions</span>
               </span>
             </a>
             <a class="canvas-lens-option" href="/company/work" role="menuitem" data-canvas-lens-target="work">
@@ -93,6 +94,17 @@
 
     <main id="company-main" class="workspace" tabindex="-1">
       <section id="company-conversation" class="conversation canvas-lens-panel" aria-label="Company operating canvas" data-company-view-panel="manager" data-canvas-lens-panel="manager">
+        <section id="project-result-stage" class="project-result-stage" aria-label="Current Project result" hidden>
+          <header class="project-result-stage-header">
+            <div class="project-result-stage-header-copy">
+              <span class="context-kicker">Current Project result</span>
+              <strong id="project-result-name">Project</strong>
+            </div>
+            <span id="project-result-updated" class="project-result-stage-updated">Saved project state</span>
+          </header>
+          <div id="project-result-host" aria-live="polite"></div>
+        </section>
+
         <section id="company-operating-map" class="company-operating-map" aria-label="Company operating map" aria-labelledby="operating-map-heading" data-controller="loading">
           <header class="operating-map-header">
             <div class="operating-map-heading">
@@ -261,7 +273,7 @@
               <div class="execution-panel-header">
                 <div class="execution-panel-heading">
                   <strong>Execution setup</strong>
-                  <span>Choose how this Work should run and where it should operate. Lucubro keeps these mechanics behind the Work once they are set.</span>
+                  <span>Choose how this Work should run and, only when needed, where it should operate. Lucubro keeps these mechanics behind the Work once they are set.</span>
                 </div>
                 <button id="close-run-settings" class="execution-panel-close" type="button" aria-label="Close Execution setup">×</button>
               </div>
@@ -280,7 +292,7 @@
                 <section class="execution-field repo-field" aria-labelledby="workspace-picker-label">
                   <div class="execution-field-head">
                     <span id="workspace-picker-label" class="execution-field-label">Workspace</span>
-                    <span class="execution-field-hint">Execution host</span>
+                    <span class="execution-field-hint">Optional execution host</span>
                   </div>
                   <div id="workspace-picker" class="workspace-picker" data-drag-active="false">
                     <div id="repo-path-control" class="repo-path-control" data-state="empty">
@@ -289,8 +301,8 @@
                           <span class="workspace-tree-caret" aria-hidden="true">▸</span>
                         </button>
                         <div class="repo-path-input-row">
-                          <label class="sr-only" for="repo-dir">Repository or workspace path on execution host</label>
-                          <input id="repo-dir" name="repoDir" placeholder="~/Projects/lucubro" autocomplete="off" required aria-autocomplete="list" aria-controls="workspace-suggestions" aria-describedby="repo-path-note repo-path-receipt">
+                          <label class="sr-only" for="repo-dir">Optional repository or workspace path on execution host</label>
+                          <input id="repo-dir" name="repoDir" placeholder="Optional · ~/Projects/lucubro" autocomplete="off" aria-autocomplete="list" aria-controls="workspace-suggestions" aria-describedby="repo-path-note repo-path-receipt">
                         </div>
                       </div>
                       <div class="repo-path-line" aria-hidden="true">
@@ -298,7 +310,7 @@
                         <span id="repo-path-scan" class="repo-path-scan"></span>
                       </div>
                       <div class="repo-path-feedback">
-                        <p id="repo-path-note" class="repo-path-note">Type ~/… or browse folders on the execution host.</p>
+                        <p id="repo-path-note" class="repo-path-note">Leave empty for Project Memory / general Work, or choose a host folder when execution needs one.</p>
                         <p id="repo-path-receipt" class="repo-path-receipt" role="status" hidden>Repository found</p>
                       </div>
                       <div id="workspace-suggestions" class="workspace-suggestions" role="listbox" aria-label="Host path suggestions" hidden></div>
@@ -357,6 +369,7 @@
   <script src="/company-workspace.js" defer></script>
   <script src="/company-kinetic.js" defer></script>
   <script src="/company-operating-map.js" defer></script>
+  <script src="/company-project-memory.js" defer></script>
   <script src="/company-pages.js" defer></script>
 </body>
 </html>
