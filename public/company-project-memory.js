@@ -35,7 +35,7 @@
     if (query && projects.some((project) => project.id === query)) return query;
     const existing = text(document.body.dataset.activeProjectId);
     if (existing && projects.some((project) => project.id === existing)) return existing;
-    return projects[0] ? projects[0].id : null;
+    return null;
   }
 
   function relativeUpdate(value) {
@@ -85,7 +85,7 @@
     return card;
   }
 
-  function renderProject(project) {
+  function renderProject(project, { activate = false } = {}) {
     const memory = project.memory || {};
     const report = memory.report && typeof memory.report === 'object' ? memory.report : {};
     const frontiers = Array.isArray(memory.frontiers) ? memory.frontiers.filter((item) => item && item.id) : [];
@@ -149,7 +149,8 @@
     if (stageName) stageName.textContent = project.name || project.id;
     if (stageUpdated) stageUpdated.textContent = relativeUpdate(project.updatedAt);
     stage.hidden = false;
-    syncProjectFocus(project);
+    document.body.dataset.hasProjectMemory = 'true';
+    if (activate) syncProjectFocus(project);
   }
 
   function hideProjectSurface() {
@@ -180,9 +181,9 @@
       return;
     }
     state.projects = new Map(projects.map((project) => [project.id, project]));
-    const projectId = requestedProjectId(projects);
-    const project = state.projects.get(projectId) || projects[0];
-    renderProject(project);
+    const activeProjectId = requestedProjectId(projects);
+    const project = activeProjectId ? state.projects.get(activeProjectId) : projects[0];
+    renderProject(project, { activate: Boolean(activeProjectId) });
   }
 
   window.addEventListener('lucubro:project-memory-refresh', load);
