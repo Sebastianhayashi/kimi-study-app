@@ -113,7 +113,7 @@ test('reload restores the same Project and Frontier identities with the latest s
   await expect(project.getByTestId('project-next-action')).toContainText('Review real buyer photos');
 });
 
-test('composer joins an explicit Project focus before continuing without a fake repository path', async ({ page }) => {
+test('composer joins an explicit Project focus and preserves a pasted product link as user Evidence', async ({ page }) => {
   await page.goto(`${URL}/company`);
   const project = page.getByTestId('project-result');
   await expect(project).toBeVisible();
@@ -125,13 +125,18 @@ test('composer joins an explicit Project focus before continuing without a fake 
   await expect(project.getByRole('button', { name: 'Working in Home refresh' })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('body')).toHaveAttribute('data-active-project-id', 'project_home_refresh');
 
+  const taobaoUrl = 'https://item.taobao.com/item.htm?id=24680';
   await expect(page.locator('#repo-dir')).toHaveValue('');
-  await page.locator('#work-brief').fill('I found another Taobao sofa-cover listing. Compare it with the current sofa plan.');
+  await page.locator('#work-brief').fill(`I found another Taobao sofa-cover listing ${taobaoUrl}. Compare it with the current sofa plan.`);
   await expect(page.locator('#send-work')).toBeEnabled();
   await page.locator('#send-work').click();
 
   const workObject = page.locator('.work-object').filter({ hasText: 'another Taobao sofa-cover listing' }).first();
   await expect(workObject).toBeVisible();
+  const evidence = workObject.getByTestId('run-evidence');
+  await expect(evidence).toBeVisible();
+  await expect(evidence).toContainText('User input');
+  await expect(evidence).toContainText(taobaoUrl);
 
   await expect.poll(async () => page.evaluate(async () => {
     const data = await fetch('/api/company/bootstrap', { cache: 'no-store' }).then((response) => response.json());
