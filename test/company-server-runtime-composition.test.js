@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { once } = require('node:events');
 
 const { createCompanyServer } = require('../company-server');
 
@@ -162,4 +163,36 @@ test('explicit runtime injection remains a test/product seam and bypasses defaul
   assert.equal(instance.codexAdmission, null);
   assert.equal(authorityCalls, 0);
   assert.equal(registryCalls, 0);
+});
+
+test('Company shell route serves from a checkout whose ancestor directory is dot-prefixed', async (t) => {
+  const fixtureRoot = tempRoot(t);
+  const rootDir = path.join(fixtureRoot, '.wrp', 'workspaces', 'verify', 'lucubro');
+  const publicDir = path.join(rootDir, 'public');
+  const dataDir = path.join(fixtureRoot, 'data');
+  fs.mkdirSync(publicDir, { recursive: true });
+  fs.writeFileSync(path.join(publicDir, 'company.html'), '<!doctype html><title>hidden-root-fixture</title>\n');
+
+  const instance = createCompanyServer({
+    rootDir,
+    dataDir,
+    runtimes: new Map([['mock', runtime('mock')]]),
+    environment: {},
+    canvasPdfRenderer: pdfRenderer(),
+  });
+  const server = instance.app.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+
+  try {
+    const address = server.address();
+    const base = `http://127.0.0.1:${address.port}`;
+    const staticResponse = await fetch(`${base}/company.html`);
+    assert.equal(staticResponse.status, 200, 'fixture must be readable through the static-file root');
+
+    const response = await fetch(`${base}/company`);
+    assert.equal(response.status, 200);
+    assert.match(await response.text(), /hidden-root-fixture/);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
 });
