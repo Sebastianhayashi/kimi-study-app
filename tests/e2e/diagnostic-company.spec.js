@@ -3,6 +3,7 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 const { startCompanyTestServer, stopCompanyTestServer } = require('../support/company-test-server');
 
 const ROOT = path.resolve(__dirname, '..', '..');
@@ -10,6 +11,19 @@ let URL;
 let server;
 
 test.beforeAll(async () => {
+  const publicDir = path.join(ROOT, 'public');
+  const companyHtml = path.join(publicDir, 'company.html');
+  const fsDiag = {
+    cwd: process.cwd(),
+    root: ROOT,
+    realRoot: fs.realpathSync(ROOT),
+    gitHead: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).trim(),
+    publicDirExists: fs.existsSync(publicDir),
+    companyHtmlExists: fs.existsSync(companyHtml),
+    companyHtmlSize: fs.existsSync(companyHtml) ? fs.statSync(companyHtml).size : null,
+    publicEntries: fs.existsSync(publicDir) ? fs.readdirSync(publicDir).filter((name) => name.startsWith('company')).sort() : [],
+  };
+  console.log(`DIAG_FS ${JSON.stringify(fsDiag)}`);
   const dataDir = path.join(ROOT, 'tests', '.runtime', 'company-diagnostic');
   fs.rmSync(dataDir, { recursive: true, force: true });
   server = await startCompanyTestServer({ rootDir: ROOT, dataDir });
