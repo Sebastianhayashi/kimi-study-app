@@ -81,7 +81,14 @@ const send=(child,message)=>child.stdout.write(`${JSON.stringify(message)}\n`);
 
 test('Codex app-server adapter handshakes, routes approval, and projects diff without reasoning', async () => {
   let approval=null;
-  const runtime=createCodexAppServerRuntime({spawnImpl(command,args){assert.equal(command,'codex');assert.deepEqual(args,['app-server']);return fakeCodex((message,child)=>{if(message.method==='initialize')send(child,{id:message.id,result:{}});else if(message.method==='thread/start')send(child,{id:message.id,result:{thread:{id:'thr_1'}}});else if(message.method==='turn/start'){send(child,{id:message.id,result:{turn:{id:'turn_1',status:'inProgress'}}});send(child,{id:9,method:'item/commandExecution/requestApproval',params:{command:['npm','test'],cwd:'/repo'}});}else if(message.id===9){approval=message.result;send(child,{method:'turn/diff/updated',params:{diff:'diff --git a/a b/a'}});send(child,{method:'turn/completed',params:{turn:{status:'completed'}}});process.nextTick(()=>child.emit('close',0));}});}});
+  const spawnImpl=(command,args)=>{assert.equal(command,'codex');assert.deepEqual(args,['app-server']);return fakeCodex((message,child)=>{if(message.method==='initialize')send(child,{id:message.id,result:{}});else if(message.method==='thread/start')send(child,{id:message.id,result:{thread:{id:'thr_1'}}});else if(message.method==='turn/start'){send(child,{id:message.id,result:{turn:{id:'turn_1',status:'inProgress'}}});send(child,{id:9,method:'item/commandExecution/requestApproval',params:{command:['npm','test'],cwd:'/repo'}});}else if(message.id===9){approval=message.result;send(child,{method:'turn/diff/updated',params:{diff:'diff --git a/a b/a'}});send(child,{method:'turn/completed',params:{turn:{status:'completed'}}});process.nextTick(()=>child.emit('close',0));}});};
+  const runtime=createCodexAppServerRuntime({
+    spawnImpl,
+    authorityBoundary:{
+      async attest(){return {enforced:true,boundaryId:'fixture-boundary'};},
+      spawn({command,args,options}){return spawnImpl(command,args,options);},
+    },
+  });
   const events=await collect(runtime.run({runId:'run_x',cwd:'/repo',prompt:'Fix',delegationEnvelope:{allow:['shell.execute']},requestApproval:async()=> 'allow'}));
   assert.deepEqual(approval,{decision:'accept'});
   assert.equal(events.some(e=>e.type==='run.started'&&e.providerSessionId==='thr_1'),true);

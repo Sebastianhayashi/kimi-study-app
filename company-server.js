@@ -5,6 +5,9 @@ const express = require('express');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { createCanvasArtifactExporter } = require('./lib/company/canvas-artifact-export');
+const { createPandocCanvasPdfRenderer } = require('./lib/company/canvas-artifact-pandoc-pdf');
+const { createCanvasArtifactStore } = require('./lib/company/canvas-artifact-store');
 const { createEvidenceStore } = require('./lib/company/evidence-store');
 const { evidenceResponsePolicy } = require('./lib/company/evidence-response');
 const { createRunStore } = require('./lib/company/run-store');
@@ -15,12 +18,12 @@ const { discoverProjectSources } = require('./lib/company/project-discovery');
 const { createApprovalBroker } = require('./lib/company/approval-broker');
 const { createRunOrchestrator } = require('./lib/company/run-orchestrator');
 const { createWorktreeManager } = require('./lib/company/worktree-manager');
+const { createExecutionWorkspaceManager } = require('./lib/company/execution-workspace-manager');
 const { createCompanyService } = require('./lib/company/company-service');
 const { createWorkspaceBrowser } = require('./lib/company/workspace-browser');
-const { createClaudeAgentSdkRuntime } = require('./lib/company/runtime/claude-agent-sdk');
-const { createCodexAppServerRuntime } = require('./lib/company/runtime/codex-app-server');
+const { createDefaultRuntimeRegistry: createDefaultRuntimeRegistryImpl } = require('./lib/company/runtime/default-runtime-registry');
+const { createSystemdCodexAuthorityBoundary: createSystemdAuthorityBoundaryImpl } = require('./lib/company/runtime/systemd-codex-authority-boundary');
 const { createMockCompanyRuntime } = require('./lib/company/runtime/mock');
-const { applyRuntimePolicy } = require('./lib/company/runtime/policy');
 
 const ROOT = __dirname;
 
@@ -41,14 +44,25 @@ function createCompanyServer({
   rootDir = ROOT,
   dataDir = process.env.LUCUBRO_COMPANY_DATA_DIR || path.join(rootDir, 'data', 'company'),
   runtimes = null,
+  environment = process.env,
+  createDefaultRuntimeRegistry = createDefaultRuntimeRegistryImpl,
+  createSystemdAuthorityBoundary = createSystemdAuthorityBoundaryImpl,
   worktreeManager = null,
+  workspaceManager = null,
   workspaceBrowser = null,
   workerStore = null,
   projectStore = null,
   projectDiscovery = discoverProjectSources,
   evidenceStore = null,
+  canvasArtifactStore = null,
+  canvasPdfRenderer = null,
   workerIdentity = null,
+  workPlanner = null,
+  skillMountBuilder = null,
 } = {}) {
+  if (!environment || typeof environment !== 'object') throw new Error('Company server environment is required.');
+  if (typeof createDefaultRuntimeRegistry !== 'function') throw new Error('Company server createDefaultRuntimeRegistry must be a function.');
+  if (typeof createSystemdAuthorityBoundary !== 'function') throw new Error('Company server createSystemdAuthorityBoundary must be a function.');
   fs.mkdirSync(dataDir, { recursive: true });
   const app = express();
   app.use(express.json({ limit: '256kb' }));
@@ -60,6 +74,12 @@ function createCompanyServer({
   const projects = projectStore || createProjectStore({ rootDir: dataDir });
   const workers = workerStore || createWorkerStore({ rootDir: dataDir });
   const evidence = evidenceStore || createEvidenceStore({ rootDir: dataDir });
+  const canvasArtifacts = canvasArtifactStore || createCanvasArtifactStore({ rootDir: dataDir, evidenceStore: evidence });
+  const pdfRenderer = canvasPdfRenderer || createPandocCanvasPdfRenderer({ evidenceStore: evidence });
+  if (!pdfRenderer || typeof pdfRenderer.render !== 'function' || typeof pdfRenderer.available !== 'function') {
+    throw new Error('Company server Canvas PDF renderer must expose available() and render()');
+  }
+  const canvasExporter = createCanvasArtifactExporter({ evidenceStore: evidence, pdfRenderer });
   const existingWorker = workers.list()[0] || null;
   const requestedWorkerId = workerIdentity && workerIdentity.id || process.env.LUCUBRO_WORKER_ID || null;
   const localWorkerId = requestedWorkerId || existingWorker && existingWorker.id || `worker_${crypto.randomUUID()}`;
@@ -69,28 +89,56 @@ function createCompanyServer({
     kind: workerIdentity && workerIdentity.kind || existingWorker && existingWorker.kind || 'self-hosted',
   });
   const approvalBroker = createApprovalBroker({ runStore });
-  const configuredRuntimeRegistry = runtimes || new Map([
-    ['claude-code', createClaudeAgentSdkRuntime()],
-    ['codex', createCodexAppServerRuntime()],
-  ]);
-  const runtimeRegistry = runtimes
-    ? configuredRuntimeRegistry
-    : applyRuntimePolicy(configuredRuntimeRegistry, {
-      enableRealRuntimes: process.env.LUCUBRO_ENABLE_REAL_RUNTIMES === '1',
+
+  let runtimeRegistry;
+  let codexAdmission = null;
+  if (runtimes) {
+    runtimeRegistry = runtimes;
+  } else {
+    const realRuntimeRequested = environment.LUCUBRO_ENABLE_REAL_RUNTIMES === '1';
+    const authorityConfig = {
+      systemdRunBinary: environment.LUCUBRO_SYSTEMD_RUN_BINARY || null,
+      codexExecutable: environment.LUCUBRO_CODEX_EXECUTABLE || null,
+      codexInstallRoot: environment.LUCUBRO_CODEX_INSTALL_ROOT || null,
+      codexHomeSource: environment.LUCUBRO_CODEX_HOME_SOURCE || null,
+    };
+    const hasAuthorityConfig = Object.values(authorityConfig).every((value) => typeof value === 'string' && value.trim());
+    const codexAuthorityBoundary = realRuntimeRequested && hasAuthorityConfig
+      ? createSystemdAuthorityBoundary({
+        ...authorityConfig,
+        stateRoot: environment.LUCUBRO_CODEX_AUTHORITY_STATE_ROOT || path.join(dataDir, 'codex-authority'),
+        runtimePath: environment.PATH || process.env.PATH || '/run/current-system/sw/bin:/usr/bin:/bin',
+      })
+      : null;
+    const enableRealRuntimes = realRuntimeRequested && Boolean(codexAuthorityBoundary);
+    const configured = createDefaultRuntimeRegistry({
+      enableRealRuntimes,
+      codexAdmissionFile: environment.LUCUBRO_CODEX_ADMISSION_FILE || null,
+      expectedRepo: environment.LUCUBRO_BUILD_REPO || 'Sebastianhayashi/lucubro',
+      expectedCommit: environment.LUCUBRO_BUILD_COMMIT || null,
+      codexAuthorityBoundary,
     });
-  if (process.env.LUCUBRO_COMPANY_MOCK_RUNTIME === '1' && !runtimeRegistry.has('mock')) runtimeRegistry.set('mock', createMockCompanyRuntime());
+    runtimeRegistry = configured.registry;
+    codexAdmission = configured.admission;
+  }
+  if (environment.LUCUBRO_COMPANY_MOCK_RUNTIME === '1' && !runtimeRegistry.has('mock')) runtimeRegistry.set('mock', createMockCompanyRuntime());
 
   const worktrees = worktreeManager || (
     process.env.NODE_ENV === 'test' && process.env.LUCUBRO_COMPANY_MOCK_RUNTIME === '1'
       ? testWorktreeManager()
       : createWorktreeManager()
   );
+  const executionWorkspaces = workspaceManager || createExecutionWorkspaceManager({
+    rootDir: dataDir,
+    gitWorktreeManager: worktrees,
+  });
   const runOrchestrator = createRunOrchestrator({
     runStore,
     approvalBroker,
     runtimeRegistry,
-    worktreeManager: worktrees,
+    workspaceManager: executionWorkspaces,
     evidenceStore: evidence,
+    skillMountBuilder,
   });
   const company = createCompanyService({
     workStore,
@@ -98,6 +146,7 @@ function createCompanyServer({
     runOrchestrator,
     projectStore: projects,
     projectDiscovery,
+    workPlanner,
     defaultWorkerId: localWorker.id,
   });
   const workspaces = workspaceBrowser || createWorkspaceBrowser();
@@ -119,6 +168,31 @@ function createCompanyServer({
     const inspected = workspaces.inspect(project.repoDir);
     if (!inspected || !inspected.exists || !inspected.isDirectory) throw new Error('Project repoDir must remain an existing directory inside the allowed workspace root.');
     return project;
+  }
+
+  function artifactForWork(workId, artifactId) {
+    const work = company.getWork(workId);
+    if (!work) return { work: null, artifact: null };
+    let artifact = null;
+    try { artifact = canvasArtifacts.get(artifactId); }
+    catch { artifact = null; }
+    if (!artifact || artifact.workId !== work.id) return { work, artifact: null };
+    return { work, artifact };
+  }
+
+  function publicPdfCapability() {
+    try {
+      const state = pdfRenderer.available();
+      if (!state || state.available !== true) {
+        return { available: false, reason: state && state.reason || 'PDF export engine is unavailable.' };
+      }
+      return {
+        available: true,
+        engine: state.engine || (state.pandoc && state.xelatex ? 'pandoc-xelatex' : 'configured'),
+      };
+    } catch (error) {
+      return { available: false, reason: error.message };
+    }
   }
 
   async function readRuntimeStates() {
@@ -158,7 +232,7 @@ function createCompanyServer({
   }
 
   app.get('/api/company/health', (req, res) => res.json({ ok: true }));
-  app.get(['/company', '/company/work', '/company/employees', '/company/settings'], (req, res) => res.sendFile(path.join(rootDir, 'public', 'company.html')));
+  app.get(['/company', '/company/work', '/company/employees', '/company/settings'], (req, res) => res.sendFile('company.html', { root: path.join(rootDir, 'public') }));
 
   app.get('/api/company/bootstrap', async (req, res) => {
     const runtimeStates = await readRuntimeStates();
@@ -266,9 +340,11 @@ function createCompanyServer({
         }
         assertProjectWorkspaceAccess(body.projectId);
       }
-      const result = await company.createCodingWork({
+      const hasRepo = Boolean(body.repoDir && String(body.repoDir).trim());
+      const createWork = body.projectId || hasRepo ? company.createCodingWork : company.createWork;
+      const result = await createWork({
         brief: body.brief,
-        repoDir: body.repoDir,
+        repoDir: hasRepo ? body.repoDir : null,
         projectId: body.projectId || null,
         runtime: body.runtime,
         employeeId: body.employeeId || 'ben',
@@ -298,6 +374,55 @@ function createCompanyServer({
     const work = company.getWork(req.params.workId);
     if (!work) return res.status(404).json({ error: 'Work not found' });
     res.json(work);
+  });
+
+  app.get('/api/company/works/:workId/artifacts', (req, res) => {
+    const work = company.getWork(req.params.workId);
+    if (!work) return res.status(404).json({ error: 'Work not found' });
+    res.json({
+      workId: work.id,
+      artifacts: canvasArtifacts.listByWork(work.id),
+      evidence: evidence.listByWork(work.id),
+      exportCapabilities: {
+        markdown: { available: true },
+        pdf: publicPdfCapability(),
+      },
+    });
+  });
+
+  app.get('/api/company/works/:workId/artifacts/:artifactId/export.md', (req, res) => {
+    const { artifact } = artifactForWork(req.params.workId, req.params.artifactId);
+    if (!artifact) return res.status(404).json({ error: 'Artifact not found for Work' });
+    try {
+      const markdown = canvasExporter.toMarkdown(artifact);
+      const body = Buffer.from(markdown, 'utf8');
+      res.set('Content-Type', 'text/markdown; charset=utf-8');
+      res.set('Content-Disposition', `attachment; filename="${artifact.id}.md"`);
+      res.set('Content-Length', String(body.byteLength));
+      res.set('Cache-Control', 'private, no-store');
+      res.set('X-Content-Type-Options', 'nosniff');
+      return res.send(body);
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/company/works/:workId/artifacts/:artifactId/export.pdf', async (req, res) => {
+    const { artifact } = artifactForWork(req.params.workId, req.params.artifactId);
+    if (!artifact) return res.status(404).json({ error: 'Artifact not found for Work' });
+    const capability = publicPdfCapability();
+    if (!capability.available) return res.status(503).json({ error: capability.reason });
+    try {
+      const body = await canvasExporter.toPdf(artifact);
+      res.set('Content-Type', 'application/pdf');
+      res.set('Content-Disposition', `attachment; filename="${artifact.id}.pdf"`);
+      res.set('Content-Length', String(body.byteLength));
+      res.set('Cache-Control', 'private, no-store');
+      res.set('X-Content-Type-Options', 'nosniff');
+      return res.send(body);
+    } catch (error) {
+      return res.status(503).json({ error: `PDF export failed: ${error.message}` });
+    }
   });
 
   app.get('/api/company/runs/:runId', (req, res) => {
@@ -356,10 +481,15 @@ function createCompanyServer({
     workStore,
     workerStore: workers,
     evidenceStore: evidence,
+    canvasArtifactStore: canvasArtifacts,
+    canvasArtifactExporter: canvasExporter,
+    canvasPdfRenderer: pdfRenderer,
     localWorker,
     approvalBroker,
     runtimeRegistry,
+    codexAdmission,
     workspaceBrowser: workspaces,
+    executionWorkspaceManager: executionWorkspaces,
   };
 }
 

@@ -1,0 +1,468 @@
+.canvas-artifact {
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-panel);
+  background: var(--surface-strong);
+  box-shadow: 0 18px 44px rgba(33, 38, 34, 0.08);
+}
+
+.canvas-artifact-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(233, 241, 236, 0.72), rgba(255, 254, 250, 0.44));
+}
+
+.canvas-artifact-title {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.canvas-artifact-context {
+  color: var(--accent);
+  font-size: 9px;
+  font-weight: 680;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+}
+
+.canvas-artifact-title h2 {
+  max-width: 650px;
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(24px, 3.2vw, 36px);
+  font-weight: 620;
+  letter-spacing: -0.04em;
+  line-height: 1.06;
+  text-wrap: balance;
+}
+
+.canvas-artifact-meta {
+  flex: 0 0 auto;
+  padding-top: 4px;
+  color: var(--muted);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
+.canvas-artifact-body {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 18px 20px;
+  padding: 24px;
+}
+
+.canvas-artifact-block {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.canvas-artifact-heading {
+  padding-top: 4px;
+}
+
+.canvas-artifact-heading h3 {
+  max-width: 690px;
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(21px, 2.6vw, 29px);
+  font-weight: 610;
+  letter-spacing: -0.032em;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+
+.canvas-artifact-paragraph,
+.canvas-artifact-list,
+.canvas-artifact-quote,
+.canvas-artifact-code,
+.canvas-artifact-callout {
+  grid-column: 1 / span 8;
+}
+
+.canvas-artifact-paragraph p,
+.canvas-artifact-claim p,
+.canvas-artifact-callout p,
+.canvas-artifact-quote blockquote,
+.canvas-artifact-list li {
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.canvas-artifact-paragraph p,
+.canvas-artifact-claim p,
+.canvas-artifact-callout p,
+.canvas-artifact-quote blockquote {
+  max-width: 68ch;
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.canvas-artifact-image {
+  grid-column: 1 / span 7;
+  margin: 0;
+}
+
+.canvas-artifact-image img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+}
+
+.canvas-artifact-image figcaption {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.canvas-artifact-claim {
+  grid-column: 8 / -1;
+  align-self: end;
+  padding: 17px 18px 16px;
+  border-top: 2px solid var(--accent);
+  background: var(--accent-soft);
+}
+
+.canvas-artifact-claim p {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 560;
+  line-height: 1.55;
+}
+
+.canvas-artifact-callout {
+  padding: 14px 16px;
+  border-left: 2px solid var(--accent);
+  background: rgba(233, 241, 236, 0.58);
+}
+
+.canvas-artifact-quote blockquote {
+  padding-left: 17px;
+  border-left: 2px solid var(--line-strong);
+  color: var(--muted-strong);
+  font-style: italic;
+}
+
+.canvas-artifact-list ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 21px;
+}
+
+.canvas-artifact-table-wrap {
+  overflow-x: auto;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.canvas-artifact-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.canvas-artifact-table th,
+.canvas-artifact-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.45;
+  text-align: left;
+  vertical-align: top;
+}
+
+.canvas-artifact-table th {
+  color: var(--muted-strong);
+  font-size: 9px;
+  font-weight: 670;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.canvas-artifact-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.canvas-artifact-interaction {
+  grid-column: 3 / -2;
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+}
+
+.canvas-artifact-interaction h4 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 620;
+  line-height: 1.35;
+}
+
+.canvas-artifact-choice-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.canvas-artifact-choice {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface-strong);
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 620;
+  transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease, transform 110ms ease;
+}
+
+.canvas-artifact-choice:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.canvas-artifact-choice:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.canvas-artifact-choice[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.canvas-artifact-interaction-response {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.canvas-artifact-code pre {
+  overflow: auto;
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #262a26;
+  color: #edf1eb;
+  font: 11px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.canvas-artifact-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(248, 247, 242, 0.72);
+}
+
+.canvas-artifact-file-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.canvas-artifact-file-copy strong {
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.canvas-artifact-file-copy span {
+  overflow: hidden;
+  color: var(--muted);
+  font: 9px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.canvas-artifact-file-open,
+.canvas-artifact-evidence-actions a {
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 620;
+  text-decoration: none;
+}
+
+.canvas-artifact-file-open:hover,
+.canvas-artifact-evidence-actions a:hover {
+  text-decoration: underline;
+}
+
+.canvas-artifact-citations {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 7px;
+  margin-top: 8px;
+}
+
+.canvas-artifact-citations-label {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.canvas-artifact-citation {
+  max-width: 230px;
+  overflow: hidden;
+  color: var(--accent);
+  font-size: 9px;
+  line-height: 1.35;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.canvas-artifact-citation:hover {
+  text-decoration: underline;
+}
+
+.canvas-artifact-evidence {
+  border-top: 1px solid var(--line);
+  background: rgba(248, 247, 242, 0.74);
+}
+
+.canvas-artifact-evidence > summary {
+  padding: 13px 24px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 640;
+}
+
+.canvas-artifact-evidence-list {
+  display: grid;
+  gap: 1px;
+  padding: 0 24px 18px;
+}
+
+.canvas-artifact-evidence-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+}
+
+.canvas-artifact-evidence-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.canvas-artifact-evidence-copy strong {
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.canvas-artifact-evidence-copy span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.canvas-artifact-evidence-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px 12px;
+}
+
+@media (max-width: 760px) {
+  .canvas-artifact-header {
+    padding: 18px;
+  }
+
+  .canvas-artifact-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    padding: 18px;
+  }
+
+  .canvas-artifact-block,
+  .canvas-artifact-paragraph,
+  .canvas-artifact-list,
+  .canvas-artifact-quote,
+  .canvas-artifact-code,
+  .canvas-artifact-callout,
+  .canvas-artifact-image,
+  .canvas-artifact-claim,
+  .canvas-artifact-interaction {
+    grid-column: 1;
+  }
+
+  .canvas-artifact-claim {
+    align-self: auto;
+  }
+
+  .canvas-artifact-table {
+    min-width: 620px;
+  }
+
+  .canvas-artifact-evidence-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .canvas-artifact-evidence-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 520px) {
+  .canvas-artifact-header {
+    display: grid;
+    gap: 7px;
+  }
+
+  .canvas-artifact-meta {
+    padding-top: 0;
+  }
+
+  .canvas-artifact-file {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .canvas-artifact-choice {
+    flex: 1 1 30%;
+  }
+
+  .canvas-artifact-evidence > summary,
+  .canvas-artifact-evidence-list {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas-artifact-choice {
+    transition: none;
+  }
+}

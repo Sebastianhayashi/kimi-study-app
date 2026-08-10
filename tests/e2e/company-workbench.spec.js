@@ -1,23 +1,13 @@
 'use strict';
 
 const { test, expect } = require('@playwright/test');
-const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { startCompanyTestServer, stopCompanyTestServer } = require('../support/company-test-server');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const PORT = 3110;
-const URL = `http://127.0.0.1:${PORT}`;
+let URL;
 let server;
-
-async function waitForServer() {
-  const deadline = Date.now() + 10_000;
-  while (Date.now() < deadline) {
-    try { const response = await fetch(`${URL}/api/company/health`); if (response.ok) return; } catch {}
-    await new Promise((resolve) => setTimeout(resolve, 80));
-  }
-  throw new Error('company-server did not become ready');
-}
 
 async function waitForCompanyControllers(page) {
   await expect(page.locator('#workspace-picker')).toHaveAttribute('data-controller', 'ready');
@@ -48,22 +38,13 @@ async function useDesktopViewport(page) {
 test.beforeAll(async () => {
   const dataDir = path.join(ROOT, 'tests', '.runtime', 'company');
   fs.rmSync(dataDir, { recursive: true, force: true });
-  server = spawn(process.execPath, [path.join(ROOT, 'company-server.js')], {
-    cwd: ROOT,
-    env: {
-      ...process.env,
-      NODE_ENV: 'test',
-      PORT: String(PORT),
-      LUCUBRO_COMPANY_PORT: String(PORT),
-      LUCUBRO_COMPANY_DATA_DIR: dataDir,
-      LUCUBRO_COMPANY_MOCK_RUNTIME: '1',
-    },
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
-  await waitForServer();
+  server = await startCompanyTestServer({ rootDir: ROOT, dataDir });
+  URL = server.url;
 });
 
-test.afterAll(async () => { if (server && !server.killed) server.kill('SIGTERM'); });
+test.afterAll(async () => {
+  await stopCompanyTestServer(server);
+});
 
 test('front door explains the company operating model before asking for another chat turn', async ({ page }) => {
   await useDesktopViewport(page);
