@@ -687,20 +687,15 @@
     const text = brief.value.trim();
     const repo = repoDir.value.trim();
     const runtimeId = runtime.value;
+    const projectId = String(document.body.dataset.activeProjectId || '').trim() || null;
 
     if (!state.bootstrapReady) {
-      showComposerError('The local workspace is not ready yet.');
+      showComposerError('The local execution environment is not ready yet.');
       return;
     }
     if (!text) {
       showComposerError('Tell Alex the outcome you want.');
       brief.focus();
-      return;
-    }
-    if (!repo) {
-      showComposerError('Choose a repository path in Execution setup.');
-      runSettings.open = true;
-      repoDir.focus();
       return;
     }
     if (!runtimeId) {
@@ -722,7 +717,8 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           brief: text,
-          repoDir: repo,
+          repoDir: repo || null,
+          projectId,
           runtime: runtimeId,
           employeeId: 'ben',
           delegationEnvelope: { allow: ['workspace.read', 'workspace.write', 'shell.execute'], deny: ['git.push'] },
