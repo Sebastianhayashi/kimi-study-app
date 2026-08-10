@@ -232,7 +232,7 @@ function createCompanyServer({
   }
 
   app.get('/api/company/health', (req, res) => res.json({ ok: true }));
-  app.get(['/company', '/company/work', '/company/employees', '/company/settings'], (req, res) => res.sendFile(path.join(rootDir, 'public', 'company.html')));
+  app.get(['/company', '/company/work', '/company/employees', '/company/settings'], (req, res) => res.sendFile('company.html', { root: path.join(rootDir, 'public') }));
 
   app.get('/api/company/bootstrap', async (req, res) => {
     const runtimeStates = await readRuntimeStates();
