@@ -27,6 +27,20 @@ test('normalized Skill outputs map to Lucubro product semantics instead of vendo
       },
     }, 'artifact-content'],
     [{
+      type: 'project.memory.patch',
+      summary: 'Updated the sofa candidate validation frontier.',
+      evidenceRefs: ['evidence_sofa_candidate'],
+      mutation: {
+        report: { changed: 'A new reversible sofa-cover candidate is under validation.' },
+        frontiersUpsert: [{
+          id: 'frontier_sofa',
+          title: 'Sofa visual refresh',
+          status: 'active',
+          summary: 'Validate the new candidate before purchase.',
+        }],
+      },
+    }, 'project-memory'],
+    [{
       type: 'workspace.diff',
       changedFiles: ['src/home.js'],
       diff: 'diff --git a/src/home.js b/src/home.js',
@@ -82,11 +96,38 @@ test('material Artifact claims are marked as requiring Evidence when references 
   assert.equal(result.requiresEvidence, true);
 });
 
+test('Project Memory patches reject transcript/raw-renderer fields and unknown mutation keys', () => {
+  const cases = [
+    {
+      type: 'project.memory.patch',
+      summary: 'Do not persist a transcript.',
+      mutation: { transcript: ['raw chat'] },
+    },
+    {
+      type: 'project.memory.patch',
+      summary: 'Do not persist renderer state.',
+      mutation: { html: '<main>renderer-owned</main>' },
+    },
+    {
+      type: 'project.memory.patch',
+      summary: '',
+      mutation: { report: { changed: 'missing summary' } },
+    },
+  ];
+
+  for (const output of cases) {
+    const result = classifySkillOutput(output);
+    assert.equal(result.classification, 'unsupported');
+    assert.ok(result.reason);
+  }
+});
+
 test('invalid normalized output shapes fail closed as unsupported instead of being guessed', () => {
   const cases = [
     null,
     {},
     { type: 'evidence', evidence: null },
+    { type: 'project.memory.patch', summary: 'Missing mutation' },
     { type: 'workspace.diff', changedFiles: 'src/home.js' },
     { type: 'authority.request', capability: '' },
     { type: 'note', persistence: 'durable', text: 'This needs a different contract.' },
