@@ -46,7 +46,11 @@ function mockRuntime(observed) {
   return {
     async available() { return { available: true, mode: 'fixture' }; },
     async *run(request) {
-      observed.push({ cwd: request.cwd, workId: request.workId });
+      observed.push({
+        cwd: request.cwd,
+        workId: request.workId,
+        inputEvidence: structuredClone(request.inputEvidence || []),
+      });
       yield { type: 'run.started', providerSessionId: 'session_general_api' };
       yield { type: 'run.completed', summary: 'done' };
     },
@@ -92,7 +96,7 @@ test('ordinary Work HTTP request needs no repository and persists its public pla
     assert.equal(runState.run.workspaceKind, 'scratch');
     assert.equal(path.isAbsolute(runState.run.cwd), true);
     assert.ok(runState.run.cwd.startsWith(path.join(dataDir, 'execution-workspaces')));
-    assert.deepEqual(observed, [{ cwd: runState.run.cwd, workId: created.work.id }]);
+    assert.deepEqual(observed, [{ cwd: runState.run.cwd, workId: created.work.id, inputEvidence: [] }]);
 
     const bootstrapResponse = await fetch(`${baseUrl}/api/company/bootstrap`);
     assert.equal(bootstrapResponse.status, 200);
@@ -104,7 +108,7 @@ test('ordinary Work HTTP request needs no repository and persists its public pla
   });
 });
 
-test('HTTP Work can continue a durable non-repository Project without a host workspace path', async (t) => {
+test('HTTP Work can continue a durable non-repository Project and persists pasted link Evidence before runtime', async (t) => {
   const dataDir = tempRoot(t);
   const projectStore = createProjectStore({ rootDir: dataDir });
   projectStore.create({
@@ -135,6 +139,7 @@ test('HTTP Work can continue a durable non-repository Project without a host wor
     },
   });
   const observed = [];
+  const taobaoUrl = 'https://item.taobao.com/item.htm?id=67890';
 
   await withServer({
     dataDir,
@@ -144,7 +149,7 @@ test('HTTP Work can continue a durable non-repository Project without a host wor
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        brief: 'Evaluate this new Taobao sofa-cover candidate.',
+        brief: `Evaluate this new Taobao sofa-cover candidate ${taobaoUrl}.`,
         projectId: 'project_home_refresh',
         runtime: 'mock',
       }),
@@ -158,6 +163,18 @@ test('HTTP Work can continue a durable non-repository Project without a host wor
     const runState = await readCompletedRun(baseUrl, created.run.id);
     assert.equal(runState.run.workspaceKind, 'scratch');
     assert.equal(runState.run.branch, null);
+    assert.equal(runState.evidence.length, 1);
+    assert.equal(runState.evidence[0].workId, created.work.id);
+    assert.equal(runState.evidence[0].runId, created.run.id);
+    assert.equal(runState.evidence[0].source, 'user-input');
+    assert.equal(runState.evidence[0].kind, 'link');
+    assert.equal(runState.evidence[0].mimeType, 'text/uri-list');
+    assert.equal(runState.evidence[0].metadata.url, taobaoUrl);
+    assert.equal(runState.evidence[0].metadata.projectId, 'project_home_refresh');
     assert.equal(observed.length, 1);
+    assert.equal(observed[0].inputEvidence.length, 1);
+    assert.equal(observed[0].inputEvidence[0].id, runState.evidence[0].id);
+    assert.equal(observed[0].inputEvidence[0].metadata.url, taobaoUrl);
+    assert.ok(runState.events.some((event) => event.type === 'evidence.received' && event.evidence && event.evidence.id === runState.evidence[0].id));
   });
 });
