@@ -162,12 +162,35 @@ function createCompanyServer({
     });
   }
 
-  function assertProjectWorkspaceAccess(projectId) {
+  function requireProject(projectId) {
     const project = company.getProject(projectId);
     if (!project) throw new Error(`Project not found: ${projectId}`);
+    return project;
+  }
+
+  function isMemoryProject(project) {
+    return Boolean(project && !project.repoDir && project.kind === 'work-context' && project.memory && typeof project.memory === 'object');
+  }
+
+  function assertProjectWorkspaceAccess(projectId) {
+    const project = requireProject(projectId);
+    if (!project.repoDir) {
+      if (isMemoryProject(project)) return project;
+      throw new Error('Project has no repository workspace or durable Project Memory.');
+    }
     const inspected = workspaces.inspect(project.repoDir);
     if (!inspected || !inspected.exists || !inspected.isDirectory) throw new Error('Project repoDir must remain an existing directory inside the allowed workspace root.');
     return project;
+  }
+
+  function requireProjectExecutionAccess(req, projectId) {
+    const project = requireProject(projectId);
+    if (!project.repoDir) {
+      if (!isMemoryProject(project)) throw new Error('Project has no repository workspace or durable Project Memory.');
+      return project;
+    }
+    if (!canAccessWorkspace(req)) return null;
+    return assertProjectWorkspaceAccess(project.id);
   }
 
   function artifactForWork(workId, artifactId) {
@@ -267,23 +290,43 @@ function createCompanyServer({
     res.json(project);
   });
 
-  app.post('/api/company/projects/:projectId/checkpoint', requireWorkspaceAccess, (req, res) => {
+  app.post('/api/company/projects/:projectId/checkpoint', (req, res) => {
     try {
-      assertProjectWorkspaceAccess(req.params.projectId);
-      const project = company.checkpointProject({
-        projectId: req.params.projectId,
+      const project = requireProject(req.params.projectId);
+      if (project.repoDir) {
+        if (!canAccessWorkspace(req)) {
+          return res.status(403).json({
+            error: 'Repository-backed Project checkpointing cannot read host Project Sources from this client.',
+          });
+        }
+        assertProjectWorkspaceAccess(project.id);
+      } else if (!isMemoryProject(project)) {
+        throw new Error('Project has no repository workspace or durable Project Memory.');
+      }
+      const updated = company.checkpointProject({
+        projectId: project.id,
         checkpoint: req.body || {},
       });
-      res.json({ project });
+      res.json({ project: updated });
     } catch (error) {
       res.status(400).json({ error: error.message });
     }
   });
 
-  app.get('/api/company/projects/:projectId/continuation', requireWorkspaceAccess, (req, res) => {
+  app.get('/api/company/projects/:projectId/continuation', (req, res) => {
     try {
-      assertProjectWorkspaceAccess(req.params.projectId);
-      res.json(company.inspectProjectContinuation(req.params.projectId));
+      const project = requireProject(req.params.projectId);
+      if (project.repoDir) {
+        if (!canAccessWorkspace(req)) {
+          return res.status(403).json({
+            error: 'Repository-backed Project continuation cannot read host Project Sources from this client.',
+          });
+        }
+        assertProjectWorkspaceAccess(project.id);
+      } else if (!isMemoryProject(project)) {
+        throw new Error('Project has no repository workspace or durable Project Memory.');
+      }
+      res.json(company.inspectProjectContinuation(project.id));
     } catch (error) {
       res.status(400).json({ error: error.message });
     }
@@ -332,20 +375,22 @@ function createCompanyServer({
   app.post('/api/company/works', async (req, res) => {
     try {
       const body = req.body || {};
+      let project = null;
       if (body.projectId) {
-        if (!canAccessWorkspace(req)) {
+        project = requireProjectExecutionAccess(req, body.projectId);
+        if (!project) {
           return res.status(403).json({
-            error: 'Project-bound Work cannot read host Project Sources from this client. Enable LAN workspace access only on a trusted network.',
+            error: 'Repository-backed Project Work cannot read host Project Sources from this client. Enable LAN workspace access only on a trusted network.',
           });
         }
-        assertProjectWorkspaceAccess(body.projectId);
       }
       const hasRepo = Boolean(body.repoDir && String(body.repoDir).trim());
-      const createWork = body.projectId || hasRepo ? company.createCodingWork : company.createWork;
+      const requiresRepo = Boolean((project && project.repoDir) || (!project && hasRepo));
+      const createWork = requiresRepo ? company.createCodingWork : company.createWork;
       const result = await createWork({
         brief: body.brief,
-        repoDir: hasRepo ? body.repoDir : null,
-        projectId: body.projectId || null,
+        repoDir: !project && hasRepo ? body.repoDir : null,
+        projectId: project ? project.id : null,
         runtime: body.runtime,
         employeeId: body.employeeId || 'ben',
         workerId: localWorker.id,
